@@ -1,6 +1,7 @@
 import { createRun } from './run.js';
 import { mountCombatScreen } from './ui/combatScreen.js';
 import { mountCharacterScreen } from './ui/characterScreen.js';
+import { mountWorkshopScreen } from './ui/workshopScreen.js';
 import { RARITY } from './data/affixes.js';
 
 const app = document.getElementById('app');
@@ -70,16 +71,23 @@ function showInterstitial(run, rewards) {
     </div>
     <div class="btn-row">
       <button id="char">Held${flag}</button>
+      <button id="shop">Werkstatt</button>
       <button id="next">Weiter</button>
     </div>
   `;
   document.getElementById('char').onclick = () => openCharacter(run, rewards);
+  document.getElementById('shop').onclick = () => openWorkshop(run, rewards);
   document.getElementById('next').onclick = () => playEncounter(run);
 }
 
 function openCharacter(run, rewards) {
   clear();
   mountCharacterScreen(app, run.hero, { onClose: () => showInterstitial(run, rewards) });
+}
+
+function openWorkshop(run, rewards) {
+  clear();
+  mountWorkshopScreen(app, run, { onClose: () => showInterstitial(run, rewards) });
 }
 
 function showEnd(run, kind) {

@@ -68,3 +68,43 @@ button:active { transform: translateY(1px); }
 .equip-btn { font-size: 11px; padding: 4px 8px; order: 2; }
 .inv-affix { flex-basis: 100%; font-size: 10px; color: #9a8a62; order: 3; }
 .close-btn { align-self: center; }
+
+/* --- Minigames (Werkstatt) --- */
+.mini { width: 360px; max-width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.mini h2 { margin: 0; color: #c8a04a; font-size: 18px; }
+.mini-status { font-size: 13px; min-height: 18px; }
+.mini-result { font-size: 13px; min-height: 18px; text-align: center; }
+.ghost { background: transparent; color: #c8a04a; border: 1px solid #5a4a2a; }
+.mat-line { font-size: 11px; color: #cdbf9a; text-align: center; }
+.mat-line b { color: #e8dcc0; }
+
+.pond { width: 200px; height: 90px; background: #163a4a; border: 2px solid #2e6075; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; }
+.bobber { color: #e0533d; font-size: 18px; transition: transform .1s; }
+.fishing.bite .pond { background: #4a2e16; border-color: #c8a04a; }
+.fishing.bite .bobber { transform: translateY(10px) scale(1.4); }
+
+.craft-sec { width: 100%; border: 1px solid #5a4a2a; border-radius: 6px; padding: 8px; }
+.sec-title { font-size: 12px; color: #c8a04a; margin-bottom: 6px; }
+.craft-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; padding: 3px 0; }
+.craft-row small { color: #8a7a52; }
+.cast-overlay { position: fixed; inset: 0; background: rgba(15,11,7,.92); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px; z-index: 50; }
+.cast-title { color: #c8a04a; font-size: 14px; }
+.cast-bar { position: relative; width: 280px; height: 26px; background: #14110c; border: 1px solid #5a4a2a;
+  border-radius: 6px; overflow: hidden; }
+.cast-zone { position: absolute; left: 42%; width: 16%; top: 0; bottom: 0; background: rgba(123,216,143,.4); }
+.cast-marker { position: absolute; top: 0; bottom: 0; width: 4px; background: #ffd24a; left: 0; }
+
+.rune-hint { font-size: 11px; color: #9a8a62; text-align: center; }
+.rune-grid { display: grid; gap: 3px; }
+.rune-cell { width: 36px; height: 36px; background: #221c14; border: 1px solid #3a3024; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: #fff; }
+.rune-cell.endpoint { color: var(--c); border-color: var(--c); }
+.rune-cell.path { background: var(--c); }
+.rune-cell.active { box-shadow: inset 0 0 0 2px #ffd24a; }
+
+.hub-btns { display: flex; flex-direction: column; gap: 8px; width: 200px; }
+.hub-btns button { width: 100%; }
+.ench-list { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.ench-item { width: 100%; background: #241f17; border: 1px solid #5a4a2a; text-align: left; }
