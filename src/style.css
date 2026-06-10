@@ -109,6 +109,19 @@ button:active { transform: translateY(1px); }
 .ench-list { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .ench-item { width: 100%; background: #241f17; border: 1px solid #5a4a2a; text-align: left; }
 
+/* --- Overlay panels (building / missions / chronik) --- */
+.panel-overlay { position: fixed; inset: 0; background: rgba(15,11,7,.85); display: flex;
+  align-items: center; justify-content: center; z-index: 60; padding: 16px; }
+.panel-box { background: #241f17; border: 2px solid #c8a04a; border-radius: 10px;
+  padding: 16px 18px; width: 340px; max-width: 100%; max-height: 86vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px; }
+.panel-box h3 { margin: 0; color: #c8a04a; font-size: 16px; }
+.panel-desc { margin: 0; font-size: 12px; color: #cdbf9a; }
+.mission-row { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  border: 1px solid #5a4a2a; border-radius: 6px; padding: 8px 10px; font-size: 12px; }
+.mission-row .dim { font-size: 10px; }
+.mission-row button { white-space: nowrap; font-size: 11px; padding: 6px 10px; }
+
 /* --- Gildenhalle (home) --- */
 .gildenhalle { width: 360px; max-width: 100%; }
 .gildenhalle h1 { color: #c8a04a; text-align: center; letter-spacing: 2px; margin: 0 0 4px; }
