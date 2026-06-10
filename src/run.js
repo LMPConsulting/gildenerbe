@@ -5,6 +5,7 @@ import { ZONE1 } from './data/zones.js';
 import { makeRng } from './core/rng.js';
 import { addXp } from './systems/leveling.js';
 import { rollLoot } from './systems/loot.js';
+import { makeBag, addMat } from './systems/materials.js';
 
 // A single hero's journey through a zone. The hero instance carries across
 // encounters (hp persists, healed between fights). Erbe/reroll = Plan 5.
@@ -17,6 +18,7 @@ export function createRun(classId = 'krieger', zone = ZONE1) {
     zone,
     index: 0,
     result: null, // null | 'cleared' | 'fallen'
+    materials: makeBag(),
 
     currentEncounter() {
       return zone.encounters[run.index];
@@ -33,7 +35,15 @@ export function createRun(classId = 'krieger', zone = ZONE1) {
       const leveled = addXp(hero, xp);
       const drops = enemies.map((e) => rollLoot(e, lootRng)).filter(Boolean);
       hero.inventory.push(...drops);
-      return { xp, leveled, drops };
+      const mats = {};
+      for (const e of enemies) {
+        const ore = e.boss ? 5 : e.elite ? 3 : 1;
+        addMat(run.materials, 'kupfererz', ore);
+        addMat(run.materials, 'kraeuter', 1);
+        mats.kupfererz = (mats.kupfererz || 0) + ore;
+        mats.kraeuter = (mats.kraeuter || 0) + 1;
+      }
+      return { xp, leveled, drops, mats };
     },
 
     onCombatEnd(result) {
