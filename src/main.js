@@ -1,70 +1,82 @@
-import { createWebStorage } from './core/storage.js';
-import { loadGame, saveGame } from './core/save.js';
-import { createInitialState } from './core/state.js';
-import { createLoop } from './core/loop.js';
-import { createEventBus } from './core/eventBus.js';
+import { createRun } from './run.js';
+import { mountCombatScreen } from './ui/combatScreen.js';
 
-const storage = createWebStorage();
-const bus = createEventBus();
-
-// Load existing save or start a fresh account.
-let state = loadGame(storage);
-const isNew = !state;
-if (isNew) {
-  state = createInitialState();
-  state.createdAt = Date.now();
-}
-
-// One tick = one fixed step; count it so we can SEE the loop running & persisting.
-function tick() {
-  state.stats.playTicks += 1;
-}
-
-const loop = createLoop({ tick, dt: 1000 / 30 });
-
-function save() {
-  state.lastSaved = Date.now();
-  saveGame(storage, state);
-  bus.emit('saved', state.lastSaved);
-}
-
-// --- minimal render ---
 const app = document.getElementById('app');
-function render() {
+let unmountCombat = null;
+
+function clear() {
+  if (unmountCombat) { unmountCombat(); unmountCombat = null; }
+  app.innerHTML = '';
+}
+
+function showStart() {
+  clear();
   app.innerHTML = `
     <div class="panel">
       <h1>GILDENERBE</h1>
-      <div class="stat">Status: <b>${isNew ? 'Neues Spiel' : 'Fortgesetzt'}</b></div>
-      <div class="stat">Ticks: <b id="ticks">${state.stats.playTicks}</b></div>
-      <div class="stat">Erbe: <b>${state.meta.erbe}</b></div>
-      <div class="stat">Klassen: <b>${state.meta.unlockedClasses.join(', ')}</b></div>
+      <div class="stat">Zone: <b>Eichhain</b></div>
+      <div class="stat">Klasse: <b>Krieger</b></div>
     </div>
-    <button id="reset">Spielstand zurücksetzen</button>
+    <button id="start">Neuer Held: Krieger</button>
   `;
-  document.getElementById('reset').onclick = () => {
-    storage.removeItem('gildenerbe.save');
-    location.reload();
-  };
+  document.getElementById('start').onclick = startRun;
 }
-render();
 
-// rAF drives the loop; update only the ticks number each frame (cheap).
-let last = performance.now();
-const ticksEl = () => document.getElementById('ticks');
-function frame(now) {
-  loop.advance(now - last);
-  last = now;
-  const el = ticksEl();
-  if (el) el.textContent = state.stats.playTicks;
-  requestAnimationFrame(frame);
+function startRun() {
+  playEncounter(createRun('krieger'));
 }
-requestAnimationFrame(frame);
 
-// autosave: interval + on tab hide (mobile background)
-setInterval(save, 5000);
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') save();
-});
+function playEncounter(run) {
+  clear();
+  const header = document.createElement('div');
+  header.className = 'run-header';
+  header.innerHTML = `<b>${run.zone.name}</b> &middot; Begegnung ${run.index + 1}/${run.zone.encounters.length}`;
+  app.appendChild(header);
 
-// expose for manual debugging in the console
-window.__GE = { get state() { return state; }, save };
+  const arena = document.createElement('div');
+  app.appendChild(arena);
+
+  const sim = run.buildSim();
+  window.__combat = sim;
+  window.__run = run;
+  unmountCombat = mountCombatScreen(arena, sim, {
+    onEnd: (result) => {
+      unmountCombat = null;
+      const outcome = run.onCombatEnd(result);
+      if (outcome === 'cleared' || outcome === 'fallen') showEnd(run, outcome);
+      else showInterstitial(run);
+    },
+  });
+}
+
+function showInterstitial(run) {
+  clear();
+  const hp = Math.max(0, Math.round(run.hero.hp));
+  app.innerHTML = `
+    <div class="overlay win">
+      <h2>Sieg!</h2>
+      <div class="stat">${run.index}/${run.zone.encounters.length} Begegnungen geschafft</div>
+      <div class="stat">HP: <b>${hp}/${run.hero.maxHp}</b> &middot; +30% geheilt</div>
+    </div>
+    <button id="next">Weiter</button>
+  `;
+  document.getElementById('next').onclick = () => playEncounter(run);
+}
+
+function showEnd(run, kind) {
+  clear();
+  const won = kind === 'cleared';
+  app.innerHTML = `
+    <div class="overlay ${won ? 'win' : 'lose'}">
+      <h2>${won ? 'Eichhain bezwungen!' : 'Gefallen'}</h2>
+      <div class="stat">${won
+        ? 'Du hast Zone 1 gemeistert.'
+        : `Bei Begegnung ${run.index + 1}/${run.zone.encounters.length} gefallen.`}</div>
+      <div class="stat dim">Erbe &amp; Reroll folgen in Milestone 5</div>
+    </div>
+    <button id="again">Neuer Held</button>
+  `;
+  document.getElementById('again').onclick = showStart;
+}
+
+showStart();

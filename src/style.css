@@ -38,3 +38,6 @@ button:active { transform: translateY(1px); }
 .overlay h2 { margin: 0 0 10px; color: #c8a04a; letter-spacing: 1px; }
 .overlay.win h2 { color: #7bd88f; }
 .overlay.lose h2 { color: #e06b5e; }
+.stat.dim { opacity: .6; margin-top: 8px; font-size: 12px; }
+.run-header { font-size: 14px; color: #e8dcc0; letter-spacing: 1px; }
+.run-header b { color: #c8a04a; }
