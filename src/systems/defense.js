@@ -68,10 +68,10 @@ export function resolveRaid(account, won) {
 export const WALL_MAX = 5;
 export const wallCost = (level) => Math.round(50 * Math.pow(1.7, level));
 
-export function buyWall(account) {
+export function buyWall(account, costMult = 1) {
   const lvl = account.base.wallLevel || 0;
   if (lvl >= WALL_MAX) return false;
-  const cost = wallCost(lvl);
+  const cost = Math.round(wallCost(lvl) * costMult);
   if (account.meta.erbe < cost) return false;
   account.meta.erbe -= cost;
   account.base.wallLevel = lvl + 1;

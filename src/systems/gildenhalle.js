@@ -6,11 +6,12 @@ export const buildingLevel = (meta, id) => (meta.buildings && meta.buildings[id]
 export const buildingCost = (id, level) =>
   Math.round(BUILDINGS[id].baseCost * Math.pow(BUILDINGS[id].costMult, level));
 
-// Spend Erbe to raise a building one level. Returns true on success.
-export function buyBuilding(meta, id) {
+// Spend Erbe to raise a building one level. costMult lets the Chronik's
+// Baumeister upgrade discount construction. Returns true on success.
+export function buyBuilding(meta, id, costMult = 1) {
   const lvl = buildingLevel(meta, id);
   if (lvl >= BUILDINGS[id].maxLevel) return false;
-  const cost = buildingCost(id, lvl);
+  const cost = Math.round(buildingCost(id, lvl) * costMult);
   if (meta.erbe < cost) return false;
   meta.erbe -= cost;
   meta.buildings[id] = lvl + 1;
