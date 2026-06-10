@@ -1,15 +1,15 @@
-// Zone 1 — Eichhain. A linear encounter sequence ending at the boss.
-// (A branching node-map comes in a later plan; this proves the run flow.)
+// Zone 1 — Eichhain. v2: walkable dungeon floors (the hero moves through
+// rooms, fights, loots chests, finds challenge events) ending at the boss.
 export const ZONE1 = {
   id: 'eichhain',
   name: 'Eichhain',
   levelRange: [1, 5],
-  encounters: [
-    ['waldwolf'],
-    ['keiler', 'waldwolf'],
-    ['raeuber'],
-    ['rudelfuehrer'],   // elite
-    ['krell'],          // boss
+  floors: [
+    { kind: 'normal', enemies: ['waldwolf', 'waldwolf', 'keiler'], chests: 1, events: 0 },
+    { kind: 'normal', enemies: ['keiler', 'waldwolf', 'waldwolf', 'raeuber'], chests: 1, events: 1 },
+    { kind: 'normal', enemies: ['raeuber', 'raeuber', 'waldwolf', 'keiler'], chests: 2, events: 1 },
+    { kind: 'normal', enemies: ['rudelfuehrer', 'waldwolf', 'waldwolf'], chests: 1, events: 1 },
+    { kind: 'boss', enemies: ['krell', 'raeuber', 'raeuber'], chests: 1, events: 0 },
   ],
 };
 

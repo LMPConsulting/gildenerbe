@@ -1,6 +1,5 @@
 import { createHero } from './systems/hero.js';
 import { makeEnemy } from './data/enemies.js';
-import { createCombat } from './systems/combatSim.js';
 import { ZONE1 } from './data/zones.js';
 import { makeRng } from './core/rng.js';
 import { addXp } from './systems/leveling.js';
@@ -8,8 +7,8 @@ import { rollLoot } from './systems/loot.js';
 import { makeBag, addMat } from './systems/materials.js';
 import { applyMetaToHero } from './systems/gildenhalle.js';
 
-// A single hero's journey through a zone. The hero instance carries across
-// encounters (hp persists, healed between fights). Erbe/reroll = Plan 5.
+// A single hero's journey through a zone's dungeon floors. The hero carries
+// across floors (hp persists, healed between floors). Erbe on run end.
 export function createRun(classId = 'krieger', zone = ZONE1, meta = null) {
   const hero = createHero(classId);
   if (meta) applyMetaToHero(hero, meta);
@@ -22,16 +21,15 @@ export function createRun(classId = 'krieger', zone = ZONE1, meta = null) {
     result: null, // null | 'cleared' | 'fallen'
     materials: makeBag(),
 
-    currentEncounter() {
-      return zone.encounters[run.index];
+    currentFloor() {
+      return zone.floors[run.index];
     },
 
-    buildSim() {
-      const enemies = run.currentEncounter().map(makeEnemy);
-      return createCombat({ hero, enemies, seed: 1000 + run.index });
+    floorSeed() {
+      return 5000 + run.index * 17;
     },
 
-    // XP + loot for slain enemies. Call on a won combat (before onCombatEnd).
+    // XP + loot for slain enemy units (passed from the dungeon's kill list).
     grantRewards(enemies) {
       const xp = enemies.reduce((s, e) => s + (e.xp || 0), 0);
       const leveled = addXp(hero, xp);
@@ -48,8 +46,18 @@ export function createRun(classId = 'krieger', zone = ZONE1, meta = null) {
       return { xp, leveled, drops, mats };
     },
 
-    onCombatEnd(result) {
-      if (result === 'won') {
+    // Guaranteed chest loot (elite-grade) + a few mats.
+    rollChestLoot() {
+      const dummy = makeEnemy('raeuber');
+      dummy.elite = true; // bumps rarity + guarantees a drop
+      const item = rollLoot(dummy, lootRng);
+      addMat(run.materials, 'kupfererz', 2);
+      if (item) hero.inventory.push(item);
+      return item;
+    },
+
+    onFloorEnd(result) {
+      if (result === 'cleared') {
         hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(hero.maxHp * 0.45));
         hero.resource.value = 0;
         hero.cooldowns = {};
@@ -57,7 +65,7 @@ export function createRun(classId = 'krieger', zone = ZONE1, meta = null) {
         hero.blocking = 0;
         hero.alive = true;
         run.index++;
-        if (run.index >= zone.encounters.length) run.result = 'cleared';
+        if (run.index >= zone.floors.length) run.result = 'cleared';
       } else {
         run.result = 'fallen';
       }
