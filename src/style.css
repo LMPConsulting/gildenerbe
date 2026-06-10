@@ -1,0 +1,14 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #1a1712; color: #e8dcc0;
+  font-family: ui-monospace, "Courier New", monospace; }
+#app { display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 24px; }
+.panel { border: 2px solid #c8a04a; background: #241f17; border-radius: 8px;
+  padding: 16px 20px; min-width: 260px; text-align: center; }
+.panel h1 { color: #c8a04a; margin: 0 0 8px; font-size: 20px; letter-spacing: 2px; }
+.stat { font-size: 14px; }
+.stat b { color: #c8a04a; }
+button { font: inherit; color: #1a1712; background: #c8a04a; border: none;
+  border-radius: 6px; padding: 8px 14px; cursor: pointer; }
+button:active { transform: translateY(1px); }
