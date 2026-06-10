@@ -160,4 +160,8 @@ function finishRun(run, kind) {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
 setInterval(save, 15000);
 
+// debug handles (console)
+window.__account = account;
+window.__save = save;
+
 boot();

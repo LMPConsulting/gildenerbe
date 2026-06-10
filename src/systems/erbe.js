@@ -5,7 +5,7 @@ import { SLOTS } from './hero.js';
 export function computeErbe(hero, encountersCleared, meta) {
   const equipped = SLOTS.map((s) => hero.equipment[s]).filter(Boolean);
   const avgIlvl = equipped.length ? equipped.reduce((s, i) => s + (i.ilvl || 0), 0) / equipped.length : 0;
-  const base = Math.pow(hero.level, 1.5) * (1 + avgIlvl / 100) * (1 + encountersCleared * 0.12);
+  const base = 3 * Math.pow(hero.level, 1.5) * (1 + avgIlvl / 100) * (1 + encountersCleared * 0.12);
   const treasuryPct = ((meta && meta.buildings && meta.buildings.schatzkammer) || 0) * 0.15;
   return Math.max(1, Math.round(base * (1 + treasuryPct)));
 }
