@@ -6,11 +6,13 @@ import { makeRng } from './core/rng.js';
 import { addXp } from './systems/leveling.js';
 import { rollLoot } from './systems/loot.js';
 import { makeBag, addMat } from './systems/materials.js';
+import { applyMetaToHero } from './systems/gildenhalle.js';
 
 // A single hero's journey through a zone. The hero instance carries across
 // encounters (hp persists, healed between fights). Erbe/reroll = Plan 5.
-export function createRun(classId = 'krieger', zone = ZONE1) {
+export function createRun(classId = 'krieger', zone = ZONE1, meta = null) {
   const hero = createHero(classId);
+  if (meta) applyMetaToHero(hero, meta);
   const lootRng = makeRng(7777);
 
   const run = {

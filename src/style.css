@@ -108,3 +108,17 @@ button:active { transform: translateY(1px); }
 .hub-btns button { width: 100%; }
 .ench-list { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .ench-item { width: 100%; background: #241f17; border: 1px solid #5a4a2a; text-align: left; }
+
+/* --- Gildenhalle (home) --- */
+.gildenhalle { width: 360px; max-width: 100%; }
+.gildenhalle h1 { color: #c8a04a; text-align: center; letter-spacing: 2px; margin: 0 0 4px; }
+.erbe-line { text-align: center; font-size: 12px; color: #cdbf9a; margin-bottom: 12px; }
+.erbe-line b { color: #c8a04a; }
+.buildings { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.bld { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  border: 1px solid #5a4a2a; border-radius: 6px; padding: 8px 10px; }
+.bld-info b { color: #e8dcc0; font-size: 13px; }
+.bld-lvl { font-size: 10px; color: #8a7a52; }
+.bld-desc { font-size: 10px; color: #9a8a62; margin-top: 2px; }
+.bld button { font-size: 11px; padding: 6px 10px; white-space: nowrap; }
+.primary { width: 100%; font-size: 14px; padding: 10px; }
