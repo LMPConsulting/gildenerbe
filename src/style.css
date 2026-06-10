@@ -41,3 +41,30 @@ button:active { transform: translateY(1px); }
 .stat.dim { opacity: .6; margin-top: 8px; font-size: 12px; }
 .run-header { font-size: 14px; color: #e8dcc0; letter-spacing: 1px; }
 .run-header b { color: #c8a04a; }
+
+/* --- Rewards + buttons --- */
+.btn-row { display: flex; gap: 8px; }
+.drops { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.drop { font-weight: bold; }
+.dim { opacity: .6; font-size: 12px; }
+
+/* --- Character / inventory screen --- */
+.char { width: 360px; max-width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.char-head h2 { margin: 0; color: #c8a04a; font-size: 18px; }
+.char-stats { font-size: 12px; color: #cdbf9a; margin-top: 4px; }
+.draft { border: 1px solid #c8a04a; border-radius: 6px; padding: 8px; background: #2a2418; }
+.draft-title { font-size: 12px; color: #c8a04a; margin-bottom: 6px; }
+.draft-opts { display: flex; gap: 6px; }
+.draft-opt { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8px 6px; text-align: center; }
+.draft-opt small { font-weight: normal; font-size: 10px; color: #1a1712; opacity: .8; }
+.equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; border: 1px solid #5a4a2a; border-radius: 6px; padding: 8px; }
+.equip-slot { display: flex; justify-content: space-between; font-size: 11px; }
+.slot-name { color: #8a7a52; }
+.slot-item { font-weight: bold; text-align: right; max-width: 62%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inv { border: 1px solid #5a4a2a; border-radius: 6px; padding: 8px; max-height: 230px; overflow-y: auto; }
+.inv-title { font-size: 12px; color: #c8a04a; margin-bottom: 6px; }
+.inv-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 5px 0; border-bottom: 1px solid #332b1d; }
+.inv-name { font-weight: bold; font-size: 12px; flex: 1; min-width: 120px; }
+.equip-btn { font-size: 11px; padding: 4px 8px; order: 2; }
+.inv-affix { flex-basis: 100%; font-size: 10px; color: #9a8a62; order: 3; }
+.close-btn { align-self: center; }
