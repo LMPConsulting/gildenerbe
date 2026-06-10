@@ -1,5 +1,6 @@
 import { generatePuzzle, validate } from '../systems/runePuzzle.js';
 import { makeRng } from '../core/rng.js';
+import { playSfx } from '../audio/index.js';
 
 const PAIR_COLORS = ['#e0533d', '#3b82f6', '#1eba5a', '#a335ee', '#ffb300'];
 let seed = 1;
@@ -53,8 +54,11 @@ export function mountRunePuzzleScreen(root, { onSolve, onClose, size = 5, pairs 
     return complete && validate(puzzle, paths);
   }
 
+  let announced = false;
   function render() {
     const done = solved();
+    if (done && !announced) { announced = true; playSfx('puzzleSolve'); }
+    if (!done) announced = false;
     let grid = '';
     for (let y = 0; y < puzzle.size; y++) {
       for (let x = 0; x < puzzle.size; x++) {

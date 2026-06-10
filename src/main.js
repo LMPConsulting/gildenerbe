@@ -9,6 +9,10 @@ import { loadGame, saveGame } from './core/save.js';
 import { createInitialState } from './core/state.js';
 import { computeErbe, offlineErbe, offlineCapSeconds } from './systems/erbe.js';
 import { computeElapsedSeconds } from './core/time.js';
+import { initAudio, playMusic, playSfx } from './audio/index.js';
+
+// Mobile-safe audio unlock: first tap/click anywhere initialises the context.
+document.addEventListener('pointerdown', () => initAudio(), { once: true });
 
 const app = document.getElementById('app');
 const storage = createWebStorage();
@@ -54,6 +58,7 @@ function boot() {
 // --- home (Gildenhalle) ---
 function home() {
   clear();
+  playMusic('town');
   mountGildenhalle(app, account, { onNewHero: startRun, onSaved: save });
 }
 
@@ -72,6 +77,11 @@ function playEncounter(run) {
   app.appendChild(arena);
 
   const sim = run.buildSim();
+  playMusic(sim.state.enemies.some((e) => e.boss) ? 'boss' : 'explore');
+  sim.on((e) => {
+    if (e.type === 'damage') playSfx(e.crit ? 'crit' : 'hit');
+    else if (e.type === 'telegraphResolve' && e.blocked) playSfx('block');
+  });
   window.__combat = sim;
   window.__run = run;
   unmountCombat = mountCombatScreen(arena, sim, {
@@ -88,6 +98,10 @@ function playEncounter(run) {
 function showInterstitial(run, rewards) {
   clear();
   const hero = run.hero;
+  if (rewards) {
+    if (rewards.leveled) playSfx('levelUp');
+    else if (rewards.drops.length) playSfx('loot', { rarity: rewards.drops[0].rarity });
+  }
   const drops = rewards && rewards.drops.length
     ? rewards.drops.map((d) => `<div class="drop" style="color:${RARITY[d.rarity].color}">${d.name}</div>`).join('')
     : '<div class="dim">keine Beute</div>';
@@ -129,6 +143,8 @@ function finishRun(run, kind) {
   account.stats.bestZone = Math.max(account.stats.bestZone || 0, run.index);
   save();
   const won = kind === 'cleared';
+  playMusic('victory');
+  if (won) playSfx('levelUp'); else playSfx('coin');
   clear();
   app.innerHTML = `
     <div class="overlay ${won ? 'win' : 'lose'}">

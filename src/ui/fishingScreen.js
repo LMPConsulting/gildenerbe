@@ -1,6 +1,7 @@
 import { createCast } from '../systems/fishing.js';
 import { addMat } from '../systems/materials.js';
 import { makeRng } from '../core/rng.js';
+import { playSfx } from '../audio/index.js';
 
 let seed = 1;
 
@@ -53,6 +54,7 @@ export function mountFishingScreen(root, run, { onClose } = {}) {
       const fish = cast.tap();
       stop(); wrap.classList.remove('bite');
       if (fish) {
+        playSfx('fishSplash');
         addMat(run.materials, 'fisch', 1);
         if (fish.id === 'runenaal') addMat(run.materials, 'kraeuter', 2);
         resultEl.innerHTML = `Gefangen: <b>${fish.name}</b>! (Fisch +1)`;
