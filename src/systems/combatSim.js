@@ -31,7 +31,7 @@ export function createCombat({ hero, enemies, seed = 1 }) {
 
   function autoAttack(unit, target) {
     if (!unit.alive || !target || !target.alive) return;
-    applyDamage(unit, target, unit.weaponDmg + unit.ap * 0.1);
+    applyDamage(unit, target, unit.weaponDmg + unit.ap * 0.3);
     gainRage(unit, 10);
   }
 
