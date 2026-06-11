@@ -1,174 +1,266 @@
 import { describe, it, expect } from 'vitest';
 import { makeRng } from '../../src/core/rng.js';
-import { PIECES, SIZE, legalMoves, applyMove, isWon, solve, generatePuzzle } from '../../src/systems/chessPuzzle.js';
+import {
+  emptyBoard,
+  boardFromPieces,
+  applyMove,
+  pseudoMoves,
+  legalMoves,
+  allLegalMoves,
+  attacks,
+  inCheck,
+  isCheckmate,
+  isStalemate,
+  solveMate,
+  generatePuzzle,
+  applyBlackBestDefense,
+  PUZZLE_LIBRARY,
+} from '../../src/systems/chessPuzzle.js';
 
-const empty = () => Array.from({ length: 5 }, () => Array(5).fill(null));
 const W = (type) => ({ type, white: true });
 const B = (type) => ({ type, white: false });
-// Brett ist board[y][x] — Helfer nimmt (x, y) wie legalMoves.
-const put = (board, x, y, piece) => { board[y][x] = piece; return board; };
+const put = (board, x, y, piece) => {
+  board[y][x] = piece;
+  return board;
+};
 const keys = (moves) => moves.map(({ x, y }) => `${x},${y}`).sort();
+const snapshot = (board) => JSON.stringify(board);
 
-describe('chessPuzzle legalMoves', () => {
-  it('exposes move logic for all six piece types', () => {
-    for (const t of ['K', 'Q', 'R', 'B', 'N', 'P']) expect(typeof PIECES[t].moves).toBe('function');
-    expect(SIZE).toBe(5);
+describe('chessPuzzle pseudoMoves', () => {
+  it('knight jumps from the centre (8) and the corner (2)', () => {
+    const b = put(emptyBoard(), 4, 4, W('N'));
+    expect(pseudoMoves(b, 4, 4).length).toBe(8);
+    const c = put(emptyBoard(), 0, 0, B('N'));
+    expect(keys(pseudoMoves(c, 0, 0))).toEqual(['1,2', '2,1']);
   });
 
-  it('king steps to all 8 neighbours but never onto own pieces', () => {
-    const b = put(empty(), 2, 2, W('K'));
-    expect(legalMoves(b, 2, 2)).toHaveLength(8);
-    put(b, 2, 1, W('P'));
-    put(b, 3, 3, B('N'));
-    const m = keys(legalMoves(b, 2, 2));
-    expect(m).toHaveLength(7);
-    expect(m).not.toContain('2,1'); // eigenes Feld blockiert
-    expect(m).toContain('3,3'); // Gegner schlagbar
+  it('rook slides, stops before own piece, captures enemy', () => {
+    const b = emptyBoard();
+    put(b, 3, 3, W('R'));
+    put(b, 3, 1, W('P')); // eigene Figur blockt
+    put(b, 6, 3, B('P')); // Gegner schlagbar
+    const moves = keys(pseudoMoves(b, 3, 3));
+    expect(moves).toContain('3,2'); // bis vor den eigenen Bauern
+    expect(moves).not.toContain('3,1'); // eigenes Feld nicht
+    expect(moves).not.toContain('3,0'); // nicht hindurch
+    expect(moves).toContain('6,3'); // Schlag
+    expect(moves).not.toContain('7,3'); // nicht über den Gegner hinweg
   });
 
-  it('queen slides 16 squares from the centre of an empty 5x5 board', () => {
-    const b = put(empty(), 2, 2, W('Q'));
-    expect(legalMoves(b, 2, 2)).toHaveLength(16);
+  it('bishop and queen ray geometry', () => {
+    const b = put(emptyBoard(), 4, 4, W('B'));
+    const bm = keys(pseudoMoves(b, 4, 4));
+    expect(bm).toContain('7,7');
+    expect(bm).toContain('0,0');
+    expect(bm).not.toContain('4,0'); // Läufer zieht nie gerade
+
+    const q = put(emptyBoard(), 4, 4, W('Q'));
+    expect(pseudoMoves(q, 4, 4).length).toBe(27); // 8 Richtungen, leeres Brett
   });
 
-  it('rook is blocked by own pieces and stops on captured enemies', () => {
-    const b = put(empty(), 0, 0, W('R'));
-    put(b, 0, 2, W('P')); // eigener Bauer auf der Linie
-    put(b, 2, 0, B('N')); // Gegner auf der Reihe
-    expect(keys(legalMoves(b, 0, 0))).toEqual(['0,1', '1,0', '2,0']);
+  it('king moves one step in all directions', () => {
+    const b = put(emptyBoard(), 4, 4, W('K'));
+    expect(pseudoMoves(b, 4, 4).length).toBe(8);
+    const c = put(emptyBoard(), 7, 7, W('K'));
+    expect(pseudoMoves(c, 7, 7).length).toBe(3);
   });
 
-  it('bishop captures the first enemy on a diagonal and cannot pass it', () => {
-    const b = put(empty(), 2, 2, W('B'));
-    put(b, 1, 1, B('N')); // schlagbar, dahinter (0,0) gesperrt
-    put(b, 3, 3, W('P')); // eigene Figur sperrt (3,3) und (4,4)
-    expect(keys(legalMoves(b, 2, 2))).toEqual(['0,4', '1,1', '1,3', '3,1', '4,0']);
+  it('white pawn: single + double from start, captures diagonally only', () => {
+    const b = put(emptyBoard(), 4, 6, W('P')); // e2
+    expect(keys(pseudoMoves(b, 4, 6))).toEqual(['4,4', '4,5']);
+
+    const blocked = put(put(emptyBoard(), 4, 6, W('P')), 4, 5, B('P'));
+    expect(pseudoMoves(blocked, 4, 6).length).toBe(0); // geradeaus kein Schlag
+
+    const cap = emptyBoard();
+    put(cap, 4, 4, W('P'));
+    put(cap, 3, 3, B('N'));
+    put(cap, 5, 3, W('N')); // eigene Figur nicht schlagbar
+    expect(keys(pseudoMoves(cap, 4, 4))).toEqual(['3,3', '4,3']);
   });
 
-  it('knight jumps over blockers', () => {
-    const b = put(empty(), 0, 0, W('N'));
-    put(b, 0, 1, W('P'));
-    put(b, 1, 0, W('P'));
-    put(b, 1, 1, B('B'));
-    expect(keys(legalMoves(b, 0, 0))).toEqual(['1,2', '2,1']);
-    put(b, 1, 2, W('P')); // Landefeld durch eigene Figur belegt
-    expect(keys(legalMoves(b, 0, 0))).toEqual(['2,1']);
-  });
-
-  it('white pawn moves up (-y) and captures only diagonally up', () => {
-    const b = put(empty(), 2, 3, W('P'));
-    expect(keys(legalMoves(b, 2, 3))).toEqual(['2,2']);
-    put(b, 1, 2, B('N'));
-    put(b, 3, 2, B('B'));
-    expect(keys(legalMoves(b, 2, 3))).toEqual(['1,2', '2,2', '3,2']);
-  });
-
-  it('pawn cannot capture straight ahead and is blocked by any piece in front', () => {
-    const b = put(empty(), 2, 3, W('P'));
-    put(b, 2, 2, B('N')); // Gegner direkt davor: weder ziehen noch schlagen
-    expect(legalMoves(b, 2, 3)).toEqual([]);
-    const b2 = put(empty(), 2, 3, W('P'));
-    put(b2, 2, 2, W('N')); // eigene Figur blockiert ebenfalls
-    expect(legalMoves(b2, 2, 3)).toEqual([]);
-    const top = put(empty(), 2, 0, W('P')); // oberste Reihe: kein Zug (keine Umwandlung)
-    expect(legalMoves(top, 2, 0)).toEqual([]);
-  });
-
-  it('black pawn mirrors the direction (+y)', () => {
-    const b = put(empty(), 2, 1, B('P'));
-    put(b, 1, 2, W('N'));
-    expect(keys(legalMoves(b, 2, 1))).toEqual(['1,2', '2,2']);
-  });
-
-  it('returns [] for empty or out-of-bounds squares', () => {
-    expect(legalMoves(empty(), 2, 2)).toEqual([]);
-    expect(legalMoves(empty(), -1, 7)).toEqual([]);
+  it('black pawn moves down (+y) with double step from y=1', () => {
+    const b = put(emptyBoard(), 2, 1, B('P')); // c7
+    expect(keys(pseudoMoves(b, 2, 1))).toEqual(['2,2', '2,3']);
+    const mid = put(emptyBoard(), 2, 3, B('P'));
+    expect(keys(pseudoMoves(mid, 2, 3))).toEqual(['2,4']);
   });
 });
 
-describe('chessPuzzle applyMove / isWon', () => {
-  it('applyMove captures immutably', () => {
-    const b = put(put(empty(), 0, 0, W('R')), 2, 0, B('N'));
-    const next = applyMove(b, { x: 0, y: 0 }, { x: 2, y: 0 });
-    expect(next[0][2]).toEqual(W('R')); // Turm steht auf dem Zielfeld
-    expect(next[0][0]).toBeNull();
-    expect(b[0][0]).toEqual(W('R')); // Original unverändert
-    expect(b[0][2]).toEqual(B('N'));
+describe('chessPuzzle attacks/inCheck', () => {
+  it('pawn attack squares differ from its move squares', () => {
+    const b = put(emptyBoard(), 4, 4, W('P'));
+    expect(attacks(b, 3, 3, true)).toBe(true);
+    expect(attacks(b, 5, 3, true)).toBe(true);
+    expect(attacks(b, 4, 3, true)).toBe(false); // Zugfeld, kein Angriffsfeld
   });
 
-  it('isWon is true exactly when the black king is gone', () => {
-    const b = put(put(empty(), 0, 0, B('K')), 0, 4, W('R'));
-    expect(isWon(b)).toBe(false);
-    expect(isWon(applyMove(b, { x: 0, y: 4 }, { x: 0, y: 0 }))).toBe(true);
-    expect(isWon(empty())).toBe(true);
+  it('sliding attacks are blocked by any piece', () => {
+    const b = emptyBoard();
+    put(b, 0, 0, B('R'));
+    put(b, 0, 4, W('P'));
+    expect(attacks(b, 0, 2, false)).toBe(true);
+    expect(attacks(b, 0, 4, false)).toBe(true); // Blocker selbst angegriffen
+    expect(attacks(b, 0, 6, false)).toBe(false); // dahinter nicht
+  });
+
+  it('inCheck detects a rook check and its absence', () => {
+    const b = emptyBoard();
+    put(b, 4, 7, W('K'));
+    put(b, 4, 0, B('R'));
+    expect(inCheck(b, true)).toBe(true);
+    put(b, 4, 4, B('N')); // eigener (schwarzer) Springer blockt die Linie
+    expect(inCheck(b, true)).toBe(false);
   });
 });
 
-describe('chessPuzzle solve', () => {
-  it('finds a mate-in-1 capture', () => {
-    const b = put(put(empty(), 0, 0, B('K')), 0, 4, W('R'));
-    const seq = solve(b, 1);
-    expect(seq).toHaveLength(1);
-    expect(seq[0]).toEqual({ from: { x: 0, y: 4 }, to: { x: 0, y: 0 } });
+describe('chessPuzzle legalMoves (Selbstschach verboten)', () => {
+  it('a pinned rook may only move along the pin line', () => {
+    const b = emptyBoard();
+    put(b, 4, 7, W('K')); // Ke1
+    put(b, 4, 4, W('R')); // Re4 gefesselt von
+    put(b, 4, 0, B('R')); // Te8
+    put(b, 0, 0, B('K'));
+    const moves = legalMoves(b, 4, 4);
+    expect(moves.length).toBeGreaterThan(0);
+    expect(moves.every((m) => m.x === 4)).toBe(true); // nur auf der e-Linie
+    expect(keys(moves)).toContain('4,0'); // Fesselnden schlagen ist erlaubt
   });
 
-  it('returns null when the king cannot be captured within the limit', () => {
-    const b = put(put(empty(), 0, 0, B('K')), 4, 4, W('N'));
-    expect(solve(b, 1)).toBeNull();
+  it('a pinned bishop has zero legal moves', () => {
+    const b = emptyBoard();
+    put(b, 4, 7, W('K'));
+    put(b, 4, 4, W('B'));
+    put(b, 4, 0, B('R'));
+    put(b, 0, 0, B('K'));
+    expect(legalMoves(b, 4, 4).length).toBe(0);
   });
 
-  it('returns [] for an already-won board', () => {
-    expect(solve(put(empty(), 1, 1, W('Q')), 0)).toEqual([]);
+  it('the king may not step onto an attacked square', () => {
+    const b = emptyBoard();
+    put(b, 4, 7, W('K'));
+    put(b, 3, 0, B('R')); // d-Linie gesperrt
+    put(b, 7, 0, B('K'));
+    const moves = keys(legalMoves(b, 4, 7));
+    expect(moves).not.toContain('3,7');
+    expect(moves).not.toContain('3,6');
+    expect(moves).toContain('5,7');
+  });
+});
+
+describe('chessPuzzle isCheckmate/isStalemate', () => {
+  it('recognises the back-rank mate as checkmate for black', () => {
+    const base = boardFromPieces(PUZZLE_LIBRARY[1][0].pieces); // Grundreihenmatt
+    const mated = applyMove(base, { x: 4, y: 7 }, { x: 4, y: 0 }); // Te1-e8#
+    expect(isCheckmate(mated, false)).toBe(true);
+    expect(isCheckmate(mated, true)).toBe(false);
+  });
+
+  it('is false before the mating move', () => {
+    const base = boardFromPieces(PUZZLE_LIBRARY[1][0].pieces);
+    expect(isCheckmate(base, false)).toBe(false);
+    expect(isCheckmate(base, true)).toBe(false);
+  });
+
+  it('detects stalemate (no moves, no check)', () => {
+    const b = emptyBoard();
+    put(b, 0, 0, B('K')); // Ka8
+    put(b, 2, 1, W('K')); // Kc7 deckt b8/b7
+    put(b, 1, 2, W('Q')); // Db6 deckt a7/b7/b8 — a8 selbst nicht
+    expect(inCheck(b, false)).toBe(false);
+    expect(isStalemate(b, false)).toBe(true);
+    expect(isCheckmate(b, false)).toBe(false);
+  });
+});
+
+describe('chessPuzzle applyMove immutability', () => {
+  it('returns a new board and leaves the original untouched', () => {
+    const b = boardFromPieces(PUZZLE_LIBRARY[1][0].pieces);
+    const before = snapshot(b);
+    const after = applyMove(b, { x: 4, y: 7 }, { x: 4, y: 0 });
+    expect(snapshot(b)).toBe(before);
+    expect(after).not.toBe(b);
+    expect(after[0][4]).toEqual({ type: 'R', white: true });
+    expect(after[7][4]).toBe(null);
+  });
+});
+
+describe('chessPuzzle library verification', () => {
+  it('contains at least 10 mate-in-1 and 8 mate-in-2 positions', () => {
+    expect(PUZZLE_LIBRARY[1].length).toBeGreaterThanOrEqual(10);
+    expect(PUZZLE_LIBRARY[2].length).toBeGreaterThanOrEqual(8);
+  });
+
+  for (const movesToWin of [1, 2]) {
+    for (const cand of PUZZLE_LIBRARY[movesToWin]) {
+      it(`"${cand.name}" is mate in exactly ${movesToWin}`, () => {
+        const board = boardFromPieces(cand.pieces);
+        expect(inCheck(board, false)).toBe(false); // Schwarz nicht schon im Schach
+        expect(inCheck(board, true)).toBe(false); // Weiß auch nicht
+        const sol = solveMate(board, movesToWin);
+        expect(sol).not.toBe(null);
+        expect(solveMate(board, movesToWin - 1)).toBe(null); // nicht schneller
+        if (movesToWin === 1) {
+          expect(isCheckmate(applyMove(board, sol.from, sol.to), false)).toBe(true);
+        }
+      });
+    }
+  }
+
+  it('mate-in-2 solutions survive the toughest black defense', () => {
+    for (const cand of PUZZLE_LIBRARY[2]) {
+      const board = boardFromPieces(cand.pieces);
+      const first = solveMate(board, 2);
+      let b = applyMove(board, first.from, first.to);
+      if (isCheckmate(b, false)) continue; // schneller geht es nicht — abgedeckt oben
+      const reply = applyBlackBestDefense(b, makeRng(99));
+      expect(reply).not.toBe(null);
+      b = applyMove(b, reply.from, reply.to);
+      const second = solveMate(b, 1);
+      expect(second).not.toBe(null);
+      expect(isCheckmate(applyMove(b, second.from, second.to), false)).toBe(true);
+    }
   });
 });
 
 describe('chessPuzzle generatePuzzle', () => {
-  const seeds = [1, 2, 3, 7, 11, 42];
-
-  for (const movesToWin of [1, 2]) {
-    it(`seeds produce puzzles solvable in exactly ${movesToWin} move(s)`, () => {
-      for (const seed of seeds) {
-        const p = generatePuzzle(makeRng(seed), { movesToWin });
-        expect(p.white).toBe(true);
-        expect(p.movesToWin).toBe(movesToWin);
-
-        const seq = solve(p.board, movesToWin);
-        expect(seq).not.toBeNull();
-        expect(seq).toHaveLength(movesToWin);
-        if (movesToWin > 1) expect(solve(p.board, movesToWin - 1)).toBeNull(); // nicht in weniger lösbar
-
-        // Sequenz nachspielen: jeder Zug legal, am Ende ist der König geschlagen.
-        let board = p.board;
-        for (const mv of seq) {
-          const piece = board[mv.from.y][mv.from.x];
-          expect(piece && piece.white).toBe(true);
-          expect(keys(legalMoves(board, mv.from.x, mv.from.y))).toContain(`${mv.to.x},${mv.to.y}`);
-          board = applyMove(board, mv.from, mv.to);
-        }
-        expect(isWon(board)).toBe(true);
-      }
-    });
-  }
-
-  it('places exactly one black king, 0-2 black minors and 1-3 white pieces', () => {
-    for (const seed of seeds) {
-      const p = generatePuzzle(makeRng(seed), { movesToWin: 2 });
-      const pieces = p.board.flat().filter(Boolean);
-      const blackKings = pieces.filter((c) => c.type === 'K' && !c.white);
-      const blackMinors = pieces.filter((c) => !c.white && c.type !== 'K');
-      const whites = pieces.filter((c) => c.white);
-      expect(blackKings).toHaveLength(1);
-      expect(blackMinors.length).toBeGreaterThanOrEqual(0);
-      expect(blackMinors.length).toBeLessThanOrEqual(2);
-      expect(blackMinors.every((c) => c.type === 'N' || c.type === 'B')).toBe(true);
-      expect(whites.length).toBeGreaterThanOrEqual(1);
-      expect(whites.length).toBeLessThanOrEqual(3);
+  it('returns a verified puzzle shape for both difficulties', () => {
+    for (const movesToWin of [1, 2]) {
+      const p = generatePuzzle(makeRng(5), { movesToWin });
+      expect(p.white).toBe(true);
+      expect(p.movesToWin).toBe(movesToWin);
+      expect(p.board.length).toBe(8);
+      expect(solveMate(p.board, movesToWin)).not.toBe(null);
     }
   });
 
-  it('is deterministic for a given seed', () => {
-    const a = generatePuzzle(makeRng(9), { movesToWin: 2 });
-    const b = generatePuzzle(makeRng(9), { movesToWin: 2 });
-    expect(a).toEqual(b);
+  it('is deterministic per seed and varies across seeds', () => {
+    const a = generatePuzzle(makeRng(7), { movesToWin: 1 });
+    const b = generatePuzzle(makeRng(7), { movesToWin: 1 });
+    expect(snapshot(a.board)).toBe(snapshot(b.board));
+    const names = new Set();
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      names.add(generatePuzzle(makeRng(seed), { movesToWin: 1 }).name);
+    }
+    expect(names.size).toBeGreaterThan(1);
+  });
+});
+
+describe('chessPuzzle applyBlackBestDefense', () => {
+  it('returns a legal move and is deterministic per seed', () => {
+    const p = generatePuzzle(makeRng(3), { movesToWin: 2 });
+    const first = solveMate(p.board, 2);
+    const afterWhite = applyMove(p.board, first.from, first.to);
+    const r1 = applyBlackBestDefense(afterWhite, makeRng(8));
+    const r2 = applyBlackBestDefense(afterWhite, makeRng(8));
+    expect(r1).toEqual(r2);
+    const legal = allLegalMoves(afterWhite, false).map((m) => JSON.stringify(m));
+    expect(legal).toContain(JSON.stringify(r1));
+  });
+
+  it('returns null when black has no legal reply', () => {
+    const base = boardFromPieces(PUZZLE_LIBRARY[1][0].pieces);
+    const mated = applyMove(base, { x: 4, y: 7 }, { x: 4, y: 0 });
+    expect(applyBlackBestDefense(mated, makeRng(1))).toBe(null);
   });
 });
