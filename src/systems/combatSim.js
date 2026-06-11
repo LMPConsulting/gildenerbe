@@ -45,23 +45,27 @@ export function createCombat({ hero, enemies, seed = 1 }) {
       if ((state.hero.cooldowns[id] ?? 0) > 0) continue;
       if (res) res.value -= ab.cost;
       state.hero.cooldowns[id] = ab.cooldown;
+      const h = state.hero;
       const targets = aliveEnemies();
-      if (ab.kind === 'attack') {
-        if (targets[0]) applyDamage(state.hero, targets[0], state.hero.weaponDmg * ab.weaponCoef + state.hero.ap * ab.apCoef);
-      } else if (ab.kind === 'aoe') {
-        for (const t of targets) applyDamage(state.hero, t, state.hero.weaponDmg * ab.weaponCoef + state.hero.ap * ab.apCoef);
+      // spell vs martial scaling; side-view treats ranged like single-target, nova like aoe
+      const base = (coefMul = 1) => ab.spellCoef
+        ? h.spellPower * ab.spellCoef * coefMul + h.level * 2
+        : h.weaponDmg * (ab.weaponCoef || 1) * coefMul + h.ap * (ab.apCoef || 0);
+      if (ab.kind === 'attack' || ab.kind === 'ranged') {
+        if (targets[0]) applyDamage(h, targets[0], base());
+      } else if (ab.kind === 'aoe' || ab.kind === 'nova') {
+        for (const t of targets) applyDamage(h, t, base());
       } else if (ab.kind === 'execute') {
         const t = targets[0];
         if (t) {
           const below = t.hp / t.maxHp <= ab.threshold;
-          const coef = below ? ab.weaponCoef : ab.weaponCoef * 0.4;
-          applyDamage(state.hero, t, state.hero.weaponDmg * coef + state.hero.ap * ab.apCoef);
+          applyDamage(h, t, ab.spellCoef ? base() : h.weaponDmg * (below ? ab.weaponCoef : ab.weaponCoef * 0.4) + h.ap * ab.apCoef);
         }
       } else if (ab.kind === 'defensive') {
-        state.hero.blocking = ab.blockMs;
-        state.hero.blockReduce = ab.blockReduce;
+        h.blocking = ab.blockMs;
+        h.blockReduce = ab.blockReduce;
       }
-      emit('ability', { id, sourceId: state.hero.id });
+      emit('ability', { id, sourceId: h.id });
     }
   }
 

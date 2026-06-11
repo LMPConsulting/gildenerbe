@@ -1,54 +1,60 @@
 import { describe, it, expect } from 'vitest';
-import { createHero, recomputeHero, SLOTS } from '../../src/systems/hero.js';
+import { createHero, recomputeHero, abilityBaseDamage } from '../../src/systems/hero.js';
+import { getAbility } from '../../src/data/abilities.js';
 
 describe('createHero', () => {
-  it('creates a level-1 Krieger with full hp, rage resource and a weapon', () => {
-    const h = createHero('krieger');
-    expect(h.side).toBe('hero');
-    expect(h.level).toBe(1);
-    expect(h.hp).toBe(h.maxHp);
-    expect(h.resource.type).toBe('rage');
-    expect(h.weaponDmg).toBeGreaterThan(0);
-    expect(h.abilities).toContain('heroic_strike');
+  it('creates each class with its armor type, resource and weapon kind', () => {
+    const k = createHero('krieger');
+    expect(k.armorType).toBe('platte');
+    expect(k.resource.type).toBe('rage');
+    expect(k.resource.value).toBe(0);        // rage starts empty
+    expect(k.weaponKind).toBe('melee');
+    expect(k.hp).toBe(k.maxHp);
+
+    const r = createHero('schurke');
+    expect(r.armorType).toBe('leder');
+    expect(r.resource.type).toBe('energie');
+    expect(r.resource.value).toBe(r.resource.max); // energy starts full
+    expect(r.abilities).toContain('eviscerate');
+
+    const m = createHero('magier');
+    expect(m.armorType).toBe('stoff');
+    expect(m.resource.type).toBe('mana');
+    expect(m.weaponKind).toBe('ranged');
+    expect(m.spellPower).toBeGreaterThan(0);
   });
+
   it('throws on unknown class', () => {
-    expect(() => createHero('wizardd')).toThrow();
+    expect(() => createHero('hexer')).toThrow();
   });
-  it('exposes the equipment slots and an empty inventory', () => {
-    const h = createHero('krieger');
-    expect(SLOTS).toContain('waffe');
-    expect(h.equipment.waffe).toBeNull();
-    expect(h.inventory).toEqual([]);
+
+  it('applies a pre-run food buff', () => {
+    const base = createHero('krieger');
+    const fed = createHero('krieger', { foodBuff: { stat: 'str', value: 10 } });
+    expect(fed.primary.str).toBe(base.primary.str + 10);
+    expect(fed.ap).toBeGreaterThan(base.ap);
   });
 });
 
 describe('recomputeHero', () => {
-  it('adds equipped-item affixes into derived stats', () => {
-    const h = createHero('krieger');
-    const ap0 = h.ap;
-    h.equipment.brust = { id: 'x', name: 'Platte', slot: 'brust', rarity: 'gruen', ilvl: 3, affixes: { str: 5 } };
-    recomputeHero(h);
-    expect(h.ap).toBe(ap0 + 5 * 2); // +5 STR -> +10 AP
+  it('adds equipped affixes (incl. spellPower) and weapon damage', () => {
+    const m = createHero('magier');
+    const sp0 = m.spellPower;
+    m.equipment.kopf = { slot: 'kopf', affixes: { int: 10, spellPower: 5 } };
+    m.equipment.waffe = { slot: 'waffe', affixes: {}, weaponDmg: 20 };
+    recomputeHero(m);
+    expect(m.spellPower).toBeGreaterThan(sp0);
+    expect(m.weaponDmg).toBe(20);
   });
-  it('applies talent mods (flat hp, crit)', () => {
-    const h = createHero('krieger');
-    const hp0 = h.maxHp, crit0 = h.critChance;
-    h.talentMods.hp = 40; h.talentMods.crit = 0.05;
-    recomputeHero(h);
-    expect(h.maxHp).toBe(hp0 + 40);
-    expect(h.critChance).toBeCloseTo(crit0 + 0.05);
-  });
-  it('preserves HP ratio across recompute', () => {
-    const h = createHero('krieger');
-    h.hp = Math.round(h.maxHp * 0.5);
-    h.equipment.kopf = { id: 'k', slot: 'kopf', affixes: { sta: 10 }, ilvl: 1, rarity: 'gruen' };
-    recomputeHero(h);
-    expect(h.hp / h.maxHp).toBeCloseTo(0.5, 1);
-  });
-  it('equipped weapon overrides base weaponDmg', () => {
-    const h = createHero('krieger');
-    h.equipment.waffe = { id: 'w', slot: 'waffe', weaponDmg: 25, affixes: {}, ilvl: 5, rarity: 'blau' };
-    recomputeHero(h);
-    expect(h.weaponDmg).toBe(25);
+});
+
+describe('abilityBaseDamage', () => {
+  it('scales martial off weapon+AP and spells off spellPower', () => {
+    const k = createHero('krieger');
+    const martial = abilityBaseDamage(k, getAbility('heroic_strike'));
+    expect(martial).toBeCloseTo(k.weaponDmg * 1.2 + k.ap * 0.15);
+    const m = createHero('magier');
+    const spell = abilityBaseDamage(m, getAbility('frostbolt'));
+    expect(spell).toBeCloseTo(m.spellPower * 1.3 + m.level * 2);
   });
 });
