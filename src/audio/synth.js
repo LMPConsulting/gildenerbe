@@ -51,8 +51,10 @@ export function noteToFreq(note) {
 
 // Play a single note `when` seconds from now. The short linear attack and
 // release ramps avoid the clicks a hard start/stop would produce.
-// Optional: `slideTo` (Hz) pitch-bends across the note, `destination` routes
-// into a bus (defaults to ctx.destination). Returns { osc, gainNode, stop }.
+// Optional richness: `slideTo` (Hz) pitch-bend, `detune` (cents — adds a 2nd
+// oscillator slightly off for chorus width), `vibrato` {rateHz, cents} (LFO),
+// `filterHz` (lowpass to tame saws into horn/pad timbres), `destination`
+// routes into a bus. Returns { osc, gainNode, stop }.
 export function playNote(ctx, {
   freq,
   durMs = 200,
@@ -63,36 +65,75 @@ export function playNote(ctx, {
   slideTo = 0,
   attackMs = 4,
   releaseMs = 40,
+  detune = 0,
+  vibrato = null,
+  filterHz = 0,
 } = {}) {
   if (!ctx || !(freq > 0) || !(durMs > 0)) return null;
   const t0 = ctx.currentTime + Math.max(0, when);
   const dur = durMs / 1000;
-  const atk = Math.min(attackMs / 1000, dur * 0.25);
+  const atk = Math.min(attackMs / 1000, dur * 0.6);
   const rel = Math.min(releaseMs / 1000, dur * 0.5);
 
-  const osc = ctx.createOscillator();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, t0);
-  if (slideTo > 0) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+  const oscs = [];
+  const mk = (cents) => {
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t0);
+    if (cents && o.detune) o.detune.setValueAtTime(cents, t0);
+    if (slideTo > 0) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+    oscs.push(o);
+    return o;
+  };
+  mk(0);
+  if (detune > 0) mk(detune);          // chorus pair
+
+  // vibrato LFO modulating all oscillator frequencies
+  let lfo = null, lfoGain = null;
+  if (vibrato && vibrato.rateHz > 0 && vibrato.cents > 0 && oscs[0].detune) {
+    lfo = ctx.createOscillator();
+    lfo.frequency.value = vibrato.rateHz;
+    lfoGain = ctx.createGain();
+    lfoGain.gain.value = vibrato.cents;
+    lfo.connect(lfoGain);
+    for (const o of oscs) lfoGain.connect(o.detune);
+    lfo.start(t0);
+    lfo.stop(t0 + dur + 0.05);
+  }
 
   const g = ctx.createGain();
+  const peak = detune > 0 ? gain * 0.6 : gain; // two oscs -> keep loudness equal
   g.gain.setValueAtTime(0, t0);
-  g.gain.linearRampToValueAtTime(gain, t0 + atk);
-  g.gain.setValueAtTime(gain, t0 + Math.max(atk, dur - rel));
+  g.gain.linearRampToValueAtTime(peak, t0 + atk);
+  g.gain.setValueAtTime(peak, t0 + Math.max(atk, dur - rel));
   g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
 
-  osc.connect(g);
+  let head = g;
+  if (filterHz > 0) {
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(filterHz, t0);
+    for (const o of oscs) o.connect(f);
+    f.connect(g);
+    head = f;
+  } else {
+    for (const o of oscs) o.connect(g);
+  }
   g.connect(destination || ctx.destination);
-  osc.start(t0);
-  osc.stop(t0 + dur + 0.02);
-  osc.onended = () => {
-    try { osc.disconnect(); g.disconnect(); } catch { /* already gone */ }
+  for (const o of oscs) { o.start(t0); o.stop(t0 + dur + 0.02); }
+  oscs[0].onended = () => {
+    try {
+      for (const o of oscs) o.disconnect();
+      g.disconnect();
+      if (head !== g) head.disconnect();
+      if (lfo) { lfo.disconnect(); lfoGain.disconnect(); }
+    } catch { /* already gone */ }
   };
   return {
-    osc,
+    osc: oscs[0],
     gainNode: g,
     stop(afterSec = 0) {
-      try { osc.stop(ctx.currentTime + Math.max(0, afterSec)); } catch { /* not started */ }
+      try { for (const o of oscs) o.stop(ctx.currentTime + Math.max(0, afterSec)); } catch { /* not started */ }
     },
   };
 }
@@ -184,12 +225,22 @@ const NOTE_FILL = 0.9;      // note length as fraction of its slot (articulation
 // pattern (a coarse JS timer schedules sample-accurate notes slightly ahead).
 // Returns a handle: { stop(), playing }. With loop:true the line repeats until
 // stopped; stop() ramps a per-sequence gain to zero, so it never clicks.
+// Voice options for rich timbres: attackMs/releaseMs (pads), detune (chorus),
+// vibrato {rateHz,cents}, filterHz (lowpass), octave (+/- shift),
+// noise:true turns the voice into filtered-noise percussion (freq -> cutoff).
 export function playSequence(ctx, steps, {
   bpm = 120,
   loop = false,
   type = 'square',
   gain = 0.15,
   destination = null,
+  attackMs = 4,
+  releaseMs = 40,
+  detune = 0,
+  vibrato = null,
+  filterHz = 0,
+  octave = 0,
+  noise = false,
 } = {}) {
   if (!ctx || !Array.isArray(steps) || steps.length === 0) return NOOP_HANDLE;
 
@@ -222,14 +273,32 @@ export function playSequence(ctx, steps, {
       if (when > horizon) break;
       const st = norm[index];
       if (st.freq > 0) {
-        playNote(ctx, {
-          freq: st.freq,
-          durMs: Math.max(25, st.beats * secPerBeat * 1000 * NOTE_FILL),
-          type: st.type || type,
-          gain: st.gain != null ? st.gain : gain,
-          when: Math.max(0, when - ctx.currentTime),
-          destination: out,
-        });
+        const durMs = Math.max(25, st.beats * secPerBeat * 1000 * NOTE_FILL);
+        const at = Math.max(0, when - ctx.currentTime);
+        if (noise) {
+          playNoise(ctx, {
+            durMs: Math.min(durMs, 220),
+            gain: st.gain != null ? st.gain : gain,
+            when: at,
+            destination: out,
+            filter: 'lowpass',
+            filterFreq: st.freq, // note encodes the cutoff -> tom/timpani pitch
+          });
+        } else {
+          playNote(ctx, {
+            freq: st.freq * 2 ** octave,
+            durMs,
+            type: st.type || type,
+            gain: st.gain != null ? st.gain : gain,
+            when: at,
+            destination: out,
+            attackMs,
+            releaseMs,
+            detune,
+            vibrato,
+            filterHz,
+          });
+        }
       }
       index += 1;
       if (index >= norm.length) {

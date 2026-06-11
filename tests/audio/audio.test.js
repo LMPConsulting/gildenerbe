@@ -34,7 +34,7 @@ describe('tracks', () => {
         for (const [note, beats] of v.steps) {
           expect(typeof beats).toBe('number');
           expect(beats).toBeGreaterThan(0);
-          if (note !== null) expect(note).toMatch(/^[A-G]#?\d$/); // 'C4'-style or rest
+          if (note !== null) expect(note).toMatch(/^[A-G][#b]?\d$/); // 'C4'/'F#3'/'Bb2'-style or rest
         }
       }
     }

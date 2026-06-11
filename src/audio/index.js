@@ -55,6 +55,16 @@ export function initAudio() {
     musicBus = ctx.createGain();
     musicBus.gain.value = musicVolume;
     musicBus.connect(ctx.destination);
+    // lightweight space: a single feedback delay as a parallel wet path
+    try {
+      const delay = ctx.createDelay(1.0);
+      delay.delayTime.value = 0.28;
+      const fb = ctx.createGain(); fb.gain.value = 0.3;
+      const wet = ctx.createGain(); wet.gain.value = 0.18;
+      musicBus.connect(delay);
+      delay.connect(fb); fb.connect(delay);
+      delay.connect(wet); wet.connect(ctx.destination);
+    } catch { /* no delay support — dry only */ }
   }
   if (!sfxBus) {
     sfxBus = ctx.createGain();
@@ -95,6 +105,13 @@ export function playMusic(name) {
     type: voice.type,
     gain: voice.gain,
     destination: musicBus,
+    attackMs: voice.attackMs,
+    releaseMs: voice.releaseMs,
+    detune: voice.detune,
+    vibrato: voice.vibrato,
+    filterHz: voice.filterHz,
+    octave: voice.octave,
+    noise: voice.noise,
   }));
   current = { name, handles };
   return true;
