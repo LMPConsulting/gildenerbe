@@ -1,6 +1,7 @@
 import { SLOTS } from '../systems/hero.js';
-import { equipItem } from '../systems/equipment.js';
-import { RARITY, SLOT_NAMES } from '../data/affixes.js';
+import { equipItem, canEquip, compareItem } from '../systems/equipment.js';
+import { depositItem, withdrawItem, ensureChest } from '../systems/chest.js';
+import { RARITY, SLOT_NAMES, ARMORTYPE_NAME } from '../data/affixes.js';
 import { draftTalents, applyTalent } from '../systems/talentDraft.js';
 import { makeRng } from '../core/rng.js';
 import { drawSprite } from './sprites.js';
@@ -42,11 +43,16 @@ const STYLE = `
   padding: 6px 9px; font-size: 11px; }
 .char2-tip-name { font-weight: bold; font-size: 12px; }
 .char2-tip-line { color: #9a8a62; font-size: 10px; margin-top: 2px; }
+.inv-cmp { font-size: 10px; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1px; }
+.inv-up { color: #7bd88f; } .inv-down { color: #e0533d; }
+.inv-locked { color: #b06b6b; font-size: 10px; }
+.equip-btn:disabled { opacity: .4; }
 `;
 
 // Character + inventory screen as a paper-doll view. Renders hero state;
 // equips items and applies talents via the systems modules, then re-renders.
-export function mountCharacterScreen(root, hero, { onClose } = {}) {
+export function mountCharacterScreen(root, hero, { onClose, account = null } = {}) {
+  if (account) ensureChest(account);
   if (!document.querySelector('style[data-char]')) {
     const st = document.createElement('style');
     st.setAttribute('data-char', '');
@@ -143,13 +149,32 @@ export function mountCharacterScreen(root, hero, { onClose } = {}) {
       </div>` : ''}
       <div class="inv">
         <div class="inv-title">Inventar (${hero.inventory.length})</div>
-        ${hero.inventory.length === 0 ? '<div class="dim">leer</div>' : hero.inventory.map((it, i) => `
+        ${hero.inventory.length === 0 ? '<div class="dim">leer</div>' : hero.inventory.map((it, i) => {
+          const cmp = compareItem(hero, it);
+          const deltas = cmp.rows.map((r) => {
+            const lbl = r.key === 'weaponDmg' ? 'Waffe' : (AFFIX_LABEL[r.key] || r.key);
+            const val = r.key === 'crit' ? `${r.delta > 0 ? '+' : ''}${Math.round(r.delta * 100)}% Krit` : `${r.delta > 0 ? '+' : ''}${r.delta} ${lbl}`;
+            return `<span class="${r.delta > 0 ? 'inv-up' : 'inv-down'}">${val}</span>`;
+          }).join('');
+          const typeTag = it.armorType ? `${ARMORTYPE_NAME[it.armorType]} · ` : '';
+          return `<div class="inv-row">
+            <span class="inv-name" style="color:${RARITY[it.rarity].color}">${it.name}</span>
+            <span class="inv-affix">${typeTag}i${it.ilvl} ${affixSummary(it.affixes)}${it.weaponDmg ? ` · Waffe ${it.weaponDmg}` : ''}</span>
+            ${cmp.usable ? `<div class="inv-cmp">${deltas || '<span class="dim">±0 zum Angelegten</span>'}</div>` : '<div class="inv-locked">🔒 falsche Klasse</div>'}
+            <button class="equip-btn" data-i="${i}" ${cmp.usable ? '' : 'disabled'}>Anlegen</button>
+            ${account ? `<button class="dep-btn" data-dep="${i}">→Truhe</button>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      ${account ? `<div class="inv">
+        <div class="inv-title">Truhe der Gilde (${account.chest.length})</div>
+        ${account.chest.length === 0 ? '<div class="dim">leer</div>' : account.chest.map((it, i) => `
           <div class="inv-row">
             <span class="inv-name" style="color:${RARITY[it.rarity].color}">${it.name}</span>
-            <span class="inv-affix">i${it.ilvl} ${affixSummary(it.affixes)}${it.weaponDmg ? ` · Waffe ${it.weaponDmg}` : ''}</span>
-            <button class="equip-btn" data-i="${i}">Anlegen</button>
+            <span class="inv-affix">${it.armorType ? ARMORTYPE_NAME[it.armorType] + ' · ' : ''}i${it.ilvl} ${affixSummary(it.affixes)}</span>
+            ${canEquip(hero, it) ? `<button class="take-btn" data-take="${i}">Nehmen</button>` : '<span class="inv-locked">🔒 andere Klasse</span>'}
           </div>`).join('')}
-      </div>
+      </div>` : ''}
       <button class="close-btn">Schließen</button>
     `;
 
@@ -165,7 +190,13 @@ export function mountCharacterScreen(root, hero, { onClose } = {}) {
       b.onclick = () => { applyTalent(hero, b.dataset.tid); offer = null; render(); };
     });
     wrap.querySelectorAll('.equip-btn').forEach((b) => {
-      b.onclick = () => { const it = hero.inventory[+b.dataset.i]; if (it) { equipItem(hero, it); render(); } };
+      b.onclick = () => { const it = hero.inventory[+b.dataset.i]; if (it && canEquip(hero, it)) { equipItem(hero, it); render(); } };
+    });
+    wrap.querySelectorAll('.dep-btn').forEach((b) => {
+      b.onclick = () => { const it = hero.inventory[+b.dataset.dep]; if (it && account && depositItem(account, hero, it)) render(); };
+    });
+    wrap.querySelectorAll('.take-btn').forEach((b) => {
+      b.onclick = () => { const it = account.chest[+b.dataset.take]; if (it && withdrawItem(account, hero, it)) render(); };
     });
     wrap.querySelector('.close-btn').onclick = () => onClose && onClose();
   }

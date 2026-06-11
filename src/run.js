@@ -9,8 +9,8 @@ import { applyMetaToHero } from './systems/gildenhalle.js';
 
 // A single hero's journey through a zone's dungeon floors. The hero carries
 // across floors (hp persists, healed between floors). Erbe on run end.
-export function createRun(classId = 'krieger', zone = ZONE1, meta = null) {
-  const hero = createHero(classId);
+export function createRun(classId = 'krieger', zone = ZONE1, meta = null, opts = {}) {
+  const hero = createHero(classId, { foodBuff: opts.foodBuff });
   if (meta) applyMetaToHero(hero, meta);
   const lootRng = makeRng(7777);
 

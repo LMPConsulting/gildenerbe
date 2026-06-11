@@ -10,10 +10,10 @@ describe('rollLoot', () => {
     const b = rollLoot(makeEnemy('raeuber'), makeRng(4));
     expect(a).toEqual(b);
   });
-  it('boss always drops with an affix count matching its rarity', () => {
+  it('boss always drops with at least its rarity affix count (armour adds a guaranteed armor stat)', () => {
     const drop = rollLoot(makeEnemy('krell'), makeRng(2));
     expect(drop).not.toBeNull();
-    expect(Object.keys(drop.affixes).length).toBe(RARITY[drop.rarity].affixes);
+    expect(Object.keys(drop.affixes).length).toBeGreaterThanOrEqual(RARITY[drop.rarity].affixes);
     expect(drop.ilvl).toBeGreaterThanOrEqual(makeEnemy('krell').level);
   });
   it('weapon drops carry weaponDmg; other slots do not', () => {

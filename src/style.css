@@ -135,3 +135,33 @@ button:active { transform: translateY(1px); }
 .bld-desc { font-size: 10px; color: #9a8a62; margin-top: 2px; }
 .bld button { font-size: 11px; padding: 6px 10px; white-space: nowrap; }
 .primary { width: 100%; font-size: 14px; padding: 10px; }
+
+/* --- v3: hub stations, class pick, chest, inventory deltas --- */
+.station-bar { width: min(100%, 540px); display: flex; flex-direction: column; gap: 6px; align-items: center; margin-top: 8px; }
+.station-gold { font-size: 12px; color: #ffd76a; }
+.station-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.station-btns button { font-size: 13px; padding: 9px 13px; }
+.station-screen { width: 100%; display: flex; justify-content: center; }
+.chest-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
+
+.class-pick { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+.class-card { text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; }
+.class-card b { font-size: 15px; }
+.class-card small { color: #1a1712; opacity: .75; font-size: 11px; }
+.class-card span { font-size: 11px; color: #1a1712; opacity: .85; }
+
+.inv-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 5px 0; border-bottom: 1px dashed #2e2618; }
+.inv-name { font-weight: bold; font-size: 12px; }
+.inv-affix { font-size: 10px; color: #9a8a62; flex: 1 1 100%; }
+.inv-row button { font-size: 11px; padding: 5px 9px; }
+.dep-btn, .take-btn { background: #6b7a4a; }
+
+/* --- LANDSCAPE: wider menus, more room, everything visible --- */
+@media (orientation: landscape) {
+  #app { padding: 8px 16px; max-width: 100%; }
+  .panel-box { width: min(700px, 94vw); max-height: 90vh; }
+  .overlay { width: min(680px, 94vw); }
+  .combat { width: min(94vw, 600px); }
+  .class-pick { grid-template-columns: 1fr 1fr 1fr; }
+  .char, .ench, .fsh { width: min(840px, 96vw); }
+}

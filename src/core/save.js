@@ -1,5 +1,7 @@
+import { makeBag } from '../systems/materials.js';
+
 export const SAVE_KEY = 'gildenerbe.save';
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 // migrations[n] upgrades a state saved at version n to version n+1.
 const migrations = {
@@ -14,6 +16,19 @@ const migrations = {
     chronik: state.chronik ?? { punkte: 0, upgrades: { baumeister: 0, gruendung: 0, schutz: 0 } },
     missions: state.missions ?? { active: null },
     stats: { basesLost: 0, raidsWon: 0, ...(state.stats || {}) },
+  }),
+  // v2 -> v3: classes, hub economy (gold/materials/rods/food), shared chest.
+  2: (state) => ({
+    ...state,
+    gold: state.gold ?? 0,
+    materials: state.materials ?? makeBag(),
+    rods: state.rods ?? [],
+    equippedRodId: state.equippedRodId ?? null,
+    fishpond: state.fishpond ?? [],
+    larder: state.larder ?? [],
+    pendingFood: state.pendingFood ?? null,
+    chest: state.chest ?? [],
+    meta: { ...state.meta, unlockedClasses: ['krieger', 'schurke', 'magier'] },
   }),
 };
 

@@ -56,6 +56,12 @@ export function destroyBase(account) {
   account.chronik.punkte += earned;
   account.meta.buildings = {};
   account.meta.erbe = chronikLevel(account.chronik, 'gruendung') * 60;
+  // the base falls: everything in it is lost — chest, gold, materials, rods, food
+  account.chest = [];
+  account.gold = 0;
+  account.materials = {};
+  account.rods = []; account.equippedRodId = null;
+  account.fishpond = []; account.larder = []; account.pendingFood = null;
   account.base.wallLevel = 0;
   account.base.maxHp = baseMaxHp(account.chronik);
   account.base.hp = account.base.maxHp;
