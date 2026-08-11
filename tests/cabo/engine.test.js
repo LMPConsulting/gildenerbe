@@ -4,6 +4,7 @@ import {
   ziehen, tauschen, abwerfen, kraftAuslassen, peek, spy, swapEigene, swapFremde,
   aufdeckenSchliessen, caboRufen, auswerten, handSumme, naechsteRunde, endstand,
   amZug, obenAufAblage,
+  paarStarten, paarWaehlen, paarAbbrechen, paarAufdecken, paarBestaetigen,
 } from '../../cabo/src/engine.js';
 
 /** Nicht mischen — so weiß der Test, welche Karte wo liegt. */
@@ -365,5 +366,107 @@ describe('Wer hält das Handy', () => {
     s.caboVon = 0;
     auswerten(s);
     expect(amZug(s)).toBe(null);
+  });
+});
+
+describe('Gleiche Karten abwerfen', () => {
+  /** Zug bis zur Paarwahl vorbereiten. */
+  function bisPaar(s, werte, gezogenerWert = 5) {
+    setzeHand(s, 0, werte);
+    ziehen(s, 'stapel');
+    s.gezogene = { id: 'gez', w: gezogenerWert };
+    paarStarten(s);
+    return s;
+  }
+
+  it('geht erst nach dem Ziehen', () => {
+    const s = starte();
+    paarStarten(s);
+    expect(s.phase).toBe('zug');
+    expect(s.paar).toBe(null);
+  });
+
+  it('braucht mindestens zwei Karten', () => {
+    const s = starte();
+    bisPaar(s, [4, 4, 9, 2]);
+    paarWaehlen(s, 0);
+    paarAufdecken(s);
+    expect(s.paar.ergebnis).toBe(null);
+  });
+
+  it('lässt die Auswahl wieder abwählen', () => {
+    const s = starte();
+    bisPaar(s, [4, 4, 9, 2]);
+    paarWaehlen(s, 0);
+    paarWaehlen(s, 1);
+    paarWaehlen(s, 0);
+    expect(s.paar.gewaehlt).toEqual([1]);
+  });
+
+  it('verkleinert die Hand bei einem echten Pärchen', () => {
+    const s = starte();
+    bisPaar(s, [4, 9, 4, 2], 5);
+    paarWaehlen(s, 0);
+    paarWaehlen(s, 2);
+    paarAufdecken(s);
+    expect(s.paar.ergebnis.stimmt).toBe(true);
+    paarBestaetigen(s);
+
+    const hand = s.spieler[0].hand;
+    expect(hand).toHaveLength(3);
+    expect(hand.map((k) => k.w)).toEqual([5, 9, 2]);   // gezogene rückt auf Platz 0
+    expect(s.ablage.slice(-2).every((k) => k.w === 4)).toBe(true);
+  });
+
+  it('räumt auch ein Triplett ab', () => {
+    const s = starte();
+    bisPaar(s, [7, 7, 7, 1], 0);
+    [0, 1, 2].forEach((i) => paarWaehlen(s, i));
+    paarAufdecken(s);
+    paarBestaetigen(s);
+    expect(s.spieler[0].hand.map((k) => k.w)).toEqual([0, 1]);
+    expect(handSumme(s.spieler[0])).toBe(1);
+  });
+
+  it('kostet bei falscher Behauptung den Zug, ohne die Hand zu ändern', () => {
+    const s = starte();
+    bisPaar(s, [4, 9, 4, 2], 5);
+    paarWaehlen(s, 0);
+    paarWaehlen(s, 1);                                  // 4 und 9 — passt nicht
+    paarAufdecken(s);
+    expect(s.paar.ergebnis.stimmt).toBe(false);
+    paarBestaetigen(s);
+
+    expect(s.spieler[0].hand.map((k) => k.w)).toEqual([4, 9, 4, 2]);
+    expect(obenAufAblage(s).w).toBe(5);                 // gezogene Karte ist futsch
+    expect(s.dran).toBe(1);
+    expect(s.phase).toBe('zug');
+  });
+
+  it('lässt sich vor dem Aufdecken folgenlos abbrechen', () => {
+    const s = starte();
+    bisPaar(s, [4, 4, 9, 2]);
+    paarWaehlen(s, 0);
+    paarAbbrechen(s);
+    expect(s.phase).toBe('gezogen');
+    expect(s.paar).toBe(null);
+    expect(s.spieler[0].hand).toHaveLength(4);
+  });
+
+  it('geht auch mit einer Karte von der Ablage', () => {
+    const s = starte();
+    setzeHand(s, 0, [6, 6, 1, 3]);
+    ziehen(s, 'ablage');
+    paarStarten(s);
+    expect(s.phase).toBe('paar');
+  });
+
+  it('lässt sich mit allen vier Karten auf eine Handkarte eindampfen', () => {
+    const s = starte();
+    bisPaar(s, [8, 8, 8, 8], 2);
+    [0, 1, 2, 3].forEach((i) => paarWaehlen(s, i));
+    paarAufdecken(s);
+    paarBestaetigen(s);
+    expect(s.spieler[0].hand.map((k) => k.w)).toEqual([2]);
   });
 });

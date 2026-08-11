@@ -50,10 +50,11 @@ export function neuesSpiel(namen = ['Monty', 'Christina']) {
     dran: 0,
     stapel: [],
     ablage: [],
-    phase: 'aus',       // 'aus' | 'einpraegen' | 'zug' | 'gezogen' | 'kraft' | 'auswertung' | 'ende'
+    phase: 'aus',       // 'aus' | 'einpraegen' | 'zug' | 'gezogen' | 'paar' | 'kraft' | 'auswertung' | 'ende'
     gezogene: null,
     quelle: null,       // 'stapel' | 'ablage'
     kraft: null,        // { art, eigene: index|null }
+    paar: null,         // { gewaehlt: [index], ergebnis }
     caboVon: null,
     restZuege: null,
     einpraegenIndex: 0,
@@ -78,6 +79,7 @@ export function neueRunde(s, rnd = Math.random) {
   s.gezogene = null;
   s.quelle = null;
   s.kraft = null;
+  s.paar = null;
   s.caboVon = null;
   s.restZuege = null;
   s.aufdecken = null;
@@ -160,6 +162,73 @@ export function abwerfen(s) {
   return zugEnde(s);
 }
 
+/* --------------------------------------------------- Gleiche Karten werfen */
+
+export const PAAR_MINDESTENS = 2;
+
+/** Nach dem Ziehen: behaupten, mehrere eigene Karten hätten denselben Wert. */
+export function paarStarten(s) {
+  if (s.phase !== 'gezogen') return s;
+  if (s.spieler[s.dran].hand.length < PAAR_MINDESTENS) return s;
+  s.paar = { gewaehlt: [], ergebnis: null };
+  s.phase = 'paar';
+  return s;
+}
+
+export function paarWaehlen(s, index) {
+  if (s.phase !== 'paar' || s.paar.ergebnis) return s;
+  const i = s.paar.gewaehlt.indexOf(index);
+  if (i === -1) s.paar.gewaehlt.push(index);
+  else s.paar.gewaehlt.splice(i, 1);
+  return s;
+}
+
+export function paarAbbrechen(s) {
+  if (s.phase !== 'paar' || s.paar.ergebnis) return s;
+  s.paar = null;
+  s.phase = 'gezogen';
+  return s;
+}
+
+/** Aufdecken — ab hier sehen alle die Karten, egal wie es ausgeht. */
+export function paarAufdecken(s) {
+  if (s.phase !== 'paar' || s.paar.ergebnis) return s;
+  const idx = s.paar.gewaehlt.slice().sort((a, b) => a - b);
+  if (idx.length < PAAR_MINDESTENS) return s;
+  const hand = s.spieler[s.dran].hand;
+  const karten = idx.map((i) => hand[i]);
+  s.paar.ergebnis = {
+    stimmt: karten.every((k) => k.w === karten[0].w),
+    karten,
+    indizes: idx,
+  };
+  return s;
+}
+
+/**
+ * Stimmt die Behauptung, wandern alle Karten auf die Ablage und die gezogene
+ * Karte rückt auf den ersten frei gewordenen Platz — die Hand wird kleiner.
+ * Stimmt sie nicht, bleibt alles liegen und der Zug ist verloren.
+ */
+export function paarBestaetigen(s) {
+  if (s.phase !== 'paar' || !s.paar.ergebnis) return s;
+  const { stimmt, indizes } = s.paar.ergebnis;
+  const hand = s.spieler[s.dran].hand;
+
+  if (stimmt) {
+    for (const i of indizes) s.ablage.push(hand[i]);
+    hand[indizes[0]] = s.gezogene;
+    for (const i of indizes.slice(1).reverse()) hand.splice(i, 1);
+  } else {
+    s.ablage.push(s.gezogene);
+  }
+
+  s.gezogene = null;
+  s.quelle = null;
+  s.paar = null;
+  return zugEnde(s);
+}
+
 /* ------------------------------------------------------------------ Kräfte */
 
 export function kraftAuslassen(s) {
@@ -225,6 +294,7 @@ export function caboRufen(s) {
 
 function zugEnde(s, warCabo = false) {
   s.kraft = null;
+  s.paar = null;
   s.gezogene = null;
   s.quelle = null;
 
@@ -296,6 +366,6 @@ export function endstand(s) {
 /** Wer muss das Handy in der Hand haben? */
 export function amZug(s) {
   if (s.phase === 'einpraegen') return s.einpraegenIndex;
-  if (s.phase === 'zug' || s.phase === 'gezogen' || s.phase === 'kraft') return s.dran;
+  if (['zug', 'gezogen', 'kraft', 'paar'].includes(s.phase)) return s.dran;
   return null;
 }

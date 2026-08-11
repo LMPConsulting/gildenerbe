@@ -6,6 +6,7 @@ import {
   ziehen, tauschen, abwerfen, kraftAuslassen, peek, spy, swapEigene, swapFremde,
   aufdeckenSchliessen, caboRufen, handSumme, naechsteRunde, endstand,
   amZug, obenAufAblage,
+  PAAR_MINDESTENS, paarStarten, paarWaehlen, paarAbbrechen, paarAufdecken, paarBestaetigen,
 } from './engine.js';
 
 const KEY = 'cabo.v1';
@@ -162,6 +163,13 @@ function waehlbar(besitzer, index) {
   if (spiel.aufdecken) return false;
   const ich = spiel.dran;
   if (spiel.phase === 'gezogen') return besitzer === ich;
+  if (spiel.phase === 'paar') return besitzer === ich && !spiel.paar.ergebnis;
+  if (spiel.phase === 'paar') {
+    const n = spiel.paar.gewaehlt.length;
+    return n < PAAR_MINDESTENS
+      ? `Tippe die Karten an, von denen du glaubst, dass sie <b>gleich</b> sind. Mindestens ${PAAR_MINDESTENS}.`
+      : `<b>${n} Karten</b> gewählt. Aufdecken sehen alle — auch wenn du danebenliegst.`;
+  }
   if (spiel.phase === 'kraft') {
     const art = spiel.kraft?.art;
     if (art === 'peek') return besitzer === ich;
@@ -176,8 +184,9 @@ function handHtml(p, klein) {
   const frisch = ui.animRunde !== spiel.runde ? ' austeilen' : '';
   return spiel.spieler[p].hand.map((k, i) => {
     const w = waehlbar(p, i);
-    const markiert = spiel.phase === 'kraft' && spiel.kraft?.art === 'swap'
-      && spiel.kraft.eigene === i && p === spiel.dran;
+    const markiert = p === spiel.dran && (
+      (spiel.phase === 'kraft' && spiel.kraft?.art === 'swap' && spiel.kraft.eigene === i)
+      || (spiel.phase === 'paar' && spiel.paar.gewaehlt.includes(i)));
     return karteHtml(k, {
       klasse: `${klein ? 'karte--klein' : ''}${markiert ? ' karte--markiert' : ''}${frisch}`,
       waehlbar: w,
@@ -273,10 +282,14 @@ function renderTisch() {
   });
   app.querySelector('#btnAbwerfen')?.addEventListener('click', () => { abwerfen(spiel); buzz(10); weiter(); });
   app.querySelector('#btnKraftAus')?.addEventListener('click', () => { kraftAuslassen(spiel); weiter(); });
+  app.querySelector('#btnPaar')?.addEventListener('click', () => { paarStarten(spiel); buzz(8); weiter(); });
+  app.querySelector('#btnPaarAb')?.addEventListener('click', () => { paarAbbrechen(spiel); weiter(); });
+  app.querySelector('#btnPaarAuf')?.addEventListener('click', () => { paarAufdecken(spiel); buzz(18); weiter(); });
 }
 
 function karteGetippt(p, i) {
   if (spiel.phase === 'gezogen') { tauschen(spiel, i); buzz(12); return weiter(); }
+  if (spiel.phase === 'paar') { paarWaehlen(spiel, i); buzz(8); return weiter(); }
   if (spiel.phase !== 'kraft' || !spiel.kraft || spiel.kraft.erledigt) return;
   const art = spiel.kraft.art;
   if (art === 'peek') peek(spiel, i);
@@ -300,6 +313,12 @@ function ansage() {
       ? `Tauschen: eigene Karte antippen. Oder abwerfen und <span class="kraftname">${KRAEFTE[art].titel}</span> nutzen.`
       : 'Tauschen: eigene Karte antippen. Oder einfach abwerfen.';
   }
+  if (spiel.phase === 'paar') {
+    const n = spiel.paar.gewaehlt.length;
+    return n < PAAR_MINDESTENS
+      ? `Tippe die Karten an, von denen du glaubst, dass sie <b>gleich</b> sind. Mindestens ${PAAR_MINDESTENS}.`
+      : `<b>${n} Karten</b> gewählt. Aufdecken sehen alle — auch wenn du danebenliegst.`;
+  }
   if (spiel.phase === 'kraft') {
     const art = spiel.kraft?.art;
     if (!art || spiel.kraft.erledigt) return 'Merk es dir — dann geht es weiter.';
@@ -316,10 +335,21 @@ function knoepfe() {
   if (spiel.phase === 'zug') {
     return `<button class="btn btn--geist" id="btnCabo">Cabo rufen</button>`;
   }
-  if (spiel.phase === 'gezogen' && spiel.quelle === 'stapel') {
+  if (spiel.phase === 'gezogen') {
+    const paarKnopf = spiel.spieler[spiel.dran].hand.length >= PAAR_MINDESTENS
+      ? `<button class="btn btn--geist" id="btnPaar">Gleiche Karten abwerfen</button>` : '';
+    if (spiel.quelle !== 'stapel') return paarKnopf;
     const art = kraftVon(spiel.gezogene.w);
     return `<button class="btn ${art ? 'btn--messing' : 'btn--geist'}" id="btnAbwerfen">
-      ${art ? `Abwerfen und ${KRAEFTE[art].titel} nutzen` : 'Abwerfen'}</button>`;
+      ${art ? `Abwerfen und ${KRAEFTE[art].titel} nutzen` : 'Abwerfen'}</button>${paarKnopf}`;
+  }
+  if (spiel.phase === 'paar') {
+    const genug = spiel.paar.gewaehlt.length >= PAAR_MINDESTENS;
+    return `<div class="reihe">
+      <button class="btn btn--geist" id="btnPaarAb">Doch nicht</button>
+      <button class="btn btn--messing" id="btnPaarAuf" ${genug ? '' : 'disabled'}>
+        Aufdecken${genug ? ` (${spiel.paar.gewaehlt.length})` : ''}</button>
+    </div>`;
   }
   if (spiel.phase === 'kraft' && spiel.kraft && !spiel.kraft.erledigt) {
     return `<button class="btn btn--geist" id="btnKraftAus">Kraft auslassen</button>`;
@@ -343,6 +373,32 @@ function renderEinpraegen() {
     <button class="btn btn--messing" id="ok">Gemerkt</button>`;
   app.appendChild(layer);
   layer.querySelector('#ok').onclick = () => { einpraegenFertig(spiel); buzz(10); weiter(); };
+}
+
+function renderPaarErgebnis() {
+  const e = spiel.paar.ergebnis;
+  const layer = document.createElement('div');
+  layer.className = 'merken';
+  layer.innerHTML = `
+    <div class="lbl">Alle schauen mit</div>
+    <div class="karten">
+      ${e.karten.map((k) => karteHtml(k, { offen: true, klasse: 'karte--gross' })).join('')}
+    </div>
+    <p class="hinweis" style="color:${e.stimmt ? 'var(--gut)' : 'var(--schlecht)'};font-weight:650">
+      ${e.stimmt
+        ? `${e.karten.length}× die ${e.karten[0].w} — die Karten sind weg, deine Hand wird kleiner.`
+        : 'Nicht alle gleich. Die Karten bleiben liegen, dein Zug ist futsch.'}
+    </p>
+    <p class="hinweis">${e.stimmt
+      ? 'Die gezogene Karte rückt auf den ersten frei gewordenen Platz.'
+      : 'Und jetzt weiß auch die Gegenseite, was da liegt.'}</p>
+    <button class="btn btn--messing" id="ok">Weiter</button>`;
+  app.appendChild(layer);
+  layer.querySelector('#ok').onclick = () => {
+    paarBestaetigen(spiel);
+    buzz(e.stimmt ? [20, 40, 20] : 60);
+    weiter();
+  };
 }
 
 function renderAufdecken() {
@@ -512,6 +568,17 @@ function renderRegeln() {
       <p>Nutzen ist freiwillig. Beim <strong>Swap</strong> siehst du keine der beiden Karten —
          du tauschst blind.</p>
 
+      <h3>Gleiche Karten abwerfen</h3>
+      <p>Wenn du glaubst, <strong>mehrere gleiche Werte</strong> auf der Hand zu haben: nach dem
+         Ziehen antippen und aufdecken. Alle sehen die Karten — so oder so.</p>
+      <ul>
+        <li><strong>Richtig geraten:</strong> Die Karten wandern auf die Ablage, die gezogene
+            Karte rückt auf den ersten frei gewordenen Platz. Deine Hand wird
+            <strong>kleiner</strong> — und damit deine Summe.</li>
+        <li><strong>Danebengelegen:</strong> Alles bleibt liegen, die gezogene Karte kommt auf
+            die Ablage, dein Zug ist verloren. Und die Gegenseite weiß jetzt Bescheid.</li>
+      </ul>
+
       <h3>Cabo rufen</h3>
       <p>Statt zu ziehen, kannst du <strong>Cabo</strong> rufen. Alle anderen bekommen noch
          <strong>genau einen Zug</strong>, dann wird aufgedeckt.</p>
@@ -583,6 +650,7 @@ function render() {
   const wer = amZug(spiel);
   if (wer !== null && wer !== ui.halter) { renderUebergabe(wer); return; }
 
+  if (spiel.phase === 'paar' && spiel.paar.ergebnis) { renderPaarErgebnis(); return; }
   if (spiel.aufdecken) { renderAufdecken(); return; }
   if (spiel.phase === 'einpraegen') { renderEinpraegen(); return; }
 }

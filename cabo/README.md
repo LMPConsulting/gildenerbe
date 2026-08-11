@@ -36,6 +36,14 @@ ist gleichzeitig der Punktwert — wenig ist gut.
 | 9 · 10 | Spy | Eine fremde Karte ansehen |
 | 11 · 12 | Swap | Eine eigene blind gegen eine fremde tauschen |
 
+**Gleiche Karten abwerfen.** Nach dem Ziehen darfst du behaupten, mehrere deiner Karten
+hätten denselben Wert — Pärchen, Triplett oder alle vier. Aufgedeckt wird für alle sichtbar.
+
+- **Richtig:** Die Karten wandern auf die Ablage, die gezogene Karte rückt auf den ersten frei
+  gewordenen Platz. Deine Hand wird kleiner — und damit deine Summe.
+- **Falsch:** Alles bleibt liegen, die gezogene Karte kommt auf die Ablage, dein Zug ist
+  verloren. Und die Gegenseite hat deine Karten gesehen.
+
 **Cabo rufen.** Statt zu ziehen. Alle anderen bekommen noch genau einen Zug, dann wird
 aufgedeckt.
 
@@ -66,7 +74,7 @@ cabo/src/ui.js       Tisch, Kartenflip, Übergabe, Auswertung
 cabo/src/style.css   Gestaltung
 cabo/build.mjs       fügt alles zu cabo/index.html zusammen
 cabo/index.html      das Ergebnis — die eine Datei, die man mitnimmt (generiert)
-tests/cabo/          35 Tests (vitest)
+tests/cabo/          44 Tests (vitest)
 ```
 
 Nach Änderungen in `src/`:
@@ -80,5 +88,6 @@ npm test             # prüft Deck, Kräfte, Cabo-Wertung und Rundenlauf
 
 ## Nicht umgesetzt
 
-Die Hausregel „gleiche Karte sofort nachwerfen" (Stapeln/Snap) fehlt bewusst: Sie lebt von
-Reaktionsschnelligkeit aller gleichzeitig und passt nicht zu einem Handy, das reihum wandert.
+Die Reaktionsvariante, bei der *alle gleichzeitig* eine passende Karte nachwerfen dürfen,
+fehlt bewusst: Sie lebt von Schnelligkeit und passt nicht zu einem Handy, das reihum wandert.
+Das eigene Pärchen auf dem eigenen Zug abzuwerfen geht dagegen (siehe oben).
