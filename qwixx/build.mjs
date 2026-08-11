@@ -19,7 +19,9 @@ const engine = read('src/engine.js').replace(/^export /gm, '');
 const uiSrc = read('src/ui.js').replace(/^import\s*\{[\s\S]*?\}\s*from\s*'\.\/engine\.js';\n/m, '');
 if (uiSrc.includes("from './engine.js'")) throw new Error('Import in ui.js nicht erkannt');
 
-const script = `(function () {\n'use strict';\n${engine}\n${uiSrc}\n})();`;
+// Wird unten mit dem Seitenkopf zusammengesetzt, damit sich die Seite selbst
+// als vollständige Datei abspeichern kann.
+const rumpf = `(function () {\n'use strict';\n${engine}\n${uiSrc}\n})();`;
 
 const ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
   + `<rect width="64" height="64" rx="14" fill="#0e1620"/>`
@@ -36,12 +38,9 @@ const manifest = {
 };
 const manifestUrl = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
 
-const body = `<div id="app"></div>\n<script>\n${script}\n</script>`;
-
-const page = `<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
+// Ein Kopf für beide Zwecke: die gebaute Seite und die Kopie, die sich das
+// Spiel im Browser selbst herunterlädt.
+const kopf = `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0e1620">
 <meta name="color-scheme" content="dark">
@@ -52,8 +51,17 @@ const page = `<!doctype html>
 <title>Qwixx</title>
 <link rel="icon" href="${iconUrl}">
 <link rel="apple-touch-icon" href="${iconUrl}">
-<link rel="manifest" href="${manifestUrl}">
-<style>
+<link rel="manifest" href="${manifestUrl}">`;
+
+const script = `const SEITENKOPF = ${JSON.stringify(kopf)};\n${rumpf}`;
+
+const body = `<div id="app"></div>\n<script id="qwixx-js">\n${script}\n</script>`;
+
+const page = `<!doctype html>
+<html lang="de">
+<head>
+${kopf}
+<style id="qwixx-css">
 ${css}
 </style>
 </head>
@@ -66,7 +74,7 @@ ${body}
 const fragmentFlag = process.argv.indexOf('--fragment');
 if (fragmentFlag !== -1) {
   const out = resolve(process.argv[fragmentFlag + 1] || 'qwixx-fragment.html');
-  writeFileSync(out, `<title>Qwixx</title>\n<style>\n${css}\n</style>\n${body}\n`);
+  writeFileSync(out, `<title>Qwixx</title>\n<style id="qwixx-css">\n${css}\n</style>\n${body}\n`);
   console.log(`Fragment geschrieben: ${out}`);
 } else {
   const out = join(here, 'index.html');

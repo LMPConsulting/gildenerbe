@@ -13,6 +13,8 @@ alles steckt in einer einzigen HTML-Datei. Ideal für den Flug.
 die Datei → „Raw" → Datei sichern) und im Browser öffnen. Ab da braucht es kein Netz mehr.
 Über „Zum Startbildschirm hinzufügen" liegt das Spiel wie eine App auf dem Homescreen.
 
+**Direkt aus dem Spiel heraus:** Im Menü gibt es **Spiel als Datei sichern**. Einmal im Browser öffnen, antippen — die Seite lädt sich selbst als `Qwixx.html` in den Downloads-Ordner. Das ist der verlässlichste Weg auf ein Handy, weil es ein ganz normaler Browser-Download ist.
+
 **Am Rechner:** Datei doppelklicken — läuft direkt über `file://`.
 
 **Im Dev-Server:** `npm run dev`, dann `http://localhost:5173/qwixx/`.

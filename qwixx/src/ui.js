@@ -95,6 +95,34 @@ function setToast(msg) {
   if (msg) toastTimer = setTimeout(() => { ui.toast = null; render(); }, 2800);
 }
 
+/**
+ * Speichert die laufende Seite als eigenständige HTML-Datei. Zuverlässigster Weg,
+ * das Spiel offline aufs Handy zu bekommen: einmal im Browser öffnen, hier tippen —
+ * und es landet als echter Download im Downloads-Ordner.
+ * Gibt false zurück, wenn die Seite aus lose geladenen Modulen besteht (Dev-Modus).
+ */
+function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  const css = document.getElementById(cssId)?.textContent || '';
+  const js = document.getElementById(jsId)?.textContent || '';
+  if (!css || !js) return false;
+  const kopf = typeof SEITENKOPF === 'string'
+    ? SEITENKOPF
+    : `<meta charset="utf-8"><title>${ersatzTitel}</title>`;
+  const html = '<!doctype html>\n<html lang="de">\n<head>\n' + kopf
+    + '\n<style id="' + cssId + '">\n' + css + '\n</style>\n</head>\n<body>\n'
+    + '<div id="app"></div>\n<script id="' + jsId + '">\n' + js + '\n<' + '/script>\n'
+    + '</body>\n</html>\n';
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = dateiname;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return true;
+}
+
 /* ------------------------------------------------------------ Speichern */
 
 function save() {
@@ -634,6 +662,7 @@ function renderMenu() {
       <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
         <button class="btn btn--ghost" id="sound">Ton: ${prefs.sound ? 'an' : 'aus'}</button>
         <button class="btn btn--ghost" id="rules">Spielregeln</button>
+        <button class="btn btn--ghost" id="save">Spiel als Datei sichern</button>
         <button class="btn btn--danger" id="abort">Spiel abbrechen</button>
         <button class="btn btn--primary" id="close">Weiterspielen</button>
       </div>
@@ -642,6 +671,12 @@ function renderMenu() {
     </div></div>`;
   app.appendChild(layer);
   layer.querySelector('#sound').onclick = () => { prefs.sound = !prefs.sound; save(); render(); };
+  layer.querySelector('#save').onclick = (e) => {
+    const ok = seiteAlsDateiSichern('qwixx-css', 'qwixx-js', 'Qwixx.html', 'Qwixx');
+    e.currentTarget.textContent = ok
+      ? 'Gesichert — liegt in deinen Downloads'
+      : 'Geht nur in der fertigen Version';
+  };
   layer.querySelector('#rules').onclick = () => { ui.overlay = 'rules'; render(); };
   layer.querySelector('#close').onclick = () => { ui.overlay = null; render(); };
   layer.querySelector('#abort').onclick = () => {

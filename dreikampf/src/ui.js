@@ -52,6 +52,34 @@ function nachAenderung() {
   render();
 }
 
+/**
+ * Speichert die laufende Seite als eigenständige HTML-Datei. Zuverlässigster Weg,
+ * das Spiel offline aufs Handy zu bekommen: einmal im Browser öffnen, hier tippen —
+ * und es landet als echter Download im Downloads-Ordner.
+ * Gibt false zurück, wenn die Seite aus lose geladenen Modulen besteht (Dev-Modus).
+ */
+function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  const css = document.getElementById(cssId)?.textContent || '';
+  const js = document.getElementById(jsId)?.textContent || '';
+  if (!css || !js) return false;
+  const kopf = typeof SEITENKOPF === 'string'
+    ? SEITENKOPF
+    : `<meta charset="utf-8"><title>${ersatzTitel}</title>`;
+  const html = '<!doctype html>\n<html lang="de">\n<head>\n' + kopf
+    + '\n<style id="' + cssId + '">\n' + css + '\n</style>\n</head>\n<body>\n'
+    + '<div id="app"></div>\n<script id="' + jsId + '">\n' + js + '\n<' + '/script>\n'
+    + '</body>\n</html>\n';
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = dateiname;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return true;
+}
+
 /* ----------------------------------------------------------- Erste Anlage */
 
 function renderStart() {
@@ -500,6 +528,7 @@ function renderMenue() {
       <button class="btn btn--geist" id="orte">Wo seid ihr? · ${ORTE[stand.ort].titel}</button>
       <button class="btn btn--geist" id="stat">Statistik</button>
       <button class="btn btn--geist" id="code">Punktestand sichern oder laden</button>
+      <button class="btn btn--geist" id="datei">Spiel als Datei sichern</button>
       <button class="btn btn--geist" id="regeln">Regeln</button>
       <button class="btn btn--nein" id="reset">Punktekonto zurücksetzen</button>
       <button class="btn btn--gold" id="zu">Zurück</button>
@@ -511,6 +540,12 @@ function renderMenue() {
   l.querySelector('#orte').onclick = () => { ui.overlay = 'orte'; render(); };
   l.querySelector('#stat').onclick = () => { ui.overlay = 'statistik'; render(); };
   l.querySelector('#code').onclick = () => { ui.overlay = 'code'; ui.codeStatus = ''; render(); };
+  l.querySelector('#datei').onclick = (e) => {
+    const ok = seiteAlsDateiSichern('dreikampf-css', 'dreikampf-js', 'Dreikampf.html', 'Dreikampf');
+    e.currentTarget.textContent = ok
+      ? 'Gesichert — liegt in deinen Downloads'
+      : 'Geht nur in der fertigen Version';
+  };
   l.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
   l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
   l.querySelector('#reset').onclick = () => {

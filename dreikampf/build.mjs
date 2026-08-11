@@ -40,7 +40,9 @@ const teile = MODULE.map((datei) => {
   return ohneImporte.replace(/^export /gm, '');
 });
 
-const script = `(function () {\n'use strict';\n${teile.join('\n')}\n})();`;
+// Wird unten mit dem Seitenkopf zusammengesetzt, damit sich die Seite selbst
+// als vollständige Datei abspeichern kann.
+const rumpf = `(function () {\n'use strict';\n${teile.join('\n')}\n})();`;
 const css = read('src/style.css');
 
 const ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
@@ -58,12 +60,9 @@ const manifest = {
 };
 const manifestUrl = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
 
-const body = `<div id="app"></div>\n<script>\n${script}\n</script>`;
-
-const seite = `<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
+// Ein Kopf für beide Zwecke: die gebaute Seite und die Kopie, die sich das
+// Spiel im Browser selbst herunterlädt.
+const kopf = `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#17111c">
 <meta name="color-scheme" content="dark">
@@ -74,8 +73,17 @@ const seite = `<!doctype html>
 <title>Dreikampf</title>
 <link rel="icon" href="${iconUrl}">
 <link rel="apple-touch-icon" href="${iconUrl}">
-<link rel="manifest" href="${manifestUrl}">
-<style>
+<link rel="manifest" href="${manifestUrl}">`;
+
+const script = `const SEITENKOPF = ${JSON.stringify(kopf)};\n${rumpf}`;
+
+const body = `<div id="app"></div>\n<script id="dreikampf-js">\n${script}\n</script>`;
+
+const seite = `<!doctype html>
+<html lang="de">
+<head>
+${kopf}
+<style id="dreikampf-css">
 ${css}
 </style>
 </head>
@@ -88,7 +96,7 @@ ${body}
 const flagge = process.argv.indexOf('--fragment');
 if (flagge !== -1) {
   const ziel = resolve(process.argv[flagge + 1] || 'dreikampf-fragment.html');
-  writeFileSync(ziel, `<title>Dreikampf</title>\n<style>\n${css}\n</style>\n${body}\n`);
+  writeFileSync(ziel, `<title>Dreikampf</title>\n<style id="dreikampf-css">\n${css}\n</style>\n${body}\n`);
   console.log(`Fragment geschrieben: ${ziel}`);
 } else {
   const ziel = join(here, 'index.html');

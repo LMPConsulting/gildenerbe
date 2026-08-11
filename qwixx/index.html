@@ -13,7 +13,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1620%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%229%22%20width%3D%2246%22%20height%3D%2246%22%20rx%3D%2210%22%20fill%3D%22%23f3f2ee%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23dc3b2f%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23e8a300%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%2312995b%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%232a6ed4%22%2F%3E%3C%2Fsvg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1620%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%229%22%20width%3D%2246%22%20height%3D%2246%22%20rx%3D%2210%22%20fill%3D%22%23f3f2ee%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23dc3b2f%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23e8a300%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%2312995b%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%232a6ed4%22%2F%3E%3C%2Fsvg%3E">
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Qwixx%22%2C%22short_name%22%3A%22Qwixx%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%230e1620%22%2C%22theme_color%22%3A%22%230e1620%22%2C%22description%22%3A%22Qwixx-W%C3%BCrfelspiel%20f%C3%BCr%20zwei%20bis%20vier%20Leute%20an%20einem%20Handy%20%E2%80%94%20komplett%20offline.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%25230e1620%2522%252F%253E%253Crect%2520x%253D%25229%2522%2520y%253D%25229%2522%2520width%253D%252246%2522%2520height%253D%252246%2522%2520rx%253D%252210%2522%2520fill%253D%2522%2523f3f2ee%2522%252F%253E%253Ccircle%2520cx%253D%252223%2522%2520cy%253D%252223%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%2523dc3b2f%2522%252F%253E%253Ccircle%2520cx%253D%252241%2522%2520cy%253D%252223%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%2523e8a300%2522%252F%253E%253Ccircle%2520cx%253D%252223%2522%2520cy%253D%252241%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%252312995b%2522%252F%253E%253Ccircle%2520cx%253D%252241%2522%2520cy%253D%252241%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%25232a6ed4%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D">
-<style>
+<style id="qwixx-css">
 /* Qwixx — "Nachtflug": dunkle Kabine, das Wertungsblatt liegt darin als echtes Papier.
    Bewusst einthemig: die vier Qwixx-Farben brauchen den hellen Papiergrund. */
 
@@ -555,7 +555,8 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 </head>
 <body>
 <div id="app"></div>
-<script>
+<script id="qwixx-js">
+const SEITENKOPF = "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no\">\n<meta name=\"theme-color\" content=\"#0e1620\">\n<meta name=\"color-scheme\" content=\"dark\">\n<meta name=\"mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\">\n<meta name=\"description\" content=\"Qwixx – das Würfelspiel für unterwegs. Zwei bis vier Leute an einem Handy, komplett offline.\">\n<title>Qwixx</title>\n<link rel=\"icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1620%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%229%22%20width%3D%2246%22%20height%3D%2246%22%20rx%3D%2210%22%20fill%3D%22%23f3f2ee%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23dc3b2f%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23e8a300%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%2312995b%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%232a6ed4%22%2F%3E%3C%2Fsvg%3E\">\n<link rel=\"apple-touch-icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1620%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%229%22%20width%3D%2246%22%20height%3D%2246%22%20rx%3D%2210%22%20fill%3D%22%23f3f2ee%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23dc3b2f%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23e8a300%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%2312995b%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%232a6ed4%22%2F%3E%3C%2Fsvg%3E\">\n<link rel=\"manifest\" href=\"data:application/manifest+json,%7B%22name%22%3A%22Qwixx%22%2C%22short_name%22%3A%22Qwixx%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%230e1620%22%2C%22theme_color%22%3A%22%230e1620%22%2C%22description%22%3A%22Qwixx-W%C3%BCrfelspiel%20f%C3%BCr%20zwei%20bis%20vier%20Leute%20an%20einem%20Handy%20%E2%80%94%20komplett%20offline.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%25230e1620%2522%252F%253E%253Crect%2520x%253D%25229%2522%2520y%253D%25229%2522%2520width%253D%252246%2522%2520height%253D%252246%2522%2520rx%253D%252210%2522%2520fill%253D%2522%2523f3f2ee%2522%252F%253E%253Ccircle%2520cx%253D%252223%2522%2520cy%253D%252223%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%2523dc3b2f%2522%252F%253E%253Ccircle%2520cx%253D%252241%2522%2520cy%253D%252223%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%2523e8a300%2522%252F%253E%253Ccircle%2520cx%253D%252223%2522%2520cy%253D%252241%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%252312995b%2522%252F%253E%253Ccircle%2520cx%253D%252241%2522%2520cy%253D%252241%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%25232a6ed4%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D\">";
 (function () {
 'use strict';
 // Qwixx — reine Spiellogik, ohne DOM. Alles serialisierbar (localStorage-tauglich).
@@ -870,6 +871,34 @@ function setToast(msg) {
   ui.toast = msg;
   clearTimeout(toastTimer);
   if (msg) toastTimer = setTimeout(() => { ui.toast = null; render(); }, 2800);
+}
+
+/**
+ * Speichert die laufende Seite als eigenständige HTML-Datei. Zuverlässigster Weg,
+ * das Spiel offline aufs Handy zu bekommen: einmal im Browser öffnen, hier tippen —
+ * und es landet als echter Download im Downloads-Ordner.
+ * Gibt false zurück, wenn die Seite aus lose geladenen Modulen besteht (Dev-Modus).
+ */
+function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  const css = document.getElementById(cssId)?.textContent || '';
+  const js = document.getElementById(jsId)?.textContent || '';
+  if (!css || !js) return false;
+  const kopf = typeof SEITENKOPF === 'string'
+    ? SEITENKOPF
+    : `<meta charset="utf-8"><title>${ersatzTitel}</title>`;
+  const html = '<!doctype html>\n<html lang="de">\n<head>\n' + kopf
+    + '\n<style id="' + cssId + '">\n' + css + '\n</style>\n</head>\n<body>\n'
+    + '<div id="app"></div>\n<script id="' + jsId + '">\n' + js + '\n<' + '/script>\n'
+    + '</body>\n</html>\n';
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = dateiname;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return true;
 }
 
 /* ------------------------------------------------------------ Speichern */
@@ -1411,6 +1440,7 @@ function renderMenu() {
       <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
         <button class="btn btn--ghost" id="sound">Ton: ${prefs.sound ? 'an' : 'aus'}</button>
         <button class="btn btn--ghost" id="rules">Spielregeln</button>
+        <button class="btn btn--ghost" id="save">Spiel als Datei sichern</button>
         <button class="btn btn--danger" id="abort">Spiel abbrechen</button>
         <button class="btn btn--primary" id="close">Weiterspielen</button>
       </div>
@@ -1419,6 +1449,12 @@ function renderMenu() {
     </div></div>`;
   app.appendChild(layer);
   layer.querySelector('#sound').onclick = () => { prefs.sound = !prefs.sound; save(); render(); };
+  layer.querySelector('#save').onclick = (e) => {
+    const ok = seiteAlsDateiSichern('qwixx-css', 'qwixx-js', 'Qwixx.html', 'Qwixx');
+    e.currentTarget.textContent = ok
+      ? 'Gesichert — liegt in deinen Downloads'
+      : 'Geht nur in der fertigen Version';
+  };
   layer.querySelector('#rules').onclick = () => { ui.overlay = 'rules'; render(); };
   layer.querySelector('#close').onclick = () => { ui.overlay = null; render(); };
   layer.querySelector('#abort').onclick = () => {

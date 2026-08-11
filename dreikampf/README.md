@@ -12,6 +12,8 @@ steckt in einer einzigen HTML-Datei.
 es kein Netz mehr. Über „Zum Startbildschirm hinzufügen“ liegt es wie eine App auf dem
 Homescreen.
 
+**Direkt aus dem Spiel heraus:** Im Menü gibt es **Spiel als Datei sichern**. Einmal im Browser öffnen, antippen — die Seite lädt sich selbst als `Dreikampf.html` in den Downloads-Ordner. Das ist der verlässlichste Weg auf ein Handy, weil es ein ganz normaler Browser-Download ist.
+
 **Am Rechner:** Datei doppelklicken — läuft direkt über `file://`.
 
 **Im Dev-Server:** `npm run dev`, dann `http://localhost:5173/dreikampf/`.
