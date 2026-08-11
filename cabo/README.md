@@ -11,6 +11,8 @@ ist, ruft **Cabo** — und riskiert Strafpunkte.
 **Direkt aus dem Spiel heraus:** Im Menü gibt es **Spiel als Datei sichern**. Einmal im
 Browser öffnen, antippen — die Seite lädt sich selbst als `Cabo.html` in den Downloads-Ordner.
 
+**Aufs zweite Handy bringen:** Im Menü **Spiel weitergeben** übergibt `Cabo.html` an das Teilen-Menü von Android — Nearby Share, WhatsApp, Bluetooth. Die andere Person speichert die Datei und öffnet sie im Browser.
+
 **Am Rechner:** `cabo/index.html` doppelklicken — läuft direkt über `file://`.
 
 **Im Dev-Server:** `npm run dev`, dann `http://localhost:5173/cabo/`.

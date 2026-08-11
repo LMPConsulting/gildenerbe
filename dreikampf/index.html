@@ -1462,6 +1462,33 @@ async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
   return 'ok';
 }
 
+/**
+ * Gibt die Spieldatei an das Teilen-Menü des Handys weiter — damit landet sie
+ * per Nearby Share, WhatsApp oder Bluetooth direkt auf dem zweiten Gerät.
+ * Rückgabe: 'ok' | 'abgelehnt' | 'geht-nicht' | 'dev'
+ */
+async function spielTeilen(cssId, jsId, dateiname, titel) {
+  const html = seitenQuelltext(cssId, jsId, titel);
+  if (!html) return 'dev';
+  try {
+    const datei = new File([html], dateiname, { type: 'text/html' });
+    if (navigator.canShare && navigator.canShare({ files: [datei] })) {
+      await navigator.share({ files: [datei], title: titel });
+      return 'ok';
+    }
+  } catch (fehler) {
+    if (fehler && fehler.name === 'AbortError') return 'abgelehnt';
+  }
+  return 'geht-nicht';
+}
+
+const TEILEN_TEXT = {
+  ok: 'Weitergegeben',
+  abgelehnt: 'Abgebrochen',
+  'geht-nicht': 'Geht hier nicht — erst sichern, dann aus den Dateien teilen',
+  dev: 'Geht nur in der fertigen Version',
+};
+
 const SICHER_TEXT = {
   ok: 'Gesichert — liegt in deinen Downloads',
   txt: 'Als .txt gesichert — bitte in %NAME% umbenennen',
@@ -1918,6 +1945,7 @@ function renderMenue() {
       <button class="btn btn--geist" id="stat">Statistik</button>
       <button class="btn btn--geist" id="code">Punktestand sichern oder laden</button>
       <button class="btn btn--geist" id="datei">Spiel als Datei sichern</button>
+      <button class="btn btn--geist" id="weitergeben">Spiel weitergeben</button>
       <button class="btn btn--geist" id="regeln">Regeln</button>
       <button class="btn btn--nein" id="reset">Punktekonto zurücksetzen</button>
       <button class="btn btn--gold" id="zu">Zurück</button>
@@ -1929,6 +1957,14 @@ function renderMenue() {
   l.querySelector('#orte').onclick = () => { ui.overlay = 'orte'; render(); };
   l.querySelector('#stat').onclick = () => { ui.overlay = 'statistik'; render(); };
   l.querySelector('#code').onclick = () => { ui.overlay = 'code'; ui.codeStatus = ''; render(); };
+  l.querySelector('#weitergeben').onclick = async (e) => {
+    const knopf = e.currentTarget;
+    knopf.disabled = true;
+    knopf.textContent = 'Teilen-Menü …';
+    const erg = await spielTeilen('dreikampf-css', 'dreikampf-js', 'Dreikampf.html', 'Dreikampf');
+    knopf.textContent = TEILEN_TEXT[erg];
+    knopf.disabled = erg === 'ok';
+  };
   l.querySelector('#datei').onclick = async (e) => {
     const knopf = e.currentTarget;
     knopf.disabled = true;

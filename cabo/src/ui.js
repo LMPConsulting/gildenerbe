@@ -113,6 +113,33 @@ async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
   return 'ok';
 }
 
+/**
+ * Gibt die Spieldatei an das Teilen-Menü des Handys weiter — damit landet sie
+ * per Nearby Share, WhatsApp oder Bluetooth direkt auf dem zweiten Gerät.
+ * Rückgabe: 'ok' | 'abgelehnt' | 'geht-nicht' | 'dev'
+ */
+async function spielTeilen(cssId, jsId, dateiname, titel) {
+  const html = seitenQuelltext(cssId, jsId, titel);
+  if (!html) return 'dev';
+  try {
+    const datei = new File([html], dateiname, { type: 'text/html' });
+    if (navigator.canShare && navigator.canShare({ files: [datei] })) {
+      await navigator.share({ files: [datei], title: titel });
+      return 'ok';
+    }
+  } catch (fehler) {
+    if (fehler && fehler.name === 'AbortError') return 'abgelehnt';
+  }
+  return 'geht-nicht';
+}
+
+const TEILEN_TEXT = {
+  ok: 'Weitergegeben',
+  abgelehnt: 'Abgebrochen',
+  'geht-nicht': 'Geht hier nicht — erst sichern, dann aus den Dateien teilen',
+  dev: 'Geht nur in der fertigen Version',
+};
+
 const SICHER_TEXT = {
   ok: 'Gesichert — liegt in deinen Downloads',
   txt: 'Als .txt gesichert — bitte in %NAME% umbenennen',
@@ -902,6 +929,7 @@ function renderMenue() {
     <div style="margin-top:18px;display:flex;flex-direction:column;gap:9px">
       <button class="btn btn--geist" id="regeln">Regeln</button>
       <button class="btn btn--geist" id="datei">Spiel als Datei sichern</button>
+      <button class="btn btn--messing" id="weitergeben">Aufs zweite Handy schicken</button>
       <button class="btn btn--warn" id="abbruch">Spiel abbrechen</button>
       <button class="btn btn--messing" id="zu">Weiterspielen</button>
     </div>
@@ -910,6 +938,14 @@ function renderMenue() {
 
   l.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
   l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
+  l.querySelector('#weitergeben').onclick = async (e) => {
+    const knopf = e.currentTarget;
+    knopf.disabled = true;
+    knopf.textContent = 'Teilen-Menü …';
+    const erg = await spielTeilen('cabo-css', 'cabo-js', 'Cabo.html', 'Cabo');
+    knopf.textContent = TEILEN_TEXT[erg];
+    knopf.disabled = erg === 'ok';
+  };
   l.querySelector('#datei').onclick = async (e) => {
     const knopf = e.currentTarget;
     knopf.disabled = true;

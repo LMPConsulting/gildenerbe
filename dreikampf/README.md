@@ -14,6 +14,8 @@ Homescreen.
 
 **Direkt aus dem Spiel heraus:** Im Menü gibt es **Spiel als Datei sichern**. Einmal im Browser öffnen, antippen — die Seite lädt sich selbst als `Dreikampf.html` in den Downloads-Ordner. Das ist der verlässlichste Weg auf ein Handy, weil es ein ganz normaler Browser-Download ist.
 
+**Aufs zweite Handy bringen:** Im Menü **Spiel weitergeben** übergibt `Dreikampf.html` an das Teilen-Menü von Android — Nearby Share, WhatsApp, Bluetooth. Die andere Person speichert die Datei und öffnet sie im Browser.
+
 **Am Rechner:** Datei doppelklicken — läuft direkt über `file://`.
 
 **Im Dev-Server:** `npm run dev`, dann `http://localhost:5173/dreikampf/`.
