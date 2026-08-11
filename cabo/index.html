@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0e1a17">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Cabo – Kartenspiel für unterwegs. Zwei bis vier Leute an einem Handy, komplett offline.">
+<title>Cabo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1a17%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%2215%22%20width%3D%2224%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%236b2230%22%20stroke%3D%22%23f6f2e7%22%20stroke-width%3D%222.5%22%20transform%3D%22rotate(-10%2024%2032)%22%2F%3E%3Crect%20x%3D%2228%22%20y%3D%2215%22%20width%3D%2224%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23f6f2e7%22%20stroke%3D%22%23c9a227%22%20stroke-width%3D%222%22%20transform%3D%22rotate(9%2040%2032)%22%2F%3E%3Ctext%20x%3D%2240%22%20y%3D%2239%22%20font-family%3D%22system-ui%2Csans-serif%22%20font-size%3D%2219%22%20font-weight%3D%22800%22%20fill%3D%22%2316211e%22%20text-anchor%3D%22middle%22%20transform%3D%22rotate(9%2040%2032)%22%3E0%3C%2Ftext%3E%3C%2Fsvg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1a17%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%2215%22%20width%3D%2224%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%236b2230%22%20stroke%3D%22%23f6f2e7%22%20stroke-width%3D%222.5%22%20transform%3D%22rotate(-10%2024%2032)%22%2F%3E%3Crect%20x%3D%2228%22%20y%3D%2215%22%20width%3D%2224%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23f6f2e7%22%20stroke%3D%22%23c9a227%22%20stroke-width%3D%222%22%20transform%3D%22rotate(9%2040%2032)%22%2F%3E%3Ctext%20x%3D%2240%22%20y%3D%2239%22%20font-family%3D%22system-ui%2Csans-serif%22%20font-size%3D%2219%22%20font-weight%3D%22800%22%20fill%3D%22%2316211e%22%20text-anchor%3D%22middle%22%20transform%3D%22rotate(9%2040%2032)%22%3E0%3C%2Ftext%3E%3C%2Fsvg%3E">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Cabo%22%2C%22short_name%22%3A%22Cabo%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%230e1a17%22%2C%22theme_color%22%3A%22%230e1a17%22%2C%22description%22%3A%22Cabo%20%E2%80%94%20Kartenspiel%20f%C3%BCr%20zwei%20bis%20vier%20Leute%20an%20einem%20Handy%2C%20komplett%20offline.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%25230e1a17%2522%252F%253E%253Crect%2520x%253D%252212%2522%2520y%253D%252215%2522%2520width%253D%252224%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%25236b2230%2522%2520stroke%253D%2522%2523f6f2e7%2522%2520stroke-width%253D%25222.5%2522%2520transform%253D%2522rotate(-10%252024%252032)%2522%252F%253E%253Crect%2520x%253D%252228%2522%2520y%253D%252215%2522%2520width%253D%252224%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%2523f6f2e7%2522%2520stroke%253D%2522%2523c9a227%2522%2520stroke-width%253D%25222%2522%2520transform%253D%2522rotate(9%252040%252032)%2522%252F%253E%253Ctext%2520x%253D%252240%2522%2520y%253D%252239%2522%2520font-family%253D%2522system-ui%252Csans-serif%2522%2520font-size%253D%252219%2522%2520font-weight%253D%2522800%2522%2520fill%253D%2522%252316211e%2522%2520text-anchor%253D%2522middle%2522%2520transform%253D%2522rotate(9%252040%252032)%2522%253E0%253C%252Ftext%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D">
+<style id="cabo-css">
+/* Cabo — „Kartentisch bei Nacht“: dunkler Filz, burgunderrote Rückseiten,
+   cremefarbene Kartenflächen, Messing als Akzent. Bewusst einthemig. */
+
+:root {
+  --filz: #0e1a17;
+  --filz-2: #07110e;
+  --feld: #16241f;
+  --feld-2: #1d2f28;
+  --naht: #2b423a;
+  --nebel: #93a8a0;
+  --nebel-dim: #62776f;
+
+  --karton: #f6f2e7;
+  --karton-2: #e6e0d0;
+  --tinte: #16211e;
+  --ruecken: #6b2230;
+  --ruecken-hell: #8a2c3d;
+
+  --messing: #c9a227;
+  --messing-dim: #7e661a;
+  --gut: #3e9b6b;
+  --schlecht: #c4553f;
+
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+
+  --r-md: 13px;
+  --r-lg: 20px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+
+body {
+  background: var(--filz);
+  background-image:
+    radial-gradient(120% 55% at 50% 42%, #1a2c26 0%, rgba(26, 44, 38, 0) 70%),
+    linear-gradient(180deg, var(--filz) 0%, var(--filz-2) 100%);
+  background-attachment: fixed;
+  color: var(--nebel);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--messing); outline-offset: 3px; }
+
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- Gerüst ---------- */
+
+#app { min-height: 100dvh; display: flex; flex-direction: column; }
+.screen { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; }
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
+.wrap { width: 100%; max-width: 520px; margin-inline: auto; padding: 0 18px; }
+
+.kopf {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(var(--safe-t) + 11px) 18px 11px;
+  border-bottom: 1px solid var(--naht);
+}
+.kopf .titel { flex: 1; min-width: 0; }
+.kopf .ober { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--nebel-dim); font-weight: 700; }
+.kopf h1 {
+  margin: 0; font-size: 17px; font-weight: 650; color: var(--karton);
+  letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.werkzeuge { display: flex; gap: 7px; }
+.werkzeug {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--feld); border: 1px solid var(--naht); color: var(--nebel); font-size: 14px;
+}
+
+/* ---------- Knöpfe ---------- */
+
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 15px 16px; border-radius: var(--r-md);
+  font-weight: 650; font-size: 15.5px; letter-spacing: -0.01em;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.btn:active { transform: scale(0.985); }
+.btn:disabled { opacity: 0.3; transform: none; box-shadow: none; }
+.btn--messing { background: var(--messing); color: #241c00; box-shadow: 0 8px 24px rgba(201, 162, 39, 0.16); }
+.btn--karton { background: var(--karton); color: var(--tinte); }
+.btn--geist { background: var(--feld); color: var(--karton); border: 1px solid var(--naht); }
+.btn--leise { background: none; color: var(--nebel-dim); font-weight: 500; font-size: 15px; padding: 12px; }
+.btn--warn { background: var(--feld); color: #f0a79d; border: 1px solid #4b2b28; }
+.reihe { display: flex; gap: 9px; }
+.reihe .btn { width: auto; flex: 1; }
+
+/* ---------- Startbildschirm ---------- */
+
+.start { justify-content: center; text-align: center; padding: 30px 20px calc(28px + var(--safe-b)); }
+.wortmarke {
+  font-size: clamp(44px, 15vw, 66px); font-weight: 800; margin: 0;
+  letter-spacing: 0.22em; text-indent: 0.22em; color: var(--messing); line-height: 1;
+}
+.unterzeile { margin: 12px 0 26px; font-size: 13.5px; color: var(--nebel-dim); }
+
+.feldreihe { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.feld {
+  flex: 1; width: 100%; background: var(--feld); border: 1px solid var(--naht);
+  border-radius: var(--r-md); padding: 13px 14px; color: var(--karton); font-size: 16px;
+  user-select: text; -webkit-user-select: text;
+}
+.feld::placeholder { color: var(--nebel-dim); }
+.feldlabel {
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; text-align: left; margin: 18px 0 7px;
+}
+
+/* ---------- Der Tisch ---------- */
+
+/* Gegner oben, Stapel in der Mitte, eigene Hand unten am Daumen. */
+.tisch {
+  flex: 1; display: flex; flex-direction: column; justify-content: space-between;
+  gap: 4px; padding: 12px 14px 6px; min-height: 0;
+}
+
+.gegner { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.gegnerblock { text-align: center; }
+.gegnerblock .wer {
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; margin-bottom: 5px;
+}
+.gegnerblock .wer b { color: var(--karton); font-weight: 700; }
+
+.mitte {
+  display: flex; align-items: center; justify-content: center; gap: 26px;
+  padding: 12px 0; margin: 4px 0;
+  position: relative;
+}
+.mitte::before, .mitte::after {
+  content: ""; position: absolute; left: 8%; right: 8%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--naht), transparent);
+}
+.mitte::before { top: 0; }
+.mitte::after { bottom: 0; }
+
+.platz { text-align: center; }
+.platz .lbl {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; margin-top: 6px;
+}
+
+.eigene { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 4px; }
+.eigene .wer { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--messing); font-weight: 700; }
+
+.hand { display: flex; gap: 9px; justify-content: center; }
+
+/* ---------- Karten ---------- */
+
+.karte {
+  --b: 76px;
+  width: var(--b); aspect-ratio: 2 / 3; flex: none;
+  border-radius: 9px; position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.32s cubic-bezier(0.3, 0.8, 0.3, 1);
+  padding: 0;
+}
+.karte--klein { --b: 52px; }
+.karte--gross { --b: 116px; }
+
+.karte .seite {
+  position: absolute; inset: 0; border-radius: 9px;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  display: grid; place-items: center;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+/* Rückseite: burgunderrot mit feinem Rautenmuster und Kartonrand */
+.karte .zu {
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0 3px, transparent 3px 7px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.09) 0 3px, transparent 3px 7px),
+    var(--ruecken);
+  border: 2.5px solid var(--karton);
+}
+.karte .zu::after {
+  content: ""; position: absolute; inset: 5px; border-radius: 4px;
+  border: 1px solid rgba(246, 242, 231, 0.35);
+}
+
+/* Vorderseite: Kartonweiß mit großer Zahl */
+.karte .auf {
+  background: linear-gradient(160deg, var(--karton) 0%, var(--karton-2) 100%);
+  color: var(--tinte);
+  transform: rotateY(180deg);
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: calc(var(--b) * 0.44);
+  letter-spacing: -0.05em;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+.karte .auf .ecke {
+  position: absolute; top: 4px; left: 6px;
+  font-size: calc(var(--b) * 0.16); font-weight: 700; opacity: 0.5; letter-spacing: 0;
+}
+.karte .auf .kraftzeichen {
+  position: absolute; bottom: 4px; right: 6px;
+  font-size: calc(var(--b) * 0.12); font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.55;
+}
+
+.karte--offen { transform: rotateY(180deg); }
+
+.karte--waehlbar .zu, .karte--waehlbar .auf {
+  box-shadow: 0 0 0 2.5px var(--messing), 0 6px 16px rgba(0, 0, 0, 0.5);
+  animation: pochen 1.5s ease-in-out infinite;
+}
+@keyframes pochen { 50% { box-shadow: 0 0 0 4.5px var(--messing), 0 6px 16px rgba(0, 0, 0, 0.5); } }
+
+.karte--markiert { transform: translateY(-10px); }
+.karte--markiert .zu { box-shadow: 0 0 0 3px var(--karton), 0 10px 20px rgba(0, 0, 0, 0.55); }
+
+.karte--leer .zu {
+  background: none; border: 2px dashed var(--naht); box-shadow: none;
+}
+.karte--leer .zu::after { display: none; }
+
+.stapelhaufen { position: relative; }
+.stapelhaufen::before, .stapelhaufen::after {
+  content: ""; position: absolute; inset: 0; border-radius: 9px;
+  background: var(--ruecken); border: 2.5px solid rgba(246, 242, 231, 0.55);
+  z-index: -1;
+}
+.stapelhaufen::before { transform: translate(3px, 3px); }
+.stapelhaufen::after { transform: translate(6px, 6px); opacity: 0.6; }
+
+.austeilen { animation: einfliegen 0.4s cubic-bezier(0.2, 0.8, 0.25, 1) both; }
+@keyframes einfliegen { from { opacity: 0; transform: translateY(-40px) scale(0.8) rotate(-8deg); } }
+
+/* ---------- Statuszeile und Aktionen ---------- */
+
+.cabobanner {
+  text-align: center; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  font-weight: 700; color: var(--messing);
+  background: rgba(201, 162, 39, 0.1); border: 1px solid var(--messing-dim);
+  border-radius: 999px; padding: 5px 12px; margin: 0 auto;
+}
+
+.fuss {
+  padding: 10px 14px calc(12px + var(--safe-b));
+  border-top: 1px solid var(--naht);
+  background: rgba(7, 17, 14, 0.86); backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ansage { text-align: center; font-size: 14px; color: var(--nebel); min-height: 20px; text-wrap: balance; }
+.ansage b { color: var(--karton); font-weight: 650; }
+.ansage .kraftname { color: var(--messing); font-weight: 700; }
+
+/* ---------- Aufdeck-Moment ---------- */
+
+.merken {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(7, 17, 14, 0.94);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; padding: 24px calc(24px + var(--safe-b));
+  animation: aufblenden 0.2s ease-out;
+}
+@keyframes aufblenden { from { opacity: 0; } }
+.merken .lbl { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--nebel-dim); font-weight: 700; }
+.merken .karten { display: flex; gap: 14px; }
+.merken .karte { animation: drehen 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) both; }
+@keyframes drehen { from { transform: rotateY(0deg) scale(0.9); } to { transform: rotateY(180deg) scale(1); } }
+.merken .hinweis { font-size: 13.5px; color: var(--nebel-dim); text-align: center; max-width: 30ch; }
+.merken .btn { max-width: 320px; }
+
+/* ---------- Punktetafel und Auswertung ---------- */
+
+.tafel {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+  background: var(--feld); border: 1px solid var(--naht);
+  border-radius: var(--r-lg); padding: 18px 14px; margin: 18px 0 6px;
+}
+.tafel .seite { text-align: center; min-width: 0; }
+.tafel .name {
+  font-size: 13.5px; line-height: 19px; height: 19px; color: var(--nebel);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tafel .zahl { font-family: var(--font-num); font-size: clamp(30px, 10vw, 42px); font-weight: 700; color: var(--karton); line-height: 1.1; }
+.tafel .seite--vorn .zahl { color: var(--gut); }
+.tafel .gegen { font-size: 13px; color: var(--nebel-dim); letter-spacing: 0.1em; }
+.hinweiszeile { text-align: center; font-size: 12.5px; color: var(--nebel-dim); margin: 0 0 18px; }
+
+.rundenzeile {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--feld); border: 1px solid var(--naht);
+  border-radius: var(--r-md); padding: 11px 13px; margin-bottom: 8px;
+}
+.rundenzeile.gewinner { border-color: var(--messing); background: var(--feld-2); }
+.rundenzeile .wer { flex: 1; min-width: 0; }
+.rundenzeile .wer b { display: block; color: var(--karton); font-weight: 650; }
+.rundenzeile .wer small { display: block; font-size: 12px; color: var(--nebel-dim); }
+.rundenzeile .karten { display: flex; gap: 4px; }
+.rundenzeile .mini {
+  font-family: var(--font-num); font-size: 12px; font-weight: 700;
+  background: var(--karton); color: var(--tinte);
+  border-radius: 4px; padding: 3px 5px; min-width: 22px; text-align: center;
+}
+.rundenzeile .pkt { font-family: var(--font-num); font-weight: 700; font-size: 17px; flex: none; min-width: 40px; text-align: right; }
+.pkt--null { color: var(--gut); }
+.pkt--viel { color: var(--schlecht); }
+.pkt--mittel { color: var(--karton); }
+
+.blatt { padding: calc(var(--safe-t) + 16px) 18px calc(18px + var(--safe-b)); width: 100%; max-width: 520px; margin-inline: auto; }
+.blatt h2 { font-size: 23px; color: var(--karton); margin: 0 0 6px; font-weight: 700; letter-spacing: -0.01em; }
+.blatt h3 {
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--messing-dim); font-weight: 700; margin: 22px 0 8px;
+}
+.blatt p, .blatt li { font-size: 15px; line-height: 1.6; color: var(--nebel); }
+.blatt p { margin: 0 0 10px; }
+.blatt ul { margin: 0 0 10px; padding-left: 20px; }
+.blatt li { margin-bottom: 6px; }
+.blatt strong { color: var(--karton); font-weight: 650; }
+.lesbar { user-select: text; -webkit-user-select: text; }
+
+.kraftliste { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.kraftzeile {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--feld); border: 1px solid var(--naht); border-radius: var(--r-md); padding: 10px 12px;
+}
+.kraftzeile .werte {
+  font-family: var(--font-num); font-weight: 700; font-size: 14px;
+  background: var(--karton); color: var(--tinte); border-radius: 6px; padding: 4px 8px; flex: none;
+}
+.kraftzeile b { color: var(--karton); display: block; font-size: 14.5px; }
+.kraftzeile small { color: var(--nebel-dim); font-size: 12.5px; }
+
+/* ---------- Übergabe ---------- */
+
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: var(--filz-2);
+  display: flex; flex-direction: column;
+  animation: aufblenden 0.18s ease-out;
+}
+.uebergabe {
+  justify-content: center; align-items: center; text-align: center;
+  padding: 26px calc(24px + var(--safe-b));
+  background-image: radial-gradient(90% 50% at 50% 40%, #1a2c26 0%, rgba(26, 44, 38, 0) 70%);
+}
+.uebergabe .pfeil { font-size: 38px; animation: schubs 1.5s ease-in-out infinite; }
+@keyframes schubs { 50% { transform: translateX(10px); } }
+.uebergabe .lbl { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--nebel-dim); font-weight: 700; margin-top: 4px; }
+.uebergabe .name { font-size: clamp(28px, 9vw, 40px); font-weight: 700; color: var(--karton); line-height: 1.1; margin: 4px 0 6px; }
+.uebergabe .auftrag { color: var(--nebel); margin: 0 0 26px; max-width: 30ch; }
+.uebergabe .btn { max-width: 320px; }
+
+@media (max-height: 700px) {
+  .karte { --b: 66px; }
+  .karte--klein { --b: 46px; }
+  .mitte { padding: 8px 0; gap: 20px; }
+  .tisch { gap: 2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script id="cabo-js">
+const SEITENKOPF = "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no\">\n<meta name=\"theme-color\" content=\"#0e1a17\">\n<meta name=\"color-scheme\" content=\"dark\">\n<meta name=\"mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\">\n<meta name=\"description\" content=\"Cabo – Kartenspiel für unterwegs. Zwei bis vier Leute an einem Handy, komplett offline.\">\n<title>Cabo</title>\n<link rel=\"icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1a17%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%2215%22%20width%3D%2224%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%236b2230%22%20stroke%3D%22%23f6f2e7%22%20stroke-width%3D%222.5%22%20transform%3D%22rotate(-10%2024%2032)%22%2F%3E%3Crect%20x%3D%2228%22%20y%3D%2215%22%20width%3D%2224%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23f6f2e7%22%20stroke%3D%22%23c9a227%22%20stroke-width%3D%222%22%20transform%3D%22rotate(9%2040%2032)%22%2F%3E%3Ctext%20x%3D%2240%22%20y%3D%2239%22%20font-family%3D%22system-ui%2Csans-serif%22%20font-size%3D%2219%22%20font-weight%3D%22800%22%20fill%3D%22%2316211e%22%20text-anchor%3D%22middle%22%20transform%3D%22rotate(9%2040%2032)%22%3E0%3C%2Ftext%3E%3C%2Fsvg%3E\">\n<link rel=\"apple-touch-icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1a17%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%2215%22%20width%3D%2224%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%236b2230%22%20stroke%3D%22%23f6f2e7%22%20stroke-width%3D%222.5%22%20transform%3D%22rotate(-10%2024%2032)%22%2F%3E%3Crect%20x%3D%2228%22%20y%3D%2215%22%20width%3D%2224%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23f6f2e7%22%20stroke%3D%22%23c9a227%22%20stroke-width%3D%222%22%20transform%3D%22rotate(9%2040%2032)%22%2F%3E%3Ctext%20x%3D%2240%22%20y%3D%2239%22%20font-family%3D%22system-ui%2Csans-serif%22%20font-size%3D%2219%22%20font-weight%3D%22800%22%20fill%3D%22%2316211e%22%20text-anchor%3D%22middle%22%20transform%3D%22rotate(9%2040%2032)%22%3E0%3C%2Ftext%3E%3C%2Fsvg%3E\">\n<link rel=\"manifest\" href=\"data:application/manifest+json,%7B%22name%22%3A%22Cabo%22%2C%22short_name%22%3A%22Cabo%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%230e1a17%22%2C%22theme_color%22%3A%22%230e1a17%22%2C%22description%22%3A%22Cabo%20%E2%80%94%20Kartenspiel%20f%C3%BCr%20zwei%20bis%20vier%20Leute%20an%20einem%20Handy%2C%20komplett%20offline.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%25230e1a17%2522%252F%253E%253Crect%2520x%253D%252212%2522%2520y%253D%252215%2522%2520width%253D%252224%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%25236b2230%2522%2520stroke%253D%2522%2523f6f2e7%2522%2520stroke-width%253D%25222.5%2522%2520transform%253D%2522rotate(-10%252024%252032)%2522%252F%253E%253Crect%2520x%253D%252228%2522%2520y%253D%252215%2522%2520width%253D%252224%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%2523f6f2e7%2522%2520stroke%253D%2522%2523c9a227%2522%2520stroke-width%253D%25222%2522%2520transform%253D%2522rotate(9%252040%252032)%2522%252F%253E%253Ctext%2520x%253D%252240%2522%2520y%253D%252239%2522%2520font-family%253D%2522system-ui%252Csans-serif%2522%2520font-size%253D%252219%2522%2520font-weight%253D%2522800%2522%2520fill%253D%2522%252316211e%2522%2520text-anchor%253D%2522middle%2522%2520transform%253D%2522rotate(9%252040%252032)%2522%253E0%253C%252Ftext%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D\">";
+(function () {
+'use strict';
+// Cabo — Spiellogik ohne DOM. Alles serialisierbar (localStorage-tauglich).
+
+// 52 Karten: 0 und 13 je zweimal, 1 bis 12 je viermal.
+const DECK_AUFBAU = [[0, 2], [13, 2], ...Array.from({ length: 12 }, (_, i) => [i + 1, 4])];
+
+const KRAEFTE = {
+  peek: { titel: 'Peek', werte: [7, 8], text: 'Sieh dir eine eigene Karte an.' },
+  spy: { titel: 'Spy', werte: [9, 10], text: 'Sieh dir eine Karte einer anderen Person an.' },
+  swap: { titel: 'Swap', werte: [11, 12], text: 'Tausche eine eigene Karte blind gegen eine fremde.' },
+};
+
+const HANDGROESSE = 4;
+const START_ANSEHEN = 2;      // die beiden unteren Karten
+const CABO_STRAFE = 5;
+const SPIELENDE_AB = 100;
+const HALBIERUNG_BEI = 100;   // genau 100 wird zu 50
+
+function kraftVon(wert) {
+  for (const [art, k] of Object.entries(KRAEFTE)) if (k.werte.includes(wert)) return art;
+  return null;
+}
+
+function neuesDeck() {
+  const deck = [];
+  let n = 0;
+  for (const [wert, anzahl] of DECK_AUFBAU) {
+    for (let i = 0; i < anzahl; i++) deck.push({ id: `k${n++}`, w: wert });
+  }
+  return deck;
+}
+
+function mischen(liste, rnd = Math.random) {
+  const a = liste.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const naechster = (i, n) => (i + 1) % n;
+
+function neuesSpiel(namen = ['Monty', 'Christina']) {
+  return {
+    v: 1,
+    spieler: namen.map((name) => ({ name, hand: [] })),
+    punkte: namen.map(() => 0),
+    runde: 1,
+    geber: 0,
+    dran: 0,
+    stapel: [],
+    ablage: [],
+    phase: 'aus',       // 'aus' | 'einpraegen' | 'zug' | 'gezogen' | 'kraft' | 'auswertung' | 'ende'
+    gezogene: null,
+    quelle: null,       // 'stapel' | 'ablage'
+    kraft: null,        // { art, eigene: index|null }
+    caboVon: null,
+    restZuege: null,
+    einpraegenIndex: 0,
+    aufdecken: null,    // { wer, index, karte, text }
+    auswertung: null,
+    verlauf: [],
+  };
+}
+
+/* ------------------------------------------------------------ Runde starten */
+
+function neueRunde(s, rnd = Math.random) {
+  const n = s.spieler.length;
+  const deck = mischen(neuesDeck(), rnd);
+  for (const p of s.spieler) p.hand = deck.splice(0, HANDGROESSE);
+  s.ablage = [deck.pop()];
+  s.stapel = deck;
+
+  s.phase = 'einpraegen';
+  s.einpraegenIndex = 0;
+  s.dran = naechster(s.geber, n);   // links vom Geber beginnt
+  s.gezogene = null;
+  s.quelle = null;
+  s.kraft = null;
+  s.caboVon = null;
+  s.restZuege = null;
+  s.aufdecken = null;
+  s.auswertung = null;
+  return s;
+}
+
+/** Die Karten, die man sich zu Beginn ansehen darf: die beiden unteren. */
+function startKarten(s, wer) {
+  const hand = s.spieler[wer].hand;
+  return Array.from({ length: START_ANSEHEN }, (_, i) => HANDGROESSE - START_ANSEHEN + i)
+    .map((index) => ({ index, karte: hand[index] }));
+}
+
+function einpraegenFertig(s) {
+  s.einpraegenIndex += 1;
+  if (s.einpraegenIndex >= s.spieler.length) {
+    s.einpraegenIndex = 0;
+    s.phase = 'zug';
+  }
+  return s;
+}
+
+/* ------------------------------------------------------------------- Zug */
+
+/** Ist der Nachziehstapel leer, wandert die Ablage bis auf die oberste Karte zurück. */
+function stapelAuffuellen(s, rnd) {
+  if (s.stapel.length > 0 || s.ablage.length <= 1) return;
+  const oben = s.ablage.pop();
+  s.stapel = mischen(s.ablage, rnd);
+  s.ablage = [oben];
+}
+
+function obenAufAblage(s) {
+  return s.ablage.length ? s.ablage[s.ablage.length - 1] : null;
+}
+
+function ziehen(s, quelle, rnd = Math.random) {
+  if (s.phase !== 'zug') return s;
+  if (quelle === 'ablage') {
+    if (!s.ablage.length) return s;
+    s.gezogene = s.ablage.pop();
+  } else {
+    stapelAuffuellen(s, rnd);
+    if (!s.stapel.length) return s;
+    s.gezogene = s.stapel.pop();
+  }
+  s.quelle = quelle;
+  s.phase = 'gezogen';
+  return s;
+}
+
+/** Gezogene Karte gegen eine eigene tauschen. Die alte Karte kommt offen auf die Ablage. */
+function tauschen(s, index) {
+  if (s.phase !== 'gezogen') return s;
+  const hand = s.spieler[s.dran].hand;
+  if (index < 0 || index >= hand.length) return s;
+  const raus = hand[index];
+  hand[index] = s.gezogene;
+  s.ablage.push(raus);
+  s.gezogene = null;
+  s.quelle = null;
+  return zugEnde(s);
+}
+
+/** Gezogene Karte abwerfen. Nur vom Stapel erlaubt, und nur so gibt es Kräfte. */
+function abwerfen(s) {
+  if (s.phase !== 'gezogen' || s.quelle !== 'stapel') return s;
+  const karte = s.gezogene;
+  s.ablage.push(karte);
+  s.gezogene = null;
+  s.quelle = null;
+
+  const art = kraftVon(karte.w);
+  if (art) {
+    s.kraft = { art, eigene: null };
+    s.phase = 'kraft';
+    return s;
+  }
+  return zugEnde(s);
+}
+
+/* ------------------------------------------------------------------ Kräfte */
+
+function kraftAuslassen(s) {
+  if (s.phase !== 'kraft') return s;
+  s.kraft = null;
+  return zugEnde(s);
+}
+
+/** Peek: eigene Karte ansehen. */
+function peek(s, index) {
+  if (s.phase !== 'kraft' || s.kraft.art !== 'peek') return s;
+  s.aufdecken = { wer: s.dran, index, karte: s.spieler[s.dran].hand[index], text: 'Deine Karte' };
+  s.kraft.erledigt = true;
+  return s;
+}
+
+/** Spy: fremde Karte ansehen. */
+function spy(s, wer, index) {
+  if (s.phase !== 'kraft' || s.kraft.art !== 'spy' || wer === s.dran) return s;
+  s.aufdecken = {
+    wer, index, karte: s.spieler[wer].hand[index],
+    text: `Karte von ${s.spieler[wer].name}`,
+  };
+  s.kraft.erledigt = true;
+  return s;
+}
+
+/** Swap, Schritt 1: eigene Karte vormerken. */
+function swapEigene(s, index) {
+  if (s.phase !== 'kraft' || s.kraft.art !== 'swap') return s;
+  s.kraft.eigene = s.kraft.eigene === index ? null : index;
+  return s;
+}
+
+/** Swap, Schritt 2: fremde Karte wählen — getauscht wird blind. */
+function swapFremde(s, wer, index) {
+  if (s.phase !== 'kraft' || s.kraft.art !== 'swap') return s;
+  if (s.kraft.eigene === null || wer === s.dran) return s;
+  const meine = s.spieler[s.dran].hand;
+  const deine = s.spieler[wer].hand;
+  const i = s.kraft.eigene;
+  [meine[i], deine[index]] = [deine[index], meine[i]];
+  s.kraft = null;
+  return zugEnde(s);
+}
+
+/** Eine Enthüllung wegtippen. Danach ist der Zug vorbei. */
+function aufdeckenSchliessen(s) {
+  if (!s.aufdecken) return s;
+  s.aufdecken = null;
+  if (s.phase === 'kraft') return zugEnde(s);
+  return s;
+}
+
+/* -------------------------------------------------------------------- Cabo */
+
+function caboRufen(s) {
+  if (s.phase !== 'zug' || s.caboVon !== null) return s;
+  s.caboVon = s.dran;
+  s.restZuege = s.spieler.length - 1;   // alle anderen bekommen genau einen Zug
+  return zugEnde(s, true);
+}
+
+function zugEnde(s, warCabo = false) {
+  s.kraft = null;
+  s.gezogene = null;
+  s.quelle = null;
+
+  if (s.caboVon !== null && !warCabo) {
+    s.restZuege -= 1;
+    if (s.restZuege <= 0) return auswerten(s);
+  }
+  s.dran = naechster(s.dran, s.spieler.length);
+  s.phase = 'zug';
+  return s;
+}
+
+/* --------------------------------------------------------------- Auswertung */
+
+function handSumme(spieler) {
+  return spieler.hand.reduce((sum, k) => sum + k.w, 0);
+}
+
+function auswerten(s) {
+  const summen = s.spieler.map(handSumme);
+  const niedrigste = Math.min(...summen);
+  const rufer = s.caboVon;
+  // Bei Gleichstand gewinnt, wer Cabo gerufen hat.
+  const caboGeglueckt = rufer !== null && summen[rufer] <= niedrigste;
+
+  const zeilen = s.spieler.map((p, i) => {
+    if (rufer === i) {
+      return caboGeglueckt
+        ? { p: i, summe: summen[i], punkte: 0, text: 'Cabo gerufen und behalten' }
+        : { p: i, summe: summen[i], punkte: summen[i] + CABO_STRAFE, text: `Cabo verpatzt — ${summen[i]} + ${CABO_STRAFE}` };
+    }
+    return { p: i, summe: summen[i], punkte: summen[i], text: 'Kartenwert' };
+  });
+
+  for (const z of zeilen) s.punkte[z.p] += z.punkte;
+
+  // Genau 100 ist ein Geschenk: zurück auf 50.
+  for (let i = 0; i < s.punkte.length; i++) {
+    if (s.punkte[i] === HALBIERUNG_BEI) s.punkte[i] = HALBIERUNG_BEI / 2;
+  }
+
+  s.auswertung = { zeilen, caboVon: rufer, caboGeglueckt, niedrigste };
+  s.verlauf.unshift({
+    runde: s.runde,
+    caboVon: rufer,
+    caboGeglueckt,
+    punkte: zeilen.map((z) => z.punkte),
+    summen,
+  });
+  if (s.verlauf.length > 100) s.verlauf.length = 100;
+
+  s.phase = Math.max(...s.punkte) >= SPIELENDE_AB ? 'ende' : 'auswertung';
+  return s;
+}
+
+function naechsteRunde(s, rnd = Math.random) {
+  if (s.phase !== 'auswertung') return s;
+  s.runde += 1;
+  s.geber = naechster(s.geber, s.spieler.length);
+  return neueRunde(s, rnd);
+}
+
+function endstand(s) {
+  return s.spieler
+    .map((p, i) => ({ index: i, name: p.name, punkte: s.punkte[i] }))
+    .sort((a, b) => a.punkte - b.punkte);
+}
+
+/** Wer muss das Handy in der Hand haben? */
+function amZug(s) {
+  if (s.phase === 'einpraegen') return s.einpraegenIndex;
+  if (s.phase === 'zug' || s.phase === 'gezogen' || s.phase === 'kraft') return s.dran;
+  return null;
+}
+
+// Cabo — Oberfläche. Ein Handy wandert, die Karten bleiben geheim.
+
+
+const KEY = 'cabo.v1';
+const app = document.getElementById('app');
+
+let spiel = null;
+let ui = { overlay: null, halter: 0, animRunde: 0 };
+
+/* ------------------------------------------------------------------ Hilfen */
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const name = (i) => esc(spiel.spieler[i].name);
+const buzz = (ms) => { try { navigator.vibrate?.(ms); } catch { /* egal */ } };
+
+function sichern() {
+  try { localStorage.setItem(KEY, JSON.stringify(spiel)); } catch { /* privater Modus */ }
+}
+
+function laden() {
+  try {
+    const roh = localStorage.getItem(KEY);
+    if (!roh) return null;
+    const s = JSON.parse(roh);
+    if (s && s.v === 1 && Array.isArray(s.punkte)) return s;
+  } catch { /* kaputter Stand wird ignoriert */ }
+  return null;
+}
+
+function weiter() {
+  sichern();
+  render();
+}
+
+/** Baut aus <style> und <script> der laufenden Seite wieder ein vollständiges Dokument. */
+function seitenQuelltext(cssId, jsId, ersatzTitel) {
+  const css = document.getElementById(cssId)?.textContent || '';
+  const js = document.getElementById(jsId)?.textContent || '';
+  if (!css || !js) return null;
+  const kopf = typeof SEITENKOPF === 'string'
+    ? SEITENKOPF
+    : `<meta charset="utf-8"><title>${ersatzTitel}</title>`;
+  return [
+    '<!doctype html>', '<html lang="de">', '<head>',
+    kopf,
+    `<style id="${cssId}">`, css, '</style>', '</head>', '<body>',
+    '<div id="app"></div>',
+    `<script id="${jsId}">`, js, '<' + '/script>',
+    '</body>', '</html>', ''
+  ].join('\n');
+}
+
+function browserDownload(dateiname, html) {
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = dateiname;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/**
+ * Speichert die laufende Seite als eigenständige HTML-Datei.
+ * In der Claude-App über deren Speichern-Dialog, sonst als Browser-Download.
+ */
+async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  const html = seitenQuelltext(cssId, jsId, ersatzTitel);
+  if (!html) return 'dev';
+  const dl = typeof window !== 'undefined' && window.claude ? window.claude.downloads : null;
+  if (dl) {
+    try {
+      await dl.save({ filename: dateiname, data: html });
+      return 'ok';
+    } catch (fehler) {
+      const code = fehler && fehler.code;
+      if (code === 'declined') return 'abgelehnt';
+      if (code === 'rejected_extension' || code === 'extension_not_enabled') {
+        try {
+          await dl.save({ filename: dateiname.replace(/\.html$/, '') + '.txt', data: html });
+          return 'txt';
+        } catch (zweiter) {
+          if (zweiter && zweiter.code === 'declined') return 'abgelehnt';
+        }
+      }
+    }
+  }
+  browserDownload(dateiname, html);
+  return 'ok';
+}
+
+const SICHER_TEXT = {
+  ok: 'Gesichert — liegt in deinen Downloads',
+  txt: 'Als .txt gesichert — bitte in %NAME% umbenennen',
+  abgelehnt: 'Abgebrochen — nichts gespeichert',
+  dev: 'Geht nur in der fertigen Version',
+};
+
+/* ------------------------------------------------------------------ Karten */
+
+function karteHtml(karte, { offen = false, klasse = '', attrs = '', waehlbar = false } = {}) {
+  const w = karte ? karte.w : null;
+  const art = w != null ? kraftVon(w) : null;
+  const tag = waehlbar ? 'button' : 'div';
+  const kl = ['karte', offen ? 'karte--offen' : '', waehlbar ? 'karte--waehlbar' : '', klasse]
+    .filter(Boolean).join(' ');
+  const vorderseite = w != null
+    ? `<span class="ecke">${w}</span>${w}${art ? `<span class="kraftzeichen">${KRAEFTE[art].titel}</span>` : ''}`
+    : '';
+  return `<${tag} class="${kl}"${attrs}${waehlbar ? ' type="button"' : ''}>
+    <span class="seite zu"></span><span class="seite auf">${vorderseite}</span>
+  </${tag}>`;
+}
+
+/* ------------------------------------------------------------------- Start */
+
+function renderStart() {
+  app.innerHTML = `
+    <div class="screen start">
+      <div class="wrap">
+        <h1 class="wortmarke">CABO</h1>
+        <p class="unterzeile">Vier Karten, keiner weiß welche. Wer am wenigsten hat, gewinnt —
+          wenn er sich traut.</p>
+
+        <div class="feldlabel">Wer spielt?</div>
+        <div class="feldreihe"><input class="feld" id="n0" maxlength="16" value="Monty" aria-label="Name 1"></div>
+        <div class="feldreihe"><input class="feld" id="n1" maxlength="16" value="Christina" aria-label="Name 2"></div>
+
+        <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn--messing" id="los">Austeilen</button>
+          <button class="btn btn--leise" id="regeln">Wie es funktioniert</button>
+        </div>
+      </div>
+    </div>`;
+
+  app.querySelector('#los').onclick = () => {
+    const namen = [0, 1].map((i) => app.querySelector(`#n${i}`).value.trim() || `Spieler ${i + 1}`);
+    spiel = neuesSpiel(namen);
+    spiel.geber = namen.length - 1;      // damit die erste Person anfängt
+    neueRunde(spiel);
+    ui.halter = 0;
+    ui.animRunde = 0;
+    weiter();
+  };
+  app.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+}
+
+/* ------------------------------------------------------------------- Tisch */
+
+/** Darf diese Karte gerade angetippt werden? */
+function waehlbar(besitzer, index) {
+  if (spiel.aufdecken) return false;
+  const ich = spiel.dran;
+  if (spiel.phase === 'gezogen') return besitzer === ich;
+  if (spiel.phase === 'kraft') {
+    const art = spiel.kraft?.art;
+    if (art === 'peek') return besitzer === ich;
+    if (art === 'spy') return besitzer !== ich;
+    if (art === 'swap') return besitzer === ich || spiel.kraft.eigene !== null;
+    return false;
+  }
+  return false;
+}
+
+function handHtml(p, klein) {
+  const frisch = ui.animRunde !== spiel.runde ? ' austeilen' : '';
+  return spiel.spieler[p].hand.map((k, i) => {
+    const w = waehlbar(p, i);
+    const markiert = spiel.phase === 'kraft' && spiel.kraft?.art === 'swap'
+      && spiel.kraft.eigene === i && p === spiel.dran;
+    return karteHtml(k, {
+      klasse: `${klein ? 'karte--klein' : ''}${markiert ? ' karte--markiert' : ''}${frisch}`,
+      waehlbar: w,
+      attrs: w ? ` data-p="${p}" data-i="${i}"` : '',
+    });
+  }).join('');
+}
+
+function renderTisch() {
+  const ich = spiel.dran;
+  const gegner = spiel.spieler.map((_, i) => i).filter((i) => i !== ich);
+  const oben = obenAufAblage(spiel);
+  const ziehbar = spiel.phase === 'zug';
+
+  const gegnerHtml = gegner.map((p) => `
+    <div class="gegnerblock">
+      <div class="wer"><b>${name(p)}</b> · ${spiel.punkte[p]}</div>
+      <div class="hand">${handHtml(p, true)}</div>
+    </div>`).join('');
+
+  app.innerHTML = `
+    <div class="screen">
+      <header class="kopf">
+        <div class="titel">
+          <div class="ober">Runde ${spiel.runde} · bis ${SPIELENDE_AB}</div>
+          <h1>${name(ich)} ist dran</h1>
+        </div>
+        <div class="werkzeuge">
+          <button class="werkzeug" id="btnRegeln" aria-label="Regeln">?</button>
+          <button class="werkzeug" id="btnMenue" aria-label="Menü">⋯</button>
+        </div>
+      </header>
+
+      <div class="tisch">
+        <div class="gegner">${gegnerHtml}</div>
+
+        <div class="mitte">
+          <div class="platz">
+            <div class="stapelhaufen">
+              ${karteHtml(null, {
+                waehlbar: ziehbar && spiel.stapel.length > 0,
+                attrs: ' data-zug="stapel"',
+                klasse: spiel.stapel.length ? '' : 'karte--leer',
+              })}
+            </div>
+            <div class="lbl">Stapel · ${spiel.stapel.length}</div>
+          </div>
+
+          <div class="platz">
+            ${oben
+              ? karteHtml(oben, { offen: true, waehlbar: ziehbar, attrs: ' data-zug="ablage"' })
+              : karteHtml(null, { klasse: 'karte--leer' })}
+            <div class="lbl">Ablage</div>
+          </div>
+
+          ${spiel.gezogene ? `<div class="platz">
+            ${karteHtml(spiel.gezogene, { offen: true })}
+            <div class="lbl" style="color:var(--messing)">Gezogen</div>
+          </div>` : ''}
+        </div>
+
+        ${spiel.caboVon !== null
+          ? `<div class="cabobanner">Cabo von ${name(spiel.caboVon)} — letzte Züge</div>`
+          : ''}
+
+        <div class="eigene">
+          <div class="wer">${name(ich)} · ${spiel.punkte[ich]} Punkte</div>
+          <div class="hand">${handHtml(ich, false)}</div>
+        </div>
+      </div>
+
+      <div class="fuss">
+        <p class="ansage">${ansage()}</p>
+        ${knoepfe()}
+      </div>
+    </div>`;
+
+  ui.animRunde = spiel.runde;
+
+  app.querySelector('#btnRegeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+  app.querySelector('#btnMenue').onclick = () => { ui.overlay = 'menue'; render(); };
+  app.querySelectorAll('[data-zug]').forEach((b) => {
+    b.onclick = () => { ziehen(spiel, b.dataset.zug); buzz(10); weiter(); };
+  });
+  app.querySelectorAll('[data-p]').forEach((b) => {
+    b.onclick = () => karteGetippt(Number(b.dataset.p), Number(b.dataset.i));
+  });
+  app.querySelector('#btnCabo')?.addEventListener('click', () => {
+    if (!confirm('Cabo rufen? Alle anderen bekommen noch genau einen Zug.')) return;
+    caboRufen(spiel);
+    buzz([20, 50, 30]);
+    weiter();
+  });
+  app.querySelector('#btnAbwerfen')?.addEventListener('click', () => { abwerfen(spiel); buzz(10); weiter(); });
+  app.querySelector('#btnKraftAus')?.addEventListener('click', () => { kraftAuslassen(spiel); weiter(); });
+}
+
+function karteGetippt(p, i) {
+  if (spiel.phase === 'gezogen') { tauschen(spiel, i); buzz(12); return weiter(); }
+  if (spiel.phase !== 'kraft' || !spiel.kraft || spiel.kraft.erledigt) return;
+  const art = spiel.kraft.art;
+  if (art === 'peek') peek(spiel, i);
+  else if (art === 'spy') spy(spiel, p, i);
+  else if (art === 'swap') {
+    if (p === spiel.dran) swapEigene(spiel, i);
+    else swapFremde(spiel, p, i);
+  }
+  buzz(10);
+  weiter();
+}
+
+function ansage() {
+  if (spiel.phase === 'zug') {
+    return 'Zieh vom <b>Stapel</b> oder nimm die <b>Ablage</b>.';
+  }
+  if (spiel.phase === 'gezogen') {
+    const art = kraftVon(spiel.gezogene.w);
+    if (spiel.quelle === 'ablage') return 'Tippe die eigene Karte an, die du dafür hergibst.';
+    return art
+      ? `Tauschen: eigene Karte antippen. Oder abwerfen und <span class="kraftname">${KRAEFTE[art].titel}</span> nutzen.`
+      : 'Tauschen: eigene Karte antippen. Oder einfach abwerfen.';
+  }
+  if (spiel.phase === 'kraft') {
+    const art = spiel.kraft?.art;
+    if (!art || spiel.kraft.erledigt) return 'Merk es dir — dann geht es weiter.';
+    if (art === 'swap' && spiel.kraft.eigene === null) {
+      return `<span class="kraftname">Swap</span> — erst eine <b>eigene</b> Karte wählen.`;
+    }
+    if (art === 'swap') return `<span class="kraftname">Swap</span> — jetzt die fremde Karte antippen. Blind.`;
+    return `<span class="kraftname">${KRAEFTE[art].titel}</span> — ${KRAEFTE[art].text}`;
+  }
+  return '';
+}
+
+function knoepfe() {
+  if (spiel.phase === 'zug') {
+    return `<button class="btn btn--geist" id="btnCabo">Cabo rufen</button>`;
+  }
+  if (spiel.phase === 'gezogen' && spiel.quelle === 'stapel') {
+    const art = kraftVon(spiel.gezogene.w);
+    return `<button class="btn ${art ? 'btn--messing' : 'btn--geist'}" id="btnAbwerfen">
+      ${art ? `Abwerfen und ${KRAEFTE[art].titel} nutzen` : 'Abwerfen'}</button>`;
+  }
+  if (spiel.phase === 'kraft' && spiel.kraft && !spiel.kraft.erledigt) {
+    return `<button class="btn btn--geist" id="btnKraftAus">Kraft auslassen</button>`;
+  }
+  return '';
+}
+
+/* --------------------------------------------------------- Aufdeck-Momente */
+
+function renderEinpraegen() {
+  const wer = spiel.einpraegenIndex;
+  const karten = startKarten(spiel, wer);
+  const layer = document.createElement('div');
+  layer.className = 'merken';
+  layer.innerHTML = `
+    <div class="lbl">${name(wer)} — einprägen</div>
+    <div class="karten">
+      ${karten.map((k) => karteHtml(k.karte, { offen: true, klasse: 'karte--gross' })).join('')}
+    </div>
+    <p class="hinweis">Deine beiden unteren Karten. Merk sie dir — danach sind sie wieder zu.</p>
+    <button class="btn btn--messing" id="ok">Gemerkt</button>`;
+  app.appendChild(layer);
+  layer.querySelector('#ok').onclick = () => { einpraegenFertig(spiel); buzz(10); weiter(); };
+}
+
+function renderAufdecken() {
+  const a = spiel.aufdecken;
+  const layer = document.createElement('div');
+  layer.className = 'merken';
+  layer.innerHTML = `
+    <div class="lbl">${esc(a.text)}</div>
+    <div class="karten">${karteHtml(a.karte, { offen: true, klasse: 'karte--gross' })}</div>
+    <p class="hinweis">Position ${a.index + 1} von ${HANDGROESSE}. Nur du siehst das.</p>
+    <button class="btn btn--messing" id="ok">Gemerkt</button>`;
+  app.appendChild(layer);
+  layer.querySelector('#ok').onclick = () => { aufdeckenSchliessen(spiel); weiter(); };
+}
+
+/* --------------------------------------------------------------- Übergabe */
+
+function renderUebergabe(wer) {
+  const auftrag = spiel.phase === 'einpraegen'
+    ? 'Sieh dir deine beiden unteren Karten an.'
+    : spiel.caboVon !== null
+      ? 'Dein letzter Zug — danach wird aufgedeckt.'
+      : 'Du bist am Zug.';
+  const layer = document.createElement('div');
+  layer.className = 'overlay uebergabe';
+  layer.innerHTML = `
+    <div class="pfeil" aria-hidden="true">📱</div>
+    <div class="lbl">Handy weitergeben an</div>
+    <div class="name">${name(wer)}</div>
+    <p class="auftrag">${auftrag}</p>
+    <button class="btn btn--messing" id="bereit">Ich hab's</button>`;
+  app.appendChild(layer);
+  layer.querySelector('#bereit').onclick = () => { ui.halter = wer; render(); };
+}
+
+/* -------------------------------------------------------------- Auswertung */
+
+function bilanzZeilen() {
+  return spiel.auswertung.zeilen.map((z) => {
+    const klasse = z.punkte === 0 ? 'pkt--null' : z.punkte >= 15 ? 'pkt--viel' : 'pkt--mittel';
+    const karten = spiel.spieler[z.p].hand.map((k) => `<span class="mini">${k.w}</span>`).join('');
+    return `<div class="rundenzeile ${z.punkte === 0 ? 'gewinner' : ''}">
+      <span class="wer"><b>${name(z.p)}${spiel.auswertung.caboVon === z.p ? ' · Cabo' : ''}</b>
+        <small>${esc(z.text)} · Summe ${z.summe}</small></span>
+      <span class="karten">${karten}</span>
+      <span class="pkt ${klasse}">+${z.punkte}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderRundenende() {
+  const a = spiel.auswertung;
+  const layer = document.createElement('div');
+  layer.className = 'overlay';
+  layer.innerHTML = `
+    <div class="scroll"><div class="blatt">
+      <h2>Runde ${spiel.runde}</h2>
+      <p>${a.caboVon === null
+        ? 'Runde beendet.'
+        : a.caboGeglueckt
+          ? `<strong>${name(a.caboVon)}</strong> hat Cabo gerufen und lag richtig.`
+          : `<strong>${name(a.caboVon)}</strong> hat Cabo gerufen und danebengelegen — ${CABO_STRAFE} Punkte obendrauf.`}</p>
+
+      <div style="margin-top:16px">${bilanzZeilen()}</div>
+
+      <div class="feldlabel">Gesamt</div>
+      ${spiel.spieler.map((p, i) => `<div class="rundenzeile">
+        <span class="wer"><b>${name(i)}</b></span>
+        <span class="pkt pkt--mittel">${spiel.punkte[i]}</span>
+      </div>`).join('')}
+
+      <div style="margin-top:22px">
+        <button class="btn btn--messing" id="weiterRunde">Nächste Runde</button>
+      </div>
+    </div></div>`;
+  app.appendChild(layer);
+  layer.querySelector('#weiterRunde').onclick = () => {
+    naechsteRunde(spiel);
+    ui.halter = -1;               // erzwingt die Übergabe an die erste Person
+    weiter();
+  };
+}
+
+function renderEnde() {
+  const tabelle = endstand(spiel);
+  const bester = tabelle[0].punkte;
+  const sieger = tabelle.filter((z) => z.punkte === bester);
+
+  app.innerHTML = `
+    <div class="screen"><div class="scroll"><div class="blatt">
+      <div style="text-align:center;padding:14px 0 20px">
+        <div class="lbl" style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--nebel-dim);font-weight:700">
+          ${sieger.length > 1 ? 'Unentschieden' : 'Gewonnen hat'}</div>
+        <div style="font-size:clamp(28px,8vw,40px);font-weight:700;color:var(--karton);line-height:1.15">
+          ${sieger.map((s) => esc(s.name)).join(' & ')}</div>
+        <div class="num" style="color:var(--nebel)">${bester} Punkte — am wenigsten gewinnt</div>
+      </div>
+
+      ${tabelle.map((z, rang) => `<div class="rundenzeile ${rang === 0 ? 'gewinner' : ''}">
+        <span class="wer"><b>${esc(z.name)}</b><small>Platz ${rang + 1}</small></span>
+        <span class="pkt ${rang === 0 ? 'pkt--null' : 'pkt--mittel'}">${z.punkte}</span>
+      </div>`).join('')}
+
+      <p class="hinweiszeile" style="margin-top:16px">
+        Nach ${spiel.runde} Runden — jemand hat ${SPIELENDE_AB} Punkte erreicht.</p>
+
+      <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn--messing" id="nochmal">Nochmal spielen</button>
+        <button class="btn btn--geist" id="zumStart">Zum Start</button>
+      </div>
+    </div></div></div>`;
+
+  app.querySelector('#nochmal').onclick = () => {
+    const namen = spiel.spieler.map((p) => p.name);
+    spiel = neuesSpiel(namen);
+    spiel.geber = namen.length - 1;
+    neueRunde(spiel);
+    ui.halter = 0;
+    ui.animRunde = 0;
+    weiter();
+  };
+  app.querySelector('#zumStart').onclick = () => {
+    spiel = null;
+    try { localStorage.removeItem(KEY); } catch { /* egal */ }
+    render();
+  };
+}
+
+/* --------------------------------------------------------------- Overlays */
+
+function huelle(inhalt) {
+  const layer = document.createElement('div');
+  layer.className = 'overlay';
+  layer.innerHTML = `<div class="scroll"><div class="blatt">${inhalt}</div></div>`;
+  app.appendChild(layer);
+  return layer;
+}
+
+function renderRegeln() {
+  const kraftliste = Object.values(KRAEFTE).map((k) => `
+    <div class="kraftzeile">
+      <span class="werte">${k.werte.join(' · ')}</span>
+      <span><b>${k.titel}</b><small>${k.text}</small></span>
+    </div>`).join('');
+
+  const l = huelle(`
+    <div class="lesbar">
+      <h2>Cabo — so geht's</h2>
+      <p>Jeder hat <strong>vier Karten</strong>, alle verdeckt. Am Anfang darfst du dir
+         <strong>zwei davon</strong> ansehen — danach musst du dich erinnern. Wer am Ende die
+         <strong>niedrigste Summe</strong> hat, gewinnt die Runde.</p>
+
+      <h3>Die Karten</h3>
+      <p>52 Stück: die <strong>0</strong> und die <strong>13</strong> je zweimal, alle Werte von
+         1 bis 12 je viermal. Der Wert ist gleichzeitig der Punktwert — <strong>wenig ist gut</strong>.</p>
+
+      <h3>Dein Zug</h3>
+      <ul>
+        <li><strong>Vom Stapel ziehen:</strong> Du siehst die Karte. Entweder tauschst du sie
+            gegen eine deiner vier (die alte kommt offen auf die Ablage), oder du wirfst sie ab.</li>
+        <li><strong>Von der Ablage nehmen:</strong> Nur tauschen — keine Kraft.</li>
+        <li>Eine abgeworfene <strong>7 bis 12</strong> darfst du als Kraft nutzen.</li>
+      </ul>
+
+      <h3>Die Kräfte</h3>
+      <div class="kraftliste">${kraftliste}</div>
+      <p>Nutzen ist freiwillig. Beim <strong>Swap</strong> siehst du keine der beiden Karten —
+         du tauschst blind.</p>
+
+      <h3>Cabo rufen</h3>
+      <p>Statt zu ziehen, kannst du <strong>Cabo</strong> rufen. Alle anderen bekommen noch
+         <strong>genau einen Zug</strong>, dann wird aufgedeckt.</p>
+      <ul>
+        <li>Hast du wirklich die niedrigste Summe: <strong>0 Punkte</strong> für dich.
+            Bei Gleichstand gewinnst du.</li>
+        <li>Lagst du daneben: deine Summe <strong>plus ${CABO_STRAFE} Strafpunkte</strong>.</li>
+        <li>Alle anderen bekommen ihre Kartensumme als Punkte.</li>
+      </ul>
+
+      <h3>Spielende</h3>
+      <p>Sobald jemand <strong>${SPIELENDE_AB} Punkte</strong> erreicht, ist Schluss — es gewinnt,
+         wer am <strong>wenigsten</strong> hat. Landet man genau auf ${SPIELENDE_AB}, geht es
+         zurück auf ${SPIELENDE_AB / 2}.</p>
+
+      <h3>An einem Handy</h3>
+      <p>Das Handy wandert reihum. Alles, was nur du sehen darfst — die Startkarten, Peek und
+         Spy — kommt als Vollbild und verschwindet danach wieder. Die App merkt sich nichts
+         für dich: <strong>erinnern musst du dich selbst</strong>.</p>
+
+      <div style="margin-top:24px"><button class="btn btn--messing" id="zu">Verstanden</button></div>
+    </div>`);
+  l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
+}
+
+function renderMenue() {
+  const l = huelle(`
+    <h2>Menü</h2>
+    <div style="margin-top:18px;display:flex;flex-direction:column;gap:9px">
+      <button class="btn btn--geist" id="regeln">Regeln</button>
+      <button class="btn btn--geist" id="datei">Spiel als Datei sichern</button>
+      <button class="btn btn--warn" id="abbruch">Spiel abbrechen</button>
+      <button class="btn btn--messing" id="zu">Weiterspielen</button>
+    </div>
+    <p class="hinweiszeile" style="margin-top:22px">
+      Der Spielstand liegt auf diesem Gerät — die App darf zwischendurch zugehen.</p>`);
+
+  l.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+  l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
+  l.querySelector('#datei').onclick = async (e) => {
+    const knopf = e.currentTarget;
+    knopf.disabled = true;
+    knopf.textContent = 'Wird gespeichert …';
+    const erg = await seiteAlsDateiSichern('cabo-css', 'cabo-js', 'Cabo.html', 'Cabo');
+    knopf.textContent = SICHER_TEXT[erg].replace('%NAME%', 'Cabo.html');
+    knopf.disabled = erg === 'ok' || erg === 'txt';
+  };
+  l.querySelector('#abbruch').onclick = () => {
+    if (!confirm('Laufendes Spiel verwerfen?')) return;
+    spiel = null;
+    ui.overlay = null;
+    try { localStorage.removeItem(KEY); } catch { /* egal */ }
+    render();
+  };
+}
+
+/* ----------------------------------------------------------------- Render */
+
+function render() {
+  if (!spiel) { renderStart(); return; }
+  if (spiel.phase === 'ende') { renderEnde(); return; }
+
+  renderTisch();
+
+  if (ui.overlay === 'regeln') { renderRegeln(); return; }
+  if (ui.overlay === 'menue') { renderMenue(); return; }
+  if (spiel.phase === 'auswertung') { renderRundenende(); return; }
+
+  const wer = amZug(spiel);
+  if (wer !== null && wer !== ui.halter) { renderUebergabe(wer); return; }
+
+  if (spiel.aufdecken) { renderAufdecken(); return; }
+  if (spiel.phase === 'einpraegen') { renderEinpraegen(); return; }
+}
+
+spiel = laden();
+if (spiel) {
+  const wer = amZug(spiel);
+  ui.halter = wer === null ? 0 : wer;
+}
+render();
+
+})();
+</script>
+</body>
+</html>

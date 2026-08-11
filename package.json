@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "qwixx:build": "node qwixx/build.mjs",
-    "dreikampf:build": "node dreikampf/build.mjs"
+    "dreikampf:build": "node dreikampf/build.mjs",
+    "cabo:build": "node cabo/build.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.0",

@@ -52,23 +52,25 @@ function nachAenderung() {
   render();
 }
 
-/**
- * Speichert die laufende Seite als eigenständige HTML-Datei. Zuverlässigster Weg,
- * das Spiel offline aufs Handy zu bekommen: einmal im Browser öffnen, hier tippen —
- * und es landet als echter Download im Downloads-Ordner.
- * Gibt false zurück, wenn die Seite aus lose geladenen Modulen besteht (Dev-Modus).
- */
-function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+/** Baut aus <style> und <script> der laufenden Seite wieder ein vollständiges Dokument. */
+function seitenQuelltext(cssId, jsId, ersatzTitel) {
   const css = document.getElementById(cssId)?.textContent || '';
   const js = document.getElementById(jsId)?.textContent || '';
-  if (!css || !js) return false;
+  if (!css || !js) return null;
   const kopf = typeof SEITENKOPF === 'string'
     ? SEITENKOPF
     : `<meta charset="utf-8"><title>${ersatzTitel}</title>`;
-  const html = '<!doctype html>\n<html lang="de">\n<head>\n' + kopf
-    + '\n<style id="' + cssId + '">\n' + css + '\n</style>\n</head>\n<body>\n'
-    + '<div id="app"></div>\n<script id="' + jsId + '">\n' + js + '\n<' + '/script>\n'
-    + '</body>\n</html>\n';
+  return [
+    '<!doctype html>', '<html lang="de">', '<head>',
+    kopf,
+    `<style id="${cssId}">`, css, '</style>', '</head>', '<body>',
+    '<div id="app"></div>',
+    `<script id="${jsId}">`, js, '<' + '/script>',
+    '</body>', '</html>', ''
+  ].join('\n');
+}
+
+function browserDownload(dateiname, html) {
   const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
   const a = document.createElement('a');
   a.href = url;
@@ -77,8 +79,48 @@ function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
-  return true;
 }
+
+/**
+ * Speichert die laufende Seite als eigenständige HTML-Datei.
+ * In der Claude-App läuft das über deren Speichern-Dialog (landet dann im
+ * normalen Download-Ordner des Handys), sonst über einen Browser-Download.
+ * Rückgabe: 'ok' | 'txt' | 'abgelehnt' | 'dev'
+ */
+async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  const html = seitenQuelltext(cssId, jsId, ersatzTitel);
+  if (!html) return 'dev';
+
+  const dl = typeof window !== 'undefined' && window.claude ? window.claude.downloads : null;
+  if (dl) {
+    try {
+      await dl.save({ filename: dateiname, data: html });
+      return 'ok';
+    } catch (fehler) {
+      const code = fehler && fehler.code;
+      if (code === 'declined') return 'abgelehnt';
+      // Manche Ansichten erlauben kein .html — dann eben als Textdatei zum Umbenennen.
+      if (code === 'rejected_extension' || code === 'extension_not_enabled') {
+        try {
+          await dl.save({ filename: dateiname.replace(/\.html$/, '') + '.txt', data: html });
+          return 'txt';
+        } catch (zweiterFehler) {
+          if (zweiterFehler && zweiterFehler.code === 'declined') return 'abgelehnt';
+        }
+      }
+      // alles andere: normaler Browser-Download als Rückfallebene
+    }
+  }
+  browserDownload(dateiname, html);
+  return 'ok';
+}
+
+const SICHER_TEXT = {
+  ok: 'Gesichert — liegt in deinen Downloads',
+  txt: 'Als .txt gesichert — bitte in %NAME% umbenennen',
+  abgelehnt: 'Abgebrochen — nichts gespeichert',
+  dev: 'Geht nur in der fertigen Version',
+};
 
 /* ----------------------------------------------------------- Erste Anlage */
 
@@ -540,11 +582,13 @@ function renderMenue() {
   l.querySelector('#orte').onclick = () => { ui.overlay = 'orte'; render(); };
   l.querySelector('#stat').onclick = () => { ui.overlay = 'statistik'; render(); };
   l.querySelector('#code').onclick = () => { ui.overlay = 'code'; ui.codeStatus = ''; render(); };
-  l.querySelector('#datei').onclick = (e) => {
-    const ok = seiteAlsDateiSichern('dreikampf-css', 'dreikampf-js', 'Dreikampf.html', 'Dreikampf');
-    e.currentTarget.textContent = ok
-      ? 'Gesichert — liegt in deinen Downloads'
-      : 'Geht nur in der fertigen Version';
+  l.querySelector('#datei').onclick = async (e) => {
+    const knopf = e.currentTarget;
+    knopf.disabled = true;
+    knopf.textContent = 'Wird gespeichert …';
+    const erg = await seiteAlsDateiSichern('dreikampf-css', 'dreikampf-js', 'Dreikampf.html', 'Dreikampf');
+    knopf.textContent = SICHER_TEXT[erg].replace('%NAME%', 'Dreikampf.html');
+    knopf.disabled = erg === 'ok' || erg === 'txt';
   };
   l.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
   l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
