@@ -1,0 +1,1452 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0e1620">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Qwixx – das Würfelspiel für unterwegs. Zwei bis vier Leute an einem Handy, komplett offline.">
+<title>Qwixx</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1620%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%229%22%20width%3D%2246%22%20height%3D%2246%22%20rx%3D%2210%22%20fill%3D%22%23f3f2ee%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23dc3b2f%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23e8a300%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%2312995b%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%232a6ed4%22%2F%3E%3C%2Fsvg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230e1620%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%229%22%20width%3D%2246%22%20height%3D%2246%22%20rx%3D%2210%22%20fill%3D%22%23f3f2ee%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23dc3b2f%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2223%22%20r%3D%226.5%22%20fill%3D%22%23e8a300%22%2F%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%2312995b%22%2F%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2241%22%20r%3D%226.5%22%20fill%3D%22%232a6ed4%22%2F%3E%3C%2Fsvg%3E">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Qwixx%22%2C%22short_name%22%3A%22Qwixx%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%230e1620%22%2C%22theme_color%22%3A%22%230e1620%22%2C%22description%22%3A%22Qwixx-W%C3%BCrfelspiel%20f%C3%BCr%20zwei%20bis%20vier%20Leute%20an%20einem%20Handy%20%E2%80%94%20komplett%20offline.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%25230e1620%2522%252F%253E%253Crect%2520x%253D%25229%2522%2520y%253D%25229%2522%2520width%253D%252246%2522%2520height%253D%252246%2522%2520rx%253D%252210%2522%2520fill%253D%2522%2523f3f2ee%2522%252F%253E%253Ccircle%2520cx%253D%252223%2522%2520cy%253D%252223%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%2523dc3b2f%2522%252F%253E%253Ccircle%2520cx%253D%252241%2522%2520cy%253D%252223%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%2523e8a300%2522%252F%253E%253Ccircle%2520cx%253D%252223%2522%2520cy%253D%252241%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%252312995b%2522%252F%253E%253Ccircle%2520cx%253D%252241%2522%2520cy%253D%252241%2522%2520r%253D%25226.5%2522%2520fill%253D%2522%25232a6ed4%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D">
+<style>
+/* Qwixx — "Nachtflug": dunkle Kabine, das Wertungsblatt liegt darin als echtes Papier.
+   Bewusst einthemig: die vier Qwixx-Farben brauchen den hellen Papiergrund. */
+
+:root {
+  --ink-900: #0a1219;
+  --ink-850: #0e1620;
+  --ink-800: #131e2a;
+  --ink-700: #1a2735;
+  --ink-600: #223244;
+  --hairline: #2b3d50;
+  --fog: #93a5b6;
+  --fog-dim: #62778a;
+
+  --paper: #f3f2ee;
+  --paper-2: #e9e8e2;
+  --paper-line: #d5d4cc;
+  --paper-ink: #16202b;
+  --paper-ghost: #a9a8a1;
+
+  --red: #dc3b2f;      --red-tint: #f8dcd8;
+  --yellow: #e8a300;   --yellow-tint: #fbecc2;
+  --green: #12995b;    --green-tint: #d0eedd;
+  --blue: #2a6ed4;     --blue-tint: #d7e4f9;
+  --stone: #6c7a88;
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--ink-850);
+  background-image:
+    radial-gradient(120% 70% at 50% -10%, #1b2b3c 0%, rgba(27, 43, 60, 0) 60%),
+    linear-gradient(180deg, var(--ink-850) 0%, var(--ink-900) 100%);
+  background-attachment: fixed;
+  color: var(--fog);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid #7fd4ff; outline-offset: 2px; }
+
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Gerüst ---------- */
+
+#app { height: 100dvh; display: flex; flex-direction: column; }
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Flex-Spalte + auto-Margins am Kind: zentriert, solange es passt, und scrollt
+   sauber weiter, sobald es nicht mehr passt. */
+.scroll {
+  flex: 1; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column;
+}
+
+.pad { padding: 16px; }
+
+/* ---------- Startbildschirm ---------- */
+
+.start { justify-content: center; gap: 8px; padding: 24px 20px calc(24px + var(--safe-b)); text-align: center; }
+
+.brand {
+  font-family: var(--font-num);
+  font-size: clamp(44px, 15vw, 72px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 0;
+  color: var(--paper);
+}
+.brand span:nth-child(1) { color: var(--red); }
+.brand span:nth-child(2) { color: var(--yellow); }
+.brand span:nth-child(3) { color: var(--green); }
+.brand span:nth-child(4) { color: var(--blue); }
+
+.tagline { margin: 4px 0 24px; color: var(--fog-dim); font-size: 14px; }
+
+.namelist { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+
+.namerow { display: flex; align-items: center; gap: 10px; }
+
+.namerow .seat {
+  width: 30px; height: 30px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--ink-700);
+  border: 1px solid var(--hairline);
+  font-family: var(--font-num); font-size: 13px; color: var(--fog);
+}
+
+.field {
+  flex: 1;
+  background: var(--ink-800);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  padding: 13px 14px;
+  color: var(--paper);
+  font-size: 16px;
+  user-select: text; -webkit-user-select: text;
+}
+.field::placeholder { color: var(--fog-dim); }
+
+.iconbtn {
+  width: 42px; height: 42px; flex: none;
+  display: grid; place-items: center;
+  border-radius: var(--r-md);
+  background: var(--ink-700);
+  border: 1px solid var(--hairline);
+  color: var(--fog);
+  font-size: 20px;
+}
+.iconbtn:disabled { opacity: 0.3; }
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%;
+  padding: 15px 18px;
+  border-radius: var(--r-md);
+  font-weight: 650;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.35; transform: none; }
+
+.btn--primary { background: var(--paper); color: var(--ink-900); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); }
+.btn--ghost { background: var(--ink-700); color: var(--paper); border: 1px solid var(--hairline); }
+.btn--quiet { background: none; color: var(--fog-dim); font-weight: 500; font-size: 15px; padding: 12px; }
+.btn--danger { background: var(--ink-700); color: #f0a79f; border: 1px solid #4a2f2c; }
+
+.btnrow { display: flex; gap: 10px; }
+.btnrow .btn { width: auto; flex: 1; }
+
+/* ---------- Kopfzeile im Spiel ---------- */
+
+.topbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px 10px;
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(10, 18, 25, 0.7);
+  backdrop-filter: blur(8px);
+}
+
+.topbar .meta { flex: 1; min-width: 0; }
+.topbar .turn { font-family: var(--font-num); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fog-dim); }
+.topbar .who { font-size: 15px; font-weight: 650; color: var(--paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.topbar .tools { display: flex; gap: 6px; }
+.topbar .tool {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: var(--ink-700); border: 1px solid var(--hairline);
+  font-size: 15px;
+}
+
+/* ---------- Würfeltablett ---------- */
+
+.tray {
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.dicegroup { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+.die {
+  --pip: var(--paper-ink);
+  width: 46px; height: 46px;
+  border-radius: 11px;
+  padding: 6px;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  gap: 2px;
+  background: var(--paper);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.14), 0 3px 8px rgba(0, 0, 0, 0.4);
+  flex: none;
+}
+.die i { display: block; border-radius: 50%; background: var(--pip); align-self: center; justify-self: center; width: 76%; aspect-ratio: 1; }
+.die i.off { background: none; }
+
+.die--red { background: var(--red); --pip: #fff; }
+.die--yellow { background: var(--yellow); --pip: #3a2a00; }
+.die--green { background: var(--green); --pip: #fff; }
+.die--blue { background: var(--blue); --pip: #fff; }
+/* Farbwürfel einer gesperrten Reihe: sichtbar aus dem Spiel, nicht einfach weg. */
+.die--out {
+  background: none;
+  box-shadow: none;
+  border: 2px dashed currentColor;
+  color: var(--fog-dim);
+  opacity: 0.5;
+}
+.die--red.die--out { color: var(--red); }
+.die--yellow.die--out { color: var(--yellow); }
+.die--green.die--out { color: var(--green); }
+.die--blue.die--out { color: var(--blue); }
+.die--out::after {
+  content: "✕";
+  grid-area: 1 / 1 / -1 / -1;
+  place-self: center;
+  font-family: var(--font-ui);
+  font-size: 15px;
+}
+
+.die--rolling { animation: tumble 0.28s linear infinite; }
+@keyframes tumble {
+  0%   { transform: translateY(0) rotate(0deg); }
+  25%  { transform: translateY(-7px) rotate(-9deg); }
+  50%  { transform: translateY(0) rotate(6deg); }
+  75%  { transform: translateY(-4px) rotate(-4deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+.plus { font-family: var(--font-num); font-size: 20px; color: var(--fog-dim); }
+
+.sumchip {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  align-self: center;
+  padding: 6px 14px 7px;
+  border-radius: 999px;
+  background: var(--ink-700);
+  border: 1px solid var(--hairline);
+}
+.sumchip b { font-family: var(--font-num); font-size: 22px; color: var(--paper); font-weight: 700; }
+.sumchip span { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fog-dim); }
+
+.combos { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.combo {
+  font-family: var(--font-num); font-size: 12px;
+  padding: 4px 9px; border-radius: 999px;
+  border: 1px solid currentColor;
+  opacity: 0.55;
+}
+.combo--live { opacity: 1; background: currentColor; }
+.combo--live b { color: var(--ink-900); }
+.combo--red { color: var(--red); } .combo--yellow { color: var(--yellow); }
+.combo--green { color: var(--green); } .combo--blue { color: var(--blue); }
+
+/* ---------- Spielerreiter ---------- */
+
+.tabs { display: flex; gap: 6px; padding: 10px 14px 0; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  flex: none;
+  display: flex; align-items: baseline; gap: 7px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--ink-800);
+  border: 1px solid var(--hairline);
+  font-size: 13px;
+  color: var(--fog);
+  max-width: 46vw;
+}
+.tab em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab b { font-family: var(--font-num); font-size: 12px; color: var(--fog-dim); font-weight: 600; }
+.tab--view { background: var(--paper); color: var(--ink-900); border-color: var(--paper); }
+.tab--view b { color: var(--stone); }
+.tab--turn::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #7fd4ff; align-self: center; }
+
+/* ---------- Das Blatt ---------- */
+
+.sheet {
+  margin: auto 10px;
+  padding: 10px 9px 9px;
+  border-radius: var(--r-lg);
+  background: var(--paper);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.18) inset;
+  color: var(--paper-ink);
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+.sheet--readonly { filter: saturate(0.72); opacity: 0.9; }
+
+.row {
+  --c: var(--red);
+  --tint: var(--red-tint);
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+  padding: 5px;
+  border-radius: var(--r-md);
+  background: var(--tint);
+  position: relative;
+}
+.row--yellow { --c: var(--yellow); --tint: var(--yellow-tint); }
+.row--green  { --c: var(--green);  --tint: var(--green-tint); }
+.row--blue   { --c: var(--blue);   --tint: var(--blue-tint); }
+
+.row--locked::after {
+  content: "GESPERRT";
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-family: var(--font-num); font-size: 12px; letter-spacing: 0.32em; font-weight: 700;
+  color: var(--paper);
+  background: rgba(22, 32, 43, 0.62);
+  border-radius: var(--r-md);
+  pointer-events: none;
+}
+
+.cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--r-sm);
+  background: var(--c);
+  color: #fff;
+  display: grid; place-items: center;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(10px, 2.9vw, 17px);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  padding: 0;
+  transition: transform 0.12s ease;
+}
+.row--yellow .cell { color: #3a2a00; }
+
+.cell--passed { opacity: 0.34; }
+/* Angekreuzt: Zahl bleibt lesbar, liegt aber sichtbar unter dem Strich. */
+.cell--crossed { box-shadow: inset 0 0 0 99px rgba(12, 22, 32, 0.22); }
+.cell--crossed:not(.cell--lock) { color: rgba(255, 255, 255, 0.62); }
+.row--yellow .cell--crossed:not(.cell--lock) { color: rgba(58, 42, 0, 0.55); }
+.cell--lock { background: var(--c); font-size: clamp(11px, 3.2vw, 18px); }
+.cell--lock.cell--open { opacity: 0.42; }
+
+.cell--legal {
+  box-shadow: 0 0 0 2.5px var(--paper), 0 0 0 4.5px var(--paper-ink);
+  z-index: 2;
+  animation: breathe 1.5s ease-in-out infinite;
+}
+@keyframes breathe { 50% { transform: scale(1.08); } }
+
+.cell--pick {
+  box-shadow: 0 0 0 2.5px var(--paper), 0 0 0 5px var(--paper-ink);
+  transform: scale(1.12);
+  z-index: 3;
+  animation: none;
+}
+
+.lockico { width: 62%; height: 62%; }
+
+.x { position: absolute; inset: 12%; width: 76%; height: 76%; pointer-events: none; }
+.x path { stroke: #fff; stroke-width: 3.2; stroke-linecap: round; fill: none; }
+.row--yellow .x path { stroke: #3a2a00; }
+.x--ghost path { opacity: 0.45; stroke-dasharray: 3 3; }
+.x--fresh path { stroke-dasharray: 22; stroke-dashoffset: 22; animation: ink 0.22s ease-out forwards; }
+.x--fresh path:nth-child(2) { animation-delay: 0.1s; }
+@keyframes ink { to { stroke-dashoffset: 0; } }
+
+/* Fußzeile des Blattes: Fehlwürfe + Punktestand */
+.sheetfoot { display: flex; align-items: center; gap: 10px; padding: 2px 4px 0; }
+
+.penalties { display: flex; align-items: center; gap: 5px; flex: 1; }
+.penalties .lbl { font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--paper-ghost); font-weight: 700; }
+.penalties .box {
+  width: 21px; height: 21px; border-radius: 5px;
+  border: 1.5px solid var(--paper-line);
+  display: grid; place-items: center;
+  position: relative;
+}
+.penalties .box.on { background: var(--stone); border-color: var(--stone); }
+.penalties .box .x path { stroke: #fff; stroke-width: 3.6; }
+
+.totalchip {
+  font-family: var(--font-num);
+  font-size: 15px; font-weight: 700;
+  color: var(--paper-ink);
+  background: var(--paper-2);
+  border-radius: 8px;
+  padding: 4px 10px;
+}
+
+/* ---------- Aktionsleiste ---------- */
+
+.actions {
+  padding: 10px 14px calc(10px + var(--safe-b));
+  border-top: 1px solid var(--hairline);
+  background: rgba(10, 18, 25, 0.82);
+  backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.hint { text-align: center; font-size: 13px; color: var(--fog); min-height: 19px; }
+.hint b { color: var(--paper); font-weight: 650; }
+
+/* ---------- Overlays ---------- */
+
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: var(--ink-900);
+  display: flex; flex-direction: column;
+  animation: fade 0.18s ease-out;
+}
+@keyframes fade { from { opacity: 0; } }
+
+.handover {
+  justify-content: center; align-items: center; text-align: center;
+  gap: 6px; padding: 24px calc(24px + var(--safe-b));
+  background-image: radial-gradient(90% 50% at 50% 40%, #1b2b3c 0%, rgba(27, 43, 60, 0) 70%);
+}
+.handover .arrow { font-size: 40px; animation: nudge 1.4s ease-in-out infinite; }
+@keyframes nudge { 50% { transform: translateX(10px); } }
+.handover .lbl { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fog-dim); }
+.handover .name { font-size: clamp(30px, 9vw, 44px); font-weight: 700; color: var(--paper); line-height: 1.1; margin: 2px 0 4px; }
+.handover .task { color: var(--fog); margin-bottom: 26px; max-width: 30ch; }
+.handover .btn { max-width: 340px; }
+
+.toast {
+  position: fixed; z-index: 60;
+  left: 50%; bottom: calc(96px + var(--safe-b));
+  transform: translateX(-50%);
+  max-width: 88vw;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--ink-600);
+  border: 1px solid var(--hairline);
+  color: var(--paper);
+  font-size: 13px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  animation: rise 0.22s ease-out;
+}
+@keyframes rise { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+/* Regeln / Endstand als Blatt-Panel */
+.panel {
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px calc(16px + var(--safe-b));
+  width: 100%; max-width: 560px; margin-inline: auto;
+}
+.panel h2 { font-size: 22px; color: var(--paper); margin: 0 0 4px; letter-spacing: -0.02em; }
+.panel h3 { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fog-dim); margin: 22px 0 6px; }
+.panel p, .panel li { font-size: 15px; line-height: 1.55; color: var(--fog); }
+.panel p { margin: 0 0 8px; }
+.panel ul { margin: 0 0 8px; padding-left: 20px; }
+.panel li { margin-bottom: 5px; }
+.panel strong { color: var(--paper); font-weight: 650; }
+.panel .prose { user-select: text; -webkit-user-select: text; }
+
+.scoretable { width: 100%; border-collapse: collapse; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 13px; }
+.scoretable th, .scoretable td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--hairline); }
+.scoretable th:first-child, .scoretable td:first-child { text-align: left; font-family: var(--font-ui); }
+.scoretable th { color: var(--fog-dim); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.scoretable td { color: var(--fog); }
+.scoretable .tot { color: var(--paper); font-weight: 700; font-size: 15px; }
+.scoretable .win td { background: rgba(127, 212, 255, 0.07); }
+.scoretable th.c-red, .scoretable td.c-red { color: var(--red); }
+.scoretable th.c-yellow, .scoretable td.c-yellow { color: var(--yellow); }
+.scoretable th.c-green, .scoretable td.c-green { color: var(--green); }
+.scoretable th.c-blue, .scoretable td.c-blue { color: var(--blue); }
+
+.winner { text-align: center; padding: 12px 0 20px; }
+.winner .lbl { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fog-dim); }
+.winner .name { font-size: clamp(28px, 8vw, 40px); font-weight: 700; color: var(--paper); line-height: 1.15; }
+.winner .pts { font-family: var(--font-num); font-size: 15px; color: var(--fog); }
+
+.foot { text-align: center; font-size: 12px; color: var(--fog-dim); padding-top: 10px; }
+
+/* Etwas mehr Luft, wenn Platz da ist */
+@media (min-width: 480px) {
+  .sheet { max-width: 460px; margin-inline: auto; }
+  .tray, .actions, .topbar, .tabs { max-width: 520px; margin-inline: auto; width: 100%; }
+  .die { width: 52px; height: 52px; }
+}
+
+/* Querformat: flaches Fenster. Gestapelt geht das Blatt nicht mehr auf, also
+   wandert das Würfeltablett nach links neben das Blatt. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .screen--game {
+    display: grid;
+    width: 100%; max-width: 940px; margin-inline: auto;
+    grid-template-columns: minmax(230px, 38%) 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      "top  top"
+      "tray tabs"
+      "tray sheet"
+      "act  sheet";
+  }
+  .screen--game .topbar {
+    grid-area: top; max-width: none;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 7px); padding-bottom: 7px;
+  }
+  .screen--game .tray {
+    grid-area: tray; max-width: none;
+    justify-content: center; gap: 10px; padding: 10px 12px;
+    border-bottom: 0; border-right: 1px solid var(--hairline);
+  }
+  .screen--game .tabs { grid-area: tabs; max-width: none; padding-top: 8px; }
+  .screen--game .scroll { grid-area: sheet; }
+  .screen--game .actions {
+    grid-area: act; max-width: none;
+    border-top: 0; border-right: 1px solid var(--hairline); padding-top: 6px;
+  }
+
+  .die { width: 40px; height: 40px; }
+  .tab { padding: 5px 11px; font-size: 12px; }
+  .sheet { margin: auto; max-width: 440px; }
+  .hint { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+'use strict';
+// Qwixx — reine Spiellogik, ohne DOM. Alles serialisierbar (localStorage-tauglich).
+
+const COLORS = ['red', 'yellow', 'green', 'blue'];
+
+const COLOR_LABEL = { red: 'Rot', yellow: 'Gelb', green: 'Grün', blue: 'Blau' };
+
+// Rot/Gelb aufsteigend 2..12, Grün/Blau absteigend 12..2.
+const ROW_VALUES = {
+  red:    [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  yellow: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  green:  [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2],
+  blue:   [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2],
+};
+
+const LAST_INDEX = 10;               // Spalte der "letzten Zahl" (12 bzw. 2)
+const LOCK_MIN_CROSSES = 5;          // so viele Kreuze braucht es davor
+const PENALTY_POINTS = -5;
+const MAX_PENALTIES = 4;
+const LOCKS_TO_END = 2;
+
+// Kreuze (inkl. Schloss) -> Punkte. Dreieckszahlen, 12 Kreuze = 78.
+const SCORE_TABLE = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78];
+
+const emptyRow = () => new Array(11).fill(false);
+
+function makePlayer(name) {
+  return {
+    name,
+    rows: { red: emptyRow(), yellow: emptyRow(), green: emptyRow(), blue: emptyRow() },
+    locks: { red: false, yellow: false, green: false, blue: false },
+    penalties: 0,
+  };
+}
+
+function createGame(names) {
+  return {
+    v: 1,
+    players: names.map(makePlayer),
+    lockedRows: { red: false, yellow: false, green: false, blue: false },
+    active: 0,          // Index des aktiven Spielers (der würfelt)
+    turn: 1,
+    dice: null,         // { w1, w2, red, yellow, green, blue } — Farbe null = Würfel raus
+    pending: [],        // Warteschlange offener Entscheidungen
+    pendingLocks: [],   // Farben, die in diesem Zug gesperrt wurden (greifen am Zugende)
+    activeCrossed: false,
+    lastMoves: [],      // Züge dieser Runde, für die Zusammenfassung
+    phase: 'roll',      // 'roll' | 'decide' | 'over'
+  };
+}
+
+/** Index des am weitesten rechts liegenden Kreuzes, sonst -1. */
+function rightmostCross(rowArr) {
+  let last = -1;
+  for (let i = 0; i < rowArr.length; i++) if (rowArr[i]) last = i;
+  return last;
+}
+
+function crossCount(player, color) {
+  return player.rows[color].reduce((n, x) => n + (x ? 1 : 0), 0);
+}
+
+/** Darf Spieler `pi` in `color` das Feld `index` ankreuzen? */
+function canCross(state, pi, color, index) {
+  if (state.lockedRows[color]) return false;
+  const row = state.players[pi].rows[color];
+  if (index < 0 || index > LAST_INDEX) return false;
+  if (row[index]) return false;
+  if (index <= rightmostCross(row)) return false;  // nur von links nach rechts
+  if (index === LAST_INDEX && crossCount(state.players[pi], color) < LOCK_MIN_CROSSES) return false;
+  return true;
+}
+
+/** Die gerade anstehende Entscheidung: { p, kind: 'white' | 'color' } oder null. */
+function currentStep(state) {
+  return state.pending.length ? state.pending[0] : null;
+}
+
+function whiteSum(state) {
+  return state.dice ? state.dice.w1 + state.dice.w2 : null;
+}
+
+/**
+ * Alle erlaubten Züge der aktuellen Entscheidung.
+ * -> [{ color, index, value, from }]   from: 'white' | 'w1+farbe' …
+ */
+function legalMoves(state) {
+  const step = currentStep(state);
+  if (!step || !state.dice) return [];
+  const moves = [];
+  const push = (color, value, from) => {
+    const index = ROW_VALUES[color].indexOf(value);
+    if (index === -1) return;
+    if (!canCross(state, step.p, color, index)) return;
+    if (moves.some((m) => m.color === color && m.index === index)) return;
+    moves.push({ color, index, value, from });
+  };
+
+  if (step.kind === 'white') {
+    const sum = whiteSum(state);
+    for (const c of COLORS) push(c, sum, 'weiß + weiß');
+  } else {
+    for (const c of COLORS) {
+      const cd = state.dice[c];
+      if (cd == null) continue;
+      push(c, state.dice.w1 + cd, `weiß ${state.dice.w1} + ${COLOR_LABEL[c].toLowerCase()} ${cd}`);
+      push(c, state.dice.w2 + cd, `weiß ${state.dice.w2} + ${COLOR_LABEL[c].toLowerCase()} ${cd}`);
+    }
+  }
+  return moves;
+}
+
+/** Alle Kombinationen aus weiß + Farbe, auch die nicht ankreuzbaren (für die Anzeige). */
+function colorCombos(state) {
+  if (!state.dice) return [];
+  const out = [];
+  for (const c of COLORS) {
+    const cd = state.dice[c];
+    if (cd == null) continue;
+    for (const w of [state.dice.w1, state.dice.w2]) {
+      if (out.some((o) => o.color === c && o.value === w + cd)) continue;
+      out.push({ color: c, white: w, die: cd, value: w + cd });
+    }
+  }
+  return out;
+}
+
+function rollDice(state, rnd = Math.random) {
+  const d6 = () => 1 + Math.floor(rnd() * 6);
+  const dice = { w1: d6(), w2: d6(), red: null, yellow: null, green: null, blue: null };
+  for (const c of COLORS) if (!state.lockedRows[c]) dice[c] = d6();
+
+  state.dice = dice;
+  state.activeCrossed = false;
+  state.pendingLocks = [];
+  state.lastMoves = [];
+
+  // Der aktive Spieler entscheidet erst über die weiße Summe, dann über weiß+Farbe.
+  // Danach sind die Mitspieler mit der weißen Summe dran (ein Handy, eine Reihenfolge).
+  const n = state.players.length;
+  state.pending = [
+    { p: state.active, kind: 'white' },
+    { p: state.active, kind: 'color' },
+  ];
+  for (let i = 1; i < n; i++) state.pending.push({ p: (state.active + i) % n, kind: 'white' });
+
+  state.phase = 'decide';
+  return state;
+}
+
+/** Entscheidung abgeben: `move` aus legalMoves() oder null zum Aussetzen. */
+function submit(state, move) {
+  const step = currentStep(state);
+  if (!step) return state;
+
+  if (move) {
+    const player = state.players[step.p];
+    player.rows[move.color][move.index] = true;
+    if (move.index === LAST_INDEX) {
+      player.locks[move.color] = true;
+      if (!state.pendingLocks.includes(move.color)) state.pendingLocks.push(move.color);
+    }
+    if (step.p === state.active) state.activeCrossed = true;
+    state.lastMoves.push({ p: step.p, color: move.color, index: move.index, value: move.value });
+  }
+
+  state.pending.shift();
+  if (state.pending.length === 0) endTurn(state);
+  return state;
+}
+
+function endTurn(state) {
+  // Wer als aktiver Spieler kein einziges Kreuz gemacht hat, kassiert einen Fehlwurf.
+  if (!state.activeCrossed) state.players[state.active].penalties += 1;
+
+  // Sperren greifen erst jetzt — so kann in derselben Runde noch jemand dieselbe
+  // Zahl ankreuzen (im Original entscheiden alle gleichzeitig).
+  for (const c of state.pendingLocks) {
+    state.lockedRows[c] = true;
+    if (state.dice) state.dice[c] = null;
+  }
+
+  const locked = COLORS.filter((c) => state.lockedRows[c]).length;
+  const worstPenalties = Math.max(...state.players.map((p) => p.penalties));
+  if (locked >= LOCKS_TO_END || worstPenalties >= MAX_PENALTIES) {
+    state.phase = 'over';
+    return state;
+  }
+
+  state.active = (state.active + 1) % state.players.length;
+  state.turn += 1;
+  state.phase = 'roll';
+  return state;
+}
+
+function playerScore(player) {
+  const rows = {};
+  let total = 0;
+  for (const c of COLORS) {
+    const n = crossCount(player, c) + (player.locks[c] ? 1 : 0);
+    rows[c] = SCORE_TABLE[n];
+    total += rows[c];
+  }
+  const penalties = player.penalties * PENALTY_POINTS;
+  return { rows, penalties, total: total + penalties };
+}
+
+/** Endstand, absteigend sortiert. Bei Gleichstand teilen sich alle Platz 1. */
+function standings(state) {
+  return state.players
+    .map((p, i) => ({ index: i, name: p.name, ...playerScore(p) }))
+    .sort((a, b) => b.total - a.total);
+}
+
+function endReason(state) {
+  if (state.phase !== 'over') return null;
+  const locked = COLORS.filter((c) => state.lockedRows[c]);
+  if (locked.length >= LOCKS_TO_END) {
+    return `Zwei Reihen gesperrt (${locked.map((c) => COLOR_LABEL[c]).join(' & ')})`;
+  }
+  const who = state.players.find((p) => p.penalties >= MAX_PENALTIES);
+  return `${who.name} hat ${MAX_PENALTIES} Fehlwürfe`;
+}
+
+// Qwixx — Oberfläche für ein Handy, das zwischen zwei bis vier Leuten wandert.
+
+
+const SAVE_KEY = 'qwixx.save.v1';
+const PREFS_KEY = 'qwixx.prefs.v1';
+
+const app = document.getElementById('app');
+
+let game = null;
+let ui = {
+  screen: 'start',    // 'start' | 'game' | 'over'
+  holder: null,       // wer das Handy gerade in der Hand hat
+  viewPlayer: 0,      // wessen Blatt angezeigt wird
+  pick: null,         // vorgemerktes Feld { color, index }
+  rolling: false,
+  overlay: null,      // 'rules' | 'menu'
+  fresh: null,        // Schlüssel des zuletzt gezeichneten Kreuzes
+  toast: null,
+};
+let prefs = { sound: true, names: ['Spieler 1', 'Spieler 2'] };
+
+/* ---------------------------------------------------------------- Hilfen */
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const cellKey = (pi, color, index) => `${pi}:${color}:${index}`;
+
+function jitter(key) {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+  return ((h % 13) - 6) * 0.9;   // −5.4° … +5.4°
+}
+
+function crossSvg(key, extra = '') {
+  return `<svg class="x ${extra}" viewBox="0 0 24 24" aria-hidden="true"
+    style="transform:rotate(${jitter(key).toFixed(1)}deg)">
+    <path d="M5.5 5.5 18.5 18.5"/><path d="M18.5 5.5 5.5 18.5"/></svg>`;
+}
+
+const LOCK_SVG = `<svg class="lockico" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="M7.5 10.5V7.2a4.5 4.5 0 0 1 9 0v3.3" fill="none" stroke="currentColor" stroke-width="2.4"/>
+  <rect x="4.2" y="10.2" width="15.6" height="10.6" rx="2.4" fill="currentColor"/></svg>`;
+
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+
+function dieSvg(value, color) {
+  const on = PIPS[value] || [];
+  const cells = Array.from({ length: 9 }, (_, i) => `<i class="${on.includes(i) ? '' : 'off'}"></i>`).join('');
+  const cls = color ? ` die--${color}` : '';
+  const label = color ? `${COLOR_LABEL[color]}er Würfel` : 'weißer Würfel';
+  return `<div class="die${cls}${ui.rolling ? ' die--rolling' : ''}" role="img" aria-label="${label}: ${value}">${cells}</div>`;
+}
+
+/* ------------------------------------------------------------------ Ton */
+
+let audioCtx = null;
+function beep(freq, dur = 0.06, type = 'square', gain = 0.05) {
+  if (!prefs.sound) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + dur);
+  } catch { /* Ton ist Beiwerk */ }
+}
+const sfx = {
+  tap: () => beep(660, 0.04, 'triangle', 0.04),
+  cross: () => beep(880, 0.05, 'triangle', 0.06),
+  rattle: () => { [420, 560, 380, 640].forEach((f, i) => setTimeout(() => beep(f, 0.035, 'square', 0.03), i * 90)); },
+  lock: () => { beep(520, 0.09, 'sawtooth', 0.05); setTimeout(() => beep(780, 0.14, 'sawtooth', 0.05), 90); },
+  penalty: () => beep(150, 0.22, 'sawtooth', 0.06),
+  win: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.13, 'triangle', 0.05), i * 110)),
+};
+const buzz = (ms) => { try { navigator.vibrate?.(ms); } catch { /* egal */ } };
+
+let toastTimer = null;
+function setToast(msg) {
+  ui.toast = msg;
+  clearTimeout(toastTimer);
+  if (msg) toastTimer = setTimeout(() => { ui.toast = null; render(); }, 2800);
+}
+
+/* ------------------------------------------------------------ Speichern */
+
+function save() {
+  try {
+    if (game && game.phase !== 'over') {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ game, holder: ui.holder }));
+    } else {
+      localStorage.removeItem(SAVE_KEY);
+    }
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch { /* privater Modus o. ä. */ }
+}
+
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (raw) prefs = { ...prefs, ...JSON.parse(raw) };
+  } catch { /* Standardwerte behalten */ }
+}
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data?.game?.v === 1 && data.game.phase !== 'over') return data;
+  } catch { /* kaputter Spielstand wird ignoriert */ }
+  return null;
+}
+
+/* -------------------------------------------------------------- Ablauf */
+
+function requiredPlayer() {
+  if (!game || game.phase === 'over') return null;
+  if (game.phase === 'roll') return game.active;
+  const step = currentStep(game);
+  return step ? step.p : null;
+}
+
+/** Mitspieler ohne jede Möglichkeit überspringen — spart sinnlose Übergaben. */
+function autoSkip() {
+  let skipped = [];
+  while (game.phase === 'decide') {
+    const step = currentStep(game);
+    if (!step || step.p === game.active) break;
+    if (legalMoves(game).length > 0) break;
+    skipped.push(game.players[step.p].name);
+    submit(game, null);
+  }
+  if (skipped.length) {
+    setToast(`${skipped.join(' & ')} konnte nichts ankreuzen`);
+  }
+}
+
+function afterMutation() {
+  autoSkip();
+  if (game.phase === 'over') {
+    ui.screen = 'over';
+    ui.overlay = null;
+    sfx.win();
+  }
+  const need = requiredPlayer();
+  if (need !== null && need !== ui.holder) ui.pick = null;
+  else if (need !== null) ui.viewPlayer = need;
+  save();
+  render();
+}
+
+function startGame(names) {
+  game = createGame(names);
+  ui.holder = null;
+  ui.viewPlayer = 0;
+  ui.pick = null;
+  ui.fresh = null;
+  setToast(null);
+  ui.screen = 'game';
+  afterMutation();
+}
+
+function doRoll() {
+  if (ui.rolling) return;
+  ui.rolling = true;
+  sfx.rattle();
+  buzz(18);
+  render();
+
+  const spin = setInterval(() => {
+    // Nur die Optik: echte Werte kommen erst beim Stoppen.
+    game.dice = {
+      w1: 1 + Math.floor(Math.random() * 6), w2: 1 + Math.floor(Math.random() * 6),
+      red: game.lockedRows.red ? null : 1 + Math.floor(Math.random() * 6),
+      yellow: game.lockedRows.yellow ? null : 1 + Math.floor(Math.random() * 6),
+      green: game.lockedRows.green ? null : 1 + Math.floor(Math.random() * 6),
+      blue: game.lockedRows.blue ? null : 1 + Math.floor(Math.random() * 6),
+    };
+    render();
+  }, 75);
+
+  setTimeout(() => {
+    clearInterval(spin);
+    ui.rolling = false;
+    setToast(null);
+    rollDice(game);
+    afterMutation();
+  }, 640);
+}
+
+function confirmPick() {
+  const move = ui.pick && legalMoves(game).find((m) => m.color === ui.pick.color && m.index === ui.pick.index);
+  if (!move) return;
+  const step = currentStep(game);
+  ui.fresh = cellKey(step.p, move.color, move.index);
+  ui.pick = null;
+  setToast(null);
+  const locking = move.index === LAST_INDEX;
+  submit(game, move);
+  if (locking) { sfx.lock(); buzz([20, 50, 30]); } else { sfx.cross(); buzz(14); }
+  afterMutation();
+}
+
+function passStep() {
+  const step = currentStep(game);
+  const wasFehlwurf = step.p === game.active && step.kind === 'color' && !game.activeCrossed;
+  ui.pick = null;
+  setToast(null);
+  submit(game, null);
+  if (wasFehlwurf) { sfx.penalty(); buzz([30, 60, 30]); } else { sfx.tap(); }
+  afterMutation();
+}
+
+/* ------------------------------------------------------- Startbildschirm */
+
+function renderStart() {
+  const resume = loadSave();
+  const names = prefs.names.length >= 2 ? prefs.names : ['Spieler 1', 'Spieler 2'];
+
+  app.innerHTML = `
+    <div class="screen start">
+      <h1 class="brand"><span>Q</span><span>w</span><span>i</span>x<span>x</span></h1>
+      <p class="tagline">Das Würfelspiel für unterwegs — ein Handy, zwei bis vier Leute, kein Internet.</p>
+
+      <div class="namelist" id="names">
+        ${names.map((n, i) => nameRow(n, i)).join('')}
+      </div>
+
+      <div class="btnrow" style="margin-bottom:16px">
+        <button class="btn btn--ghost" id="rmPlayer" ${names.length <= 2 ? 'disabled' : ''}>− Spieler</button>
+        <button class="btn btn--ghost" id="addPlayer" ${names.length >= 4 ? 'disabled' : ''}>+ Spieler</button>
+      </div>
+
+      ${resume ? `<button class="btn btn--primary" id="resume">Angefangenes Spiel fortsetzen</button>
+                  <button class="btn btn--ghost" id="start" style="margin-top:10px">Neues Spiel</button>`
+               : `<button class="btn btn--primary" id="start">Spiel starten</button>`}
+
+      <button class="btn btn--quiet" id="rules" style="margin-top:12px">Spielregeln lesen</button>
+    </div>`;
+
+  const readNames = () => Array.from(app.querySelectorAll('.field'))
+    .map((f, i) => (f.value.trim() || `Spieler ${i + 1}`));
+
+  app.querySelector('#addPlayer').onclick = () => { prefs.names = [...readNames(), `Spieler ${readNames().length + 1}`]; save(); render(); };
+  app.querySelector('#rmPlayer').onclick = () => { prefs.names = readNames().slice(0, -1); save(); render(); };
+  app.querySelector('#rules').onclick = () => { ui.overlay = 'rules'; render(); };
+  app.querySelector('#start').onclick = () => { prefs.names = readNames(); save(); startGame(readNames()); };
+  if (resume) {
+    app.querySelector('#resume').onclick = () => {
+      game = resume.game;
+      ui.holder = resume.holder;
+      ui.screen = game.phase === 'over' ? 'over' : 'game';
+      ui.pick = null;
+      afterMutation();
+    };
+  }
+}
+
+function nameRow(name, i) {
+  return `<div class="namerow">
+    <span class="seat num">${i + 1}</span>
+    <input class="field" type="text" maxlength="14" value="${esc(name)}"
+           placeholder="Spieler ${i + 1}" aria-label="Name Spieler ${i + 1}" />
+  </div>`;
+}
+
+/* ------------------------------------------------------------ Spielblatt */
+
+function sheetHtml(pi, interactive) {
+  const player = game.players[pi];
+  const legal = interactive ? legalMoves(game) : [];
+  const score = playerScore(player);
+
+  const rows = COLORS.map((color) => {
+    const row = player.rows[color];
+    const edge = rightmostCross(row);
+    const rowLocked = game.lockedRows[color];
+
+    const cells = ROW_VALUES[color].map((value, index) => {
+      const key = cellKey(pi, color, index);
+      const crossed = row[index];
+      const isLegal = legal.some((m) => m.color === color && m.index === index);
+      const picked = ui.pick && ui.pick.color === color && ui.pick.index === index;
+      const dead = !crossed && (rowLocked || index <= edge
+        || (index === LAST_INDEX && crossCount(player, color) < LOCK_MIN_CROSSES));
+
+      const cls = ['cell'];
+      if (crossed) cls.push('cell--crossed');
+      else if (dead) cls.push('cell--passed');
+      if (isLegal && !picked) cls.push('cell--legal');
+      if (picked) cls.push('cell--pick');
+
+      const mark = crossed ? crossSvg(key, key === ui.fresh ? 'x--fresh' : '')
+                 : picked ? crossSvg(key, 'x--ghost') : '';
+      const tag = isLegal ? 'button' : 'div';
+      const attrs = isLegal
+        ? ` type="button" data-color="${color}" data-index="${index}" aria-label="${COLOR_LABEL[color]} ${value} ankreuzen"`
+        : ' aria-hidden="false"';
+      return `<${tag} class="${cls.join(' ')}"${attrs}>${value}${mark}</${tag}>`;
+    }).join('');
+
+    const lockKey = cellKey(pi, color, 'lock');
+    const lockCls = ['cell', 'cell--lock'];
+    if (!player.locks[color]) lockCls.push('cell--open');
+    const lockMark = player.locks[color] ? crossSvg(lockKey, lockKey === ui.fresh ? 'x--fresh' : '') : '';
+
+    return `<div class="row row--${color}${rowLocked ? ' row--locked' : ''}"
+                 role="group" aria-label="Reihe ${COLOR_LABEL[color]}">
+      ${cells}<div class="${lockCls.join(' ')}">${LOCK_SVG}${lockMark}</div></div>`;
+  }).join('');
+
+  const boxes = Array.from({ length: MAX_PENALTIES }, (_, i) => {
+    const on = i < player.penalties;
+    return `<span class="box${on ? ' on' : ''}">${on ? crossSvg(`p${pi}${i}`) : ''}</span>`;
+  }).join('');
+
+  return `<div class="sheet${interactive ? '' : ' sheet--readonly'}">
+    ${rows}
+    <div class="sheetfoot">
+      <div class="penalties">
+        <span class="lbl">Fehlwürfe</span>${boxes}
+        ${player.penalties ? `<span class="lbl num">−${player.penalties * 5}</span>` : ''}
+      </div>
+      <span class="totalchip">${score.total} Pkt</span>
+    </div>
+  </div>`;
+}
+
+/* -------------------------------------------------------------- Spielsicht */
+
+function renderGame() {
+  const step = currentStep(game);
+  const need = requiredPlayer();
+  const owner = ui.holder;
+  const viewingOther = ui.viewPlayer !== owner;
+  const interactive = !viewingOther && !ui.rolling && game.phase === 'decide' && step && step.p === owner;
+  const legal = interactive ? legalMoves(game) : [];
+
+  const d = game.dice;
+  const whiteDice = d ? `${dieSvg(d.w1)}<span class="plus">+</span>${dieSvg(d.w2)}` : `${dieSvg(1)}<span class="plus">+</span>${dieSvg(1)}`;
+  const colorDice = COLORS.map((c) => (d && d[c] != null
+    ? dieSvg(d[c], c)
+    : `<div class="die die--${c} die--out" role="img" aria-label="${COLOR_LABEL[c]} ausgeschieden"></div>`)).join('');
+
+  const showCombos = game.phase === 'decide' && step && step.kind === 'color' && !ui.rolling;
+  const combos = showCombos ? colorCombos(game).map((k) => {
+    const live = legal.some((m) => m.color === k.color && m.value === k.value);
+    return `<span class="combo combo--${k.color}${live ? ' combo--live' : ''}">
+      <b>${k.white}+${k.die}=${k.value}</b></span>`;
+  }).join('') : '';
+
+  const tabs = game.players.map((p, i) => {
+    const cls = ['tab'];
+    if (i === ui.viewPlayer) cls.push('tab--view');
+    if (i === need) cls.push('tab--turn');
+    return `<button class="${cls.join(' ')}" data-tab="${i}">
+      <em>${esc(p.name)}</em><b>${playerScore(p).total}</b></button>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="screen screen--game">
+      <header class="topbar">
+        <div class="meta">
+          <div class="turn">Runde ${game.turn} · ${esc(game.players[game.active].name)} würfelt</div>
+          <div class="who">${headline(step, owner)}</div>
+        </div>
+        <div class="tools">
+          <button class="tool" id="btnRules" aria-label="Regeln">?</button>
+          <button class="tool" id="btnMenu" aria-label="Menü">⋯</button>
+        </div>
+      </header>
+
+      <div class="tray">
+        <div class="dicegroup">${whiteDice}</div>
+        ${d && !ui.rolling ? `<div class="sumchip"><span>Weiße Summe</span><b>${whiteSum(game)}</b></div>` : ''}
+        <div class="dicegroup">${colorDice}</div>
+        ${combos ? `<div class="combos">${combos}</div>` : ''}
+      </div>
+
+      <div class="tabs">${tabs}</div>
+
+      <div class="scroll">${sheetHtml(ui.viewPlayer, interactive)}</div>
+
+      <div class="actions">
+        <div class="hint">${hintText(step, owner, viewingOther, legal)}</div>
+        ${actionButtons(step, owner, viewingOther, legal)}
+      </div>
+    </div>
+    ${ui.toast ? `<div class="toast">${esc(ui.toast)}</div>` : ''}`;
+
+  app.querySelector('#btnRules').onclick = () => { ui.overlay = 'rules'; render(); };
+  app.querySelector('#btnMenu').onclick = () => { ui.overlay = 'menu'; render(); };
+  app.querySelectorAll('[data-tab]').forEach((b) => {
+    b.onclick = () => { ui.viewPlayer = Number(b.dataset.tab); ui.pick = null; sfx.tap(); render(); };
+  });
+  app.querySelectorAll('.cell[data-color]').forEach((b) => {
+    b.onclick = () => {
+      const pick = { color: b.dataset.color, index: Number(b.dataset.index) };
+      ui.pick = (ui.pick && ui.pick.color === pick.color && ui.pick.index === pick.index) ? null : pick;
+      sfx.tap(); buzz(8); render();
+    };
+  });
+  app.querySelector('#btnRoll')?.addEventListener('click', doRoll);
+  app.querySelector('#btnConfirm')?.addEventListener('click', confirmPick);
+  app.querySelector('#btnClear')?.addEventListener('click', () => { ui.pick = null; sfx.tap(); render(); });
+  app.querySelector('#btnPass')?.addEventListener('click', passStep);
+  app.querySelector('#btnBack')?.addEventListener('click', () => { ui.viewPlayer = ui.holder; render(); });
+}
+
+function headline(step, owner) {
+  if (game.phase === 'roll') return 'Würfeln';
+  if (!step) return '';
+  if (step.kind === 'white') return `Weiße Summe · ${esc(game.players[step.p].name)}`;
+  return `Weiß + Farbe · nur ${esc(game.players[step.p].name)}`;
+}
+
+function hintText(step, owner, viewingOther, legal) {
+  if (viewingOther) return `Du schaust auf das Blatt von <b>${esc(game.players[ui.viewPlayer].name)}</b>.`;
+  if (ui.rolling) return 'Die Würfel rollen …';
+  if (game.phase === 'roll') return 'Du bist am Zug — wirf alle Würfel.';
+  if (!step) return '';
+
+  if (ui.pick) {
+    const v = ROW_VALUES[ui.pick.color][ui.pick.index];
+    const lockNote = ui.pick.index === LAST_INDEX ? ' — das <b>sperrt die Reihe</b> für alle!' : '';
+    return `<b>${COLOR_LABEL[ui.pick.color]} ${v}</b> ankreuzen${lockNote}`;
+  }
+
+  if (legal.length === 0) {
+    return step.kind === 'white'
+      ? 'Mit dieser Summe geht bei dir nichts mehr.'
+      : 'Keine Kombination aus Weiß + Farbe passt.';
+  }
+
+  if (step.kind === 'white') {
+    return `Summe <b>${whiteSum(game)}</b> — in <b>einer</b> beliebigen Reihe ankreuzen. Freiwillig.`;
+  }
+  return 'Nur du darfst jetzt einen weißen mit einem Farbwürfel kombinieren.';
+}
+
+function actionButtons(step, owner, viewingOther, legal) {
+  if (viewingOther) return `<button class="btn btn--ghost" id="btnBack">Zurück zu meinem Blatt</button>`;
+  if (ui.rolling) return `<button class="btn btn--primary" disabled>Würfeln …</button>`;
+  if (game.phase === 'roll') return `<button class="btn btn--primary" id="btnRoll">Würfeln</button>`;
+  if (!step) return '';
+
+  if (ui.pick) {
+    return `<div class="btnrow">
+      <button class="btn btn--ghost" id="btnClear">Doch nicht</button>
+      <button class="btn btn--primary" id="btnConfirm">Ankreuzen</button>
+    </div>`;
+  }
+
+  const lastActiveStep = step.p === game.active && step.kind === 'color';
+  const fehlwurf = lastActiveStep && !game.activeCrossed;
+
+  if (legal.length === 0) {
+    return `<button class="btn ${fehlwurf ? 'btn--danger' : 'btn--ghost'}" id="btnPass">
+      ${fehlwurf ? 'Fehlwurf hinnehmen (−5)' : 'Weiter'}</button>`;
+  }
+  return `<button class="btn ${fehlwurf ? 'btn--danger' : 'btn--ghost'}" id="btnPass">
+    ${fehlwurf ? 'Aussetzen — kostet Fehlwurf (−5)' : 'Aussetzen'}</button>`;
+}
+
+/* ------------------------------------------------------------- Übergabe */
+
+function renderHandover(need) {
+  const step = currentStep(game);
+  let task;
+  if (game.phase === 'roll') task = 'Du bist am Zug und würfelst alle Würfel.';
+  else if (step.kind === 'white') task = `Weiße Summe ${whiteSum(game)} — du darfst in einer Reihe ankreuzen.`;
+  else task = 'Weiß + Farbe kombinieren.';
+
+  const first = ui.holder === null;
+
+  const layer = document.createElement('div');
+  layer.className = 'overlay handover';
+  layer.innerHTML = `
+    <div class="arrow" aria-hidden="true">📱</div>
+    <div class="lbl">${first ? 'Es beginnt' : 'Handy weitergeben an'}</div>
+    <div class="name">${esc(game.players[need].name)}</div>
+    <p class="task">${esc(task)}</p>
+    <button class="btn btn--primary" id="btnReady">Ich hab's — weiter</button>`;
+  app.appendChild(layer);
+  layer.querySelector('#btnReady').onclick = () => {
+    ui.holder = need;
+    ui.viewPlayer = need;
+    ui.pick = null;
+    ui.fresh = null;
+    sfx.tap();
+    render();
+  };
+}
+
+/* -------------------------------------------------------------- Endstand */
+
+function renderOver() {
+  const table = standings(game);
+  const best = table[0].total;
+  const winners = table.filter((r) => r.total === best);
+
+  app.innerHTML = `
+    <div class="screen">
+      <div class="scroll">
+        <div class="panel">
+          <div class="winner">
+            <div class="lbl">${winners.length > 1 ? 'Unentschieden' : 'Gewonnen hat'}</div>
+            <div class="name">${winners.map((w) => esc(w.name)).join(' & ')}</div>
+            <div class="pts num">${best} Punkte</div>
+          </div>
+
+          <table class="scoretable">
+            <thead><tr>
+              <th>Spieler</th>
+              ${COLORS.map((c) => `<th class="c-${c}">${COLOR_LABEL[c].slice(0, 2)}</th>`).join('')}
+              <th>Fehl</th><th>Σ</th>
+            </tr></thead>
+            <tbody>
+              ${table.map((r) => `<tr class="${r.total === best ? 'win' : ''}">
+                <td>${esc(r.name)}</td>
+                ${COLORS.map((c) => `<td class="c-${c}">${r.rows[c]}</td>`).join('')}
+                <td>${r.penalties}</td>
+                <td class="tot">${r.total}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+
+          <p class="foot">Spielende: ${esc(endReason(game) || '')}</p>
+
+          <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
+            <button class="btn btn--primary" id="again">Nochmal spielen</button>
+            <button class="btn btn--ghost" id="home">Zum Start</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  app.querySelector('#again').onclick = () => startGame(game.players.map((p) => p.name));
+  app.querySelector('#home').onclick = () => { game = null; ui.screen = 'start'; save(); render(); };
+}
+
+/* --------------------------------------------------------------- Overlays */
+
+const SCORE_ROW = SCORE_TABLE.slice(1).map((p, i) => `<td>${p}</td>`).join('');
+
+function renderRules() {
+  const layer = document.createElement('div');
+  layer.className = 'overlay';
+  layer.innerHTML = `
+    <div class="scroll">
+      <div class="panel prose">
+        <h2>Qwixx — so geht's</h2>
+        <p>Kreuze in den vier Farbreihen möglichst viele Zahlen an. Wer am Ende die meisten
+           Punkte hat, gewinnt.</p>
+
+        <h3>Das Blatt</h3>
+        <ul>
+          <li><strong>Rot</strong> und <strong>Gelb</strong> laufen von 2 nach 12,
+              <strong>Grün</strong> und <strong>Blau</strong> von 12 nach 2.</li>
+          <li>Angekreuzt wird immer <strong>nur von links nach rechts</strong>. Übersprungene
+              Zahlen sind für dich für den Rest des Spiels weg.</li>
+        </ul>
+
+        <h3>Ein Zug</h3>
+        <ul>
+          <li>Der aktive Spieler wirft <strong>alle</strong> Würfel.</li>
+          <li><strong>Summe der beiden weißen Würfel:</strong> <em>jeder</em> darf sie in einer
+              beliebigen Reihe ankreuzen — muss aber nicht.</li>
+          <li><strong>Weiß + Farbe:</strong> zusätzlich darf <em>nur der aktive Spieler</em> einen
+              weißen mit einem Farbwürfel addieren und das Ergebnis in genau dieser Farbreihe
+              ankreuzen.</li>
+          <li>Beides ist erlaubt, eins davon, oder keins.</li>
+        </ul>
+
+        <h3>Fehlwurf</h3>
+        <p>Macht der aktive Spieler in seinem Zug <strong>kein einziges Kreuz</strong>, kostet
+           ihn das einen Fehlwurf: <strong>−5 Punkte</strong>. Mitspieler trifft das nie.</p>
+
+        <h3>Reihe sperren</h3>
+        <ul>
+          <li>Die letzte Zahl einer Reihe (12 bzw. 2) darfst du nur ankreuzen, wenn du in dieser
+              Reihe schon <strong>mindestens ${LOCK_MIN_CROSSES} Kreuze</strong> hast.</li>
+          <li>Wer sie ankreuzt, bekommt zusätzlich das <strong>Schloss</strong> — das zählt wie ein
+              weiteres Kreuz — und <strong>sperrt die Reihe für alle</strong>. Der Farbwürfel
+              fliegt raus.</li>
+        </ul>
+
+        <h3>Spielende</h3>
+        <p>Sobald <strong>zwei Reihen gesperrt</strong> sind oder jemand
+           <strong>${MAX_PENALTIES} Fehlwürfe</strong> hat, endet das Spiel nach dem laufenden Zug.</p>
+
+        <h3>Punkte je Reihe</h3>
+        <div style="overflow-x:auto">
+          <table class="scoretable">
+            <thead><tr><th>Kreuze</th>${SCORE_TABLE.slice(1).map((_, i) => `<th>${i + 1}</th>`).join('')}</tr></thead>
+            <tbody><tr><td>Punkte</td>${SCORE_ROW}</tr></tbody>
+          </table>
+        </div>
+        <p style="margin-top:8px">Das Schloss zählt als Kreuz mit. Fehlwürfe werden abgezogen.</p>
+
+        <h3>An einem Handy</h3>
+        <p>Das Handy wandert reihum. In der App entscheidet erst der aktive Spieler (weiße Summe,
+           dann Weiß + Farbe), danach die Mitspieler — am Tisch passiert das gleichzeitig.
+           Sperrt jemand eine Reihe, dürfen die anderen im selben Wurf dieselbe Zahl noch
+           ankreuzen, genau wie im Original.</p>
+
+        <div style="margin-top:22px"><button class="btn btn--primary" id="close">Verstanden</button></div>
+      </div>
+    </div>`;
+  app.appendChild(layer);
+  layer.querySelector('#close').onclick = () => { ui.overlay = null; render(); };
+}
+
+function renderMenu() {
+  const layer = document.createElement('div');
+  layer.className = 'overlay';
+  layer.innerHTML = `
+    <div class="scroll"><div class="panel">
+      <h2>Menü</h2>
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn--ghost" id="sound">Ton: ${prefs.sound ? 'an' : 'aus'}</button>
+        <button class="btn btn--ghost" id="rules">Spielregeln</button>
+        <button class="btn btn--danger" id="abort">Spiel abbrechen</button>
+        <button class="btn btn--primary" id="close">Weiterspielen</button>
+      </div>
+      <p class="foot" style="margin-top:24px">Der Spielstand wird auf diesem Gerät gespeichert —
+         die App darf zwischendurch geschlossen werden.</p>
+    </div></div>`;
+  app.appendChild(layer);
+  layer.querySelector('#sound').onclick = () => { prefs.sound = !prefs.sound; save(); render(); };
+  layer.querySelector('#rules').onclick = () => { ui.overlay = 'rules'; render(); };
+  layer.querySelector('#close').onclick = () => { ui.overlay = null; render(); };
+  layer.querySelector('#abort').onclick = () => {
+    game = null; ui.screen = 'start'; ui.overlay = null;
+    try { localStorage.removeItem(SAVE_KEY); } catch { /* egal */ }
+    render();
+  };
+}
+
+/* ----------------------------------------------------------------- Render */
+
+function render() {
+  if (ui.screen === 'start' || !game) renderStart();
+  else if (ui.screen === 'over' || game.phase === 'over') renderOver();
+  else renderGame();
+
+  if (ui.overlay === 'rules') renderRules();
+  else if (ui.overlay === 'menu') renderMenu();
+  else if (ui.screen === 'game' && game) {
+    const need = requiredPlayer();
+    if (need !== null && need !== ui.holder) renderHandover(need);
+  }
+}
+
+loadPrefs();
+render();
+
+})();
+</script>
+</body>
+</html>

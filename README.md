@@ -1,3 +1,7 @@
+> **Auch in diesem Repo:** [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx* für zwei bis
+> vier Leute an einem Handy, als eine einzige HTML-Datei, komplett offline. Eigenes Projekt,
+> unabhängig von Gildenerbe.
+
 # Gildenerbe (Guild Legacy)
 
 Ein aktives Action-RPG-Roguelite mit Automatisierungs-Meta-Progression im Classic-MMO-Stil.
