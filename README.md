@@ -5,6 +5,7 @@
 > - [`dreikampf/`](dreikampf/README.md) — *Wissen · Wahrheit · Wagnis*, ein Duell zu zweit mit
 >   Punktekonto über den ganzen Urlaub.
 > - [`cabo/`](cabo/README.md) — das Kartenspiel *Cabo*: vier verdeckte Karten, Peek, Spy, Swap.
+>   Wahlweise an einem Handy oder auf zweien, per QR gekoppelt ohne Server.
 
 # Gildenerbe (Guild Legacy)
 

@@ -370,3 +370,40 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Kopplung zweier Geräte ---------- */
+
+.qrfeld {
+  display: grid; place-items: center;
+  background: var(--karton); border-radius: var(--r-md);
+  padding: 14px; margin: 16px 0;
+}
+.qrfeld canvas { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; display: block; }
+
+.scanfenster {
+  position: relative; overflow: hidden;
+  border-radius: var(--r-md); background: #000;
+  aspect-ratio: 1; margin: 16px 0;
+  border: 1px solid var(--naht);
+}
+.scanfenster video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanfenster::after {
+  content: ""; position: absolute; inset: 16%;
+  border: 2px solid var(--messing); border-radius: 12px;
+  box-shadow: 0 0 0 999px rgba(7, 17, 14, 0.45);
+}
+
+.codeklappe { margin-top: 6px; }
+.codeklappe summary {
+  font-size: 13px; color: var(--nebel-dim); cursor: pointer;
+  padding: 8px 0; list-style: none;
+}
+.codeklappe summary::before { content: "▸ "; }
+.codeklappe[open] summary::before { content: "▾ "; }
+
+.codefeld {
+  width: 100%; min-height: 84px; resize: vertical; margin-top: 6px;
+  background: var(--feld); border: 1px solid var(--naht); border-radius: 10px;
+  padding: 10px; color: var(--nebel); font-family: var(--font-num); font-size: 11px;
+  word-break: break-all; user-select: text; -webkit-user-select: text;
+}

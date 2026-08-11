@@ -7,13 +7,24 @@ import {
   aufdeckenSchliessen, caboRufen, handSumme, naechsteRunde, endstand,
   amZug, obenAufAblage,
   PAAR_MINDESTENS, paarStarten, paarWaehlen, paarAbbrechen, paarAufdecken, paarBestaetigen,
+  START_ANSEHEN,
 } from './engine.js';
+import { qrZeichnen } from './qr.js';
+import { funkAufbauen, scannerStarten, scannerMoeglich } from './funk.js';
 
 const KEY = 'cabo.v1';
 const app = document.getElementById('app');
 
 let spiel = null;
-let ui = { overlay: null, halter: 0, animRunde: 0 };
+let ui = {
+  overlay: null,
+  halter: 0,           // nur im Modus 'lokal': wer das Handy in der Hand hat
+  animRunde: 0,
+  modus: 'lokal',      // 'lokal' | 'online'
+  meinIndex: 0,        // im Modus 'online': welcher Spieler dieses Gerät ist
+  funk: null,
+  kopplung: null,      // Zustand des Verbindungsaufbaus
+};
 
 /* ------------------------------------------------------------------ Hilfen */
 
@@ -24,6 +35,8 @@ const name = (i) => esc(spiel.spieler[i].name);
 const buzz = (ms) => { try { navigator.vibrate?.(ms); } catch { /* egal */ } };
 
 function sichern() {
+  // Auf zwei Geräten führt der Gastgeber Buch; ein halber Stand im Gast wäre wertlos.
+  if (ui.modus === 'online') return;
   try { localStorage.setItem(KEY, JSON.stringify(spiel)); } catch { /* privater Modus */ }
 }
 
@@ -107,6 +120,64 @@ const SICHER_TEXT = {
   dev: 'Geht nur in der fertigen Version',
 };
 
+/* ------------------------------------------------- Züge ausführen oder senden */
+
+const AKTIONEN = {
+  ziehen, tauschen, abwerfen, kraftAuslassen, peek, spy, swapEigene, swapFremde,
+  aufdeckenSchliessen, caboRufen, einpraegenFertig, naechsteRunde,
+  paarStarten, paarWaehlen, paarAbbrechen, paarAufdecken, paarBestaetigen,
+};
+
+/** Der Gastgeber rechnet, der Gast schickt nur seine Absicht hinüber. */
+function tun(name, ...args) {
+  if (ui.modus === 'online' && ui.meinIndex !== 0) {
+    ui.funk?.senden({ typ: 'aktion', name, args });
+    return;
+  }
+  AKTIONEN[name](spiel, ...args);
+  if (ui.modus === 'online') standSenden();
+  weiter();
+}
+
+/**
+ * Was der Gast zu sehen bekommt: alle Handkarten und der Nachziehstapel sind
+ * wertlos gemacht. Nur was ihm zusteht — seine gezogene Karte, seine
+ * Enthüllung, seine Startkarten — kommt im Klartext mit.
+ */
+function standFuer(s, empfaenger) {
+  const k = JSON.parse(JSON.stringify(s));
+  if (k.phase === 'auswertung' || k.phase === 'ende') return k;
+
+  const zu = (karte) => ({ id: karte.id, w: null });
+  for (const p of k.spieler) p.hand = p.hand.map(zu);
+  k.stapel = k.stapel.map(zu);
+
+  if (k.dran !== empfaenger) {
+    if (k.gezogene) k.gezogene = zu(k.gezogene);
+    if (k.aufdecken) k.aufdecken = { ...k.aufdecken, karte: zu(k.aufdecken.karte) };
+  }
+  if (k.phase === 'einpraegen' && k.einpraegenIndex === empfaenger) {
+    const echt = s.spieler[empfaenger].hand;
+    k.spieler[empfaenger].hand = echt.map((c, i) => (
+      i >= echt.length - START_ANSEHEN ? { ...c } : zu(c)));
+  }
+  return k;                                   // aufgedeckte Paare sehen ohnehin alle
+}
+
+function standSenden() {
+  ui.funk?.senden({ typ: 'stand', spiel: standFuer(spiel, 1) });
+}
+
+/** Wessen Blatt zeigt dieses Gerät als „meins“? */
+function michSelbst() {
+  return ui.modus === 'online' ? ui.meinIndex : spiel.dran;
+}
+
+/** Darf an diesem Gerät gerade überhaupt getippt werden? */
+function ichBinDran() {
+  return ui.modus !== 'online' || spiel.dran === ui.meinIndex;
+}
+
 /* ------------------------------------------------------------------ Karten */
 
 function karteHtml(karte, { offen = false, klasse = '', attrs = '', waehlbar = false } = {}) {
@@ -138,22 +209,237 @@ function renderStart() {
         <div class="feldreihe"><input class="feld" id="n1" maxlength="16" value="Christina" aria-label="Name 2"></div>
 
         <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
-          <button class="btn btn--messing" id="los">Austeilen</button>
+          <button class="btn btn--messing" id="los">An einem Handy</button>
+          <button class="btn btn--geist" id="zweiGeraete">Auf zwei Handys</button>
           <button class="btn btn--leise" id="regeln">Wie es funktioniert</button>
         </div>
       </div>
     </div>`;
 
+  const namenLesen = () => [0, 1].map((i) => app.querySelector(`#n${i}`).value.trim() || `Spieler ${i + 1}`);
+
   app.querySelector('#los').onclick = () => {
-    const namen = [0, 1].map((i) => app.querySelector(`#n${i}`).value.trim() || `Spieler ${i + 1}`);
-    spiel = neuesSpiel(namen);
-    spiel.geber = namen.length - 1;      // damit die erste Person anfängt
-    neueRunde(spiel);
-    ui.halter = 0;
-    ui.animRunde = 0;
-    weiter();
+    ui.modus = 'lokal';
+    spielAnlegen(namenLesen());
+  };
+  app.querySelector('#zweiGeraete').onclick = () => {
+    ui.namen = namenLesen();
+    ui.kopplung = { schritt: 'rolle' };
+    render();
   };
   app.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+}
+
+function spielAnlegen(namen) {
+  spiel = neuesSpiel(namen);
+  spiel.geber = namen.length - 1;      // damit die erste Person anfängt
+  neueRunde(spiel);
+  ui.halter = 0;
+  ui.animRunde = 0;
+  weiter();
+}
+
+/* ------------------------------------------------------------- Zwei Geräte */
+
+function kopplungAbbrechen() {
+  ui.kopplung?.scannerStoppen?.();
+  ui.funk?.schliessen();
+  ui.funk = null;
+  ui.kopplung = null;
+  ui.modus = 'lokal';
+  ui.meinIndex = 0;
+  render();
+}
+
+async function kopplungStarten(rolle) {
+  ui.modus = 'online';
+  ui.meinIndex = rolle === 'gastgeber' ? 0 : 1;
+  ui.kopplung = { schritt: 'moment', rolle, hinweis: '', fehler: '' };
+  render();
+
+  ui.funk = funkAufbauen({
+    gastgeber: rolle === 'gastgeber',
+    aufZustand: (text, verbunden) => {
+      if (verbunden) return verbindungSteht();
+      if (ui.kopplung && ui.kopplung.schritt !== 'scannen') {
+        ui.kopplung.hinweis = text;
+        render();
+      }
+      return undefined;
+    },
+    aufNachricht: nachrichtVerarbeiten,
+  });
+
+  if (rolle === 'gastgeber') {
+    ui.kopplung.code = await ui.funk.eigenerCode();
+    ui.kopplung.schritt = 'zeigen';
+  } else {
+    ui.kopplung.schritt = 'scannen';
+  }
+  render();
+}
+
+async function fremdenCodeAnnehmen(code) {
+  const k = ui.kopplung;
+  try {
+    await ui.funk.codeLesen(code);
+    if (!ui.kopplung) return;            // war schon verbunden
+    if (k.rolle === 'gast') {
+      ui.kopplung.code = await ui.funk.eigenerCode();
+      ui.kopplung.schritt = 'zeigen';
+    } else {
+      ui.kopplung.schritt = 'warten';
+    }
+    k.fehler = '';
+  } catch (fehler) {
+    if (!ui.kopplung) return;
+    k.fehler = fehler.message || 'Der Code passt nicht.';
+  }
+  render();
+}
+
+function verbindungSteht() {
+  ui.kopplung?.scannerStoppen?.();
+  ui.kopplung = null;
+  if (ui.meinIndex === 0) {
+    const namen = ui.namen || ['Gastgeber', 'Gast'];
+    spiel = neuesSpiel(namen);
+    spiel.geber = namen.length - 1;
+    neueRunde(spiel);
+    ui.animRunde = 0;
+    standSenden();
+  }
+  render();
+}
+
+function nachrichtVerarbeiten(m) {
+  if (m.typ === 'stand' && ui.meinIndex !== 0) {
+    spiel = m.spiel;
+    render();
+    return;
+  }
+  if (m.typ === 'aktion' && ui.meinIndex === 0 && spiel) {
+    const erlaubt = amZug(spiel) === 1 || spiel.phase === 'auswertung';
+    if (!erlaubt || !AKTIONEN[m.name]) return;
+    AKTIONEN[m.name](spiel, ...(m.args || []));
+    standSenden();
+    render();
+  }
+}
+
+function renderKopplung() {
+  const k = ui.kopplung;
+  const gastgeber = k.rolle === 'gastgeber';
+
+  if (k.schritt === 'rolle') {
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>Auf zwei Handys</h2>
+        <p>Beide Geräte müssen im <strong>selben WLAN oder Hotspot</strong> sein. Zum Koppeln
+           zeigt ihr euch gegenseitig einen QR-Code — danach läuft alles direkt zwischen den
+           Handys, ganz ohne Internet.</p>
+        <div class="wahlreihe" style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn--messing" id="alsGastgeber">Dieses Handy teilt aus</button>
+          <button class="btn btn--geist" id="alsGast">Dieses Handy macht mit</button>
+          <button class="btn btn--leise" id="zurueck">Doch an einem Handy</button>
+        </div>
+        <p class="hinweiszeile" style="margin-top:20px">Wer austeilt, führt Buch. Fangt beide
+           gleichzeitig an — einer tippt oben, der andere unten.</p>
+      </div></div></div>`;
+    app.querySelector('#alsGastgeber').onclick = () => kopplungStarten('gastgeber');
+    app.querySelector('#alsGast').onclick = () => kopplungStarten('gast');
+    app.querySelector('#zurueck').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'moment') {
+    app.innerHTML = `<div class="screen"><div class="scroll"><div class="blatt">
+      <h2>Einen Moment</h2><p>Verbindungsdaten werden vorbereitet …</p></div></div></div>`;
+    return;
+  }
+
+  if (k.schritt === 'warten') {
+    app.innerHTML = `<div class="screen"><div class="scroll"><div class="blatt">
+      <h2>Verbinde …</h2>
+      <p>${esc(k.hinweis || 'Die Handys suchen sich gerade.')}</p>
+      <div class="hinweis" style="margin-top:16px">Dauert es länger als ein paar Sekunden,
+        blockiert der Hotspot vermutlich die direkte Verbindung. Dann hilft nur: beide ins
+        gleiche WLAN, oder doch an einem Handy spielen.</div>
+      <div style="margin-top:20px"><button class="btn btn--geist" id="abbruch">Abbrechen</button></div>
+    </div></div></div>`;
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'zeigen') {
+    const weiterText = gastgeber ? 'Weiter — jetzt den anderen Code scannen' : 'Fertig, warte auf Verbindung';
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>${gastgeber ? 'Zeig diesen Code' : 'Jetzt du zurück'}</h2>
+        <p>${gastgeber
+          ? 'Die andere Person scannt ihn mit „Dieses Handy macht mit“.'
+          : 'Halt den Code dem Gastgeber hin — er scannt ihn.'}</p>
+        <div class="qrfeld"><canvas id="qr" width="720" height="720"></canvas></div>
+        <details class="codeklappe">
+          <summary>Kamera streikt? Code als Text</summary>
+          <textarea class="codefeld" id="raus" readonly>${esc(k.code || '')}</textarea>
+          <button class="btn btn--geist" id="kopieren" style="margin-top:8px">Kopieren</button>
+        </details>
+        <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn--messing" id="weiterKoppeln">${weiterText}</button>
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+
+    try {
+      qrZeichnen(app.querySelector('#qr'), k.code, { hell: '#f6f2e7', dunkel: '#16211e' });
+    } catch {
+      app.querySelector('.qrfeld').textContent = 'Code zu lang für einen QR — nimm den Textcode.';
+    }
+    app.querySelector('#kopieren').onclick = async (e) => {
+      try { await navigator.clipboard.writeText(k.code); e.currentTarget.textContent = 'Kopiert'; }
+      catch { app.querySelector('#raus').select(); }
+    };
+    app.querySelector('#weiterKoppeln').onclick = () => {
+      ui.kopplung.schritt = gastgeber ? 'scannen' : 'warten';
+      ui.kopplung.scannerVersucht = false;
+      render();
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  // schritt === 'scannen'
+  app.innerHTML = `
+    <div class="screen"><div class="scroll"><div class="blatt">
+      <h2>Code scannen</h2>
+      <p>${gastgeber ? 'Halte die Kamera auf den Code des Gasts.' : 'Halte die Kamera auf den Code des Gastgebers.'}</p>
+      <div class="scanfenster"><video id="kamera" muted playsinline></video></div>
+      ${k.fehler ? `<div class="hinweis" style="border-color:#4b2b28;color:#f0a79d">${esc(k.fehler)}</div>` : ''}
+      <details class="codeklappe" ${scannerMoeglich() ? '' : 'open'}>
+        <summary>Kamera streikt? Code eintippen oder einfügen</summary>
+        <textarea class="codefeld" id="rein" placeholder="CB1O|…"></textarea>
+        <button class="btn btn--geist" id="uebernehmen" style="margin-top:8px">Code übernehmen</button>
+      </details>
+      <div style="margin-top:20px"><button class="btn btn--leise" id="abbruch">Abbrechen</button></div>
+    </div></div></div>`;
+
+  app.querySelector('#uebernehmen').onclick = () => {
+    const code = app.querySelector('#rein').value.trim();
+    if (code) fremdenCodeAnnehmen(code);
+  };
+  app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+
+  // Nur einmal versuchen: ein fehlgeschlagener Start rendert neu und würde sich
+  // sonst selbst wieder aufrufen.
+  if (!k.scannerVersucht) {
+    k.scannerVersucht = true;
+    scannerStarten(
+      app.querySelector('#kamera'),
+      (code) => { k.scannerStoppen = null; fremdenCodeAnnehmen(code); },
+      (fehler) => { k.fehler = fehler.message; render(); },
+    ).then((stoppen) => { if (ui.kopplung === k) k.scannerStoppen = stoppen; else stoppen(); });
+  }
 }
 
 /* ------------------------------------------------------------------- Tisch */
@@ -161,6 +447,7 @@ function renderStart() {
 /** Darf diese Karte gerade angetippt werden? */
 function waehlbar(besitzer, index) {
   if (spiel.aufdecken) return false;
+  if (!ichBinDran()) return false;
   const ich = spiel.dran;
   if (spiel.phase === 'gezogen') return besitzer === ich;
   if (spiel.phase === 'paar') return besitzer === ich && !spiel.paar.ergebnis;
@@ -196,7 +483,7 @@ function handHtml(p, klein) {
 }
 
 function renderTisch() {
-  const ich = spiel.dran;
+  const ich = michSelbst();
   const gegner = spiel.spieler.map((_, i) => i).filter((i) => i !== ich);
   const oben = obenAufAblage(spiel);
   const ziehbar = spiel.phase === 'zug';
@@ -211,8 +498,9 @@ function renderTisch() {
     <div class="screen">
       <header class="kopf">
         <div class="titel">
-          <div class="ober">Runde ${spiel.runde} · bis ${SPIELENDE_AB}</div>
-          <h1>${name(ich)} ist dran</h1>
+          <div class="ober">Runde ${spiel.runde} · bis ${SPIELENDE_AB}${
+            ui.modus === 'online' ? ' · zwei Geräte' : ''}</div>
+          <h1>${name(spiel.dran)} ist dran</h1>
         </div>
         <div class="werkzeuge">
           <button class="werkzeug" id="btnRegeln" aria-label="Regeln">?</button>
@@ -269,40 +557,40 @@ function renderTisch() {
   app.querySelector('#btnRegeln').onclick = () => { ui.overlay = 'regeln'; render(); };
   app.querySelector('#btnMenue').onclick = () => { ui.overlay = 'menue'; render(); };
   app.querySelectorAll('[data-zug]').forEach((b) => {
-    b.onclick = () => { ziehen(spiel, b.dataset.zug); buzz(10); weiter(); };
+    b.onclick = () => { tun('ziehen', b.dataset.zug); buzz(10); };
   });
   app.querySelectorAll('[data-p]').forEach((b) => {
     b.onclick = () => karteGetippt(Number(b.dataset.p), Number(b.dataset.i));
   });
   app.querySelector('#btnCabo')?.addEventListener('click', () => {
     if (!confirm('Cabo rufen? Alle anderen bekommen noch genau einen Zug.')) return;
-    caboRufen(spiel);
+    tun('caboRufen');
     buzz([20, 50, 30]);
-    weiter();
   });
-  app.querySelector('#btnAbwerfen')?.addEventListener('click', () => { abwerfen(spiel); buzz(10); weiter(); });
-  app.querySelector('#btnKraftAus')?.addEventListener('click', () => { kraftAuslassen(spiel); weiter(); });
-  app.querySelector('#btnPaar')?.addEventListener('click', () => { paarStarten(spiel); buzz(8); weiter(); });
-  app.querySelector('#btnPaarAb')?.addEventListener('click', () => { paarAbbrechen(spiel); weiter(); });
-  app.querySelector('#btnPaarAuf')?.addEventListener('click', () => { paarAufdecken(spiel); buzz(18); weiter(); });
+  app.querySelector('#btnAbwerfen')?.addEventListener('click', () => { tun('abwerfen'); buzz(10); });
+  app.querySelector('#btnKraftAus')?.addEventListener('click', () => { tun('kraftAuslassen'); });
+  app.querySelector('#btnPaar')?.addEventListener('click', () => { tun('paarStarten'); buzz(8); });
+  app.querySelector('#btnPaarAb')?.addEventListener('click', () => { tun('paarAbbrechen'); });
+  app.querySelector('#btnPaarAuf')?.addEventListener('click', () => { tun('paarAufdecken'); buzz(18); });
 }
 
 function karteGetippt(p, i) {
-  if (spiel.phase === 'gezogen') { tauschen(spiel, i); buzz(12); return weiter(); }
-  if (spiel.phase === 'paar') { paarWaehlen(spiel, i); buzz(8); return weiter(); }
-  if (spiel.phase !== 'kraft' || !spiel.kraft || spiel.kraft.erledigt) return;
-  const art = spiel.kraft.art;
-  if (art === 'peek') peek(spiel, i);
-  else if (art === 'spy') spy(spiel, p, i);
-  else if (art === 'swap') {
-    if (p === spiel.dran) swapEigene(spiel, i);
-    else swapFremde(spiel, p, i);
-  }
   buzz(10);
-  weiter();
+  if (spiel.phase === 'gezogen') return tun('tauschen', i);
+  if (spiel.phase === 'paar') return tun('paarWaehlen', i);
+  if (spiel.phase !== 'kraft' || !spiel.kraft || spiel.kraft.erledigt) return undefined;
+  const art = spiel.kraft.art;
+  if (art === 'peek') return tun('peek', i);
+  if (art === 'spy') return tun('spy', p, i);
+  if (art === 'swap') return p === spiel.dran ? tun('swapEigene', i) : tun('swapFremde', p, i);
+  return undefined;
 }
 
 function ansage() {
+  if (spiel.phase === 'einpraegen') {
+    return `<b>${name(spiel.einpraegenIndex)}</b> prägt sich gerade zwei Karten ein.`;
+  }
+  if (!ichBinDran()) return `<b>${name(spiel.dran)}</b> ist am Zug. Schau zu.`;
   if (spiel.phase === 'zug') {
     return 'Zieh vom <b>Stapel</b> oder nimm die <b>Ablage</b>.';
   }
@@ -332,6 +620,7 @@ function ansage() {
 }
 
 function knoepfe() {
+  if (!ichBinDran()) return '';
   if (spiel.phase === 'zug') {
     return `<button class="btn btn--geist" id="btnCabo">Cabo rufen</button>`;
   }
@@ -372,7 +661,7 @@ function renderEinpraegen() {
     <p class="hinweis">Deine beiden unteren Karten. Merk sie dir — danach sind sie wieder zu.</p>
     <button class="btn btn--messing" id="ok">Gemerkt</button>`;
   app.appendChild(layer);
-  layer.querySelector('#ok').onclick = () => { einpraegenFertig(spiel); buzz(10); weiter(); };
+  layer.querySelector('#ok').onclick = () => { buzz(10); tun('einpraegenFertig'); };
 }
 
 function renderPaarErgebnis() {
@@ -395,9 +684,8 @@ function renderPaarErgebnis() {
     <button class="btn btn--messing" id="ok">Weiter</button>`;
   app.appendChild(layer);
   layer.querySelector('#ok').onclick = () => {
-    paarBestaetigen(spiel);
     buzz(e.stimmt ? [20, 40, 20] : 60);
-    weiter();
+    tun('paarBestaetigen');
   };
 }
 
@@ -411,7 +699,7 @@ function renderAufdecken() {
     <p class="hinweis">Position ${a.index + 1} von ${HANDGROESSE}. Nur du siehst das.</p>
     <button class="btn btn--messing" id="ok">Gemerkt</button>`;
   app.appendChild(layer);
-  layer.querySelector('#ok').onclick = () => { aufdeckenSchliessen(spiel); weiter(); };
+  layer.querySelector('#ok').onclick = () => { tun('aufdeckenSchliessen'); };
 }
 
 /* --------------------------------------------------------------- Übergabe */
@@ -476,9 +764,8 @@ function renderRundenende() {
     </div></div>`;
   app.appendChild(layer);
   layer.querySelector('#weiterRunde').onclick = () => {
-    naechsteRunde(spiel);
-    ui.halter = -1;               // erzwingt die Übergabe an die erste Person
-    weiter();
+    ui.halter = -1;               // erzwingt im lokalen Spiel die Übergabe
+    tun('naechsteRunde');
   };
 }
 
@@ -513,12 +800,17 @@ function renderEnde() {
 
   app.querySelector('#nochmal').onclick = () => {
     const namen = spiel.spieler.map((p) => p.name);
-    spiel = neuesSpiel(namen);
-    spiel.geber = namen.length - 1;
-    neueRunde(spiel);
-    ui.halter = 0;
-    ui.animRunde = 0;
-    weiter();
+    if (ui.modus === 'online') {
+      if (ui.meinIndex !== 0) return;          // der Gastgeber teilt neu aus
+      spiel = neuesSpiel(namen);
+      spiel.geber = namen.length - 1;
+      neueRunde(spiel);
+      ui.animRunde = 0;
+      standSenden();
+      render();
+      return;
+    }
+    spielAnlegen(namen);
   };
   app.querySelector('#zumStart').onclick = () => {
     spiel = null;
@@ -638,6 +930,12 @@ function renderMenue() {
 /* ----------------------------------------------------------------- Render */
 
 function render() {
+  if (ui.kopplung) { renderKopplung(); return; }
+  if (!spiel && ui.modus === 'online') {
+    app.innerHTML = `<div class="screen"><div class="scroll"><div class="blatt">
+      <h2>Verbunden</h2><p>Warte auf die Karten vom Gastgeber …</p></div></div></div>`;
+    return;
+  }
   if (!spiel) { renderStart(); return; }
   if (spiel.phase === 'ende') { renderEnde(); return; }
 
@@ -648,11 +946,14 @@ function render() {
   if (spiel.phase === 'auswertung') { renderRundenende(); return; }
 
   const wer = amZug(spiel);
-  if (wer !== null && wer !== ui.halter) { renderUebergabe(wer); return; }
+  if (ui.modus === 'lokal' && wer !== null && wer !== ui.halter) { renderUebergabe(wer); return; }
 
+  // Das aufgedeckte Paar sehen beide, alles andere nur das betroffene Gerät.
   if (spiel.phase === 'paar' && spiel.paar.ergebnis) { renderPaarErgebnis(); return; }
-  if (spiel.aufdecken) { renderAufdecken(); return; }
-  if (spiel.phase === 'einpraegen') { renderEinpraegen(); return; }
+  if (spiel.aufdecken && spiel.dran === michSelbst()) { renderAufdecken(); return; }
+  if (spiel.phase === 'einpraegen' && spiel.einpraegenIndex === michSelbst()) {
+    renderEinpraegen();
+  }
 }
 
 spiel = laden();

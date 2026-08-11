@@ -57,6 +57,30 @@ Genau 100 Punkte werden auf 50 zurückgesetzt.
 Ist der Nachziehstapel leer, wandert die Ablage bis auf die oberste Karte zurück und wird
 gemischt — die Runde läuft weiter.
 
+## Auf zwei Handys
+
+Beide Geräte müssen im **selben WLAN oder Hotspot** hängen. Auf dem Startbildschirm
+**Auf zwei Handys** wählen, dann ein Gerät als Gastgeber, das andere als Gast.
+
+1. Der Gastgeber zeigt einen QR-Code, der Gast scannt ihn.
+2. Der Gast zeigt einen zurück, der Gastgeber scannt.
+3. Fertig — ab hier läuft alles direkt zwischen den Handys.
+
+Es gibt keinen Server dazwischen: Die Geräte tauschen beim Koppeln nur ihre lokalen
+Adressen aus (der Code ist rund 90 Zeichen kurz) und reden danach direkt miteinander.
+Ohne Internet, ohne Konto.
+
+**Wenn die Kamera streikt** — etwa in einer eingebetteten Ansicht — lässt sich der Code
+unter „Code als Text“ auch kopieren oder eintippen. Bei 90 Zeichen ist das zumutbar.
+
+**Wenn es gar nicht klappt:** Viele Hotspots trennen verbundene Geräte voneinander ab.
+Dann hilft nur ein gemeinsames WLAN — oder eben das Weiterreichen an einem Handy.
+
+Der Gastgeber führt Buch und rechnet; der Gast schickt nur seine Züge hinüber und bekommt
+den Spielstand zurück. Dabei werden **alle Kartenwerte herausgefiltert**, die den Gast
+nichts angehen — er bekommt nur seine eigene gezogene Karte, seine eigenen Enthüllungen
+und am Rundenende die aufgedeckten Blätter.
+
 ## An einem Handy
 
 Das Handy wandert reihum. Alles, was nur eine Person sehen darf — die beiden Startkarten,
@@ -70,11 +94,13 @@ die eben angesehenen. Genau das ist das Spiel.
 
 ```
 cabo/src/engine.js   Deck, Züge, Kräfte, Cabo, Wertung — ohne DOM
-cabo/src/ui.js       Tisch, Kartenflip, Übergabe, Auswertung
+cabo/src/qr.js       QR-Erzeuger (Byte-Modus, Stufe L, Versionen 1–15), Eigenbau
+cabo/src/funk.js     Direktverbindung zweier Geräte, Kurzcode, QR-Scanner
+cabo/src/ui.js       Tisch, Kartenflip, Übergabe, Kopplung, Auswertung
 cabo/src/style.css   Gestaltung
 cabo/build.mjs       fügt alles zu cabo/index.html zusammen
 cabo/index.html      das Ergebnis — die eine Datei, die man mitnimmt (generiert)
-tests/cabo/          44 Tests (vitest)
+tests/cabo/          53 Tests (vitest): Spielregeln und QR-Erzeuger
 ```
 
 Nach Änderungen in `src/`:
@@ -85,6 +111,9 @@ npm test             # prüft Deck, Kräfte, Cabo-Wertung und Rundenlauf
 ```
 
 `cabo/index.html` wird generiert — Änderungen gehören nach `cabo/src/`.
+
+Der QR-Erzeuger wurde beim Bau modulgenau gegen eine Referenzbibliothek geprüft und mit
+einem echten Decoder zurückgelesen; die Tests halten diese Ergebnisse fest.
 
 ## Nicht umgesetzt
 
