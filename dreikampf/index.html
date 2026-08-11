@@ -1,0 +1,2000 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#17111c">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Dreikampf – Wissen, Wahrheit, Wagnis. Duell zu zweit an einem Handy, komplett offline.">
+<title>Dreikampf</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2317111c%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2216%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%230e6f77%22%20transform%3D%22rotate(-11%2020%2033)%22%2F%3E%3Crect%20x%3D%2222%22%20y%3D%2214%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23a83a5c%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2216%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23cf8f1a%22%20transform%3D%22rotate(11%2044%2033)%22%2F%3E%3C%2Fsvg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2317111c%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2216%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%230e6f77%22%20transform%3D%22rotate(-11%2020%2033)%22%2F%3E%3Crect%20x%3D%2222%22%20y%3D%2214%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23a83a5c%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2216%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23cf8f1a%22%20transform%3D%22rotate(11%2044%2033)%22%2F%3E%3C%2Fsvg%3E">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Dreikampf%22%2C%22short_name%22%3A%22Dreikampf%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%2317111c%22%2C%22theme_color%22%3A%22%2317111c%22%2C%22description%22%3A%22Wissen%2C%20Wahrheit%2C%20Wagnis%20%E2%80%94%20Duell%20zu%20zweit%20an%20einem%20Handy%2C%20mit%20Punktekonto%20f%C3%BCr%20den%20ganzen%20Urlaub.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%252317111c%2522%252F%253E%253Crect%2520x%253D%252210%2522%2520y%253D%252216%2522%2520width%253D%252220%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%25230e6f77%2522%2520transform%253D%2522rotate(-11%252020%252033)%2522%252F%253E%253Crect%2520x%253D%252222%2522%2520y%253D%252214%2522%2520width%253D%252220%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%2523a83a5c%2522%252F%253E%253Crect%2520x%253D%252234%2522%2520y%253D%252216%2522%2520width%253D%252220%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%2523cf8f1a%2522%2520transform%253D%2522rotate(11%252044%252033)%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D">
+<style>
+/* Dreikampf — „Wiener Abend“: tiefes Aubergine als Grund, die drei Disziplinen
+   als Karten in Juwelenfarben. Bewusst einthemig, alles explizit gefärbt. */
+
+:root {
+  --ground: #17111c;
+  --ground-2: #0e0a12;
+  --panel: #221a29;
+  --panel-2: #2b2134;
+  --hairline: #3b2d46;
+  --fog: #b1a2bd;
+  --fog-dim: #7a6a87;
+  --paper: #f2edea;
+  --gold: #e2b459;
+  --gold-dim: #8e6f2e;
+
+  --wissen: #0e6f77;
+  --wissen-hell: #14929c;
+  --wahrheit: #a83a5c;
+  --wahrheit-hell: #c94f74;
+  --wagnis: #cf8f1a;
+  --wagnis-hell: #eaa92c;
+
+  --gut: #3fa46a;
+  --schlecht: #cf5a4e;
+
+  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+
+  --r-md: 14px;
+  --r-lg: 22px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+
+body {
+  background: var(--ground);
+  background-image:
+    radial-gradient(130% 60% at 50% -8%, #2c1f36 0%, rgba(44, 31, 54, 0) 62%),
+    linear-gradient(180deg, var(--ground) 0%, var(--ground-2) 100%);
+  background-attachment: fixed;
+  color: var(--fog);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- Gerüst ---------- */
+
+#app { min-height: 100dvh; display: flex; flex-direction: column; }
+.screen { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; }
+/* Flex-Spalte, damit die Bühne den Rest füllt und die Karte mittig sitzt. */
+.scroll {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column;
+}
+.wrap { width: 100%; max-width: 560px; margin-inline: auto; padding: 0 18px; }
+
+.kopf {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(var(--safe-t) + 12px) 18px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+.kopf .titel { flex: 1; min-width: 0; }
+.kopf .ober {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--fog-dim); font-weight: 700;
+}
+.kopf h1 {
+  margin: 0; font-family: var(--font-display); font-weight: 400;
+  font-size: 25px; letter-spacing: -0.01em; color: var(--paper);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.werkzeuge { display: flex; gap: 7px; }
+.werkzeug {
+  width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+  background: var(--panel); border: 1px solid var(--hairline); color: var(--fog); font-size: 15px;
+}
+
+/* ---------- Knöpfe ---------- */
+
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; padding: 16px 18px; border-radius: var(--r-md);
+  font-weight: 650; font-size: 16px; letter-spacing: -0.01em;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.btn:active { transform: scale(0.985); }
+.btn:disabled { opacity: 0.3; transform: none; box-shadow: none; filter: saturate(0.5); }
+.btn--gold { background: var(--gold); color: #2a1c02; box-shadow: 0 8px 26px rgba(226, 180, 89, 0.18); }
+.btn--hell { background: var(--paper); color: #1d1524; }
+.btn--geist { background: var(--panel); color: var(--paper); border: 1px solid var(--hairline); }
+.btn--leise { background: none; color: var(--fog-dim); font-weight: 500; font-size: 15px; padding: 13px; }
+.btn--ja { background: var(--gut); color: #05210f; }
+.btn--nein { background: var(--panel); color: #eda79d; border: 1px solid #4c2f2c; }
+.reihe { display: flex; gap: 10px; }
+.reihe .btn { width: auto; flex: 1; }
+
+/* ---------- Startbildschirm ---------- */
+
+.start { justify-content: center; text-align: center; padding: 30px 20px calc(28px + var(--safe-b)); gap: 0; }
+.wortmarke {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(38px, 12vw, 58px); line-height: 1.02; margin: 0;
+  color: var(--paper); letter-spacing: -0.02em;
+}
+.wortmarke em { font-style: italic; color: var(--gold); }
+.dreiwort {
+  display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+  margin: 14px 0 26px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700;
+}
+.dreiwort span:nth-child(1) { color: var(--wissen-hell); }
+.dreiwort span:nth-child(2) { color: var(--wahrheit-hell); }
+.dreiwort span:nth-child(3) { color: var(--wagnis-hell); }
+.dreiwort i { color: var(--fog-dim); font-style: normal; }
+
+.feldreihe { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.feld {
+  flex: 1; background: var(--panel); border: 1px solid var(--hairline);
+  border-radius: var(--r-md); padding: 14px; color: var(--paper); font-size: 16px;
+  user-select: text; -webkit-user-select: text; width: 100%;
+}
+.feld::placeholder { color: var(--fog-dim); }
+.feldlabel {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--fog-dim); font-weight: 700; text-align: left; margin: 18px 0 7px;
+}
+
+/* ---------- Punktetafel ---------- */
+
+.tafel {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: 10px; margin: 20px 0 8px;
+  background: var(--panel); border: 1px solid var(--hairline);
+  border-radius: var(--r-lg); padding: 20px 14px;
+}
+.tafel .seite { text-align: center; min-width: 0; }
+.tafel .name {
+  font-size: 14px; line-height: 20px; height: 20px; color: var(--fog);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;
+}
+.tafel .zahl {
+  font-family: var(--font-num); font-size: clamp(34px, 11vw, 46px);
+  font-weight: 700; line-height: 1; color: var(--paper); letter-spacing: -0.03em;
+}
+.tafel .seite--vorn .zahl { color: var(--gold); }
+.tafel .seite--vorn .name::before { content: "♛ "; color: var(--gold); font-size: 12px; }
+.tafel .gegen { font-family: var(--font-display); font-size: 15px; color: var(--fog-dim); font-style: italic; }
+.tafel .dranmarke {
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold); font-weight: 700; margin-top: 4px; min-height: 14px;
+}
+
+.abstand { text-align: center; font-size: 13px; color: var(--fog-dim); margin-bottom: 20px; }
+
+/* ---------- Disziplin-Karten ---------- */
+
+.disziplinen { display: flex; flex-direction: column; gap: 12px; }
+
+.dis {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; text-align: left;
+  padding: 18px 18px; border-radius: var(--r-lg);
+  color: #fff; background: var(--c);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease;
+}
+.dis:active { transform: scale(0.985); }
+.dis--wissen { --c: var(--wissen); }
+.dis--wahrheit { --c: var(--wahrheit); }
+.dis--wagnis { --c: var(--wagnis); color: #2a1c02; }
+.dis .zahl {
+  font-family: var(--font-num); font-size: 24px; font-weight: 700;
+  width: 62px; flex: none; text-align: center; opacity: 0.92;
+}
+.dis .txt { flex: 1; min-width: 0; }
+.dis .txt b { display: block; font-family: var(--font-display); font-size: 21px; font-weight: 400; letter-spacing: 0.01em; }
+.dis .txt small { display: block; font-size: 12.5px; opacity: 0.82; line-height: 1.35; }
+.dis .rest { font-family: var(--font-num); font-size: 11px; opacity: 0.7; }
+
+/* ---------- Die Frage-Karte ---------- */
+
+.buehne { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 18px; gap: 14px; }
+
+.karte {
+  border-radius: var(--r-lg);
+  background: var(--c); color: var(--ct);
+  padding: 24px 22px 22px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+  animation: geben 0.4s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+.karte--wissen { --c: var(--wissen); --ct: #fff; }
+.karte--wahrheit { --c: var(--wahrheit); --ct: #fff; }
+.karte--wagnis { --c: var(--wagnis); --ct: #2a1c02; }
+@keyframes geben {
+  from { opacity: 0; transform: translateY(24px) rotateY(-10deg) scale(0.95); }
+}
+
+.karte .marke {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  font-weight: 700; opacity: 0.78; margin-bottom: 14px;
+}
+.karte .marke .pille {
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2); letter-spacing: 0.1em;
+}
+.karte--wagnis .marke .pille { background: rgba(42, 28, 2, 0.16); }
+.karte .frage {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(21px, 5.6vw, 28px); line-height: 1.32;
+  text-wrap: balance; margin: 0;
+}
+
+.optionen { display: flex; flex-direction: column; gap: 9px; margin-top: 18px; }
+.opt {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; text-align: left; padding: 13px 15px;
+  border-radius: 12px; font-size: 15.5px; line-height: 1.3;
+  background: rgba(255, 255, 255, 0.14); color: inherit;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+}
+.karte--wagnis .opt { background: rgba(42, 28, 2, 0.1); border-color: rgba(42, 28, 2, 0.2); }
+.opt .buchstabe {
+  width: 25px; height: 25px; flex: none; border-radius: 7px;
+  display: grid; place-items: center;
+  font-family: var(--font-num); font-size: 12px; font-weight: 700;
+  background: rgba(255, 255, 255, 0.22);
+}
+.opt--gewaehlt { background: rgba(255, 255, 255, 0.95); color: #1d1524; border-color: #fff; }
+.opt--gewaehlt .buchstabe { background: rgba(0, 0, 0, 0.12); }
+.opt--richtig { background: var(--gut); border-color: var(--gut); color: #fff; }
+.opt--richtig .buchstabe { background: rgba(0, 0, 0, 0.2); }
+.opt--falsch { background: rgba(0, 0, 0, 0.28); border-color: rgba(0, 0, 0, 0.3); color: rgba(255, 255, 255, 0.72); }
+.opt .wer {
+  margin-left: auto; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  font-weight: 700; opacity: 0.85; text-align: right; flex: none;
+}
+
+.anweisung {
+  text-align: center; font-size: 14.5px; color: var(--fog);
+  padding: 0 4px; text-wrap: balance;
+}
+.anweisung b { color: var(--paper); font-weight: 650; }
+
+.fuss {
+  padding: 12px 18px calc(14px + var(--safe-b));
+  border-top: 1px solid var(--hairline);
+  display: flex; flex-direction: column; gap: 9px;
+  background: rgba(14, 10, 18, 0.86); backdrop-filter: blur(8px);
+}
+
+/* ---------- Ergebnis ---------- */
+
+.bilanz { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 4px; }
+.bilanzzeile {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--panel); border: 1px solid var(--hairline);
+  border-radius: var(--r-md); padding: 13px 15px;
+}
+.bilanzzeile .wer { flex: 1; color: var(--paper); font-weight: 600; min-width: 0; }
+.bilanzzeile .was { font-size: 13px; color: var(--fog-dim); }
+.bilanzzeile .pkt { font-family: var(--font-num); font-weight: 700; font-size: 18px; flex: none; }
+.pkt--plus { color: var(--gut); }
+.pkt--null { color: var(--fog-dim); }
+.pkt--minus { color: var(--schlecht); }
+
+/* ---------- Verlauf ---------- */
+
+.verlauf { display: flex; flex-direction: column; gap: 7px; }
+.eintrag {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: 12px;
+  background: var(--panel); border: 1px solid var(--hairline);
+}
+.eintrag .marker { width: 4px; align-self: stretch; border-radius: 3px; flex: none; }
+.eintrag--wissen .marker { background: var(--wissen-hell); }
+.eintrag--wahrheit .marker { background: var(--wahrheit-hell); }
+.eintrag--wagnis .marker { background: var(--wagnis-hell); }
+.eintrag .txt { flex: 1; min-width: 0; }
+.eintrag .txt b { display: block; font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--fog-dim); }
+.eintrag .txt span {
+  display: block; font-size: 13.5px; color: var(--fog);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.eintrag .delta { font-family: var(--font-num); font-size: 12.5px; flex: none; text-align: right; line-height: 1.3; }
+
+/* ---------- Overlays ---------- */
+
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: var(--ground-2);
+  display: flex; flex-direction: column;
+  animation: einblenden 0.18s ease-out;
+}
+@keyframes einblenden { from { opacity: 0; } }
+
+.uebergabe {
+  justify-content: center; align-items: center; text-align: center;
+  padding: 26px calc(24px + var(--safe-b));
+  background-image: radial-gradient(90% 50% at 50% 40%, #2c1f36 0%, rgba(44, 31, 54, 0) 70%);
+}
+.uebergabe .pfeil { font-size: 40px; animation: schubs 1.5s ease-in-out infinite; }
+@keyframes schubs { 50% { transform: translateX(10px); } }
+.uebergabe .lbl { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fog-dim); font-weight: 700; margin-top: 4px; }
+.uebergabe .name {
+  font-family: var(--font-display); font-size: clamp(30px, 9vw, 42px);
+  color: var(--paper); line-height: 1.1; margin: 4px 0 6px;
+}
+.uebergabe .auftrag { color: var(--fog); margin: 0 0 26px; max-width: 30ch; }
+.uebergabe .btn { max-width: 340px; }
+
+.blatt { padding: calc(var(--safe-t) + 16px) 18px calc(18px + var(--safe-b)); width: 100%; max-width: 560px; margin-inline: auto; }
+.blatt h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; color: var(--paper); margin: 0 0 6px; }
+.blatt h3 {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--gold-dim); font-weight: 700; margin: 24px 0 8px;
+}
+.blatt p, .blatt li { font-size: 15px; line-height: 1.6; color: var(--fog); }
+.blatt p { margin: 0 0 10px; }
+.blatt ul { margin: 0 0 10px; padding-left: 20px; }
+.blatt li { margin-bottom: 6px; }
+.blatt strong { color: var(--paper); font-weight: 650; }
+.lesbar { user-select: text; -webkit-user-select: text; }
+
+.wahlreihe { display: flex; flex-direction: column; gap: 8px; }
+.wahl {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 13px 15px; border-radius: var(--r-md);
+  background: var(--panel); border: 1px solid var(--hairline); color: var(--fog);
+}
+.wahl b { display: block; color: var(--paper); font-size: 15px; }
+.wahl small { display: block; font-size: 12.5px; color: var(--fog-dim); }
+.wahl--an { border-color: var(--gold); background: var(--panel-2); }
+.wahl--an::after { content: "✓"; margin-left: auto; color: var(--gold); font-weight: 700; }
+
+.code {
+  width: 100%; min-height: 116px; resize: vertical;
+  background: var(--panel); border: 1px solid var(--hairline); border-radius: 12px;
+  padding: 12px; color: var(--fog); font-family: var(--font-num); font-size: 11px;
+  word-break: break-all; user-select: text; -webkit-user-select: text;
+}
+
+.statz { display: grid; grid-template-columns: 1fr auto auto; gap: 8px 14px; align-items: baseline; }
+.statz .k { font-size: 13.5px; color: var(--fog); }
+.statz .v { font-family: var(--font-num); font-size: 14px; color: var(--paper); text-align: right; min-width: 34px; }
+.statz .kopfz { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fog-dim); font-weight: 700; text-align: right; }
+
+.hinweis {
+  background: var(--panel); border: 1px solid var(--hairline);
+  border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--fog-dim); line-height: 1.5;
+}
+
+@media (min-width: 720px) {
+  .buehne { max-width: 620px; margin-inline: auto; width: 100%; }
+  .fuss > * { max-width: 560px; margin-inline: auto; width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+'use strict';
+// Allgemeinwissen. Die richtige Antwort steht hier immer an erster Stelle —
+// die Engine mischt die Optionen beim Ziehen, damit die Position nichts verrät.
+//
+// { id, cat, q, o: [richtig, falsch, falsch, falsch] }
+
+const WISSEN = [
+  // ── Wien & Österreich ───────────────────────────────────────────────────
+  { id: 'at01', cat: 'Wien', q: 'Welcher Fluss fließt durch Wien?', o: ['Donau', 'Rhein', 'Elbe', 'Moldau'] },
+  { id: 'at02', cat: 'Wien', q: 'Welcher große Komponist wurde in Wien geboren?', o: ['Franz Schubert', 'W. A. Mozart', 'Ludwig van Beethoven', 'Joseph Haydn'] },
+  { id: 'at03', cat: 'Wien', q: 'Wie heißt der Dom mitten in der Wiener Innenstadt?', o: ['Stephansdom', 'Karlsdom', 'Michaelerkirche', 'Ruprechtskirche'] },
+  { id: 'at04', cat: 'Wien', q: 'Welches Schloss war die Sommerresidenz der Habsburger?', o: ['Schönbrunn', 'Belvedere', 'Hofburg', 'Laxenburg'] },
+  { id: 'at05', cat: 'Wien', q: 'Was ist eine „Wiener Melange“?', o: ['Kaffee mit aufgeschäumter Milch', 'Ein Mischbrot', 'Ein Kartenspiel', 'Ein Walzer'] },
+  { id: 'at06', cat: 'Wien', q: 'Welcher Wiener Maler schuf „Der Kuss“?', o: ['Gustav Klimt', 'Egon Schiele', 'Oskar Kokoschka', 'Friedensreich Hundertwasser'] },
+  { id: 'at07', cat: 'Wien', q: 'Welche Torte wurde 1832 in Wien erfunden?', o: ['Sachertorte', 'Linzer Torte', 'Esterházytorte', 'Malakofftorte'] },
+  { id: 'at08', cat: 'Wien', q: 'Wie heißt Wiens Prachtstraße rund um die Innenstadt?', o: ['Ringstraße', 'Mariahilfer Straße', 'Kärntner Straße', 'Praterstraße'] },
+  { id: 'at09', cat: 'Wien', q: 'Welcher Wiener schrieb „Die Traumdeutung“?', o: ['Sigmund Freud', 'Alfred Adler', 'Viktor Frankl', 'Carl Gustav Jung'] },
+  { id: 'at10', cat: 'Wien', q: 'Welche Wiener Institution ist für ihre Lipizzaner berühmt?', o: ['Spanische Hofreitschule', 'Wiener Staatsoper', 'Albertina', 'Musikverein'] },
+  { id: 'at11', cat: 'Wien', q: 'Was ist ein „Einspänner“ im Wiener Kaffeehaus?', o: ['Schwarzer Kaffee mit Schlagobers im Glas', 'Kaffee mit Rum', 'Doppelter Espresso', 'Kaffee mit Ei'] },
+  { id: 'at12', cat: 'Wien', q: 'Was ist ein „Heuriger“?', o: ['Weinlokal mit jungem Wein', 'Ein Erntedankfest', 'Ein Straßenbahntyp', 'Ein Hefegebäck'] },
+  { id: 'at13', cat: 'Wien', q: 'Wie sagt man in Wien zur Tüte?', o: ['Sackerl', 'Tüterl', 'Beutel', 'Packerl'] },
+  { id: 'at14', cat: 'Wien', q: 'Welcher Künstler gestaltete das Hundertwasserhaus?', o: ['Friedensreich Hundertwasser', 'Otto Wagner', 'Adolf Loos', 'Josef Hoffmann'] },
+  { id: 'at15', cat: 'Wien', q: 'In welchem Wiener Bezirk steht der Stephansdom?', o: ['1. Bezirk', '2. Bezirk', '7. Bezirk', '9. Bezirk'] },
+  { id: 'at16', cat: 'Wien', q: 'Wie viele Bundesländer hat Österreich?', o: ['9', '8', '10', '7'] },
+  { id: 'at17', cat: 'Wien', q: 'Welches Land grenzt NICHT an Österreich?', o: ['Kroatien', 'Slowenien', 'Ungarn', 'Slowakei'] },
+  { id: 'at18', cat: 'Wien', q: 'Wie heißt der höchste Berg Österreichs?', o: ['Großglockner', 'Wildspitze', 'Großvenediger', 'Dachstein'] },
+  { id: 'at19', cat: 'Wien', q: 'Welcher Österreicher landete 1985 mit „Rock Me Amadeus“ einen Welthit?', o: ['Falco', 'Udo Jürgens', 'Peter Alexander', 'Rainhard Fendrich'] },
+  { id: 'at20', cat: 'Wien', q: 'Wie hieß die Frau von Kaiser Franz Joseph?', o: ['Elisabeth, genannt Sisi', 'Maria Theresia', 'Zita', 'Sophie'] },
+  { id: 'at21', cat: 'Wien', q: 'Welche Kaiserin regierte Österreich 40 Jahre lang im 18. Jahrhundert?', o: ['Maria Theresia', 'Elisabeth I.', 'Katharina II.', 'Zita von Bourbon-Parma'] },
+  { id: 'at22', cat: 'Wien', q: 'Auf welchem Hügel hat man den klassischen Blick über Wien?', o: ['Kahlenberg', 'Semmering', 'Schneeberg', 'Rax'] },
+  { id: 'at23', cat: 'Wien', q: 'Wie heißt Wiens großer Vergnügungspark mit dem Riesenrad?', o: ['Prater', 'Donaupark', 'Augarten', 'Stadtpark'] },
+  { id: 'at24', cat: 'Wien', q: 'Was bestellt man in Wien mit „a Krügerl“?', o: ['Ein halbes Bier', 'Einen Kaffee', 'Ein Glas Wein', 'Ein Wasser'] },
+  { id: 'at25', cat: 'Wien', q: 'Wie heißt Wiens bekanntester Markt mit Essensständen?', o: ['Naschmarkt', 'Viktualienmarkt', 'Karmelitermarkt', 'Brunnenmarkt'] },
+  { id: 'at26', cat: 'Wien', q: 'Welches Getränk gehört klassisch zum Wiener Kaffeehaus dazu?', o: ['Ein Glas Leitungswasser', 'Ein Schnaps', 'Ein Tee', 'Eine Limonade'] },
+  { id: 'at27', cat: 'Wien', q: 'Wie nennt man in Österreich die Sahne?', o: ['Schlagobers', 'Rahmschaum', 'Sauerrahm', 'Topfen'] },
+  { id: 'at28', cat: 'Wien', q: 'Was ist „Topfen“ in Österreich?', o: ['Quark', 'Hüttenkäse', 'Butter', 'Joghurt'] },
+  { id: 'at29', cat: 'Wien', q: 'Welche Wiener Oper ist eines der berühmtesten Opernhäuser der Welt?', o: ['Wiener Staatsoper', 'Volksoper', 'Theater an der Wien', 'Burgtheater'] },
+  { id: 'at30', cat: 'Wien', q: 'Welcher Walzer gilt als heimliche Hymne Österreichs?', o: ['An der schönen blauen Donau', 'Kaiserwalzer', 'Frühlingsstimmen', 'Wiener Blut'] },
+  { id: 'at31', cat: 'Wien', q: 'Wie heißt das Wiener Neujahrskonzert-Orchester?', o: ['Wiener Philharmoniker', 'Wiener Symphoniker', 'Tonkünstler-Orchester', 'RSO Wien'] },
+  { id: 'at32', cat: 'Wien', q: 'Welcher Wiener Architekt prägte den Jugendstil mit der Kirche am Steinhof?', o: ['Otto Wagner', 'Adolf Loos', 'Camillo Sitte', 'Theophil Hansen'] },
+
+  // ── Geografie ───────────────────────────────────────────────────────────
+  { id: 'geo01', cat: 'Geografie', q: 'Wie heißt die Hauptstadt Australiens?', o: ['Canberra', 'Sydney', 'Melbourne', 'Perth'] },
+  { id: 'geo02', cat: 'Geografie', q: 'Welches Land hat die längste Küstenlinie der Welt?', o: ['Kanada', 'Russland', 'Indonesien', 'Australien'] },
+  { id: 'geo03', cat: 'Geografie', q: 'Welcher ist der tiefste See der Erde?', o: ['Baikalsee', 'Tanganjikasee', 'Titicacasee', 'Genfersee'] },
+  { id: 'geo04', cat: 'Geografie', q: 'Welcher Fluss führt das meiste Wasser der Welt?', o: ['Amazonas', 'Nil', 'Jangtse', 'Mississippi'] },
+  { id: 'geo05', cat: 'Geografie', q: 'Wie heißt die Hauptstadt Kanadas?', o: ['Ottawa', 'Toronto', 'Vancouver', 'Montreal'] },
+  { id: 'geo06', cat: 'Geografie', q: 'Welches Meer liegt zwischen Italien und Kroatien?', o: ['Adria', 'Ägäis', 'Tyrrhenisches Meer', 'Ionisches Meer'] },
+  { id: 'geo07', cat: 'Geografie', q: 'In welchem Land liegt Machu Picchu?', o: ['Peru', 'Bolivien', 'Ecuador', 'Chile'] },
+  { id: 'geo08', cat: 'Geografie', q: 'Welche Großstadt liegt auf zwei Kontinenten?', o: ['Istanbul', 'Kairo', 'Athen', 'Moskau'] },
+  { id: 'geo09', cat: 'Geografie', q: 'Wie viele Zeitzonen hat Russland?', o: ['11', '7', '9', '14'] },
+  { id: 'geo10', cat: 'Geografie', q: 'Welches ist das flächenmäßig kleinste Land der Welt?', o: ['Vatikanstadt', 'Monaco', 'San Marino', 'Liechtenstein'] },
+  { id: 'geo11', cat: 'Geografie', q: 'Wie heißt die Hauptstadt Neuseelands?', o: ['Wellington', 'Auckland', 'Christchurch', 'Dunedin'] },
+  { id: 'geo12', cat: 'Geografie', q: 'Welcher Ozean ist der größte?', o: ['Pazifik', 'Atlantik', 'Indischer Ozean', 'Arktischer Ozean'] },
+  { id: 'geo13', cat: 'Geografie', q: 'In welchem Gebirge liegt der Mount Everest?', o: ['Himalaya', 'Karakorum', 'Anden', 'Alpen'] },
+  { id: 'geo14', cat: 'Geografie', q: 'Welches Land hat heute die meisten Einwohner?', o: ['Indien', 'China', 'USA', 'Indonesien'] },
+  { id: 'geo15', cat: 'Geografie', q: 'Auf welchem Kontinent liegt die Sahara?', o: ['Afrika', 'Asien', 'Australien', 'Südamerika'] },
+  { id: 'geo16', cat: 'Geografie', q: 'Wie heißt die Währung der Schweiz?', o: ['Schweizer Franken', 'Euro', 'Krone', 'Gulden'] },
+  { id: 'geo17', cat: 'Geografie', q: 'Welche Wüste ist die größte Sandwüste der Erde?', o: ['Sahara', 'Gobi', 'Kalahari', 'Atacama'] },
+  { id: 'geo18', cat: 'Geografie', q: 'Welches Land besteht aus über 17.000 Inseln?', o: ['Indonesien', 'Philippinen', 'Japan', 'Malediven'] },
+  { id: 'geo19', cat: 'Geografie', q: 'Durch welches Land fließt die Donau NICHT?', o: ['Polen', 'Ungarn', 'Serbien', 'Rumänien'] },
+  { id: 'geo20', cat: 'Geografie', q: 'Wie heißt die Hauptstadt von Marokko?', o: ['Rabat', 'Casablanca', 'Marrakesch', 'Fès'] },
+  { id: 'geo21', cat: 'Geografie', q: 'Welcher Kanal verbindet Mittelmeer und Rotes Meer?', o: ['Suezkanal', 'Panamakanal', 'Kieler Kanal', 'Korinth-Kanal'] },
+  { id: 'geo22', cat: 'Geografie', q: 'Welches europäische Land hat die meisten Vulkane?', o: ['Island', 'Italien', 'Griechenland', 'Spanien'] },
+  { id: 'geo23', cat: 'Geografie', q: 'In welchem Land liegt die Stadt Marrakesch?', o: ['Marokko', 'Tunesien', 'Algerien', 'Ägypten'] },
+  { id: 'geo24', cat: 'Geografie', q: 'Welches Land wird „Land der tausend Seen“ genannt?', o: ['Finnland', 'Schweden', 'Kanada', 'Estland'] },
+  { id: 'geo25', cat: 'Geografie', q: 'Welche Stadt ist die nördlichste Hauptstadt der Welt?', o: ['Reykjavík', 'Oslo', 'Helsinki', 'Stockholm'] },
+  { id: 'geo26', cat: 'Geografie', q: 'Wie heißt der höchste Wasserfall der Erde?', o: ['Salto Ángel', 'Niagarafälle', 'Victoriafälle', 'Iguazú'] },
+  { id: 'geo27', cat: 'Geografie', q: 'Welches Land hat als Flagge einen roten Punkt auf Weiß?', o: ['Japan', 'Bangladesch', 'Palau', 'Südkorea'] },
+  { id: 'geo28', cat: 'Geografie', q: 'Auf welcher Insel liegt der Ätna?', o: ['Sizilien', 'Sardinien', 'Kreta', 'Korsika'] },
+  { id: 'geo29', cat: 'Geografie', q: 'Welcher See ist der größte der Erde (nach Fläche)?', o: ['Kaspisches Meer', 'Oberer See', 'Baikalsee', 'Victoriasee'] },
+  { id: 'geo30', cat: 'Geografie', q: 'Welche Stadt trägt den Beinamen „die Ewige Stadt“?', o: ['Rom', 'Athen', 'Jerusalem', 'Istanbul'] },
+
+  // ── Geschichte ──────────────────────────────────────────────────────────
+  { id: 'his01', cat: 'Geschichte', q: 'In welchem Jahr fiel die Berliner Mauer?', o: ['1989', '1987', '1991', '1993'] },
+  { id: 'his02', cat: 'Geschichte', q: 'Wer war der erste Mensch im Weltall?', o: ['Juri Gagarin', 'Neil Armstrong', 'Alan Shepard', 'German Titow'] },
+  { id: 'his03', cat: 'Geschichte', q: 'In welchem Jahr sank die Titanic?', o: ['1912', '1905', '1918', '1923'] },
+  { id: 'his04', cat: 'Geschichte', q: 'Welcher Krieg begann 1914?', o: ['Erster Weltkrieg', 'Zweiter Weltkrieg', 'Krimkrieg', 'Spanischer Bürgerkrieg'] },
+  { id: 'his05', cat: 'Geschichte', q: 'Wer erreichte 1492 im Auftrag Spaniens Amerika?', o: ['Christoph Kolumbus', 'Vasco da Gama', 'Ferdinand Magellan', 'Amerigo Vespucci'] },
+  { id: 'his06', cat: 'Geschichte', q: 'Welche antike Stadt wurde vom Vesuv verschüttet?', o: ['Pompeji', 'Karthago', 'Troja', 'Ephesos'] },
+  { id: 'his07', cat: 'Geschichte', q: 'Wer war die erste Frau, die einen Nobelpreis erhielt?', o: ['Marie Curie', 'Rosalind Franklin', 'Lise Meitner', 'Ada Lovelace'] },
+  { id: 'his08', cat: 'Geschichte', q: 'Wer war der erste Bundeskanzler der Bundesrepublik Deutschland?', o: ['Konrad Adenauer', 'Willy Brandt', 'Ludwig Erhard', 'Helmut Schmidt'] },
+  { id: 'his09', cat: 'Geschichte', q: 'In welchem Jahrhundert lebte Mozart?', o: ['18. Jahrhundert', '17. Jahrhundert', '19. Jahrhundert', '16. Jahrhundert'] },
+  { id: 'his10', cat: 'Geschichte', q: 'Welche Dynastie regierte jahrhundertelang von Wien aus?', o: ['Habsburger', 'Hohenzollern', 'Bourbonen', 'Windsors'] },
+  { id: 'his11', cat: 'Geschichte', q: 'Wer erfand um 1450 den Buchdruck mit beweglichen Lettern in Europa?', o: ['Johannes Gutenberg', 'Martin Luther', 'Leonardo da Vinci', 'William Caxton'] },
+  { id: 'his12', cat: 'Geschichte', q: 'In welchem Jahr landeten erstmals Menschen auf dem Mond?', o: ['1969', '1965', '1972', '1961'] },
+  { id: 'his13', cat: 'Geschichte', q: 'Wer war der erste Kaiser Roms?', o: ['Augustus', 'Julius Caesar', 'Nero', 'Trajan'] },
+  { id: 'his14', cat: 'Geschichte', q: 'Welches Land schenkte den USA die Freiheitsstatue?', o: ['Frankreich', 'England', 'Spanien', 'Niederlande'] },
+  { id: 'his15', cat: 'Geschichte', q: 'Wer war Anführerin der französischen Truppen im Hundertjährigen Krieg?', o: ['Jeanne d’Arc', 'Marie Antoinette', 'Katharina von Medici', 'Eleonore von Aquitanien'] },
+  { id: 'his16', cat: 'Geschichte', q: 'In welchem Jahr begann die Französische Revolution?', o: ['1789', '1776', '1804', '1815'] },
+  { id: 'his17', cat: 'Geschichte', q: 'Wer schrieb die 95 Thesen und löste die Reformation aus?', o: ['Martin Luther', 'Johannes Calvin', 'Ulrich Zwingli', 'Thomas Müntzer'] },
+  { id: 'his18', cat: 'Geschichte', q: 'Welches Volk baute die Pyramiden von Gizeh?', o: ['Die alten Ägypter', 'Die Sumerer', 'Die Nubier', 'Die Phönizier'] },
+  { id: 'his19', cat: 'Geschichte', q: 'Wo wurde Napoleon 1815 endgültig geschlagen?', o: ['Waterloo', 'Leipzig', 'Austerlitz', 'Borodino'] },
+  { id: 'his20', cat: 'Geschichte', q: 'Welche Mauer wurde 1961 gebaut?', o: ['Die Berliner Mauer', 'Die Chinesische Mauer', 'Der Limes', 'Der Hadrianswall'] },
+  { id: 'his21', cat: 'Geschichte', q: 'Wer war die letzte Pharaonin Ägyptens?', o: ['Kleopatra VII.', 'Nofretete', 'Hatschepsut', 'Nitokris'] },
+  { id: 'his22', cat: 'Geschichte', q: 'Welches Schiff brachte 1620 englische Siedler nach Amerika?', o: ['Mayflower', 'Santa Maria', 'Beagle', 'Endeavour'] },
+  { id: 'his23', cat: 'Geschichte', q: 'Wer führte den gewaltlosen Widerstand in Indien an?', o: ['Mahatma Gandhi', 'Jawaharlal Nehru', 'Subhas Chandra Bose', 'B. R. Ambedkar'] },
+  { id: 'his24', cat: 'Geschichte', q: 'Welcher Vertrag beendete 1919 formal den Ersten Weltkrieg mit Deutschland?', o: ['Vertrag von Versailles', 'Vertrag von Trianon', 'Vertrag von Saint-Germain', 'Vertrag von Rom'] },
+  { id: 'his25', cat: 'Geschichte', q: 'Wer war der erste Präsident der USA?', o: ['George Washington', 'Thomas Jefferson', 'John Adams', 'Benjamin Franklin'] },
+  { id: 'his26', cat: 'Geschichte', q: 'In welchem Jahr wurde die Europäische Union durch den Vertrag von Maastricht gegründet?', o: ['1992', '1985', '1999', '2004'] },
+  { id: 'his27', cat: 'Geschichte', q: 'Welche Seuche wütete im 14. Jahrhundert in Europa?', o: ['Die Pest', 'Die Cholera', 'Die Pocken', 'Die Spanische Grippe'] },
+  { id: 'his28', cat: 'Geschichte', q: 'Wer war Südafrikas erster schwarzer Präsident?', o: ['Nelson Mandela', 'Desmond Tutu', 'Thabo Mbeki', 'Jacob Zuma'] },
+
+  // ── Natur & Körper ──────────────────────────────────────────────────────
+  { id: 'nat01', cat: 'Natur', q: 'Wie viele Knochen hat ein erwachsener Mensch?', o: ['206', '186', '224', '256'] },
+  { id: 'nat02', cat: 'Natur', q: 'Welches Element hat das Symbol „Au“?', o: ['Gold', 'Silber', 'Aluminium', 'Kupfer'] },
+  { id: 'nat03', cat: 'Natur', q: 'Was misst die Richterskala?', o: ['Erdbebenstärke', 'Windstärke', 'Lautstärke', 'Radioaktivität'] },
+  { id: 'nat04', cat: 'Natur', q: 'Wie schnell ist Licht ungefähr?', o: ['300.000 km/s', '30.000 km/s', '3 Mio. km/s', '3.000 km/s'] },
+  { id: 'nat05', cat: 'Natur', q: 'Welches Organ produziert Insulin?', o: ['Bauchspeicheldrüse', 'Leber', 'Niere', 'Milz'] },
+  { id: 'nat06', cat: 'Natur', q: 'Welches Gas nehmen Pflanzen bei der Fotosynthese auf?', o: ['Kohlendioxid', 'Sauerstoff', 'Stickstoff', 'Methan'] },
+  { id: 'nat07', cat: 'Natur', q: 'Was transportieren die roten Blutkörperchen?', o: ['Sauerstoff', 'Zucker', 'Hormone', 'Fett'] },
+  { id: 'nat08', cat: 'Natur', q: 'Welches Vitamin bildet der Körper mithilfe von Sonnenlicht?', o: ['Vitamin D', 'Vitamin C', 'Vitamin B12', 'Vitamin K'] },
+  { id: 'nat09', cat: 'Natur', q: 'Wie viele Chromosomenpaare hat der Mensch?', o: ['23', '21', '25', '46'] },
+  { id: 'nat10', cat: 'Natur', q: 'In welcher Einheit misst man Lautstärke?', o: ['Dezibel', 'Hertz', 'Watt', 'Lumen'] },
+  { id: 'nat11', cat: 'Natur', q: 'Woraus besteht Wasser chemisch?', o: ['Wasserstoff und Sauerstoff', 'Wasserstoff und Stickstoff', 'Sauerstoff und Kohlenstoff', 'Helium und Sauerstoff'] },
+  { id: 'nat12', cat: 'Natur', q: 'Welches ist das härteste natürliche Material?', o: ['Diamant', 'Quarz', 'Stahl', 'Titan'] },
+  { id: 'nat13', cat: 'Natur', q: 'Welches Organ ist das größte des Menschen?', o: ['Die Haut', 'Die Leber', 'Die Lunge', 'Der Darm'] },
+  { id: 'nat14', cat: 'Natur', q: 'Wie viele Kammern hat das menschliche Herz?', o: ['4', '2', '3', '6'] },
+  { id: 'nat15', cat: 'Natur', q: 'Bei wie viel Grad Celsius siedet Wasser auf Meereshöhe?', o: ['100', '90', '110', '80'] },
+  { id: 'nat16', cat: 'Natur', q: 'Welches Element ist im Universum am häufigsten?', o: ['Wasserstoff', 'Helium', 'Sauerstoff', 'Kohlenstoff'] },
+  { id: 'nat17', cat: 'Natur', q: 'Was entsteht, wenn ein Stern sehr großer Masse kollabiert?', o: ['Ein Schwarzes Loch', 'Ein Komet', 'Ein Asteroid', 'Ein Nebelmond'] },
+  { id: 'nat18', cat: 'Natur', q: 'Wie nennt man die Angst vor engen Räumen?', o: ['Klaustrophobie', 'Agoraphobie', 'Akrophobie', 'Arachnophobie'] },
+  { id: 'nat19', cat: 'Natur', q: 'Welcher Muskel ist der stärkste im Verhältnis zu seiner Größe?', o: ['Der Kaumuskel', 'Der Bizeps', 'Das Herz', 'Die Wade'] },
+  { id: 'nat20', cat: 'Natur', q: 'Was bedeutet die Abkürzung DNA?', o: ['Desoxyribonukleinsäure', 'Dinatriumacetat', 'Dendritische Nervenachse', 'Doppelnukleare Aminosäure'] },
+  { id: 'nat21', cat: 'Natur', q: 'Wie viele Flächen hat ein Dodekaeder?', o: ['12', '10', '20', '8'] },
+  { id: 'nat22', cat: 'Natur', q: 'Welche Blutgruppe gilt als Universalspender (rote Blutkörperchen)?', o: ['0 negativ', 'AB positiv', 'A positiv', 'B negativ'] },
+  { id: 'nat23', cat: 'Natur', q: 'Welche Farbe hat Chlorophyll?', o: ['Grün', 'Rot', 'Blau', 'Gelb'] },
+  { id: 'nat24', cat: 'Natur', q: 'Woraus besteht der größte Teil der Erdatmosphäre?', o: ['Stickstoff', 'Sauerstoff', 'Kohlendioxid', 'Argon'] },
+  { id: 'nat25', cat: 'Natur', q: 'Wie nennt man die Wissenschaft von den Erdbeben?', o: ['Seismologie', 'Vulkanologie', 'Geodäsie', 'Meteorologie'] },
+  { id: 'nat26', cat: 'Natur', q: 'Was ist ein Tsunami?', o: ['Eine durch Erdbeben ausgelöste Meereswelle', 'Ein tropischer Wirbelsturm', 'Eine Springflut', 'Ein Unterwasservulkan'] },
+
+  // ── Tiere ───────────────────────────────────────────────────────────────
+  { id: 'tie01', cat: 'Tiere', q: 'Wie viele Herzen hat ein Oktopus?', o: ['3', '1', '2', '5'] },
+  { id: 'tie02', cat: 'Tiere', q: 'Welches Tier ist das größte der Erde?', o: ['Blauwal', 'Afrikanischer Elefant', 'Pottwal', 'Giraffe'] },
+  { id: 'tie03', cat: 'Tiere', q: 'Welches Landtier ist das schnellste?', o: ['Gepard', 'Löwe', 'Gabelbock', 'Pferd'] },
+  { id: 'tie04', cat: 'Tiere', q: 'Wie viele Beine hat eine Spinne?', o: ['8', '6', '10', '12'] },
+  { id: 'tie05', cat: 'Tiere', q: 'Welches Tier schläft im Stehen und mit einem offenen Auge?', o: ['Die Giraffe schläft stehend', 'Der Wolf', 'Der Igel', 'Das Wildschwein'] },
+  { id: 'tie06', cat: 'Tiere', q: 'Welcher Vogel kann rückwärts fliegen?', o: ['Kolibri', 'Adler', 'Specht', 'Schwalbe'] },
+  { id: 'tie07', cat: 'Tiere', q: 'Wie nennt man eine Gruppe von Löwen?', o: ['Rudel', 'Schwarm', 'Herde', 'Meute'] },
+  { id: 'tie08', cat: 'Tiere', q: 'Welches Tier hat den längsten Winterschlaf?', o: ['Der Siebenschläfer', 'Der Braunbär', 'Das Eichhörnchen', 'Der Dachs'] },
+  { id: 'tie09', cat: 'Tiere', q: 'Welches Tier legt als einziges Säugetier Eier?', o: ['Das Schnabeltier', 'Das Gürteltier', 'Das Faultier', 'Der Ameisenbär'] },
+  { id: 'tie10', cat: 'Tiere', q: 'Wie viele Mägen hat eine Kuh?', o: ['4 Magenabteilungen', '2', '3', '1'] },
+  { id: 'tie11', cat: 'Tiere', q: 'Welches Tier gilt als das giftigste der Welt?', o: ['Die Seewespe (Würfelqualle)', 'Die Kobra', 'Der Skorpion', 'Der Kugelfisch'] },
+  { id: 'tie12', cat: 'Tiere', q: 'Welcher Fisch kann sein Geschlecht wechseln?', o: ['Der Clownfisch', 'Der Hering', 'Der Karpfen', 'Der Hecht'] },
+  { id: 'tie13', cat: 'Tiere', q: 'Was fressen Pandas fast ausschließlich?', o: ['Bambus', 'Fisch', 'Beeren', 'Gras'] },
+  { id: 'tie14', cat: 'Tiere', q: 'Welches Tier hat Fingerabdrücke, die menschlichen ähneln?', o: ['Der Koala', 'Der Delfin', 'Der Orang-Utan-Fuß', 'Das Kaninchen'] },
+  { id: 'tie15', cat: 'Tiere', q: 'Wie lange ist eine Elefantenkuh ungefähr trächtig?', o: ['Etwa 22 Monate', 'Etwa 9 Monate', 'Etwa 12 Monate', 'Etwa 30 Monate'] },
+  { id: 'tie16', cat: 'Tiere', q: 'Welches Insekt produziert Honig?', o: ['Die Honigbiene', 'Die Wespe', 'Die Hummel', 'Die Ameise'] },
+  { id: 'tie17', cat: 'Tiere', q: 'Welches Tier kann seine Farbe zur Tarnung ändern?', o: ['Das Chamäleon', 'Der Leguan', 'Der Gecko', 'Die Eidechse'] },
+  { id: 'tie18', cat: 'Tiere', q: 'Wie viele Zähne hat ein erwachsener Mensch normalerweise?', o: ['32', '28', '30', '36'] },
+
+  // ── Weltraum & Technik ──────────────────────────────────────────────────
+  { id: 'tec01', cat: 'Technik', q: 'Welcher Planet ist der Sonne am nächsten?', o: ['Merkur', 'Venus', 'Mars', 'Erde'] },
+  { id: 'tec02', cat: 'Technik', q: 'Welcher ist der größte Planet unseres Sonnensystems?', o: ['Jupiter', 'Saturn', 'Neptun', 'Uranus'] },
+  { id: 'tec03', cat: 'Technik', q: 'Welcher Planet wird „der rote Planet“ genannt?', o: ['Mars', 'Venus', 'Merkur', 'Jupiter'] },
+  { id: 'tec04', cat: 'Technik', q: 'Wie heißt unsere Galaxie?', o: ['Milchstraße', 'Andromeda', 'Sombrero', 'Triangulum'] },
+  { id: 'tec05', cat: 'Technik', q: 'Wie lange braucht das Licht von der Sonne zur Erde?', o: ['Etwa 8 Minuten', 'Etwa 8 Sekunden', 'Etwa 1 Stunde', 'Etwa 1 Tag'] },
+  { id: 'tec06', cat: 'Technik', q: 'Wer entwickelte die Relativitätstheorie?', o: ['Albert Einstein', 'Isaac Newton', 'Niels Bohr', 'Max Planck'] },
+  { id: 'tec07', cat: 'Technik', q: 'Wofür steht „WWW“?', o: ['World Wide Web', 'Wide World Wire', 'Web Wide World', 'World Web Wire'] },
+  { id: 'tec08', cat: 'Technik', q: 'Wer gründete Microsoft mit?', o: ['Bill Gates', 'Steve Jobs', 'Larry Page', 'Michael Dell'] },
+  { id: 'tec09', cat: 'Technik', q: 'Was bedeutet „HTTP“ am Anfang einer Webadresse?', o: ['Hypertext Transfer Protocol', 'High Transfer Text Protocol', 'Hyperlink Text Transport', 'Home Text Transfer Path'] },
+  { id: 'tec10', cat: 'Technik', q: 'Wie viele Bit hat ein Byte?', o: ['8', '4', '16', '10'] },
+  { id: 'tec11', cat: 'Technik', q: 'Welches Unternehmen entwickelte das Betriebssystem Android?', o: ['Google', 'Apple', 'Samsung', 'Microsoft'] },
+  { id: 'tec12', cat: 'Technik', q: 'Wer erfand das Telefon (mit dem ersten Patent)?', o: ['Alexander Graham Bell', 'Thomas Edison', 'Nikola Tesla', 'Guglielmo Marconi'] },
+  { id: 'tec13', cat: 'Technik', q: 'Wie heißt der erste künstliche Erdsatellit?', o: ['Sputnik 1', 'Explorer 1', 'Vostok 1', 'Apollo 1'] },
+  { id: 'tec14', cat: 'Technik', q: 'Welche Firma stellt den Prozessor „Snapdragon“ her?', o: ['Qualcomm', 'Intel', 'AMD', 'Nvidia'] },
+  { id: 'tec15', cat: 'Technik', q: 'Was misst ein Barometer?', o: ['Luftdruck', 'Temperatur', 'Luftfeuchtigkeit', 'Windgeschwindigkeit'] },
+  { id: 'tec16', cat: 'Technik', q: 'Wer gilt als erste Programmiererin der Geschichte?', o: ['Ada Lovelace', 'Grace Hopper', 'Hedy Lamarr', 'Margaret Hamilton'] },
+  { id: 'tec17', cat: 'Technik', q: 'Wie viele Planeten hat unser Sonnensystem heute offiziell?', o: ['8', '9', '7', '10'] },
+  { id: 'tec18', cat: 'Technik', q: 'Was ist ein „Lichtjahr“?', o: ['Eine Entfernung', 'Eine Zeitspanne', 'Eine Helligkeit', 'Eine Geschwindigkeit'] },
+  { id: 'tec19', cat: 'Technik', q: 'Welches Metall ist bei Zimmertemperatur flüssig?', o: ['Quecksilber', 'Blei', 'Zinn', 'Natrium'] },
+  { id: 'tec20', cat: 'Technik', q: 'Wer erfand die Glühlampe zur Marktreife?', o: ['Thomas Edison', 'Nikola Tesla', 'James Watt', 'Michael Faraday'] },
+
+  // ── Kunst & Literatur ───────────────────────────────────────────────────
+  { id: 'kul01', cat: 'Kultur', q: 'Wer malte die Mona Lisa?', o: ['Leonardo da Vinci', 'Michelangelo', 'Raffael', 'Tizian'] },
+  { id: 'kul02', cat: 'Kultur', q: 'Wer schrieb „Romeo und Julia“?', o: ['William Shakespeare', 'Christopher Marlowe', 'Molière', 'Johann Wolfgang von Goethe'] },
+  { id: 'kul03', cat: 'Kultur', q: 'Wer schrieb „Faust“?', o: ['Goethe', 'Schiller', 'Lessing', 'Heine'] },
+  { id: 'kul04', cat: 'Kultur', q: 'Wer malte „Die Sternennacht“?', o: ['Vincent van Gogh', 'Claude Monet', 'Paul Cézanne', 'Edvard Munch'] },
+  { id: 'kul05', cat: 'Kultur', q: 'In welcher Stadt steht der Louvre?', o: ['Paris', 'Madrid', 'Rom', 'Brüssel'] },
+  { id: 'kul06', cat: 'Kultur', q: 'Wer schrieb „Der kleine Prinz“?', o: ['Antoine de Saint-Exupéry', 'Albert Camus', 'Jules Verne', 'Michael Ende'] },
+  { id: 'kul07', cat: 'Kultur', q: 'Wer schrieb die Harry-Potter-Romane?', o: ['J. K. Rowling', 'Philip Pullman', 'Suzanne Collins', 'Cornelia Funke'] },
+  { id: 'kul08', cat: 'Kultur', q: 'Wer schuf die Skulptur „David“ in Florenz?', o: ['Michelangelo', 'Donatello', 'Bernini', 'Cellini'] },
+  { id: 'kul09', cat: 'Kultur', q: 'Wer malte „Der Schrei“?', o: ['Edvard Munch', 'Salvador Dalí', 'Pablo Picasso', 'Wassily Kandinsky'] },
+  { id: 'kul10', cat: 'Kultur', q: 'Welcher Maler schnitt sich ein Ohrläppchen ab?', o: ['Vincent van Gogh', 'Paul Gauguin', 'Henri Matisse', 'Édouard Manet'] },
+  { id: 'kul11', cat: 'Kultur', q: 'Wer schrieb „Krieg und Frieden“?', o: ['Leo Tolstoi', 'Fjodor Dostojewski', 'Anton Tschechow', 'Iwan Turgenjew'] },
+  { id: 'kul12', cat: 'Kultur', q: 'Wer schrieb „Die Verwandlung“, in der ein Mann als Käfer erwacht?', o: ['Franz Kafka', 'Thomas Mann', 'Hermann Hesse', 'Robert Musil'] },
+  { id: 'kul13', cat: 'Kultur', q: 'Welche Kunstrichtung begründete Pablo Picasso mit?', o: ['Kubismus', 'Impressionismus', 'Surrealismus', 'Expressionismus'] },
+  { id: 'kul14', cat: 'Kultur', q: 'Wer schrieb „1984“?', o: ['George Orwell', 'Aldous Huxley', 'Ray Bradbury', 'H. G. Wells'] },
+  { id: 'kul15', cat: 'Kultur', q: 'Welches Museum beherbergt die Sixtinische Kapelle?', o: ['Die Vatikanischen Museen', 'Die Uffizien', 'Der Prado', 'Die Eremitage'] },
+  { id: 'kul16', cat: 'Kultur', q: 'Wer schrieb „Stolz und Vorurteil“?', o: ['Jane Austen', 'Charlotte Brontë', 'Virginia Woolf', 'Mary Shelley'] },
+  { id: 'kul17', cat: 'Kultur', q: 'Welcher Künstler malte schmelzende Uhren?', o: ['Salvador Dalí', 'René Magritte', 'Joan Miró', 'Max Ernst'] },
+  { id: 'kul18', cat: 'Kultur', q: 'Wer schrieb „Der Herr der Ringe“?', o: ['J. R. R. Tolkien', 'C. S. Lewis', 'George R. R. Martin', 'Terry Pratchett'] },
+  { id: 'kul19', cat: 'Kultur', q: 'Welche Farbe fehlt im Regenbogen?', o: ['Braun', 'Indigo', 'Violett', 'Orange'] },
+  { id: 'kul20', cat: 'Kultur', q: 'Wer schrieb „Die unendliche Geschichte“?', o: ['Michael Ende', 'Otfried Preußler', 'Erich Kästner', 'James Krüss'] },
+  { id: 'kul21', cat: 'Kultur', q: 'Welche mexikanische Malerin ist für ihre Selbstporträts berühmt?', o: ['Frida Kahlo', 'Remedios Varo', 'Leonora Carrington', 'Tamara de Lempicka'] },
+  { id: 'kul22', cat: 'Kultur', q: 'Wer schrieb „Die Blechtrommel“?', o: ['Günter Grass', 'Heinrich Böll', 'Siegfried Lenz', 'Martin Walser'] },
+
+  // ── Musik ───────────────────────────────────────────────────────────────
+  { id: 'mus01', cat: 'Musik', q: 'Welche Band veröffentlichte „Bohemian Rhapsody“?', o: ['Queen', 'The Beatles', 'Led Zeppelin', 'Pink Floyd'] },
+  { id: 'mus02', cat: 'Musik', q: 'Wer komponierte „Eine kleine Nachtmusik“?', o: ['Mozart', 'Beethoven', 'Haydn', 'Bach'] },
+  { id: 'mus03', cat: 'Musik', q: 'In welcher Mozart-Oper singt die Königin der Nacht?', o: ['Die Zauberflöte', 'Don Giovanni', 'Figaros Hochzeit', 'Così fan tutte'] },
+  { id: 'mus04', cat: 'Musik', q: 'Welches Instrument hat 88 Tasten?', o: ['Klavier', 'Orgel', 'Akkordeon', 'Cembalo'] },
+  { id: 'mus05', cat: 'Musik', q: 'Wer wird „King of Pop“ genannt?', o: ['Michael Jackson', 'Prince', 'Elvis Presley', 'James Brown'] },
+  { id: 'mus06', cat: 'Musik', q: 'Aus welcher Stadt stammen die Beatles?', o: ['Liverpool', 'London', 'Manchester', 'Birmingham'] },
+  { id: 'mus07', cat: 'Musik', q: 'Welcher Komponist war am Ende seines Lebens taub?', o: ['Ludwig van Beethoven', 'Franz Liszt', 'Frédéric Chopin', 'Robert Schumann'] },
+  { id: 'mus08', cat: 'Musik', q: 'Wie viele Saiten hat eine klassische Gitarre?', o: ['6', '4', '7', '12'] },
+  { id: 'mus09', cat: 'Musik', q: 'Welche Sängerin sang „Rolling in the Deep“?', o: ['Adele', 'Amy Winehouse', 'Duffy', 'Florence Welch'] },
+  { id: 'mus10', cat: 'Musik', q: 'Welcher Tanz wird im Dreivierteltakt getanzt?', o: ['Walzer', 'Tango', 'Foxtrott', 'Cha-Cha-Cha'] },
+  { id: 'mus11', cat: 'Musik', q: 'Wer schrieb „Die vier Jahreszeiten“?', o: ['Antonio Vivaldi', 'Johann Sebastian Bach', 'Georg Friedrich Händel', 'Arcangelo Corelli'] },
+  { id: 'mus12', cat: 'Musik', q: 'Welches Instrument spielte Louis Armstrong?', o: ['Trompete', 'Saxofon', 'Posaune', 'Klarinette'] },
+  { id: 'mus13', cat: 'Musik', q: 'Wie heißt der Wettbewerb, bei dem europäische Länder gegeneinander singen?', o: ['Eurovision Song Contest', 'Europa-Festival', 'Song of Europe', 'Continental Song Cup'] },
+  { id: 'mus14', cat: 'Musik', q: 'Welche Band sang „Stairway to Heaven“?', o: ['Led Zeppelin', 'Deep Purple', 'The Who', 'Black Sabbath'] },
+  { id: 'mus15', cat: 'Musik', q: 'Wie viele Töne hat eine Oktave in der Dur-Tonleiter (ohne Wiederholung des Grundtons)?', o: ['7', '8', '5', '12'] },
+  { id: 'mus16', cat: 'Musik', q: 'Wer sang „Like a Prayer“?', o: ['Madonna', 'Cher', 'Whitney Houston', 'Cyndi Lauper'] },
+  { id: 'mus17', cat: 'Musik', q: 'Welches Instrument bedient man mit Pedalen, Manualen und Registern?', o: ['Die Orgel', 'Das Cembalo', 'Das Harmonium', 'Das Klavichord'] },
+  { id: 'mus18', cat: 'Musik', q: 'Aus welchem Land stammt der Fado?', o: ['Portugal', 'Spanien', 'Italien', 'Griechenland'] },
+
+  // ── Film & Fernsehen ────────────────────────────────────────────────────
+  { id: 'fil01', cat: 'Film', q: 'Aus welchem Film stammt „Ich mache ihm ein Angebot, das er nicht ablehnen kann“?', o: ['Der Pate', 'Scarface', 'Goodfellas', 'Casino'] },
+  { id: 'fil02', cat: 'Film', q: 'Wer führte Regie bei „Pulp Fiction“?', o: ['Quentin Tarantino', 'Martin Scorsese', 'Guy Ritchie', 'Die Coen-Brüder'] },
+  { id: 'fil03', cat: 'Film', q: 'Welcher Film spielt auf dem Planeten Pandora?', o: ['Avatar', 'Interstellar', 'Dune', 'Star Trek'] },
+  { id: 'fil04', cat: 'Film', q: 'Wie heißt der Zauberschüler mit der Blitznarbe?', o: ['Harry Potter', 'Ron Weasley', 'Neville Longbottom', 'Draco Malfoy'] },
+  { id: 'fil05', cat: 'Film', q: 'Welcher Schauspieler spielte James Bond zuerst im Kino?', o: ['Sean Connery', 'Roger Moore', 'George Lazenby', 'Timothy Dalton'] },
+  { id: 'fil06', cat: 'Film', q: 'In welchem Film hört man „Möge die Macht mit dir sein“?', o: ['Star Wars', 'Star Trek', 'Dune', 'Matrix'] },
+  { id: 'fil07', cat: 'Film', q: 'Welche Serie spielt in Westeros?', o: ['Game of Thrones', 'The Witcher', 'Vikings', 'The Last Kingdom'] },
+  { id: 'fil08', cat: 'Film', q: 'Wer spielte Jack in „Titanic“?', o: ['Leonardo DiCaprio', 'Brad Pitt', 'Matt Damon', 'Johnny Depp'] },
+  { id: 'fil09', cat: 'Film', q: 'Welches Studio produzierte „Findet Nemo“?', o: ['Pixar', 'DreamWorks', 'Illumination', 'Studio Ghibli'] },
+  { id: 'fil10', cat: 'Film', q: 'Welche Farbe hat die Pille, die Neo in „Matrix“ nimmt?', o: ['Rot', 'Blau', 'Grün', 'Weiß'] },
+  { id: 'fil11', cat: 'Film', q: 'Wie heißt der Preis der amerikanischen Filmakademie?', o: ['Oscar', 'Golden Globe', 'Bafta', 'Palme d’Or'] },
+  { id: 'fil12', cat: 'Film', q: 'Welcher Regisseur drehte „Schindlers Liste“?', o: ['Steven Spielberg', 'Ridley Scott', 'Roman Polański', 'Oliver Stone'] },
+  { id: 'fil13', cat: 'Film', q: 'In welcher Stadt spielt die Serie „Friends“?', o: ['New York', 'Chicago', 'Los Angeles', 'Boston'] },
+  { id: 'fil14', cat: 'Film', q: 'Wie heißt das japanische Animationsstudio hinter „Chihiros Reise“?', o: ['Studio Ghibli', 'Toei Animation', 'Madhouse', 'Kyoto Animation'] },
+  { id: 'fil15', cat: 'Film', q: 'Welcher Film gewann als erster Animationsfilm eine Oscar-Nominierung als bester Film?', o: ['Die Schöne und das Biest', 'Der König der Löwen', 'Toy Story', 'Aladdin'] },
+  { id: 'fil16', cat: 'Film', q: 'Wie heißt der Chemielehrer in „Breaking Bad“?', o: ['Walter White', 'Jesse Pinkman', 'Saul Goodman', 'Hank Schrader'] },
+  { id: 'fil17', cat: 'Film', q: 'In welchem Land spielt „Squid Game“?', o: ['Südkorea', 'Japan', 'China', 'Taiwan'] },
+  { id: 'fil18', cat: 'Film', q: 'Welcher Schauspieler spielt Iron Man im Marvel-Universum?', o: ['Robert Downey Jr.', 'Chris Evans', 'Chris Hemsworth', 'Mark Ruffalo'] },
+
+  // ── Sport ───────────────────────────────────────────────────────────────
+  { id: 'spo01', cat: 'Sport', q: 'Wie viele Spieler einer Fußballmannschaft stehen auf dem Feld?', o: ['11', '10', '12', '9'] },
+  { id: 'spo02', cat: 'Sport', q: 'Alle wie viele Jahre finden die Olympischen Sommerspiele statt?', o: ['4', '2', '3', '5'] },
+  { id: 'spo03', cat: 'Sport', q: 'Wie viele Ringe hat das olympische Symbol?', o: ['5', '4', '6', '7'] },
+  { id: 'spo04', cat: 'Sport', q: 'Welche Sportart wird in Wimbledon gespielt?', o: ['Tennis', 'Cricket', 'Golf', 'Polo'] },
+  { id: 'spo05', cat: 'Sport', q: 'Wie lang ist ein Marathon?', o: ['42,195 km', '40 km', '45 km', '38,5 km'] },
+  { id: 'spo06', cat: 'Sport', q: 'Wie viele Punkte bringt ein Touchdown im American Football?', o: ['6', '7', '3', '5'] },
+  { id: 'spo07', cat: 'Sport', q: 'Wie viele Löcher hat eine volle Golfrunde?', o: ['18', '12', '16', '20'] },
+  { id: 'spo08', cat: 'Sport', q: 'In welchem Land entstand der moderne Fußball?', o: ['England', 'Italien', 'Brasilien', 'Deutschland'] },
+  { id: 'spo09', cat: 'Sport', q: 'Wie viele Spieler hat eine Basketballmannschaft auf dem Feld?', o: ['5', '6', '7', '4'] },
+  { id: 'spo10', cat: 'Sport', q: 'Welches Land hat die meisten Fußball-Weltmeistertitel?', o: ['Brasilien', 'Deutschland', 'Italien', 'Argentinien'] },
+  { id: 'spo11', cat: 'Sport', q: 'Wie heißt das wichtigste Radrennen der Welt?', o: ['Tour de France', 'Giro d’Italia', 'Vuelta a España', 'Paris–Roubaix'] },
+  { id: 'spo12', cat: 'Sport', q: 'Wie viele Runden hat ein Boxkampf um einen WM-Titel maximal?', o: ['12', '10', '15', '8'] },
+  { id: 'spo13', cat: 'Sport', q: 'Welche Sportart betreibt man auf einem „Half Pipe“?', o: ['Snowboarden', 'Klettern', 'Rudern', 'Turnen'] },
+  { id: 'spo14', cat: 'Sport', q: 'Wie heißt der Punktestand „null“ beim Tennis?', o: ['Love', 'Zero', 'Nil', 'Duck'] },
+  { id: 'spo15', cat: 'Sport', q: 'Aus wie vielen Disziplinen besteht ein Triathlon?', o: ['3', '2', '4', '5'] },
+  { id: 'spo16', cat: 'Sport', q: 'In welcher Sportart gibt es den „Slam Dunk“?', o: ['Basketball', 'Volleyball', 'Handball', 'Baseball'] },
+  { id: 'spo17', cat: 'Sport', q: 'Welches Land richtete die Olympischen Sommerspiele 2021 aus?', o: ['Japan', 'China', 'Brasilien', 'Frankreich'] },
+  { id: 'spo18', cat: 'Sport', q: 'Wie viele Felder hat ein Schachbrett?', o: ['64', '81', '49', '100'] },
+
+  // ── Essen & Trinken ─────────────────────────────────────────────────────
+  { id: 'ess01', cat: 'Essen', q: 'Aus welchem Land stammt Sushi?', o: ['Japan', 'China', 'Korea', 'Thailand'] },
+  { id: 'ess02', cat: 'Essen', q: 'Welches Gewürz ist das teuerste der Welt?', o: ['Safran', 'Vanille', 'Kardamom', 'Zimt'] },
+  { id: 'ess03', cat: 'Essen', q: 'Woraus wird Guacamole hauptsächlich gemacht?', o: ['Avocado', 'Erbsen', 'Zucchini', 'Spinat'] },
+  { id: 'ess04', cat: 'Essen', q: 'Aus welchem Land kommt der Käse Feta?', o: ['Griechenland', 'Italien', 'Türkei', 'Bulgarien'] },
+  { id: 'ess05', cat: 'Essen', q: 'Woraus besteht Hummus hauptsächlich?', o: ['Kichererbsen', 'Linsen', 'Bohnen', 'Sesam'] },
+  { id: 'ess06', cat: 'Essen', q: 'Aus welcher Pflanze wird Tequila gemacht?', o: ['Agave', 'Zuckerrohr', 'Kaktusfeige', 'Mais'] },
+  { id: 'ess07', cat: 'Essen', q: 'Welches Land trinkt pro Kopf am meisten Kaffee?', o: ['Finnland', 'Italien', 'Brasilien', 'Österreich'] },
+  { id: 'ess08', cat: 'Essen', q: 'Wie heißt der scharfe grüne japanische Meerrettich?', o: ['Wasabi', 'Miso', 'Yuzu', 'Ponzu'] },
+  { id: 'ess09', cat: 'Essen', q: 'Welche Nudelsorte ist ein flaches, breites Band?', o: ['Tagliatelle', 'Penne', 'Fusilli', 'Rigatoni'] },
+  { id: 'ess10', cat: 'Essen', q: 'Aus welchem Land stammt die Paella?', o: ['Spanien', 'Portugal', 'Italien', 'Mexiko'] },
+  { id: 'ess11', cat: 'Essen', q: 'Welche Zutat macht Risotto cremig?', o: ['Stärke aus dem Rundkornreis', 'Sahne', 'Mehl', 'Ei'] },
+  { id: 'ess12', cat: 'Essen', q: 'Was ist Sake?', o: ['Reiswein', 'Reisessig', 'Pflaumenschnaps', 'Grüner Tee'] },
+  { id: 'ess13', cat: 'Essen', q: 'Wie heißt die italienische Nachspeise aus Mascarpone und Espresso?', o: ['Tiramisu', 'Panna Cotta', 'Zabaione', 'Cannoli'] },
+  { id: 'ess14', cat: 'Essen', q: 'Aus welchem Land kommt Kimchi?', o: ['Korea', 'Japan', 'China', 'Vietnam'] },
+  { id: 'ess15', cat: 'Essen', q: 'Welche Frucht ist botanisch gesehen eine Beere?', o: ['Die Banane', 'Die Erdbeere', 'Die Himbeere', 'Die Brombeere'] },
+  { id: 'ess16', cat: 'Essen', q: 'Welcher Wein wird aus der Rebsorte Grüner Veltliner gemacht?', o: ['Weißwein', 'Rotwein', 'Roséwein', 'Dessertwein'] },
+  { id: 'ess17', cat: 'Essen', q: 'Was ist Ceviche?', o: ['In Zitrussaft marinierter roher Fisch', 'Eine Fischsuppe', 'Gegrillte Meeresfrüchte', 'Ein Reisgericht'] },
+  { id: 'ess18', cat: 'Essen', q: 'Welches Getreide steckt in klassischem Bier?', o: ['Gerste', 'Hafer', 'Roggen', 'Hirse'] },
+  { id: 'ess19', cat: 'Essen', q: 'Wie heißt die scharfe nordafrikanische Gewürzpaste?', o: ['Harissa', 'Sambal', 'Sriracha', 'Chimichurri'] },
+  { id: 'ess20', cat: 'Essen', q: 'Welches Land ist der größte Olivenölproduzent?', o: ['Spanien', 'Italien', 'Griechenland', 'Türkei'] },
+
+  // ── Sprache, Zahlen & Alltag ────────────────────────────────────────────
+  { id: 'all01', cat: 'Alltag', q: 'Wie viele Minuten hat ein Tag?', o: ['1440', '1200', '1600', '2400'] },
+  { id: 'all02', cat: 'Alltag', q: 'Wie viel ist die Quadratwurzel aus 144?', o: ['12', '14', '16', '11'] },
+  { id: 'all03', cat: 'Alltag', q: 'Welche Sprache hat weltweit die meisten Muttersprachler?', o: ['Mandarin-Chinesisch', 'Englisch', 'Spanisch', 'Hindi'] },
+  { id: 'all04', cat: 'Alltag', q: 'Welche Farbe ergibt Blau gemischt mit Gelb?', o: ['Grün', 'Lila', 'Braun', 'Orange'] },
+  { id: 'all05', cat: 'Alltag', q: 'Wie viele Sekunden hat eine Stunde?', o: ['3600', '360', '6000', '1800'] },
+  { id: 'all06', cat: 'Alltag', q: 'Wie viele Buchstaben hat das deutsche Grundalphabet ohne Umlaute und ß?', o: ['26', '24', '28', '30'] },
+  { id: 'all07', cat: 'Alltag', q: 'Was bedeutet die Abkürzung „etc.“?', o: ['et cetera – und so weiter', 'et cera – und ähnlich', 'estimated – geschätzt', 'et casus – im Fall'] },
+  { id: 'all08', cat: 'Alltag', q: 'Wie viele Nullen hat eine Milliarde?', o: ['9', '6', '12', '8'] },
+  { id: 'all09', cat: 'Alltag', q: 'Welche Sprache ist Amtssprache in Brasilien?', o: ['Portugiesisch', 'Spanisch', 'Brasilianisch', 'Französisch'] },
+  { id: 'all10', cat: 'Alltag', q: 'Was bedeutet „Carpe diem“?', o: ['Nutze den Tag', 'Lebe wohl', 'So ist das Leben', 'Vertraue der Zeit'] },
+  { id: 'all11', cat: 'Alltag', q: 'Wie viele Grad hat ein Kreis?', o: ['360', '180', '270', '400'] },
+  { id: 'all12', cat: 'Alltag', q: 'Was ist ein „Palindrom“?', o: ['Ein Wort, das rückwärts gleich lautet', 'Ein Wort mit doppelter Bedeutung', 'Ein Wort ohne Vokale', 'Ein zusammengesetztes Wort'] },
+  { id: 'all13', cat: 'Alltag', q: 'Welche römische Zahl steht für 50?', o: ['L', 'C', 'D', 'X'] },
+  { id: 'all14', cat: 'Alltag', q: 'Wie viele Karten hat ein Skatblatt?', o: ['32', '52', '36', '24'] },
+  { id: 'all15', cat: 'Alltag', q: 'Welches Sternzeichen hat der 1. Januar?', o: ['Steinbock', 'Wassermann', 'Schütze', 'Fische'] },
+  { id: 'all16', cat: 'Alltag', q: 'Was misst man in Karat bei Diamanten?', o: ['Das Gewicht', 'Die Reinheit', 'Den Schliff', 'Die Farbe'] },
+  { id: 'all17', cat: 'Alltag', q: 'Wie heißt die Währung Japans?', o: ['Yen', 'Won', 'Yuan', 'Baht'] },
+  { id: 'all18', cat: 'Alltag', q: 'Wie viele Felder hat ein Sudoku-Gitter?', o: ['81', '64', '100', '72'] },
+  { id: 'all19', cat: 'Alltag', q: 'Welches Verkehrszeichen ist achteckig?', o: ['Das Stoppschild', 'Die Vorfahrtstraße', 'Das Halteverbot', 'Die Einbahnstraße'] },
+  { id: 'all20', cat: 'Alltag', q: 'Welche Blutgruppe ist in Europa am häufigsten?', o: ['A positiv', '0 negativ', 'AB positiv', 'B negativ'] },
+
+  // ── Mythologie & Religion ───────────────────────────────────────────────
+  { id: 'myt01', cat: 'Mythos', q: 'Wer ist in der griechischen Mythologie der Göttervater?', o: ['Zeus', 'Poseidon', 'Hades', 'Apollon'] },
+  { id: 'myt02', cat: 'Mythos', q: 'Welcher nordische Gott führt den Hammer Mjölnir?', o: ['Thor', 'Odin', 'Loki', 'Baldur'] },
+  { id: 'myt03', cat: 'Mythos', q: 'Wie heißt das geflügelte Pferd der griechischen Sage?', o: ['Pegasos', 'Zentaur', 'Chimära', 'Greif'] },
+  { id: 'myt04', cat: 'Mythos', q: 'Welche Stadt eroberten die Griechen mit einem hölzernen Pferd?', o: ['Troja', 'Sparta', 'Theben', 'Korinth'] },
+  { id: 'myt05', cat: 'Mythos', q: 'Wer musste zwölf Aufgaben bewältigen?', o: ['Herakles', 'Odysseus', 'Achilles', 'Perseus'] },
+  { id: 'myt06', cat: 'Mythos', q: 'Wie heißt das heilige Buch des Islam?', o: ['Der Koran', 'Die Tora', 'Die Veden', 'Das Avesta'] },
+  { id: 'myt07', cat: 'Mythos', q: 'Wie viele Gebote stehen auf den Tafeln des Mose?', o: ['10', '7', '12', '5'] },
+  { id: 'myt08', cat: 'Mythos', q: 'Wo liegt der Sitz des Papstes?', o: ['Vatikanstadt', 'Rom-Trastevere', 'Assisi', 'Florenz'] },
+  { id: 'myt09', cat: 'Mythos', q: 'Welcher Fluss gilt im Hinduismus als heilig?', o: ['Der Ganges', 'Der Indus', 'Der Brahmaputra', 'Der Jamuna'] },
+  { id: 'myt10', cat: 'Mythos', q: 'Welches Tier symbolisiert in Ägypten die Göttin Bastet?', o: ['Die Katze', 'Der Falke', 'Das Krokodil', 'Der Skarabäus'] },
+  { id: 'myt11', cat: 'Mythos', q: 'Wie heißt das Fest, an dem Juden den Auszug aus Ägypten feiern?', o: ['Pessach', 'Chanukka', 'Jom Kippur', 'Sukkot'] },
+  { id: 'myt12', cat: 'Mythos', q: 'Wer war in der römischen Mythologie die Göttin der Liebe?', o: ['Venus', 'Juno', 'Minerva', 'Diana'] },
+  { id: 'myt13', cat: 'Mythos', q: 'Welche Kreatur wird als halb Mensch, halb Stier beschrieben?', o: ['Der Minotaurus', 'Der Zentaur', 'Der Satyr', 'Der Faun'] },
+  { id: 'myt14', cat: 'Mythos', q: 'Wie heißt der Weltuntergang in der nordischen Mythologie?', o: ['Ragnarök', 'Walhall', 'Yggdrasil', 'Midgard'] },
+];
+
+// Wahrheitsfragen. Beide antworten immer, danach bewertet der oder die andere.
+//
+// { id, tiefe: 'leicht' | 'ehrlich' | 'tief', thema }
+
+const WAHRHEIT = [
+  // ── Wir beide & der Anfang ──────────────────────────────────────────────
+  { id: 'wir01', tiefe: 'leicht', thema: 'Wir beide', q: 'Was war dein allererster Gedanke, als du mich zum ersten Mal gesehen hast?' },
+  { id: 'wir02', tiefe: 'leicht', thema: 'Wir beide', q: 'Welches gemeinsame Foto von uns magst du am liebsten — und warum genau das?' },
+  { id: 'wir03', tiefe: 'leicht', thema: 'Wir beide', q: 'Was war der Moment, in dem du dachtest: das hier wird was Ernstes?' },
+  { id: 'wir04', tiefe: 'leicht', thema: 'Wir beide', q: 'Welchen Spitznamen für mich hast du dir mal ausgedacht und nie ausgesprochen?' },
+  { id: 'wir05', tiefe: 'leicht', thema: 'Wir beide', q: 'Was ist dein liebster Moment eines ganz normalen Tages mit mir?' },
+  { id: 'wir06', tiefe: 'leicht', thema: 'Wir beide', q: 'Welches Kompliment von mir ist bei dir hängen geblieben?' },
+  { id: 'wir07', tiefe: 'leicht', thema: 'Wir beide', q: 'Wann hast du dich zuletzt wegen mir richtig gefreut, ohne es zu zeigen?' },
+  { id: 'wir08', tiefe: 'leicht', thema: 'Wir beide', q: 'Welche Angewohnheit von mir findest du insgeheim süß, obwohl du dich darüber beschwerst?' },
+  { id: 'wir09', tiefe: 'leicht', thema: 'Wir beide', q: 'Wenn du mich in einem Satz jemandem beschreiben müsstest, der mich nie trifft — welcher Satz?' },
+  { id: 'wir10', tiefe: 'leicht', thema: 'Wir beide', q: 'Welchen Streit von uns findest du im Nachhinein einfach nur komisch?' },
+  { id: 'wir11', tiefe: 'leicht', thema: 'Wir beide', q: 'Was würdest du sofort wieder genauso machen, wenn wir unsere Hochzeit noch mal planen müssten?' },
+  { id: 'wir12', tiefe: 'leicht', thema: 'Wir beide', q: 'Was würdest du an unserer Hochzeit ändern?' },
+  { id: 'wir13', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Wann hast du dich zuletzt von mir übersehen gefühlt?' },
+  { id: 'wir14', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Was sagst du über mich, wenn ich nicht dabei bin?' },
+  { id: 'wir15', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Was vermisst du an unserer Zeit vor der Ehe?' },
+  { id: 'wir16', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Welche Erwartung an mich hast du still aufgegeben?' },
+  { id: 'wir17', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Was war die letzte Situation, in der du dich für mich fremdgeschämt hast?' },
+  { id: 'wir18', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Welches Thema vermeiden wir beide konsequent?' },
+  { id: 'wir19', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Welche Kritik von mir hat dich mal richtig getroffen, und ich hab es nicht gemerkt?' },
+  { id: 'wir20', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Wofür bist du mir dankbar, ohne es je richtig gesagt zu haben?' },
+  { id: 'wir21', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Wofür hättest du dich bei mir längst entschuldigen sollen?' },
+  { id: 'wir22', tiefe: 'ehrlich', thema: 'Wir beide', q: 'Wann hast du zuletzt „ist schon okay“ gesagt, obwohl es nicht okay war?' },
+  { id: 'wir23', tiefe: 'tief', thema: 'Wir beide', q: 'In welchem Moment wusstest du, dass du mit mir alt werden willst?' },
+  { id: 'wir24', tiefe: 'tief', thema: 'Wir beide', q: 'Wann hast du zuletzt an uns gezweifelt?' },
+  { id: 'wir25', tiefe: 'tief', thema: 'Wir beide', q: 'Was glaubst du, verstehe ich an dir bis heute nicht?' },
+  { id: 'wir26', tiefe: 'tief', thema: 'Wir beide', q: 'Welchen Teil von dir zeigst du nur mir — und welchen niemandem?' },
+  { id: 'wir27', tiefe: 'tief', thema: 'Wir beide', q: 'Wenn du heute noch einmal Ja sagen müsstest — was würdest du diesmal dazusagen?' },
+  { id: 'wir28', tiefe: 'tief', thema: 'Wir beide', q: 'Was brauchst du, um dich bei mir vollkommen sicher zu fühlen?' },
+  { id: 'wir29', tiefe: 'tief', thema: 'Wir beide', q: 'Welche Version von uns in zehn Jahren wünschst du dir — und was müssten wir dafür ab morgen ändern?' },
+  { id: 'wir30', tiefe: 'tief', thema: 'Wir beide', q: 'Was wäre aus dir geworden, wenn wir uns nie getroffen hätten?' },
+
+  // ── Alltag & Reibung ────────────────────────────────────────────────────
+  { id: 'alt01', tiefe: 'leicht', thema: 'Alltag', q: 'Welches Essen, das ich koche, magst du in Wahrheit weniger, als du zugibst?' },
+  { id: 'alt02', tiefe: 'leicht', thema: 'Alltag', q: 'Welche Serie hast du heimlich ohne mich weitergeschaut?' },
+  { id: 'alt03', tiefe: 'leicht', thema: 'Alltag', q: 'Was ist die harmloseste Lüge, die du mir diese Woche erzählt hast?' },
+  { id: 'alt04', tiefe: 'leicht', thema: 'Alltag', q: 'Welche Hausarbeit schiebst du absichtlich so lange auf, bis ich sie mache?' },
+  { id: 'alt05', tiefe: 'leicht', thema: 'Alltag', q: 'Was ist das Unordentlichste an dir, das du gut versteckst?' },
+  { id: 'alt06', tiefe: 'leicht', thema: 'Alltag', q: 'Was würdest du an unserer Wohnung ändern, wenn Geld egal wäre?' },
+  { id: 'alt07', tiefe: 'leicht', thema: 'Alltag', q: 'Welchen Gegenstand von mir würdest du am liebsten heimlich entsorgen?' },
+  { id: 'alt08', tiefe: 'leicht', thema: 'Alltag', q: 'Wie oft am Tag denkst du an mich — ehrlich geschätzt?' },
+  { id: 'alt09', tiefe: 'ehrlich', thema: 'Alltag', q: 'Welche meiner Angewohnheiten nervt dich wirklich — nicht die höfliche Antwort?' },
+  { id: 'alt10', tiefe: 'ehrlich', thema: 'Alltag', q: 'Was tue ich, wenn ich gestresst bin, das dir zusetzt?' },
+  { id: 'alt11', tiefe: 'ehrlich', thema: 'Alltag', q: 'In welchem Bereich unseres Lebens hast du das Gefühl, mehr zu tragen als ich?' },
+  { id: 'alt12', tiefe: 'ehrlich', thema: 'Alltag', q: 'Was würdest du an unserer Rollenverteilung im Alltag ändern?' },
+  { id: 'alt13', tiefe: 'ehrlich', thema: 'Alltag', q: 'Wann hast du dich zuletzt einsam gefühlt, obwohl ich im selben Raum war?' },
+  { id: 'alt14', tiefe: 'ehrlich', thema: 'Alltag', q: 'Wie viel Zeit für dich allein bräuchtest du eigentlich pro Woche?' },
+  { id: 'alt15', tiefe: 'ehrlich', thema: 'Alltag', q: 'Was an unserem Alltag langweilt dich?' },
+  { id: 'alt16', tiefe: 'ehrlich', thema: 'Alltag', q: 'Welche Regel zwischen uns hältst du für überholt?' },
+  { id: 'alt17', tiefe: 'ehrlich', thema: 'Alltag', q: 'Wann hast du zuletzt aufgeräumt, nur damit ich nichts sage?' },
+  { id: 'alt18', tiefe: 'tief', thema: 'Alltag', q: 'Was fehlt dir in unserem gemeinsamen Leben am meisten?' },
+  { id: 'alt19', tiefe: 'tief', thema: 'Alltag', q: 'Woran merkst du, dass es mir schlecht geht, bevor ich es sage?' },
+  { id: 'alt20', tiefe: 'tief', thema: 'Alltag', q: 'Wenn wir ein Jahr lang alles anders machen dürften: was wäre das Erste?' },
+
+  // ── Nähe & Körper ───────────────────────────────────────────────────────
+  { id: 'nae01', tiefe: 'leicht', thema: 'Nähe', q: 'Welche Berührung von mir magst du am liebsten?' },
+  { id: 'nae02', tiefe: 'leicht', thema: 'Nähe', q: 'Was findest du körperlich am attraktivsten an mir — und was hast du dabei noch nie gesagt?' },
+  { id: 'nae03', tiefe: 'leicht', thema: 'Nähe', q: 'Wann hast du dich zuletzt so richtig zu mir hingezogen gefühlt?' },
+  { id: 'nae04', tiefe: 'leicht', thema: 'Nähe', q: 'Welches Outfit von mir gefällt dir am besten?' },
+  { id: 'nae05', tiefe: 'leicht', thema: 'Nähe', q: 'Wie sieht dein perfekter Abend zu zweit aus — im Detail?' },
+  { id: 'nae06', tiefe: 'ehrlich', thema: 'Nähe', q: 'Wie zufrieden bist du gerade mit unserer Nähe — auf einer Skala von 1 bis 10, und was fehlt zur 10?' },
+  { id: 'nae07', tiefe: 'ehrlich', thema: 'Nähe', q: 'Was wünschst du dir körperlich von mir, hast es aber nie so direkt gesagt?' },
+  { id: 'nae08', tiefe: 'ehrlich', thema: 'Nähe', q: 'Was bringt dich am schnellsten dazu, dich mir wieder nah zu fühlen nach einem Streit?' },
+  { id: 'nae09', tiefe: 'ehrlich', thema: 'Nähe', q: 'Woran merkst du, dass ich Abstand brauche — und wie geht es dir damit?' },
+  { id: 'nae10', tiefe: 'ehrlich', thema: 'Nähe', q: 'Welche Zärtlichkeit fehlt dir im Alltag am meisten?' },
+  { id: 'nae11', tiefe: 'ehrlich', thema: 'Nähe', q: 'Was hast du dir mal gewünscht und dich nicht getraut zu fragen?' },
+  { id: 'nae12', tiefe: 'ehrlich', thema: 'Nähe', q: 'Wann warst du zuletzt eifersüchtig — und worauf genau?' },
+  { id: 'nae13', tiefe: 'tief', thema: 'Nähe', q: 'Was macht dich bei mir wirklich verletzlich?' },
+  { id: 'nae14', tiefe: 'tief', thema: 'Nähe', q: 'Wann fühlst du dich mir am nächsten — außerhalb vom Bett?' },
+  { id: 'nae15', tiefe: 'tief', thema: 'Nähe', q: 'Was müsste passieren, damit du dich mir völlig ausliefern könntest?' },
+
+  // ── Geld & Arbeit ───────────────────────────────────────────────────────
+  { id: 'gel01', tiefe: 'leicht', thema: 'Geld & Arbeit', q: 'Wofür würdest du sofort 1.000 Euro ausgeben, wenn sie morgen da wären?' },
+  { id: 'gel02', tiefe: 'leicht', thema: 'Geld & Arbeit', q: 'Welchen Beruf hättest du gern ausprobiert?' },
+  { id: 'gel03', tiefe: 'leicht', thema: 'Geld & Arbeit', q: 'Was war dein sinnlosester Kauf der letzten zwei Jahre?' },
+  { id: 'gel04', tiefe: 'ehrlich', thema: 'Geld & Arbeit', q: 'Wie viel Geld hast du zuletzt ausgegeben, ohne es zu erwähnen?' },
+  { id: 'gel05', tiefe: 'ehrlich', thema: 'Geld & Arbeit', q: 'Was macht dich in deinem Job gerade unglücklich, und warum sagst du es nicht lauter?' },
+  { id: 'gel06', tiefe: 'ehrlich', thema: 'Geld & Arbeit', q: 'Hast du Angst, dass wir irgendwann finanziell nicht klarkommen? Woran genau?' },
+  { id: 'gel07', tiefe: 'ehrlich', thema: 'Geld & Arbeit', q: 'Findest du, wir gehen fair mit Geld um? Wo nicht?' },
+  { id: 'gel08', tiefe: 'ehrlich', thema: 'Geld & Arbeit', q: 'Wie viel Arbeit ist zu viel Arbeit — bei mir, bei dir?' },
+  { id: 'gel09', tiefe: 'ehrlich', thema: 'Geld & Arbeit', q: 'Für welchen beruflichen Traum würdest du Sicherheit aufgeben?' },
+  { id: 'gel10', tiefe: 'tief', thema: 'Geld & Arbeit', q: 'Woran misst du beruflichen Erfolg — und erfüllst du dieses Maß gerade?' },
+  { id: 'gel11', tiefe: 'tief', thema: 'Geld & Arbeit', q: 'Was würdest du arbeiten, wenn Geld keine Rolle spielte?' },
+  { id: 'gel12', tiefe: 'tief', thema: 'Geld & Arbeit', q: 'Wovon in unserer finanziellen Zukunft hast du heimlich ein mulmiges Gefühl?' },
+
+  // ── Familie & Herkunft ──────────────────────────────────────────────────
+  { id: 'fam01', tiefe: 'leicht', thema: 'Familie', q: 'Welche Eigenschaft hast du eindeutig von deinen Eltern?' },
+  { id: 'fam02', tiefe: 'leicht', thema: 'Familie', q: 'Welche Familientradition von dir möchtest du unbedingt behalten?' },
+  { id: 'fam03', tiefe: 'leicht', thema: 'Familie', q: 'Was war das beste Essen deiner Kindheit?' },
+  { id: 'fam04', tiefe: 'ehrlich', thema: 'Familie', q: 'Was an meiner Familie ist für dich anstrengender, als du zugibst?' },
+  { id: 'fam05', tiefe: 'ehrlich', thema: 'Familie', q: 'Wo verteidigst du deine Familie, obwohl du mir insgeheim recht gibst?' },
+  { id: 'fam06', tiefe: 'ehrlich', thema: 'Familie', q: 'Welche Erwartung deiner Familie an uns spürst du am stärksten?' },
+  { id: 'fam07', tiefe: 'ehrlich', thema: 'Familie', q: 'Was möchtest du auf keinen Fall so machen wie deine Eltern?' },
+  { id: 'fam08', tiefe: 'ehrlich', thema: 'Familie', q: 'Wem in deiner Familie stehst du weniger nah, als du zeigst?' },
+  { id: 'fam09', tiefe: 'tief', thema: 'Familie', q: 'Was hast du deinen Eltern nie verziehen?' },
+  { id: 'fam10', tiefe: 'tief', thema: 'Familie', q: 'Welche Wunde aus deiner Kindheit merkst du heute noch in unserer Beziehung?' },
+  { id: 'fam11', tiefe: 'tief', thema: 'Familie', q: 'Was würdest du deinen Eltern heute gern sagen, wenn Zeit und Mut keine Rolle spielten?' },
+  { id: 'fam12', tiefe: 'tief', thema: 'Familie', q: 'Welche Rolle hattest du als Kind in deiner Familie — und trägst du sie noch?' },
+
+  // ── Zukunft & Kinder ────────────────────────────────────────────────────
+  { id: 'zuk01', tiefe: 'leicht', thema: 'Zukunft', q: 'Wenn wir morgen auswandern müssten: wohin, und was nimmst du mit?' },
+  { id: 'zuk02', tiefe: 'leicht', thema: 'Zukunft', q: 'Wie stellst du dir unser Zuhause in zehn Jahren vor?' },
+  { id: 'zuk03', tiefe: 'leicht', thema: 'Zukunft', q: 'Welches Hobby willst du unbedingt noch anfangen?' },
+  { id: 'zuk04', tiefe: 'ehrlich', thema: 'Zukunft', q: 'Was möchtest du unbedingt gemeinsam erlebt haben, bevor wir 40 sind?' },
+  { id: 'zuk05', tiefe: 'ehrlich', thema: 'Zukunft', q: 'Wovor in unserer gemeinsamen Zukunft hast du am meisten Respekt?' },
+  { id: 'zuk06', tiefe: 'ehrlich', thema: 'Zukunft', q: 'Was macht dir an deinem eigenen Älterwerden zu schaffen?' },
+  { id: 'zuk07', tiefe: 'ehrlich', thema: 'Zukunft', q: 'Wie viel Veränderung verträgst du gerade in deinem Leben?' },
+  { id: 'zuk08', tiefe: 'tief', thema: 'Zukunft', q: 'Wenn wir Kinder hätten oder bekämen: welche Eigenschaft von mir sollen sie unbedingt erben — und welche auf keinen Fall?' },
+  { id: 'zuk09', tiefe: 'tief', thema: 'Zukunft', q: 'Was für ein Elternteil oder Mensch möchtest du für andere sein?' },
+  { id: 'zuk10', tiefe: 'tief', thema: 'Zukunft', q: 'Was würdest du tun, wenn du wüsstest, du hättest noch genau ein Jahr?' },
+  { id: 'zuk11', tiefe: 'tief', thema: 'Zukunft', q: 'Was soll man einmal über dich sagen, wenn du nicht mehr da bist?' },
+  { id: 'zuk12', tiefe: 'tief', thema: 'Zukunft', q: 'Welchen Traum hast du aufgegeben, weil er nicht zu unserem Leben passt?' },
+
+  // ── Ich selbst ──────────────────────────────────────────────────────────
+  { id: 'ich01', tiefe: 'leicht', thema: 'Ich selbst', q: 'Was ist die peinlichste Musik, die du heimlich hörst?' },
+  { id: 'ich02', tiefe: 'leicht', thema: 'Ich selbst', q: 'Welche Sache an dir würde mich überraschen, wenn ich sie erst heute erführe?' },
+  { id: 'ich03', tiefe: 'leicht', thema: 'Ich selbst', q: 'Was hast du dir als Kind für dein Leben mit 30 vorgestellt?' },
+  { id: 'ich04', tiefe: 'leicht', thema: 'Ich selbst', q: 'Worauf bist du unverhältnismäßig stolz?' },
+  { id: 'ich05', tiefe: 'leicht', thema: 'Ich selbst', q: 'Welche völlig nutzlose Fähigkeit beherrschst du erstaunlich gut?' },
+  { id: 'ich06', tiefe: 'leicht', thema: 'Ich selbst', q: 'Was ist dein größter Luxus im Alltag?' },
+  { id: 'ich07', tiefe: 'ehrlich', thema: 'Ich selbst', q: 'Was findest du an dir selbst am schwersten zu akzeptieren?' },
+  { id: 'ich08', tiefe: 'ehrlich', thema: 'Ich selbst', q: 'Welches Versprechen an dich selbst hast du in den letzten Jahren gebrochen?' },
+  { id: 'ich09', tiefe: 'ehrlich', thema: 'Ich selbst', q: 'Wovor drückst du dich gerade?' },
+  { id: 'ich10', tiefe: 'ehrlich', thema: 'Ich selbst', q: 'In welcher Situation bist du nicht die Person, die du sein willst?' },
+  { id: 'ich11', tiefe: 'ehrlich', thema: 'Ich selbst', q: 'Wann hast du zuletzt gelogen, um gut dazustehen?' },
+  { id: 'ich12', tiefe: 'ehrlich', thema: 'Ich selbst', q: 'Welche Freundschaft von dir tut dir eigentlich nicht gut?' },
+  { id: 'ich13', tiefe: 'ehrlich', thema: 'Ich selbst', q: 'Was ist die unbequemste Wahrheit über dich selbst, die du inzwischen akzeptierst?' },
+  { id: 'ich14', tiefe: 'ehrlich', thema: 'Ich selbst', q: 'Wofür beneidest du andere?' },
+  { id: 'ich15', tiefe: 'ehrlich', thema: 'Ich selbst', q: 'Was tust du nur, weil andere es von dir erwarten?' },
+  { id: 'ich16', tiefe: 'tief', thema: 'Ich selbst', q: 'Wovor hast du gerade in deinem Leben am meisten Angst?' },
+  { id: 'ich17', tiefe: 'tief', thema: 'Ich selbst', q: 'Wann warst du zuletzt richtig stolz auf dich?' },
+  { id: 'ich18', tiefe: 'tief', thema: 'Ich selbst', q: 'Woran misst du, ob dein Leben gerade gut läuft?' },
+  { id: 'ich19', tiefe: 'tief', thema: 'Ich selbst', q: 'Was ist dein größtes ungelebtes Vorhaben?' },
+  { id: 'ich20', tiefe: 'tief', thema: 'Ich selbst', q: 'Was ist das Mutigste, das du je gemacht hast?' },
+  { id: 'ich21', tiefe: 'tief', thema: 'Ich selbst', q: 'Welche Entscheidung in deinem Leben bereust du am meisten?' },
+  { id: 'ich22', tiefe: 'tief', thema: 'Ich selbst', q: 'Wofür würdest du dein jetziges Leben aufgeben?' },
+  { id: 'ich23', tiefe: 'tief', thema: 'Ich selbst', q: 'Wann hast du dich zuletzt richtig lebendig gefühlt?' },
+  { id: 'ich24', tiefe: 'tief', thema: 'Ich selbst', q: 'Was glaubst du über dich, das wahrscheinlich nicht stimmt?' },
+
+  // ── Früher & Geheimnisse ────────────────────────────────────────────────
+  { id: 'fru01', tiefe: 'leicht', thema: 'Früher', q: 'Was war deine peinlichste Phase als Teenager?' },
+  { id: 'fru02', tiefe: 'leicht', thema: 'Früher', q: 'In wen warst du als Kind heimlich verliebt?' },
+  { id: 'fru03', tiefe: 'leicht', thema: 'Früher', q: 'Welche Regel hast du als Jugendlicher am häufigsten gebrochen?' },
+  { id: 'fru04', tiefe: 'leicht', thema: 'Früher', q: 'Was war dein schlimmstes Outfit, von dem es noch Fotos gibt?' },
+  { id: 'fru05', tiefe: 'leicht', thema: 'Früher', q: 'Welchen Berufswunsch hattest du mit zehn?' },
+  { id: 'fru06', tiefe: 'ehrlich', thema: 'Früher', q: 'Gibt es etwas, das du mir in den letzten sechs Monaten verschwiegen hast?' },
+  { id: 'fru07', tiefe: 'ehrlich', thema: 'Früher', q: 'Was hast du in deinem Leben getan, wofür du dich heute noch schämst?' },
+  { id: 'fru08', tiefe: 'ehrlich', thema: 'Früher', q: 'Welche Geschichte aus deiner Vergangenheit hast du mir geschönt erzählt?' },
+  { id: 'fru09', tiefe: 'ehrlich', thema: 'Früher', q: 'Wen aus deiner Vergangenheit würdest du gern noch einmal treffen — und warum?' },
+  { id: 'fru10', tiefe: 'ehrlich', thema: 'Früher', q: 'Was war dein größter Fehler vor unserer Zeit?' },
+  { id: 'fru11', tiefe: 'tief', thema: 'Früher', q: 'Welchen Menschen aus deiner Vergangenheit trägst du immer noch mit dir herum?' },
+  { id: 'fru12', tiefe: 'tief', thema: 'Früher', q: 'Was war der einsamste Moment deines Lebens?' },
+  { id: 'fru13', tiefe: 'tief', thema: 'Früher', q: 'Wann hast du zuletzt geweint und es mir nicht erzählt?' },
+  { id: 'fru14', tiefe: 'tief', thema: 'Früher', q: 'Was ist das Schwerste, das du je jemandem verziehen hast?' },
+  { id: 'fru15', tiefe: 'tief', thema: 'Früher', q: 'Welcher Moment hat dich zu dem Menschen gemacht, der du heute bist?' },
+
+  // ── Reisen & Abenteuer ──────────────────────────────────────────────────
+  { id: 'rei01', tiefe: 'leicht', thema: 'Reisen', q: 'Welches Urlaubsbild hast du im Kopf, wenn du an „perfekt“ denkst?' },
+  { id: 'rei02', tiefe: 'leicht', thema: 'Reisen', q: 'Was war unsere bisher beste gemeinsame Reise — und warum?' },
+  { id: 'rei03', tiefe: 'leicht', thema: 'Reisen', q: 'Welches Reiseziel steht ganz oben auf deiner Liste und du hast es nie erwähnt?' },
+  { id: 'rei04', tiefe: 'leicht', thema: 'Reisen', q: 'Was nervt dich beim Reisen mit mir?' },
+  { id: 'rei05', tiefe: 'leicht', thema: 'Reisen', q: 'Bist du eher Planer oder Bauchmensch im Urlaub — und wie geht es dir mit mir dabei?' },
+  { id: 'rei06', tiefe: 'ehrlich', thema: 'Reisen', q: 'Wann hast du dich in einem Urlaub mit mir gelangweilt?' },
+  { id: 'rei07', tiefe: 'ehrlich', thema: 'Reisen', q: 'Welche Reise würdest du gern einmal allein machen?' },
+  { id: 'rei08', tiefe: 'ehrlich', thema: 'Reisen', q: 'Was erhoffst du dir von genau diesem Urlaub?' },
+  { id: 'rei09', tiefe: 'tief', thema: 'Reisen', q: 'Welcher Ort auf der Welt hat etwas in dir verändert?' },
+  { id: 'rei10', tiefe: 'tief', thema: 'Reisen', q: 'Wenn wir ein Jahr frei hätten: was würdest du damit machen — ehrlich, nicht die Instagram-Antwort?' },
+];
+
+// Mutproben. Nur eine Person macht sie, die andere entscheidet, ob sie zählt.
+//
+// { id, ort: 'überall' | 'flug' | 'stadt' | 'abend', q }
+//   überall  geht immer — Sitzplatz, Hotelzimmer, Café
+//   flug     unterwegs: Flughafen, Flieger, Bahn, Taxi
+//   stadt    draußen in Wien, bei Tageslicht unter Leuten
+//   abend    Bar, Restaurant, später Abend
+
+const WAGNIS = [
+  // ── Überall ─────────────────────────────────────────────────────────────
+  { id: 'u01', ort: 'überall', q: 'Erzähle die Handlung deines Lieblingsfilms in 60 Sekunden — rückwärts.' },
+  { id: 'u02', ort: 'überall', q: 'Sprich die nächsten fünf Minuten wie ein Nachrichtensprecher. Auch beim Bestellen.' },
+  { id: 'u03', ort: 'überall', q: 'Zeichne mich, ohne einmal auf das Papier zu schauen. Das Ergebnis wird fotografiert.' },
+  { id: 'u04', ort: 'überall', q: 'Sag mir drei Minuten lang ununterbrochen Dinge, die du an mir magst. Keine Pause, keine Wiederholung.' },
+  { id: 'u05', ort: 'überall', q: 'Setz mein dümmstes Foto als mein Kontaktbild in deinem Handy — für den Rest des Urlaubs.' },
+  { id: 'u06', ort: 'überall', q: 'Sprich die nächste Viertelstunde ausschließlich in Fragen.' },
+  { id: 'u07', ort: 'überall', q: 'Lass mich die nächsten drei Songs aussuchen. Du hörst sie ganz, ohne Kommentar.' },
+  { id: 'u08', ort: 'überall', q: 'Lies mir die letzte Nachricht vor, die du deiner besten Freundin oder deinem besten Freund geschickt hast.' },
+  { id: 'u09', ort: 'überall', q: 'Erfinde aus dem Stand ein Gedicht über mich. Vier Zeilen, es muss sich reimen.' },
+  { id: 'u10', ort: 'überall', q: 'Mach 20 Kniebeugen. Jetzt. Wo du gerade bist.' },
+  { id: 'u11', ort: 'überall', q: 'Imitiere mich, bis ich lachen muss. Du hast zwei Minuten.' },
+  { id: 'u12', ort: 'überall', q: 'Schreib mir eine Nachricht, die du mir vor zehn Jahren geschickt hättest — und lies sie laut vor.' },
+  { id: 'u13', ort: 'überall', q: 'Rede eine Minute lang nur in Reimen.' },
+  { id: 'u14', ort: 'überall', q: 'Zeig mir das älteste Foto auf deinem Handy und erzähl die Geschichte dazu.' },
+  { id: 'u15', ort: 'überall', q: 'Sing mir zwei Zeilen aus dem Lied, das bei unserer Hochzeit lief.' },
+  { id: 'u16', ort: 'überall', q: 'Lass mich dein Handy 60 Sekunden lang halten. Ich darf eine App öffnen, du schaust zu.' },
+  { id: 'u17', ort: 'überall', q: 'Halte eine ernsthafte 90-Sekunden-Rede über ein völlig belangloses Thema, das ich dir gebe.' },
+  { id: 'u18', ort: 'überall', q: 'Erzähl mir eine Geschichte aus deinem Leben, die ich garantiert noch nicht kenne.' },
+  { id: 'u19', ort: 'überall', q: 'Sprich bis zur nächsten Runde nur im Flüsterton.' },
+  { id: 'u20', ort: 'überall', q: 'Beschreibe unseren letzten Streit aus meiner Sicht — fair und ohne Ironie.' },
+  { id: 'u21', ort: 'überall', q: 'Massiere mir fünf Minuten lang die Schultern. Ohne Kommentar.' },
+  { id: 'u22', ort: 'überall', q: 'Nenn zehn Dinge, für die du dankbar bist, ohne zu stocken. Bei einer Pause zählt es nicht.' },
+  { id: 'u23', ort: 'überall', q: 'Iss oder trink das Nächste ausschließlich mit deiner schwachen Hand.' },
+  { id: 'u24', ort: 'überall', q: 'Ruf jemanden aus deiner Familie an und sag ohne Vorwarnung, dass du ihn oder sie liebst. Dann leg auf.' },
+  { id: 'u25', ort: 'überall', q: 'Schreib eine Fünf-Sterne-Bewertung über mich, als wäre ich ein Restaurant. Und lies sie vor.' },
+  { id: 'u26', ort: 'überall', q: 'Mach eine Minute lang den Handstand an der Wand. Oder versuch es wenigstens ernsthaft.' },
+  { id: 'u27', ort: 'überall', q: 'Erzähl mir von deinem letzten Traum, an den du dich erinnerst — mit allen peinlichen Details.' },
+  { id: 'u28', ort: 'überall', q: 'Beschreibe mich fünf Minuten lang nur in der dritten Person, als wäre ich nicht da.' },
+  { id: 'u29', ort: 'überall', q: 'Lass mich eine Regel für die nächste Stunde festlegen. Du hältst dich daran.' },
+  { id: 'u30', ort: 'überall', q: 'Sag mir drei Dinge, die du an dir selbst magst — laut, ohne Relativieren.' },
+  { id: 'u31', ort: 'überall', q: 'Erfinde einen Werbespot für mich. 30 Sekunden, mit Jingle.' },
+  { id: 'u32', ort: 'überall', q: 'Schreib mir eine Liebeserklärung in genau zehn Wörtern. Vorlesen.' },
+  { id: 'u33', ort: 'überall', q: 'Sprich bis zur nächsten Runde ausschließlich Englisch. Auch mit mir.' },
+  { id: 'u34', ort: 'überall', q: 'Zeig mir dein Handy-Hintergrundbild und erklär, warum ausgerechnet das.' },
+  { id: 'u35', ort: 'überall', q: 'Halte 60 Sekunden lang Blickkontakt mit mir. Ohne Reden, ohne Lachen.' },
+  { id: 'u36', ort: 'überall', q: 'Tausch für die nächste halbe Stunde ein Kleidungsstück mit mir.' },
+  { id: 'u37', ort: 'überall', q: 'Erzähl mir in zwei Minuten dein Leben, als wärst du ein Filmtrailer-Sprecher.' },
+  { id: 'u38', ort: 'überall', q: 'Nenn ohne nachzudenken fünf Dinge, die du morgen anders machen willst — und mach mindestens eins davon.' },
+  { id: 'u39', ort: 'überall', q: 'Lies mir deine letzten drei Suchanfragen vor.' },
+  { id: 'u40', ort: 'überall', q: 'Sing ein Lied deiner Wahl komplett zu Ende. Ohne Text nachschauen.' },
+  { id: 'u41', ort: 'überall', q: 'Schreib eine Nachricht an dich selbst in fünf Jahren und lies sie mir vor.' },
+  { id: 'u42', ort: 'überall', q: 'Erklär mir dein Lieblingsthema drei Minuten lang so, als wäre ich fünf Jahre alt.' },
+  { id: 'u43', ort: 'überall', q: 'Lass mich deinen Nachnamen in deinem Handy für den Rest des Urlaubs ändern — ich such ihn aus.' },
+  { id: 'u44', ort: 'überall', q: 'Mach ein Foto von uns, auf dem wir beide absichtlich furchtbar aussehen. Es kommt in die Urlaubsgalerie.' },
+  { id: 'u45', ort: 'überall', q: 'Steh auf und tanz 30 Sekunden — ohne Musik.' },
+
+  // ── Unterwegs: Flughafen, Flieger, Bahn ─────────────────────────────────
+  { id: 'f01', ort: 'flug', q: 'Frag das Bordpersonal nach seinem persönlichen Lieblingsort in Wien.' },
+  { id: 'f02', ort: 'flug', q: 'Denk dir zu drei Mitreisenden in Sichtweite eine Lebensgeschichte aus und erzähl sie mir flüsternd.' },
+  { id: 'f03', ort: 'flug', q: 'Bestell dein Getränk in einer Sprache, die du nicht sprichst. Mit Händen und Füßen.' },
+  { id: 'f04', ort: 'flug', q: 'Schreib eine Postkarte an uns selbst, die wir in einem Jahr lesen. Ich darf sie nicht sehen.' },
+  { id: 'f05', ort: 'flug', q: 'Mach ein Selfie von uns, auf dem wir beide so tun, als hätten wir gerade schlechte Nachrichten bekommen.' },
+  { id: 'f06', ort: 'flug', q: 'Plane die ersten drei Stunden nach der Ankunft komplett allein. Ich erfahre nichts vorher und muss mitmachen.' },
+  { id: 'f07', ort: 'flug', q: 'Sag der Person neben dir oder gegenüber ein ehrliches Kompliment.' },
+  { id: 'f08', ort: 'flug', q: 'Lerne fünf Wörter Wienerisch und benutze sie ab jetzt konsequent.' },
+  { id: 'f09', ort: 'flug', q: 'Erstelle eine Urlaubs-Playlist mit zehn Songs — in fünf Minuten, keine Korrektur danach.' },
+  { id: 'f10', ort: 'flug', q: 'Zeig mir deinen Suchverlauf der letzten drei Tage.' },
+  { id: 'f11', ort: 'flug', q: 'Bau aus dem, was du dabeihast, ein Geschenk für mich und überreiche es mit einer Rede.' },
+  { id: 'f12', ort: 'flug', q: 'Schreib die drei Dinge auf, die dieser Urlaub unbedingt haben muss, und lies sie vor.' },
+  { id: 'f13', ort: 'flug', q: 'Frag jemanden am Nachbarplatz, was das Beste ist, das ihm oder ihr diese Woche passiert ist.' },
+  { id: 'f14', ort: 'flug', q: 'Beschreibe mir die Aussicht aus dem Fenster, als wärst du ein Reiseführer aus den 1950ern.' },
+  { id: 'f15', ort: 'flug', q: 'Rate bei drei Mitreisenden den Beruf. Wenn du dich traust: frag nach, ob es stimmt.' },
+  { id: 'f16', ort: 'flug', q: 'Bedanke dich beim Bordpersonal ausdrücklich und namentlich für den Service.' },
+  { id: 'f17', ort: 'flug', q: 'Iss dein Bordessen komplett auf — auch das, was du nicht magst.' },
+  { id: 'f18', ort: 'flug', q: 'Schreib in fünf Minuten eine Kurzgeschichte über eine Person, die du hier siehst, und lies sie vor.' },
+  { id: 'f19', ort: 'flug', q: 'Lass mich dein Sitznachbar-Gespräch starten: ich gebe dir den ersten Satz vor.' },
+  { id: 'f20', ort: 'flug', q: 'Mach eine Liste mit zehn Dingen, die du in Wien machen willst — und lass mich drei streichen.' },
+  { id: 'f21', ort: 'flug', q: 'Nimm eine Sprachnachricht auf, in der du unseren Urlaub ankündigst wie einen Kinofilm. Schick sie jemandem.' },
+  { id: 'f22', ort: 'flug', q: 'Frag eine fremde Person nach einem Buchtipp und notier ihn dir wirklich.' },
+  { id: 'f23', ort: 'flug', q: 'Verzichte für die nächste Stunde komplett auf dein Handy. Es liegt bei mir.' },
+  { id: 'f24', ort: 'flug', q: 'Erzähl mir, wie du unseren ersten gemeinsamen Urlaub in Erinnerung hast — Minute für Minute des ersten Tages.' },
+  { id: 'f25', ort: 'flug', q: 'Such heraus, wie man in fünf Sprachen „Ich liebe dich“ sagt, und sag es mir in allen.' },
+
+  // ── Draußen in der Stadt ────────────────────────────────────────────────
+  { id: 's01', ort: 'stadt', q: 'Bestell deinen Kaffee im breitesten Wienerisch, das du hinbekommst.' },
+  { id: 's02', ort: 'stadt', q: 'Frag eine fremde Person nach dem Weg zum Stephansdom — auch wenn ihr direkt davorsteht.' },
+  { id: 's03', ort: 'stadt', q: 'Sing zwei Zeilen „Rock Me Amadeus“ so laut, dass mindestens eine fremde Person es hört.' },
+  { id: 's04', ort: 'stadt', q: 'Tanz 15 Sekunden Walzer mit mir. Mitten auf dem Platz, wo wir gerade sind.' },
+  { id: 's05', ort: 'stadt', q: 'Mach einer fremden Person ein ehrliches Kompliment und geh weiter, ohne auf eine Antwort zu warten.' },
+  { id: 's06', ort: 'stadt', q: 'Bitte jemanden, ein Foto von uns zu machen — in der albernsten Pose, die dir einfällt.' },
+  { id: 's07', ort: 'stadt', q: 'Kauf mir in zehn Minuten etwas für unter fünf Euro, das zu mir passt. Ich darf nicht mitkommen.' },
+  { id: 's08', ort: 'stadt', q: 'Geh in einen Souvenirladen und probier den peinlichsten Hut an, den du findest. Foto ist Pflicht.' },
+  { id: 's09', ort: 'stadt', q: 'Frag im Kaffeehaus nach dem Gericht, das die Bedienung selbst am liebsten isst — und bestell genau das.' },
+  { id: 's10', ort: 'stadt', q: 'Sprich eine Wienerin oder einen Wiener an und lass dir einen Geheimtipp geben. Wir gehen heute noch hin.' },
+  { id: 's11', ort: 'stadt', q: 'Ruf quer über den Platz meinen Namen und sag laut einen Satz, der mit „Ich liebe dich, weil …“ beginnt.' },
+  { id: 's12', ort: 'stadt', q: 'Bestell im Kaffeehaus mit „Herr Ober, bitte!“ oder „Frau Ober, bitte!“ — mit voller Überzeugung.' },
+  { id: 's13', ort: 'stadt', q: 'Führe mich zehn Minuten durch die Stadt und erfinde dabei Sehenswürdigkeiten samt Geschichte.' },
+  { id: 's14', ort: 'stadt', q: 'Setz dich zu einer fremden Person auf eine Bank und stell drei ehrliche Fragen.' },
+  { id: 's15', ort: 'stadt', q: 'Kauf eine Blume und schenk sie einer wildfremden Person.' },
+  { id: 's16', ort: 'stadt', q: 'Bestell das Gericht, dessen Namen du nicht aussprechen kannst. Und iss es auf.' },
+  { id: 's17', ort: 'stadt', q: 'Mach an der nächsten Kreuzung 30 Sekunden lang Statue. Egal wer zuschaut.' },
+  { id: 's18', ort: 'stadt', q: 'Frag drei verschiedene Leute nach dem besten Schnitzel der Stadt und führ mich zum Sieger.' },
+  { id: 's19', ort: 'stadt', q: 'Halte einer Statue eine zweiminütige Ansprache, als wäre sie ein alter Freund.' },
+  { id: 's20', ort: 'stadt', q: 'Sprich die nächsten 20 Minuten mit allen in höchster Höflichkeit und per Sie — auch mit mir.' },
+  { id: 's21', ort: 'stadt', q: 'Nimm die nächste Straßenbahn, die kommt — egal wohin. Wir steigen nach drei Stationen aus.' },
+  { id: 's22', ort: 'stadt', q: 'Bring eine fremde Person innerhalb einer Minute zum Lachen.' },
+  { id: 's23', ort: 'stadt', q: 'Lass dich von einer fremden Person fotografieren, während du so tust, als würdest du einen Preis gewinnen.' },
+  { id: 's24', ort: 'stadt', q: 'Frag im nächsten Laden nach etwas, das es dort garantiert nicht gibt — todernst.' },
+  { id: 's25', ort: 'stadt', q: 'Geh in eine Kirche und zünde eine Kerze an. Sag mir danach, wofür.' },
+  { id: 's26', ort: 'stadt', q: 'Kauf uns beiden ein Eis in einer Sorte, die du noch nie probiert hast.' },
+  { id: 's27', ort: 'stadt', q: 'Bitte eine fremde Person, uns eine Empfehlung fürs Abendessen zu geben. Wir gehen hin.' },
+  { id: 's28', ort: 'stadt', q: 'Renn 20 Meter, als würdest du einen Bus verpassen — obwohl kein Bus da ist.' },
+  { id: 's29', ort: 'stadt', q: 'Setz dich auf eine Parkbank und schreib in zehn Minuten ein Gedicht über diese Stadt. Vorlesen.' },
+  { id: 's30', ort: 'stadt', q: 'Geh auf jemanden zu, der ein Instrument spielt, und gib etwas — mit einem echten Kompliment.' },
+  { id: 's31', ort: 'stadt', q: 'Sprich mit mir die nächsten zehn Minuten nur in Filmzitaten.' },
+  { id: 's32', ort: 'stadt', q: 'Lass eine fremde Person entscheiden, in welche Richtung wir als Nächstes gehen.' },
+  { id: 's33', ort: 'stadt', q: 'Probier in einem Geschäft ein Kleidungsstück an, das überhaupt nicht zu dir passt, und zeig es mir.' },
+  { id: 's34', ort: 'stadt', q: 'Frag eine ältere Person, wie Wien früher war. Hör mindestens fünf Minuten zu.' },
+  { id: 's35', ort: 'stadt', q: 'Umarme mich mitten auf einem belebten Platz zehn Sekunden lang, ohne dich umzuschauen.' },
+  { id: 's36', ort: 'stadt', q: 'Lauf die nächsten 100 Meter rückwärts. Ich führe dich.' },
+  { id: 's37', ort: 'stadt', q: 'Kauf etwas auf einem Markt und handle den Preis — auch wenn man das hier nicht macht.' },
+  { id: 's38', ort: 'stadt', q: 'Frag jemanden im Café, ob du kurz an seinem Tisch Platz nehmen darfst, und stell dich vor.' },
+  { id: 's39', ort: 'stadt', q: 'Zähle laut alle Dinge auf, die du in diesem Moment schön findest. Mindestens fünfzehn.' },
+  { id: 's40', ort: 'stadt', q: 'Frag im Museum oder an einer Kasse nach dem Lieblingsstück der Person hinter dem Tresen und schau es dir an.' },
+  { id: 's41', ort: 'stadt', q: 'Kauf eine Zeitung oder Postkarte und lies mir eine Passage laut auf der Straße vor.' },
+  { id: 's42', ort: 'stadt', q: 'Führ mich zehn Minuten lang mit geschlossenen Augen. Ich vertraue dir komplett.' },
+  { id: 's43', ort: 'stadt', q: 'Sag der nächsten Bedienung, dass sie den besten Job der Welt hat — und begründe es.' },
+  { id: 's44', ort: 'stadt', q: 'Mach fünf Fotos von Dingen, die dich an mich erinnern. Zeig sie mir und erklär jedes.' },
+  { id: 's45', ort: 'stadt', q: 'Erfinde für die nächste halbe Stunde eine neue Identität. Wenn dich jemand fragt, bleibst du dabei.' },
+  { id: 's46', ort: 'stadt', q: 'Frag eine fremde Person, was ihr Lieblingswort auf Deutsch ist. Benutze es heute noch dreimal.' },
+  { id: 's47', ort: 'stadt', q: 'Verschenke einen Kaffee an die Person hinter dir in der Schlange.' },
+  { id: 's48', ort: 'stadt', q: 'Stell dich vor ein Gemälde oder ein Denkmal und erklär mir laut, was es bedeutet — frei erfunden.' },
+  { id: 's49', ort: 'stadt', q: 'Bestell in einem Lokal ausschließlich mit Handzeichen.' },
+  { id: 's50', ort: 'stadt', q: 'Frag die nächste Person mit Hund, ob du den Hund streicheln darfst — und lern den Namen.' },
+
+  // ── Abends: Bar, Restaurant, spät ───────────────────────────────────────
+  { id: 'a01', ort: 'abend', q: 'Bestell für mich, ohne zu fragen. Ich esse, was kommt.' },
+  { id: 'a02', ort: 'abend', q: 'Lass mich dein Getränk auswählen. Du trinkst es ohne Kommentar.' },
+  { id: 'a03', ort: 'abend', q: 'Erhebe das Glas und halte einen Toast auf uns — laut genug, dass der Nachbartisch mithört.' },
+  { id: 'a04', ort: 'abend', q: 'Frag die Person an der Bar nach dem Drink, den sie am liebsten macht, und bestell ihn.' },
+  { id: 'a05', ort: 'abend', q: 'Lade ein fremdes Paar zu einem Gespräch an euren Tisch ein — für zehn Minuten.' },
+  { id: 'a06', ort: 'abend', q: 'Sag mir vor allen, was du an mir am attraktivsten findest. In voller Lautstärke.' },
+  { id: 'a07', ort: 'abend', q: 'Bestell etwas von der Karte, das du noch nie gegessen hast, und iss es komplett.' },
+  { id: 'a08', ort: 'abend', q: 'Fordere mich zu einem Spiel deiner Wahl heraus. Verlierer zahlt die nächste Runde.' },
+  { id: 'a09', ort: 'abend', q: 'Erzähl der Bedienung, dass wir heute etwas feiern — und erfinde was.' },
+  { id: 'a10', ort: 'abend', q: 'Tanz mit mir, auch wenn niemand sonst tanzt. Mindestens einen ganzen Song.' },
+  { id: 'a11', ort: 'abend', q: 'Sing oder summ ein Lied, bis ich errate, welches es ist.' },
+  { id: 'a12', ort: 'abend', q: 'Schreib eine Nachricht auf eine Serviette und gib sie einer fremden Person. Etwas Nettes.' },
+  { id: 'a13', ort: 'abend', q: 'Frag jemanden an der Bar nach der besten Geschichte, die er oder sie zu erzählen hat.' },
+  { id: 'a14', ort: 'abend', q: 'Erzähl mir die peinlichste Geschichte aus deinem Leben — laut genug, dass es der Nachbartisch hört.' },
+  { id: 'a15', ort: 'abend', q: 'Bestell das teuerste Ding auf der Karte — und iss oder trink es zur Hälfte, dann tauschen wir.' },
+  { id: 'a16', ort: 'abend', q: 'Halte eine ernste Rede über mich, als wären wir auf einer Hochzeit. Zwei Minuten.' },
+  { id: 'a17', ort: 'abend', q: 'Geh zu einem anderen Tisch und frag, was dort gerade gefeiert wird.' },
+  { id: 'a18', ort: 'abend', q: 'Lass mich für den Rest des Abends deinen Spitznamen bestimmen. Du reagierst nur darauf.' },
+  { id: 'a19', ort: 'abend', q: 'Bestell einen Nachtisch für den Nachbartisch — anonym.' },
+  { id: 'a20', ort: 'abend', q: 'Frag jemanden nach der besten Bar der Stadt und wir gehen als Nächstes dorthin.' },
+  { id: 'a21', ort: 'abend', q: 'Sag mir zehn Minuten lang zu allem, was ich vorschlage, Ja.' },
+  { id: 'a22', ort: 'abend', q: 'Zeig mir dein Handy-Fotoalbum von heute und kommentiere jedes Bild in einem Satz.' },
+  { id: 'a23', ort: 'abend', q: 'Frag die Bedienung, welchen Gast sie heute am sympathischsten fand — und warum.' },
+  { id: 'a24', ort: 'abend', q: 'Erfinde einen Cocktail, gib ihm einen Namen nach mir und beschreib ihn der Bar.' },
+  { id: 'a25', ort: 'abend', q: 'Erzähl mir, was du heute an mir gesehen hast, das du sonst übersiehst.' },
+];
+
+// Dreikampf — Spiellogik ohne DOM. Alles serialisierbar.
+
+
+const STAPEL = { wissen: WISSEN, wahrheit: WAHRHEIT, wagnis: WAGNIS };
+
+const TYPEN = ['wissen', 'wahrheit', 'wagnis'];
+
+const TYP_INFO = {
+  wissen:   { titel: 'Wissen',   unter: 'Beide antworten — Richtige punkten' },
+  wahrheit: { titel: 'Wahrheit', unter: 'Beide antworten, der andere bewertet' },
+  wagnis:   { titel: 'Wagnis',   unter: 'Einer macht es, der andere entscheidet' },
+};
+
+const PUNKTE = {
+  wissenRichtig: 10,     // richtige Antwort
+  wissenAllein: 5,       // Bonus, wenn nur einer richtig lag
+  wahrheitEhrlich: 20,   // ehrlich geantwortet, vom anderen bestätigt
+  wagnisGemacht: 40,     // Mutprobe durchgezogen und anerkannt
+  wagnisVerweigert: -15, // gekniffen
+};
+
+const ORTE = {
+  egal:  { titel: 'Egal',      unter: 'Alle Mutproben' },
+  flug:  { titel: 'Unterwegs', unter: 'Flieger, Bahn, Flughafen' },
+  stadt: { titel: 'In Wien',   unter: 'Draußen unter Leuten' },
+  abend: { titel: 'Abends',    unter: 'Bar, Restaurant, spät' },
+};
+
+const SAVE_VERSION = 1;
+
+function neuerStand(namen = ['Monty', 'Christina'], reise = 'Wien') {
+  return {
+    v: SAVE_VERSION,
+    reise,
+    spieler: namen.map((name) => ({ name })),
+    punkte: namen.map(() => 0),
+    dran: 0,
+    runde: 1,
+    ort: 'egal',
+    benutzt: { wissen: [], wahrheit: [], wagnis: [] },
+    verlauf: [],
+    statistik: {
+      wissenRichtig: [0, 0],
+      wahrheitEhrlich: [0, 0],
+      wagnisGemacht: [0, 0],
+      wagnisVerweigert: [0, 0],
+    },
+    aktuell: null,
+  };
+}
+
+const gegner = (i) => (i === 0 ? 1 : 0);
+
+/* ------------------------------------------------------------ Karten ziehen */
+
+function mischen(liste, rnd) {
+  const a = liste.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** Karten des Stapels, die zum aktuellen Ort passen (nur für Wagnis relevant). */
+function passend(typ, ort) {
+  if (typ !== 'wagnis' || ort === 'egal') return STAPEL[typ];
+  return STAPEL.wagnis.filter((k) => k.ort === ort || k.ort === 'überall');
+}
+
+/**
+ * Zieht eine ungenutzte Karte. Ist der Stapel durch, wird er zurückgesetzt —
+ * lieber Wiederholung als „keine Karten mehr“ mitten im Urlaub.
+ */
+function ziehen(stand, typ, rnd = Math.random) {
+  const auswahl = passend(typ, stand.ort);
+  let frei = auswahl.filter((k) => !stand.benutzt[typ].includes(k.id));
+  if (frei.length === 0) {
+    stand.benutzt[typ] = stand.benutzt[typ].filter(
+      (id) => !auswahl.some((k) => k.id === id),
+    );
+    frei = auswahl;
+  }
+  const karte = frei[Math.floor(rnd() * frei.length)];
+  stand.benutzt[typ].push(karte.id);
+  return karte;
+}
+
+/** Wissenskarte für die Anzeige: Optionen gemischt, richtige Position gemerkt. */
+function aufbereiten(karte, rnd = Math.random) {
+  const richtigeAntwort = karte.o[0];
+  const optionen = mischen(karte.o, rnd);
+  return {
+    id: karte.id,
+    cat: karte.cat,
+    q: karte.q,
+    optionen,
+    richtig: optionen.indexOf(richtigeAntwort),
+  };
+}
+
+/* ----------------------------------------------------------------- Runde */
+
+function neueRunde(stand, typ, rnd = Math.random) {
+  const roh = ziehen(stand, typ, rnd);
+  const ich = stand.dran;
+  const du = gegner(ich);
+
+  const runde = {
+    typ,
+    wer: ich,
+    antworten: [null, null],
+    urteile: [null, null],   // urteile[i] = Urteil ÜBER Spieler i
+    gemacht: null,
+    i: 0,
+  };
+
+  if (typ === 'wissen') {
+    runde.karte = aufbereiten(roh, rnd);
+    runde.schritte = [
+      { art: 'antwort', p: ich },
+      { art: 'antwort', p: du },
+      { art: 'auflösung' },
+    ];
+  } else if (typ === 'wahrheit') {
+    runde.karte = { id: roh.id, q: roh.q, tiefe: roh.tiefe, thema: roh.thema };
+    runde.schritte = [
+      { art: 'reden' },
+      { art: 'urteil', p: ich, ueber: du },
+      { art: 'urteil', p: du, ueber: ich },
+      { art: 'auflösung' },
+    ];
+  } else {
+    runde.karte = { id: roh.id, q: roh.q, ort: roh.ort };
+    runde.schritte = [
+      { art: 'ausführen', p: ich },
+      { art: 'urteil', p: du, ueber: ich },
+      { art: 'auflösung' },
+    ];
+  }
+
+  stand.aktuell = runde;
+  return stand;
+}
+
+function schritt(stand) {
+  const r = stand.aktuell;
+  return r ? r.schritte[r.i] : null;
+}
+
+/** Antwort auf eine Wissensfrage abgeben. */
+function antworten(stand, optionIndex) {
+  const r = stand.aktuell;
+  const s = schritt(stand);
+  if (!r || !s || s.art !== 'antwort') return stand;
+  r.antworten[s.p] = optionIndex;
+  r.i += 1;
+  return stand;
+}
+
+/** Urteil abgeben: bei Wahrheit „ehrlich?“, bei Wagnis „gemacht?“. */
+function bewerten(stand, ja) {
+  const r = stand.aktuell;
+  const s = schritt(stand);
+  if (!r || !s || s.art !== 'urteil') return stand;
+  if (r.typ === 'wagnis') r.gemacht = !!ja;
+  else r.urteile[s.ueber] = !!ja;
+  r.i += 1;
+  return stand;
+}
+
+/** Schritte ohne Eingabe („beide antworten jetzt mündlich“) abhaken. */
+function weiter(stand) {
+  const r = stand.aktuell;
+  const s = schritt(stand);
+  if (!r || !s) return stand;
+  if (s.art === 'reden' || s.art === 'ausführen') r.i += 1;
+  return stand;
+}
+
+/** Punkte der laufenden Runde — reine Rechnung, ändert nichts. */
+function ergebnis(runde) {
+  const deltas = [0, 0];
+  const zeilen = [];
+
+  if (runde.typ === 'wissen') {
+    const richtig = [0, 1].map((i) => runde.antworten[i] === runde.karte.richtig);
+    const allein = richtig[0] !== richtig[1];
+    for (const i of [0, 1]) {
+      if (!richtig[i]) { zeilen.push({ p: i, text: 'daneben', punkte: 0 }); continue; }
+      const p = PUNKTE.wissenRichtig + (allein ? PUNKTE.wissenAllein : 0);
+      deltas[i] = p;
+      zeilen.push({ p: i, text: allein ? 'als Einzige richtig' : 'richtig', punkte: p });
+    }
+  } else if (runde.typ === 'wahrheit') {
+    for (const i of [0, 1]) {
+      const ehrlich = runde.urteile[i] === true;
+      const p = ehrlich ? PUNKTE.wahrheitEhrlich : 0;
+      deltas[i] = p;
+      zeilen.push({ p: i, text: ehrlich ? 'ehrlich geantwortet' : 'ausgewichen', punkte: p });
+    }
+  } else {
+    const p = runde.gemacht ? PUNKTE.wagnisGemacht : PUNKTE.wagnisVerweigert;
+    deltas[runde.wer] = p;
+    zeilen.push({
+      p: runde.wer,
+      text: runde.gemacht ? 'Mutprobe bestanden' : 'gekniffen',
+      punkte: p,
+    });
+  }
+
+  return { deltas, zeilen };
+}
+
+function rundeFertig(stand) {
+  const s = schritt(stand);
+  return !!s && s.art === 'auflösung';
+}
+
+/** Punkte gutschreiben, Runde in den Verlauf legen, Zug wechseln. */
+function rundeAbschliessen(stand) {
+  const r = stand.aktuell;
+  if (!r) return stand;
+  const { deltas, zeilen } = ergebnis(r);
+
+  for (const i of [0, 1]) stand.punkte[i] += deltas[i];
+
+  const st = stand.statistik;
+  if (r.typ === 'wissen') {
+    for (const i of [0, 1]) if (r.antworten[i] === r.karte.richtig) st.wissenRichtig[i] += 1;
+  } else if (r.typ === 'wahrheit') {
+    for (const i of [0, 1]) if (r.urteile[i] === true) st.wahrheitEhrlich[i] += 1;
+  } else if (r.gemacht) {
+    st.wagnisGemacht[r.wer] += 1;
+  } else {
+    st.wagnisVerweigert[r.wer] += 1;
+  }
+
+  stand.verlauf.unshift({
+    runde: stand.runde,
+    typ: r.typ,
+    wer: r.wer,
+    frage: r.karte.q,
+    deltas,
+    zeilen,
+  });
+  if (stand.verlauf.length > 200) stand.verlauf.length = 200;
+
+  stand.runde += 1;
+  stand.dran = gegner(stand.dran);
+  stand.aktuell = null;
+  return stand;
+}
+
+/** Laufende Runde verwerfen, ohne Punkte und ohne Zugwechsel. */
+function rundeAbbrechen(stand) {
+  stand.aktuell = null;
+  return stand;
+}
+
+/* -------------------------------------------------------------- Auswertung */
+
+function fuehrung(stand) {
+  const [a, b] = stand.punkte;
+  if (a === b) return { gleich: true, vorne: null, abstand: 0 };
+  const vorne = a > b ? 0 : 1;
+  return { gleich: false, vorne, abstand: Math.abs(a - b) };
+}
+
+function stapelRest(stand, typ) {
+  const auswahl = passend(typ, stand.ort);
+  const offen = auswahl.filter((k) => !stand.benutzt[typ].includes(k.id)).length;
+  return { offen, gesamt: auswahl.length };
+}
+
+/* ------------------------------------------------ Sichern & Wiederherstellen */
+
+/** Punktestand als Text, der sich kopieren und woanders einfügen lässt. */
+function alsCode(stand) {
+  const json = JSON.stringify(stand);
+  const bytes = new TextEncoder().encode(json);
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+function ausCode(code) {
+  try {
+    const bin = atob(String(code).trim());
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const stand = JSON.parse(new TextDecoder().decode(bytes));
+    if (stand && stand.v === SAVE_VERSION && Array.isArray(stand.punkte)) return stand;
+  } catch { /* unbrauchbarer Code */ }
+  return null;
+}
+
+// Dreikampf — Oberfläche. Ein Handy, zwei Leute, ein Punktekonto für den ganzen Urlaub.
+
+
+const KEY = 'dreikampf.v1';
+const app = document.getElementById('app');
+
+let stand = null;
+let ui = { screen: 'start', overlay: null, wahl: null, halter: 0, codeStatus: '' };
+
+/* ------------------------------------------------------------------ Hilfen */
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const andere = (i) => (i === 0 ? 1 : 0);
+const name = (i) => esc(stand.spieler[i].name);
+const vz = (n) => (n > 0 ? `+${n}` : `${n}`);
+const pktKlasse = (n) => (n > 0 ? 'pkt--plus' : n < 0 ? 'pkt--minus' : 'pkt--null');
+
+function sichern() {
+  try { localStorage.setItem(KEY, JSON.stringify(stand)); } catch { /* privater Modus */ }
+}
+
+function laden() {
+  try {
+    const roh = localStorage.getItem(KEY);
+    if (!roh) return null;
+    const s = JSON.parse(roh);
+    if (s && s.v === 1 && Array.isArray(s.punkte)) return s;
+  } catch { /* kaputter Stand wird ignoriert */ }
+  return null;
+}
+
+const buzz = (ms) => { try { navigator.vibrate?.(ms); } catch { /* egal */ } };
+
+/** Wer muss das Handy in der Hand haben? null = beide dürfen schauen. */
+function braucht() {
+  const s = schritt(stand);
+  if (!s) return null;
+  if (s.art === 'antwort') return s.p;     // verdeckt — nur diese Person darf sehen
+  return null;
+}
+
+function nachAenderung() {
+  sichern();
+  render();
+}
+
+/* ----------------------------------------------------------- Erste Anlage */
+
+function renderStart() {
+  app.innerHTML = `
+    <div class="screen start">
+      <div class="wrap">
+        <h1 class="wortmarke">Der <em>Dreikampf</em></h1>
+        <div class="dreiwort"><span>Wissen</span><i>·</i><span>Wahrheit</span><i>·</i><span>Wagnis</span></div>
+
+        <p style="color:var(--fog-dim);font-size:14px;margin:0 0 24px">
+          Zwei Leute, ein Handy, ein Punktekonto für den ganzen Urlaub.
+        </p>
+
+        <div class="feldlabel">Wer spielt?</div>
+        <div class="feldreihe"><input class="feld" id="n0" maxlength="16" value="Monty" aria-label="Name 1"></div>
+        <div class="feldreihe"><input class="feld" id="n1" maxlength="16" value="Christina" aria-label="Name 2"></div>
+
+        <div class="feldlabel">Wofür zählen die Punkte?</div>
+        <div class="feldreihe"><input class="feld" id="reise" maxlength="24" value="Wien" aria-label="Reise"></div>
+
+        <div style="margin-top:26px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn--gold" id="los">Losgehen</button>
+          <button class="btn btn--leise" id="regeln">Wie es funktioniert</button>
+        </div>
+      </div>
+    </div>`;
+
+  app.querySelector('#los').onclick = () => {
+    const n0 = app.querySelector('#n0').value.trim() || 'Spieler 1';
+    const n1 = app.querySelector('#n1').value.trim() || 'Spieler 2';
+    const reise = app.querySelector('#reise').value.trim() || 'Urlaub';
+    stand = neuerStand([n0, n1], reise);
+    ui.screen = 'hub';
+    ui.halter = 0;
+    nachAenderung();
+  };
+  app.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+}
+
+/* --------------------------------------------------------------- Übersicht */
+
+function renderHub() {
+  const f = fuehrung(stand);
+  const eintraege = stand.verlauf.slice(0, 14).map((e) => {
+    const d = e.deltas
+      .map((n, i) => (n !== 0 ? `${esc(stand.spieler[i].name.slice(0, 1))} ${vz(n)}` : null))
+      .filter(Boolean);
+    return `<div class="eintrag eintrag--${e.typ}">
+      <span class="marker"></span>
+      <span class="txt">
+        <b>Runde ${e.runde} · ${TYP_INFO[e.typ].titel}</b>
+        <span>${esc(e.frage)}</span>
+      </span>
+      <span class="delta">${d.length ? d.join('<br>') : '±0'}</span>
+    </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="screen">
+      <header class="kopf">
+        <div class="titel">
+          <div class="ober">Dreikampf</div>
+          <h1>${esc(stand.reise)}</h1>
+        </div>
+        <div class="werkzeuge">
+          <button class="werkzeug" id="btnRegeln" aria-label="Regeln">?</button>
+          <button class="werkzeug" id="btnMenue" aria-label="Menü">⋯</button>
+        </div>
+      </header>
+
+      <div class="scroll">
+        <div class="wrap">
+          <div class="tafel">
+            <div class="seite ${f.vorne === 0 ? 'seite--vorn' : ''}">
+              <div class="name">${name(0)}</div>
+              <div class="zahl">${stand.punkte[0]}</div>
+              <div class="dranmarke">${stand.dran === 0 ? 'am Zug' : ''}</div>
+            </div>
+            <div class="gegen">vs.</div>
+            <div class="seite ${f.vorne === 1 ? 'seite--vorn' : ''}">
+              <div class="name">${name(1)}</div>
+              <div class="zahl">${stand.punkte[1]}</div>
+              <div class="dranmarke">${stand.dran === 1 ? 'am Zug' : ''}</div>
+            </div>
+          </div>
+          <p class="abstand">
+            ${f.gleich
+              ? 'Gleichstand.'
+              : `${name(f.vorne)} führt mit ${f.abstand} ${f.abstand === 1 ? 'Punkt' : 'Punkten'}.`}
+            · Runde ${stand.runde}
+          </p>
+
+          <button class="btn btn--gold" id="btnRunde">Runde ${stand.runde} — ${name(stand.dran)} wählt</button>
+
+          ${stand.verlauf.length
+            ? `<div class="feldlabel">Bisher</div><div class="verlauf">${eintraege}</div>`
+            : `<div class="hinweis" style="margin-top:22px">
+                 ${name(0)} fängt an. Wer dran ist, wählt eine der drei Disziplinen — und trägt
+                 damit auch das Risiko. Danach wechselt der Zug.
+               </div>`}
+          <div style="height:26px"></div>
+        </div>
+      </div>
+    </div>`;
+
+  app.querySelector('#btnRegeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+  app.querySelector('#btnMenue').onclick = () => { ui.overlay = 'menue'; render(); };
+  app.querySelector('#btnRunde').onclick = () => { ui.screen = 'wahl'; ui.halter = stand.dran; render(); };
+}
+
+/* ----------------------------------------------------------- Disziplinwahl */
+
+function renderWahl() {
+  const punkteText = {
+    wissen: `${PUNKTE.wissenRichtig}`,
+    wahrheit: `${PUNKTE.wahrheitEhrlich}`,
+    wagnis: `${PUNKTE.wagnisGemacht}`,
+  };
+
+  const karten = TYPEN.map((t) => {
+    const rest = stapelRest(stand, t);
+    return `<button class="dis dis--${t}" data-typ="${t}">
+      <span class="zahl">${punkteText[t]}</span>
+      <span class="txt">
+        <b>${TYP_INFO[t].titel}</b>
+        <small>${TYP_INFO[t].unter}</small>
+      </span>
+      <span class="rest">${rest.offen}<br>neu</span>
+    </button>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="screen">
+      <header class="kopf">
+        <div class="titel">
+          <div class="ober">Runde ${stand.runde}</div>
+          <h1>${name(stand.dran)} wählt</h1>
+        </div>
+        <div class="werkzeuge"><button class="werkzeug" id="btnZurueck" aria-label="Zurück">✕</button></div>
+      </header>
+
+      <div class="scroll"><div class="wrap" style="padding-top:18px">
+        <div class="disziplinen">${karten}</div>
+        <button class="btn btn--geist" id="btnZufall" style="margin-top:14px">Überrasch mich</button>
+        <p class="abstand" style="margin-top:16px">
+          Wagnis-Karten passend zu: <strong style="color:var(--fog)">${ORTE[stand.ort].titel}</strong>
+          — im Menü änderbar.
+        </p>
+      </div></div>
+    </div>`;
+
+  app.querySelectorAll('[data-typ]').forEach((b) => {
+    b.onclick = () => starteRunde(b.dataset.typ);
+  });
+  app.querySelector('#btnZufall').onclick = () => starteRunde(TYPEN[Math.floor(Math.random() * TYPEN.length)]);
+  app.querySelector('#btnZurueck').onclick = () => { ui.screen = 'hub'; render(); };
+}
+
+function starteRunde(typ) {
+  neueRunde(stand, typ);
+  ui.screen = 'runde';
+  ui.halter = stand.dran;
+  buzz(12);
+  nachAenderung();
+}
+
+/* --------------------------------------------------------------- Die Runde */
+
+function renderRunde() {
+  const r = stand.aktuell;
+  const s = schritt(stand);
+  if (!r || !s) { ui.screen = 'hub'; return render(); }
+
+  const koerper = s.art === 'auflösung' ? aufloesung(r) : karteAnsicht(r, s);
+
+  app.innerHTML = `
+    <div class="screen">
+      <header class="kopf">
+        <div class="titel">
+          <div class="ober">Runde ${stand.runde} · ${TYP_INFO[r.typ].titel}</div>
+          <h1>${kopfzeile(r, s)}</h1>
+        </div>
+        <div class="werkzeuge"><button class="werkzeug" id="btnAbbruch" aria-label="Runde abbrechen">✕</button></div>
+      </header>
+      <div class="scroll"><div class="buehne">${koerper.inhalt}</div></div>
+      <div class="fuss">
+        ${koerper.anweisung ? `<p class="anweisung">${koerper.anweisung}</p>` : ''}
+        ${koerper.knoepfe}
+      </div>
+    </div>`;
+
+  app.querySelector('#btnAbbruch').onclick = () => {
+    rundeAbbrechen(stand);
+    ui.screen = 'hub';
+    nachAenderung();
+  };
+  koerper.binden?.();
+}
+
+function kopfzeile(r, s) {
+  if (s.art === 'auflösung') return 'Auswertung';
+  if (s.art === 'antwort') return `${name(s.p)} antwortet`;
+  if (s.art === 'urteil') return `${name(s.p)} entscheidet`;
+  if (s.art === 'ausführen') return `${name(r.wer)} ist dran`;
+  return 'Beide antworten';
+}
+
+function karteAnsicht(r, s) {
+  const k = r.karte;
+
+  if (r.typ === 'wissen') {
+    const gewaehlt = r.antworten[s.p];
+    const optionen = k.optionen.map((o, i) => `
+      <button class="opt ${gewaehlt === i ? 'opt--gewaehlt' : ''}" data-opt="${i}">
+        <span class="buchstabe">${'ABCD'[i]}</span><span>${esc(o)}</span>
+      </button>`).join('');
+
+    return {
+      inhalt: `<div class="karte karte--wissen">
+        <div class="marke"><span class="pille">${esc(k.cat)}</span></div>
+        <p class="frage">${esc(k.q)}</p>
+        <div class="optionen">${optionen}</div>
+      </div>`,
+      anweisung: gewaehlt === null
+        ? `<b>${name(s.p)}</b>, tipp deine Antwort an. Die andere Person sieht sie nicht.`
+        : 'Antwort steht — abgeben, ohne dass jemand mitliest.',
+      knoepfe: `<button class="btn btn--gold" id="btnAbgeben" ${gewaehlt === null ? 'disabled' : ''}>
+        Antwort abgeben</button>`,
+      binden() {
+        app.querySelectorAll('[data-opt]').forEach((b) => {
+          b.onclick = () => {
+            r.antworten[s.p] = Number(b.dataset.opt);
+            buzz(8);
+            nachAenderung();
+          };
+        });
+        app.querySelector('#btnAbgeben').onclick = () => {
+          antworten(stand, r.antworten[s.p]);
+          nachAenderung();
+        };
+      },
+    };
+  }
+
+  if (r.typ === 'wahrheit') {
+    const tiefeText = { leicht: 'Zum Warmwerden', ehrlich: 'Ehrlich jetzt', tief: 'Tief' };
+    const karte = `<div class="karte karte--wahrheit">
+      <div class="marke">
+        <span class="pille">${esc(k.thema)}</span><span>${tiefeText[k.tiefe] || ''}</span>
+      </div>
+      <p class="frage">${esc(k.q)}</p>
+    </div>`;
+
+    if (s.art === 'reden') {
+      return {
+        inhalt: karte,
+        anweisung: `Beide antworten — laut und nacheinander. <b>${name(r.wer)}</b> fängt an.`,
+        knoepfe: `<button class="btn btn--gold" id="btnFertig">Beide haben geantwortet</button>`,
+        binden() { app.querySelector('#btnFertig').onclick = () => { weiter(stand); nachAenderung(); }; },
+      };
+    }
+
+    return {
+      inhalt: karte,
+      anweisung: `<b>${name(s.p)}</b>: War die Antwort von <b>${name(s.ueber)}</b> ehrlich?`,
+      knoepfe: `<div class="reihe">
+        <button class="btn btn--nein" id="btnNein">Ausgewichen</button>
+        <button class="btn btn--ja" id="btnJa">Ehrlich · ${vz(PUNKTE.wahrheitEhrlich)}</button>
+      </div>`,
+      binden() {
+        app.querySelector('#btnJa').onclick = () => { bewerten(stand, true); buzz(12); nachAenderung(); };
+        app.querySelector('#btnNein').onclick = () => { bewerten(stand, false); nachAenderung(); };
+      },
+    };
+  }
+
+  // Wagnis
+  const karte = `<div class="karte karte--wagnis">
+    <div class="marke"><span class="pille">${esc(ORTE[k.ort]?.titel || 'Überall')}</span><span>Mutprobe</span></div>
+    <p class="frage">${esc(k.q)}</p>
+  </div>`;
+
+  if (s.art === 'ausführen') {
+    return {
+      inhalt: karte,
+      anweisung: `<b>${name(r.wer)}</b>, das ist deins. ${name(andere(r.wer))} entscheidet danach, ob es zählt.`,
+      knoepfe: `<div class="reihe">
+        <button class="btn btn--nein" id="btnKneifen">Kneifen · ${PUNKTE.wagnisVerweigert}</button>
+        <button class="btn btn--gold" id="btnErledigt">Erledigt</button>
+      </div>`,
+      binden() {
+        app.querySelector('#btnErledigt').onclick = () => { weiter(stand); nachAenderung(); };
+        app.querySelector('#btnKneifen').onclick = () => {
+          r.gemacht = false;
+          r.i = r.schritte.length - 1;
+          nachAenderung();
+        };
+      },
+    };
+  }
+
+  return {
+    inhalt: karte,
+    anweisung: `<b>${name(s.p)}</b>: Hat <b>${name(s.ueber)}</b> das wirklich durchgezogen?`,
+    knoepfe: `<div class="reihe">
+      <button class="btn btn--nein" id="btnNein">Nein · ${PUNKTE.wagnisVerweigert}</button>
+      <button class="btn btn--ja" id="btnJa">Ja · ${vz(PUNKTE.wagnisGemacht)}</button>
+    </div>`,
+    binden() {
+      app.querySelector('#btnJa').onclick = () => { bewerten(stand, true); buzz([15, 40, 20]); nachAenderung(); };
+      app.querySelector('#btnNein').onclick = () => { bewerten(stand, false); nachAenderung(); };
+    },
+  };
+}
+
+function aufloesung(r) {
+  const { deltas, zeilen } = ergebnis(r);
+  let inhalt = '';
+
+  if (r.typ === 'wissen') {
+    const k = r.karte;
+    const optionen = k.optionen.map((o, i) => {
+      const wer = [0, 1].filter((p) => r.antworten[p] === i).map((p) => name(p)).join(' & ');
+      const kl = i === k.richtig ? 'opt--richtig' : (wer ? 'opt--falsch' : '');
+      return `<div class="opt ${kl}">
+        <span class="buchstabe">${'ABCD'[i]}</span><span>${esc(o)}</span>
+        ${wer ? `<span class="wer">${wer}</span>` : ''}
+      </div>`;
+    }).join('');
+    inhalt = `<div class="karte karte--wissen">
+      <div class="marke"><span class="pille">${esc(k.cat)}</span><span>Auflösung</span></div>
+      <p class="frage">${esc(k.q)}</p>
+      <div class="optionen">${optionen}</div>
+    </div>`;
+  } else {
+    inhalt = `<div class="karte karte--${r.typ}">
+      <div class="marke"><span>${TYP_INFO[r.typ].titel}</span></div>
+      <p class="frage">${esc(r.karte.q)}</p>
+    </div>`;
+  }
+
+  const bilanz = zeilen.map((z) => `
+    <div class="bilanzzeile">
+      <span class="wer">${name(z.p)}<br><span class="was">${esc(z.text)}</span></span>
+      <span class="pkt ${pktKlasse(z.punkte)}">${vz(z.punkte)}</span>
+    </div>`).join('');
+
+  const neu = [0, 1].map((i) => stand.punkte[i] + deltas[i]);
+
+  return {
+    inhalt: `${inhalt}
+      <div class="bilanz">${bilanz}</div>
+      <p class="abstand" style="margin:0">
+        Danach: ${name(0)} ${neu[0]} · ${name(1)} ${neu[1]}
+      </p>`,
+    anweisung: '',
+    knoepfe: `<button class="btn btn--gold" id="btnBuchen">Punkte gutschreiben</button>`,
+    binden() {
+      app.querySelector('#btnBuchen').onclick = () => {
+        rundeAbschliessen(stand);
+        ui.screen = 'hub';
+        ui.halter = stand.dran;
+        buzz(15);
+        nachAenderung();
+      };
+    },
+  };
+}
+
+/* --------------------------------------------------------------- Übergabe */
+
+function renderUebergabe(wer) {
+  const layer = document.createElement('div');
+  layer.className = 'overlay uebergabe';
+  layer.innerHTML = `
+    <div class="pfeil" aria-hidden="true">📱</div>
+    <div class="lbl">Handy weitergeben an</div>
+    <div class="name">${name(wer)}</div>
+    <p class="auftrag">Deine Antwort — ohne dass jemand mitliest.</p>
+    <button class="btn btn--gold" id="btnBereit">Ich hab's</button>`;
+  app.appendChild(layer);
+  layer.querySelector('#btnBereit').onclick = () => { ui.halter = wer; render(); };
+}
+
+/* --------------------------------------------------------------- Overlays */
+
+function overlayHuelle(inhalt) {
+  const layer = document.createElement('div');
+  layer.className = 'overlay';
+  layer.innerHTML = `<div class="scroll"><div class="blatt">${inhalt}</div></div>`;
+  app.appendChild(layer);
+  return layer;
+}
+
+function renderRegeln() {
+  const l = overlayHuelle(`
+    <div class="lesbar">
+      <h2>Der Dreikampf</h2>
+      <p>Zwei Leute, ein Handy. Wer dran ist, wählt eine von drei Disziplinen — und trägt
+         damit auch das Risiko. Danach wechselt der Zug. Die Punkte laufen über den ganzen
+         Urlaub weiter.</p>
+
+      <h3>Wissen · ${PUNKTE.wissenRichtig} Punkte</h3>
+      <ul>
+        <li><strong>Beide</strong> beantworten dieselbe Frage, verdeckt und nacheinander.</li>
+        <li>Richtig: <strong>${PUNKTE.wissenRichtig} Punkte</strong>.</li>
+        <li>Wer als <strong>Einzige richtig</strong> liegt, bekommt
+            <strong>${PUNKTE.wissenRichtig + PUNKTE.wissenAllein}</strong> — das ist das Duell.</li>
+      </ul>
+
+      <h3>Wahrheit · ${PUNKTE.wahrheitEhrlich} Punkte</h3>
+      <ul>
+        <li><strong>Beide</strong> müssen antworten, laut und nacheinander.</li>
+        <li>Danach entscheidet jeder über den anderen: ehrlich oder ausgewichen?</li>
+        <li>Ehrlich: <strong>${PUNKTE.wahrheitEhrlich} Punkte</strong>. Ausgewichen: nichts.</li>
+        <li>Es gibt mehr als beim Wissen, weil es mehr kostet.</li>
+      </ul>
+
+      <h3>Wagnis · ${PUNKTE.wagnisGemacht} Punkte</h3>
+      <ul>
+        <li>Nur wer dran ist, muss ran.</li>
+        <li>Der oder die andere entscheidet, ob es zählt.</li>
+        <li>Durchgezogen: <strong>${PUNKTE.wagnisGemacht} Punkte</strong> — die höchste Beute.</li>
+        <li>Gekniffen oder nicht anerkannt: <strong>${PUNKTE.wagnisVerweigert} Punkte</strong>.</li>
+      </ul>
+
+      <h3>Die Stapel</h3>
+      <p>${STAPEL.wissen.length} Wissensfragen, ${STAPEL.wahrheit.length} Wahrheitsfragen und
+         ${STAPEL.wagnis.length} Mutproben. Jede Karte kommt erst wieder, wenn ihr Stapel
+         durch ist. Mutproben lassen sich danach filtern, wo ihr gerade seid.</p>
+
+      <h3>Punkte</h3>
+      <p>Der Stand wird auf diesem Gerät gespeichert und läuft weiter, bis ihr ihn
+         zurücksetzt. Über <strong>Menü → Punktestand sichern</strong> lässt er sich als Code
+         oder Datei mitnehmen — praktisch, wenn ihr die App mal von woanders öffnet.</p>
+
+      <div style="margin-top:24px"><button class="btn btn--gold" id="zu">Verstanden</button></div>
+    </div>`);
+  l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
+}
+
+function renderMenue() {
+  const l = overlayHuelle(`
+    <h2>Menü</h2>
+    <div style="margin-top:18px;display:flex;flex-direction:column;gap:9px">
+      <button class="btn btn--geist" id="orte">Wo seid ihr? · ${ORTE[stand.ort].titel}</button>
+      <button class="btn btn--geist" id="stat">Statistik</button>
+      <button class="btn btn--geist" id="code">Punktestand sichern oder laden</button>
+      <button class="btn btn--geist" id="regeln">Regeln</button>
+      <button class="btn btn--nein" id="reset">Punktekonto zurücksetzen</button>
+      <button class="btn btn--gold" id="zu">Zurück</button>
+    </div>
+    <div class="hinweis" style="margin-top:22px">
+      Der Stand liegt in diesem Browser auf diesem Gerät. Öffnet ihr das Spiel von einer
+      anderen Adresse aus, fängt es dort bei null an — dafür gibt es den Sicherungscode.
+    </div>`);
+  l.querySelector('#orte').onclick = () => { ui.overlay = 'orte'; render(); };
+  l.querySelector('#stat').onclick = () => { ui.overlay = 'statistik'; render(); };
+  l.querySelector('#code').onclick = () => { ui.overlay = 'code'; ui.codeStatus = ''; render(); };
+  l.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+  l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
+  l.querySelector('#reset').onclick = () => {
+    if (!confirm('Alle Punkte und der ganze Verlauf werden gelöscht. Sicher?')) return;
+    stand = neuerStand(stand.spieler.map((p) => p.name), stand.reise);
+    ui.overlay = null;
+    ui.screen = 'hub';
+    nachAenderung();
+  };
+}
+
+function renderOrte() {
+  const knoepfe = Object.entries(ORTE).map(([k, v]) => {
+    const rest = k === 'egal' ? STAPEL.wagnis.length
+      : STAPEL.wagnis.filter((x) => x.ort === k || x.ort === 'überall').length;
+    return `<button class="wahl ${stand.ort === k ? 'wahl--an' : ''}" data-ort="${k}">
+      <span><b>${v.titel}</b><small>${v.unter} · ${rest} Karten</small></span>
+    </button>`;
+  }).join('');
+
+  const l = overlayHuelle(`
+    <h2>Wo seid ihr gerade?</h2>
+    <p>Das filtert nur die Mutproben. Wissen und Wahrheit gehen überall.</p>
+    <div class="wahlreihe" style="margin-top:16px">${knoepfe}</div>
+    <div style="margin-top:22px"><button class="btn btn--gold" id="zu">Passt</button></div>`);
+  l.querySelectorAll('[data-ort]').forEach((b) => {
+    b.onclick = () => { stand.ort = b.dataset.ort; nachAenderung(); };
+  });
+  l.querySelector('#zu').onclick = () => { ui.overlay = 'menue'; render(); };
+}
+
+function renderStatistik() {
+  const st = stand.statistik;
+  const zeile = (k, werte, suffix = '') => `
+    <span class="k">${k}</span>
+    <span class="v">${werte[0]}${suffix}</span>
+    <span class="v">${werte[1]}${suffix}</span>`;
+
+  const l = overlayHuelle(`
+    <h2>Statistik</h2>
+    <div class="statz" style="margin-top:16px">
+      <span class="kopfz" style="text-align:left">&nbsp;</span>
+      <span class="kopfz">${name(0)}</span>
+      <span class="kopfz">${name(1)}</span>
+      ${zeile('Punkte gesamt', stand.punkte)}
+      ${zeile('Wissen richtig', st.wissenRichtig)}
+      ${zeile('Ehrlich geantwortet', st.wahrheitEhrlich)}
+      ${zeile('Mutproben bestanden', st.wagnisGemacht)}
+      ${zeile('Gekniffen', st.wagnisVerweigert)}
+    </div>
+    <p style="margin-top:20px">${stand.runde - 1} gespielte Runden in „${esc(stand.reise)}“.</p>
+    <div style="margin-top:16px"><button class="btn btn--gold" id="zu">Zurück</button></div>`);
+  l.querySelector('#zu').onclick = () => { ui.overlay = 'menue'; render(); };
+}
+
+function renderCode() {
+  const code = alsCode(stand);
+  const l = overlayHuelle(`
+    <h2>Punktestand mitnehmen</h2>
+    <p>Kopiert den Code oder sichert ihn als Datei. Auf einem anderen Gerät oder unter einer
+       anderen Adresse fügt ihr ihn unten wieder ein.</p>
+
+    <div class="feldlabel">Euer Code</div>
+    <textarea class="code" id="raus" readonly>${esc(code)}</textarea>
+    <div class="reihe" style="margin-top:9px">
+      <button class="btn btn--geist" id="kopieren">Kopieren</button>
+      <button class="btn btn--geist" id="datei">Als Datei</button>
+    </div>
+
+    <div class="feldlabel">Code einspielen</div>
+    <textarea class="code" id="rein" placeholder="Code hier einfügen"></textarea>
+    <button class="btn btn--nein" id="laden" style="margin-top:9px">Diesen Stand übernehmen</button>
+
+    ${ui.codeStatus ? `<p class="hinweis" style="margin-top:14px">${esc(ui.codeStatus)}</p>` : ''}
+    <div style="margin-top:22px"><button class="btn btn--gold" id="zu">Zurück</button></div>`);
+
+  l.querySelector('#kopieren').onclick = async () => {
+    const feld = l.querySelector('#raus');
+    try {
+      await navigator.clipboard.writeText(feld.value);
+      ui.codeStatus = 'Code liegt in der Zwischenablage.';
+    } catch {
+      feld.select();
+      ui.codeStatus = 'Code ist markiert — jetzt kopieren.';
+    }
+    render();
+  };
+  l.querySelector('#datei').onclick = () => {
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dreikampf-${stand.reise.replace(/\W+/g, '-').toLowerCase()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    ui.codeStatus = 'Datei gesichert.';
+    render();
+  };
+  l.querySelector('#laden').onclick = () => {
+    const neu = ausCode(l.querySelector('#rein').value);
+    if (!neu) { ui.codeStatus = 'Der Code lässt sich nicht lesen. Vollständig eingefügt?'; return render(); }
+    stand = neu;
+    ui.overlay = null;
+    ui.screen = stand.aktuell ? 'runde' : 'hub';
+    ui.halter = braucht() ?? stand.dran;
+    ui.codeStatus = '';
+    nachAenderung();
+  };
+  l.querySelector('#zu').onclick = () => { ui.overlay = 'menue'; render(); };
+}
+
+/* ----------------------------------------------------------------- Render */
+
+function render() {
+  if (!stand) { renderStart(); }
+  else if (ui.screen === 'runde' && stand.aktuell) { renderRunde(); }
+  else if (ui.screen === 'wahl') { renderWahl(); }
+  else { ui.screen = 'hub'; renderHub(); }
+
+  if (ui.overlay === 'regeln') renderRegeln();
+  else if (ui.overlay === 'menue') renderMenue();
+  else if (ui.overlay === 'orte') renderOrte();
+  else if (ui.overlay === 'statistik') renderStatistik();
+  else if (ui.overlay === 'code') renderCode();
+  else if (ui.screen === 'runde' && stand?.aktuell) {
+    const wer = braucht();
+    if (wer !== null && wer !== ui.halter) renderUebergabe(wer);
+  }
+}
+
+stand = laden();
+if (stand) {
+  ui.screen = stand.aktuell ? 'runde' : 'hub';
+  ui.halter = braucht() ?? stand.dran;
+}
+render();
+
+})();
+</script>
+</body>
+</html>

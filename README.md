@@ -1,6 +1,9 @@
-> **Auch in diesem Repo:** [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx* für zwei bis
-> vier Leute an einem Handy, als eine einzige HTML-Datei, komplett offline. Eigenes Projekt,
-> unabhängig von Gildenerbe.
+> **Auch in diesem Repo** — zwei eigenständige Reisespiele, unabhängig von Gildenerbe,
+> jeweils als eine einzige HTML-Datei und komplett offline:
+>
+> - [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx* für zwei bis vier Leute an einem Handy.
+> - [`dreikampf/`](dreikampf/README.md) — *Wissen · Wahrheit · Wagnis*, ein Duell zu zweit mit
+>   Punktekonto über den ganzen Urlaub.
 
 # Gildenerbe (Guild Legacy)
 
