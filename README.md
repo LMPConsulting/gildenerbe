@@ -1,4 +1,4 @@
-> **Auch in diesem Repo** — drei eigenständige Reisespiele, unabhängig von Gildenerbe,
+> **Auch in diesem Repo** — vier eigenständige Reisespiele, unabhängig von Gildenerbe,
 > jeweils als eine einzige HTML-Datei und komplett offline:
 >
 > - [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx* für zwei bis vier Leute an einem Handy.
@@ -6,6 +6,8 @@
 >   Punktekonto über den ganzen Urlaub.
 > - [`cabo/`](cabo/README.md) — das Kartenspiel *Cabo*: vier verdeckte Karten, Peek, Spy, Swap.
 >   Wahlweise an einem Handy oder auf zweien, per QR gekoppelt ohne Server.
+> - [`skyteam/`](skyteam/README.md) — *Sky Team*: Pilot und Kopilot landen kooperativ ein
+>   Flugzeug, schweigend, mit acht Würfeln pro Runde. Ebenfalls auf einem oder zwei Handys.
 
 # Gildenerbe (Guild Legacy)
 
