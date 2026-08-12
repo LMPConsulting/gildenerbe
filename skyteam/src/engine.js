@@ -6,37 +6,46 @@ export const KOPILOT = 1;
 export const ROLLE = ['Pilot', 'Kopilot'];
 
 export const WUERFEL_JE_RUNDE = 4;
-export const FLUGLAGE_GRENZE = 3;        // darüber hinaus trudelt das Flugzeug
+export const FLUGLAGE_GRENZE = 2;        // ±2 ist noch gut, ab ±3 trudelt es
 export const KAFFEE_MAX = 3;
+export const NEUWURF_MARKEN = 2;         // je Spiel, beide würfeln davon neu
 
-// Aerodynamik: Motorsumme ≤ blau -> 0 Felder, ≤ orange -> 1 Feld, darüber 2.
+// Geschwindigkeitsskala: Motorsumme ≤ blau -> 0 Felder, ≤ orange -> 1 Feld, darüber 2.
+// Startpositionen wie im Original: blau zwischen 4 und 5, orange zwischen 8 und 9.
 export const AERO_START = { blau: 4, orange: 8 };
 
-// Bremsstufe -> höchste Motorsumme, die bei der Landung noch zu bremsen ist.
-export const BREMSWERTE = [2, 5, 8, 11];
+// Bremsmarke: startet links der 2, jede Bremse schiebt sie ein Feld weiter.
+// Der Wert ist die höchste Geschwindigkeit, die beim Aufsetzen noch zu bremsen ist.
+export const BREMSWERTE = [1, 2, 3, 4];
 
-// Welche Augenzahlen ein Schalter verlangt.
+// Welche Augenzahlen ein Schalter verlangt. Bremsen wollen exakt 2, 4 und 6.
 export const FAHRWERK_WERTE = [[1, 2], [3, 4], [5, 6]];
 export const KLAPPEN_WERTE = [[1, 2], [2, 3], [3, 4], [4, 5]];
-export const BREMSEN_WERTE = [[1, 2], [3, 4], [5, 6]];
+export const BREMSEN_WERTE = [[2], [4], [6]];
 
 /**
  * Elf Flughäfen mit steigender Schwierigkeit. Höhe bestimmt die Rundenzahl
- * (1000 Fuß pro Runde), Anflug die Zahl der Felder bis zur Landebahn.
- * Die Werte sind per Simulation auf eine ansteigende Kurve eingestellt.
+ * (1000 Fuß pro Runde), `anflug` die Zahl der Felder bis zur Landebahn.
+ *
+ * `flugzeuge`  fremde Maschinen, die von Anfang an im Anflug stehen (Feldnummer)
+ * `verkehr`    Felder, auf denen zu Rundenbeginn der Verkehrswürfel rollt und
+ *              eine neue Maschine irgendwo voraus einsetzt
+ * `wind`       böig: die Schräglage schiebt zusätzlich auf die Geschwindigkeit
+ *
+ * Die Tabelle ist per Simulation auf eine ansteigende Kurve eingestellt.
  */
 export const FLUGHAEFEN = [
-  { kuerzel: 'YUL', name: 'Montréal', hoehe: 6000, anflug: 4, flugzeuge: [3], wind: false },
-  { kuerzel: 'ZRH', name: 'Zürich', hoehe: 7000, anflug: 6, flugzeuge: [2, 4, 5], wind: false },
-  { kuerzel: 'ORD', name: 'Chicago', hoehe: 7000, anflug: 6, flugzeuge: [2, 4], wind: true },
-  { kuerzel: 'GRU', name: 'São Paulo', hoehe: 6000, anflug: 5, flugzeuge: [2, 4], wind: false },
-  { kuerzel: 'LHR', name: 'London', hoehe: 8000, anflug: 8, flugzeuge: [2, 4, 6, 7], wind: false },
-  { kuerzel: 'CPT', name: 'Kapstadt', hoehe: 7000, anflug: 7, flugzeuge: [2, 4, 6], wind: false },
-  { kuerzel: 'KEF', name: 'Reykjavík', hoehe: 8000, anflug: 9, flugzeuge: [2, 4, 6, 8], wind: true },
-  { kuerzel: 'DXB', name: 'Dubai', hoehe: 8000, anflug: 8, flugzeuge: [1, 3, 5, 7], wind: true },
-  { kuerzel: 'SYD', name: 'Sydney', hoehe: 7000, anflug: 7, flugzeuge: [1, 3, 5], wind: true },
-  { kuerzel: 'MEX', name: 'Mexiko-Stadt', hoehe: 9000, anflug: 10, flugzeuge: [1, 3, 5, 7, 9], wind: true },
-  { kuerzel: 'HND', name: 'Tokio', hoehe: 9000, anflug: 11, flugzeuge: [1, 3, 5, 7, 9, 10], wind: true },
+  { kuerzel: 'YUL', name: 'Montréal', hoehe: 8000, anflug: 4, flugzeuge: [], verkehr: [], wind: false },
+  { kuerzel: 'ZRH', name: 'Zürich', hoehe: 8000, anflug: 5, flugzeuge: [3], verkehr: [], wind: false },
+  { kuerzel: 'GRU', name: 'São Paulo', hoehe: 8000, anflug: 6, flugzeuge: [3, 5], verkehr: [], wind: false },
+  { kuerzel: 'ORD', name: 'Chicago', hoehe: 8000, anflug: 7, flugzeuge: [2, 5], verkehr: [], wind: false },
+  { kuerzel: 'CPT', name: 'Kapstadt', hoehe: 8000, anflug: 7, flugzeuge: [3, 6], verkehr: [], wind: true },
+  { kuerzel: 'LHR', name: 'London', hoehe: 8000, anflug: 8, flugzeuge: [3, 5, 7], verkehr: [], wind: false },
+  { kuerzel: 'ATL', name: 'Atlanta', hoehe: 8000, anflug: 7, flugzeuge: [2, 4], verkehr: [3], wind: false },
+  { kuerzel: 'SYD', name: 'Sydney', hoehe: 7000, anflug: 6, flugzeuge: [2, 5], verkehr: [], wind: true },
+  { kuerzel: 'KEF', name: 'Reykjavík', hoehe: 8000, anflug: 8, flugzeuge: [3, 6], verkehr: [2, 5], wind: true },
+  { kuerzel: 'MEX', name: 'Mexiko-Stadt', hoehe: 9000, anflug: 10, flugzeuge: [2, 5, 8], verkehr: [1, 6], wind: true },
+  { kuerzel: 'HND', name: 'Tokio', hoehe: 9000, anflug: 11, flugzeuge: [2, 4, 6, 9], verkehr: [1, 4, 7], wind: true },
 ];
 
 /* --------------------------------------------------------------- Cockpit */
@@ -84,7 +93,7 @@ export function feldWerte(feld) {
 export function neuesSpiel(flughafenIndex = 0, namen = ['Pilot', 'Kopilot']) {
   const f = FLUGHAEFEN[flughafenIndex];
   return {
-    v: 1,
+    v: 2,
     flughafen: flughafenIndex,
     namen: namen.slice(0, 2),
     runde: 1,
@@ -93,20 +102,22 @@ export function neuesSpiel(flughafenIndex = 0, namen = ['Pilot', 'Kopilot']) {
     anflugLaenge: f.anflug,
     position: 0,
     flugzeuge: f.flugzeuge.slice(),
+    verkehr: (f.verkehr || []).slice(),
     wind: f.wind,
-    windRichtung: 0,
     fluglage: 0,
     aero: { ...AERO_START },
     fahrwerk: [false, false, false],
     klappen: [false, false, false, false],
     bremsen: [false, false, false],
     kaffee: 0,
+    neuwurf: NEUWURF_MARKEN,
     wuerfel: [[], []],
     belegt: {},
     dran: PILOT,
     startspieler: PILOT,
-    phase: 'briefing',      // 'briefing' | 'setzen' | 'auswertung' | 'gewonnen' | 'verloren'
+    phase: 'briefing',      // 'briefing' | 'setzen' | 'gewonnen' | 'verloren'
     letzteRunde: null,
+    neueMaschinen: [],      // was der Verkehrswürfel zuletzt eingesetzt hat
     grund: '',
   };
 }
@@ -123,14 +134,38 @@ function d6(rnd) { return 1 + Math.floor(rnd() * 6); }
 
 export function wuerfeln(s, rnd = Math.random) {
   if (s.phase !== 'briefing') return s;
+
+  // Verkehrswürfel: steht das Flugzeug auf einem Feld mit Verkehrszeichen,
+  // rollt für jedes Zeichen ein Würfel und setzt eine Maschine so viele
+  // Felder voraus ein.
+  s.neueMaschinen = [];
+  for (const feld of s.verkehr) {
+    if (feld !== s.position) continue;
+    const ziel = s.position + d6(rnd);
+    if (ziel <= s.anflugLaenge && !s.flugzeuge.includes(ziel)) {
+      s.flugzeuge.push(ziel);
+      s.neueMaschinen.push(ziel);
+    }
+  }
+
   s.wuerfel = [
     Array.from({ length: WUERFEL_JE_RUNDE }, () => d6(rnd)),
     Array.from({ length: WUERFEL_JE_RUNDE }, () => d6(rnd)),
   ];
   s.belegt = {};
   s.dran = s.startspieler;
-  s.windRichtung = s.wind ? [-1, 0, 1][Math.floor(rnd() * 3)] : 0;
   s.phase = 'setzen';
+  return s;
+}
+
+/**
+ * Neuwurf-Marke ausgeben: beide Seiten würfeln alle noch nicht gesetzten
+ * Würfel neu. Kostet eine der zwei Marken pro Spiel.
+ */
+export function neuWuerfeln(s, rnd = Math.random) {
+  if (s.phase !== 'setzen' || s.neuwurf < 1) return s;
+  s.neuwurf -= 1;
+  s.wuerfel = s.wuerfel.map((satz) => satz.map(() => d6(rnd)));
   return s;
 }
 
@@ -245,6 +280,16 @@ export function geschwindigkeit(s, summe) {
   return 2;
 }
 
+/**
+ * Der Wind greift das schräg liegende Flugzeug von der Seite an: je weiter
+ * die Fluglage aus der Mitte, desto mehr Tempo kommt oben drauf. Liegt das
+ * Flugzeug gerade, ist auch bei Wind nichts zu spüren.
+ */
+export const windAufschlag = (s) => (s.wind ? Math.abs(s.fluglage) : 0);
+
+/** Tempo dieser Runde: Motorsumme plus Wind. */
+export const tempoWert = (s, motorSumme) => motorSumme + windAufschlag(s);
+
 function verloren(s, grund) {
   s.phase = 'verloren';
   s.grund = grund;
@@ -264,16 +309,19 @@ export function rundeAuswerten(s) {
     return verloren(s, 'Der Schub blieb unbedient — die Triebwerke fallen aus.');
   }
 
-  // Fluglage: die Differenz kippt das Flugzeug, dazu bei Bedarf der Wind.
-  s.fluglage += (achseP - achseK) + s.windRichtung;
+  // Fluglage: die Differenz der beiden Ruderwürfel kippt das Flugzeug und
+  // bleibt liegen — sie summiert sich über die Runden.
+  s.fluglage += achseP - achseK;
   if (Math.abs(s.fluglage) > FLUGLAGE_GRENZE) {
     return verloren(s, `Schräglage ${s.fluglage > 0 ? '+' : ''}${s.fluglage} — das Flugzeug trudelt.`);
   }
 
-  // Schub: Summe gegen die Aerodynamik-Marker.
+  // Schub: Motorsumme plus Wind, gegen die beiden Marker der Skala.
   const summe = motorP + motorK;
-  const tempo = geschwindigkeit(s, summe);
-  const ziel = s.position + tempo;
+  const wind = windAufschlag(s);
+  const tempo = summe + wind;
+  const felder = geschwindigkeit(s, tempo);
+  const ziel = s.position + felder;
 
   for (let feld = s.position + 1; feld <= Math.min(ziel, s.anflugLaenge); feld++) {
     if (s.flugzeuge.includes(feld)) {
@@ -285,7 +333,7 @@ export function rundeAuswerten(s) {
   }
 
   s.position = ziel;
-  s.letzteRunde = { achseP, achseK, motorP, motorK, summe, tempo, fluglage: s.fluglage };
+  s.letzteRunde = { achseP, achseK, motorP, motorK, summe, wind, tempo, felder, fluglage: s.fluglage };
   s.hoehe -= 1000;
 
   if (s.hoehe > 0) {
@@ -294,17 +342,17 @@ export function rundeAuswerten(s) {
     s.phase = 'briefing';
     return s;
   }
-  return landung(s, summe);
+  return landung(s, tempo);
 }
 
-export function landung(s, summe) {
+export function landung(s, tempo) {
   const fehler = [];
   if (s.position < s.anflugLaenge) fehler.push('Die Landebahn ist noch nicht erreicht');
   if (s.fluglage !== 0) fehler.push('Das Flugzeug liegt schräg');
   if (!alleFahrwerke(s)) fehler.push('Das Fahrwerk ist nicht komplett ausgefahren');
   if (!alleKlappen(s)) fehler.push('Die Landeklappen sind nicht komplett ausgefahren');
   if (!luftraumFrei(s)) fehler.push('Es sind noch fremde Maschinen im Anflug');
-  if (summe > bremswert(s)) fehler.push(`Zu schnell zum Bremsen (${summe} statt höchstens ${bremswert(s)})`);
+  if (tempo > bremswert(s)) fehler.push(`Zu schnell zum Bremsen (Tempo ${tempo}, Bremse hält ${bremswert(s)})`);
 
   if (fehler.length) {
     s.phase = 'verloren';
@@ -329,6 +377,8 @@ export function lage(s) {
     rest: s.anflugLaenge - s.position,
     fluglage: s.fluglage,
     bremswert: bremswert(s),
+    windAufschlag: windAufschlag(s),
+    letzteRunde: istLanderunde(s),
     tempoGrenzen: { blau: s.aero.blau, orange: s.aero.orange },
     offen: {
       fahrwerk: s.fahrwerk.filter((x) => !x).length,

@@ -4,6 +4,7 @@ import {
   FAHRWERK_WERTE, KLAPPEN_WERTE, BREMSEN_WERTE,
   neuesSpiel, wuerfeln, setzen, passt, darfSetzen, moeglicheFelder, feldMit, feldWerte,
   geschwindigkeit, rundeAuswerten, landung, bremswert, kaffeeNutzen, feldFrei, lage,
+  windAufschlag, neuWuerfeln, NEUWURF_MARKEN,
 } from '../../skyteam/src/engine.js';
 
 const ohneZufall = () => 0;
@@ -106,12 +107,12 @@ describe('Würfel setzen', () => {
   });
 
   it('verlangt Klappen und Bremsen der Reihe nach', () => {
-    const s = bereit([3, 3, 4, 4], [2, 3, 4, 5]);
+    const s = bereit([2, 4, 4, 4], [2, 3, 4, 5]);
     expect(passt(s, KOPILOT, 'klappe1', 2)).toBe(false);   // Klappe 1 fehlt noch
-    expect(passt(s, PILOT, 'bremse1', 3)).toBe(false);
-    setzen(s, PILOT, 'bremse0', 1) || s;
-    s.bremsen[0] = true;
-    expect(passt(s, PILOT, 'bremse1', 3)).toBe(true);
+    expect(passt(s, PILOT, 'bremse1', 4)).toBe(false);     // Bremse 1 fehlt noch
+    expect(passt(s, PILOT, 'bremse0', 4)).toBe(false);     // Bremse 1 will genau die 2
+    setzen(s, PILOT, 'bremse0', 2);
+    expect(passt(s, PILOT, 'bremse1', 4)).toBe(true);
   });
 
   it('hält so viele Würfel zurück, dass Ruder und Schub noch gehen', () => {
@@ -120,8 +121,8 @@ describe('Würfel setzen', () => {
     expect(passt(s, PILOT, 'fahrwerk0', 1)).toBe(true);
     setzen(s, PILOT, 'fahrwerk0', 1);
     s.dran = PILOT;
-    expect(passt(s, PILOT, 'bremse0', 1)).toBe(true);
-    setzen(s, PILOT, 'bremse0', 1);
+    expect(passt(s, PILOT, 'kaffeeP', 1)).toBe(true);
+    setzen(s, PILOT, 'kaffeeP', 1);
     s.dran = PILOT;
     expect(passt(s, PILOT, 'kaffeeP', 1)).toBe(false);     // sonst fehlt ein Pflichtwürfel
     expect(passt(s, PILOT, 'achseP', 1)).toBe(true);
@@ -170,9 +171,9 @@ describe('Sofortwirkungen', () => {
   });
 
   it('hebt mit jeder Bremse den zulässigen Landewert', () => {
-    const s = bereit([1, 3, 5, 2], [1, 1, 1, 1]);
+    const s = bereit([2, 3, 5, 2], [1, 1, 1, 1]);
     expect(bremswert(s)).toBe(BREMSWERTE[0]);
-    setzen(s, PILOT, 'bremse0', 1);
+    setzen(s, PILOT, 'bremse0', 2);
     expect(bremswert(s)).toBe(BREMSWERTE[1]);
   });
 
@@ -270,9 +271,10 @@ describe('Rundenauswertung', () => {
   it('bewegt das Flugzeug gemäß der Motorsumme', () => {
     const s = bereit([3, 3, 1, 1], [3, 3, 1, 1]);
     s.flugzeuge = [];
+    const hoeheVorher = s.hoehe;
     runde(s, { achseP: 3, achseK: 3, motorP: 3, motorK: 3 });   // Summe 6 -> ein Feld
     expect(s.position).toBe(1);
-    expect(s.hoehe).toBe(5000);
+    expect(s.hoehe).toBe(hoeheVorher - 1000);
     expect(s.runde).toBe(2);
   });
 
@@ -332,7 +334,7 @@ describe('Landung', () => {
 
   it('gelingt, wenn alles stimmt', () => {
     const s = kurzVorSchluss();
-    landung(s, 8);
+    landung(s, bremswert(s));
     expect(s.phase).toBe('gewonnen');
   });
 
@@ -421,5 +423,126 @@ describe('Flughäfen', () => {
     expect(l.rest).toBe(FLUGHAEFEN[4].anflug);
     expect(l.offen.fahrwerk).toBe(3);
     expect(l.offen.klappen).toBe(4);
+  });
+});
+
+describe('Wind', () => {
+  it('bleibt wirkungslos, solange das Flugzeug gerade liegt', () => {
+    const s = neuesSpiel(4);                      // Kapstadt: böig
+    expect(s.wind).toBe(true);
+    expect(windAufschlag(s)).toBe(0);
+  });
+
+  it('schiebt umso mehr, je schräger das Flugzeug liegt', () => {
+    const s = neuesSpiel(4);
+    s.fluglage = -2;
+    expect(windAufschlag(s)).toBe(2);
+  });
+
+  it('lässt ruhige Flughäfen in Ruhe', () => {
+    const s = neuesSpiel(0);
+    s.fluglage = 2;
+    expect(windAufschlag(s)).toBe(0);
+  });
+
+  it('rechnet den Aufschlag auf die Motorsumme drauf', () => {
+    const s = neuesSpiel(4);
+    wuerfeln(s, () => 0);
+    s.wuerfel = [[4, 1, 1, 1], [4, 1, 1, 1]];
+    s.fluglage = 1;                                // Wind +1
+    s.flugzeuge = [];
+    s.dran = PILOT;
+    setzen(s, PILOT, 'achseP', 4);
+    setzen(s, KOPILOT, 'achseK', 4);              // Lage bleibt +1
+    setzen(s, PILOT, 'motorP', 1);
+    setzen(s, KOPILOT, 'motorK', 1);
+    s.wuerfel = [[], []];
+    rundeAuswerten(s);
+    expect(s.letzteRunde.summe).toBe(2);
+    expect(s.letzteRunde.wind).toBe(1);
+    expect(s.letzteRunde.tempo).toBe(3);
+  });
+});
+
+describe('Verkehrswürfel', () => {
+  it('setzt zu Rundenbeginn eine Maschine voraus ein', () => {
+    const s = neuesSpiel(0);
+    s.verkehr = [0];
+    s.flugzeuge = [];
+    wuerfeln(s, () => 0.5);                        // d6 = 4
+    expect(s.flugzeuge).toEqual([4]);
+    expect(s.neueMaschinen).toEqual([4]);
+  });
+
+  it('rollt nur auf dem markierten Feld', () => {
+    const s = neuesSpiel(0);
+    s.verkehr = [2];
+    s.position = 1;
+    s.flugzeuge = [];
+    wuerfeln(s, () => 0.5);
+    expect(s.flugzeuge).toEqual([]);
+  });
+
+  it('setzt nichts hinter die Landebahn', () => {
+    const s = neuesSpiel(0);
+    s.verkehr = [0];
+    s.flugzeuge = [];
+    s.anflugLaenge = 2;
+    wuerfeln(s, () => 0.9);                        // d6 = 6, aber Bahn liegt bei 2
+    expect(s.flugzeuge).toEqual([]);
+  });
+});
+
+describe('Neuwurf', () => {
+  it('gibt es zweimal pro Spiel und würfelt beide Sätze neu', () => {
+    const s = bereit([1, 1, 1, 1], [1, 1, 1, 1]);
+    expect(s.neuwurf).toBe(NEUWURF_MARKEN);
+    neuWuerfeln(s, () => 0.9);                     // alles wird zur 6
+    expect(s.wuerfel[PILOT]).toEqual([6, 6, 6, 6]);
+    expect(s.wuerfel[KOPILOT]).toEqual([6, 6, 6, 6]);
+    expect(s.neuwurf).toBe(NEUWURF_MARKEN - 1);
+  });
+
+  it('lässt gesetzte Würfel in Ruhe', () => {
+    const s = bereit([3, 1, 1, 1], [1, 1, 1, 1]);
+    setzen(s, PILOT, 'achseP', 3);
+    neuWuerfeln(s, () => 0.9);
+    expect(s.belegt.achseP).toBe(3);
+    expect(s.wuerfel[PILOT]).toHaveLength(3);
+  });
+
+  it('hört auf, wenn keine Marke mehr da ist', () => {
+    const s = bereit([1, 1, 1, 1], [1, 1, 1, 1]);
+    s.neuwurf = 0;
+    neuWuerfeln(s, () => 0.9);
+    expect(s.wuerfel[PILOT]).toEqual([1, 1, 1, 1]);
+  });
+});
+
+describe('Bremsen', () => {
+  it('verlangt genau die 2, die 4 und die 6', () => {
+    expect(BREMSEN_WERTE).toEqual([[2], [4], [6]]);
+  });
+
+  it('hält ohne Bremse nicht einmal die kleinste Summe', () => {
+    const s = neuesSpiel(0);
+    expect(bremswert(s)).toBeLessThan(2);
+  });
+
+  it('kommt mit allen drei Bremsen auf vier', () => {
+    const s = neuesSpiel(0);
+    s.bremsen = [true, true, true];
+    expect(bremswert(s)).toBe(4);
+  });
+
+  it('lässt genau den Bremswert noch durchgehen', () => {
+    const s = neuesSpiel(0);
+    s.position = s.anflugLaenge;
+    s.fahrwerk = [true, true, true];
+    s.klappen = [true, true, true, true];
+    s.bremsen = [true, true, true];
+    s.flugzeuge = [];
+    landung(s, 4);
+    expect(s.phase).toBe('gewonnen');
   });
 });

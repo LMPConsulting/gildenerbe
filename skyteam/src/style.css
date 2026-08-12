@@ -163,7 +163,7 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 
 .cockpit .scroll { padding: 12px 14px 0; }
 .instrumente { display: flex; flex-direction: column; gap: 9px; }
-.instrumentpaar { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.instrumentpaar { display: grid; grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.5fr); gap: 9px; }
 
 .instrument, .anflug {
   background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-md); padding: 9px 11px;
@@ -425,4 +425,295 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
     animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ===========================================================================
+   Zweite Fassung: näher am echten Brett — blaue Pilotenseite, orange
+   Kopilotenseite, Schalter mit Lämpchen, Zeigerinstrument, echte Würfelfarben.
+   =========================================================================== */
+
+:root {
+  --blau: #4a9be8;
+  --blau-tief: #1d4f80;
+  --blau-hauch: rgba(74, 155, 232, 0.12);
+  --orange: #f0a92b;
+  --orange-tief: #8a6416;
+  --orange-hauch: rgba(240, 169, 43, 0.12);
+  --rot: #e2664f;
+  --gruen: #5ec98a;
+  --metall: #1a2434;
+  --metall-hell: #22304a;
+}
+
+/* ---------- Startbildschirm: Cockpitfenster statt Balken ---------- */
+
+.marke { padding: 4px 0 2px; }
+.fenster {
+  position: relative; height: 78px; margin-bottom: 14px; overflow: hidden;
+  border: 2px solid var(--naht); border-bottom: 0;
+  border-radius: 46px 46px 8px 8px;
+  background: linear-gradient(180deg, #16304f 0%, #2a4a6d 45%, #101b2b 100%);
+}
+.himmel { position: absolute; inset: 0; }
+.sonne {
+  position: absolute; left: 50%; bottom: 6px; width: 46px; height: 46px;
+  margin-left: -23px; border-radius: 50%;
+  background: radial-gradient(circle, #ffd894 0%, #f0a92b 55%, rgba(240, 169, 43, 0) 72%);
+}
+.bahnlicht {
+  position: absolute; left: 12%; right: 12%; bottom: 0; height: 3px;
+  background: repeating-linear-gradient(90deg, var(--orange) 0 12px, transparent 12px 24px);
+  opacity: 0.85;
+}
+
+.zielkopf { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; width: 100%; }
+.ziel .schwer { font-size: 7.5px; letter-spacing: 0.14em; color: var(--orange); }
+.ziel .zielzeile { font-size: 10.5px; color: var(--nebel-dim); margin-top: 3px; line-height: 1.3; }
+.rollenschild--blau { color: var(--blau); background: var(--blau-hauch); border-color: var(--blau-tief); }
+.rollenschild--orange { color: var(--orange); background: var(--orange-hauch); border-color: var(--orange-tief); }
+.schalterzeile {
+  display: flex; align-items: center; gap: 11px; text-align: left;
+  margin-top: 18px; font-size: 13.5px; color: var(--nebel-dim);
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-md); padding: 12px 14px;
+}
+.schalterzeile input { width: 20px; height: 20px; flex: none; accent-color: var(--orange); }
+
+.btn--lehre { margin-top: 18px; justify-content: flex-start; gap: 10px; font-size: 14.5px; }
+.lehrezeichen {
+  display: inline-grid; place-items: center; flex: none;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--orange); color: #2a1c00; font-weight: 800; font-size: 14px;
+}
+
+/* ---------- Einweisung ---------- */
+
+.einweisung .blatt { display: flex; flex-direction: column; justify-content: center; min-height: 100%; }
+.lehrbild {
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-lg);
+  padding: 12px; margin: 10px 0 16px;
+}
+.lehrbild svg { width: 100%; height: auto; display: block; }
+.lehrtext { font-size: 15.5px; line-height: 1.65; }
+.punkte { display: flex; gap: 6px; justify-content: center; margin-top: 18px; }
+.punkte .punkt { width: 7px; height: 7px; border-radius: 50%; background: var(--naht); }
+.punkte .punkt.an { background: var(--orange); }
+
+/* ---------- Anflugstreifen ---------- */
+
+.bahn { display: flex; gap: 3px; align-items: stretch; }
+.zelle {
+  flex: 1; aspect-ratio: 1; min-width: 0; border-radius: 6px; position: relative;
+  background: linear-gradient(180deg, var(--metall-hell) 0%, var(--metall) 100%);
+  border: 1px solid var(--naht);
+  display: grid; place-items: center; overflow: hidden;
+}
+.zelle--bahn {
+  background: linear-gradient(180deg, #2c3c56 0%, #1a2536 100%);
+  border-color: var(--nebel-dim);
+}
+.bahnstreifen {
+  position: absolute; inset: auto 3px 4px 3px; height: 3px; border-radius: 2px;
+  background: repeating-linear-gradient(90deg, var(--orange) 0 4px, transparent 4px 8px);
+}
+.verkehrszeichen { font-size: 8px; color: var(--nebel-dim); }
+.zelle--fremd { border-color: var(--rot); background: rgba(226, 102, 79, 0.14); }
+.zelle--neu { animation: aufblitzen 1.4s ease-out 2; }
+@keyframes aufblitzen { 50% { box-shadow: 0 0 0 3px rgba(226, 102, 79, 0.45); } }
+.zelle--hier { border-color: var(--orange); background: rgba(240, 169, 43, 0.16); }
+
+.flieger { width: 66%; height: 66%; }
+.flieger--eigen { fill: var(--orange); filter: drop-shadow(0 0 4px rgba(240, 169, 43, 0.5)); }
+.flieger--fremd { fill: var(--rot); transform: scaleX(-1); opacity: 0.9; }
+
+/* ---------- Fluglage als Zeigerinstrument ---------- */
+
+.lagescheibe { width: 100%; height: auto; display: block; margin: 2px 0 4px; }
+.lagescheibe .bogen { fill: none; stroke: var(--naht); stroke-width: 2; }
+.lagescheibe .strich { stroke: var(--nebel-dim); stroke-width: 1.6; }
+.lagescheibe .strich--mitte { stroke: var(--gruen); stroke-width: 2.4; }
+.lagescheibe .strich--x { stroke: var(--rot); stroke-width: 2.4; }
+.lagescheibe .zeiger { stroke: var(--weiss); stroke-width: 2.4; stroke-linecap: round; }
+.lagescheibe .zeigerspitze { fill: var(--weiss); }
+.lagescheibe .nabe { fill: var(--panel-2); stroke: var(--nebel-dim); stroke-width: 1.5; }
+.instrumentwert.gut { color: var(--gruen); }
+.instrumentwert.warn { color: var(--orange); }
+
+/* ---------- Geschwindigkeitsskala ---------- */
+
+.tempoleiste { position: relative; padding-top: 9px; }
+.tempofelder { display: flex; gap: 2px; }
+.tempofeld {
+  /* flex-basis 0 plus min-width 0: alle elf Felder wirklich gleich breit,
+     sonst stimmen die Positionen der Marken darüber nicht. */
+  flex: 1 1 0; min-width: 0;
+  text-align: center; font-family: var(--font-num); font-size: 9px; font-weight: 700;
+  letter-spacing: -0.08em; border-radius: 4px; padding: 5px 0; border: 1px solid var(--naht);
+}
+.tempofeld.t0 { background: var(--metall); color: var(--nebel-dim); }
+.tempofeld.t1 { background: rgba(74, 155, 232, 0.16); color: var(--blau); border-color: var(--blau-tief); }
+.tempofeld.t2 { background: rgba(240, 169, 43, 0.18); color: var(--orange); border-color: var(--orange-tief); }
+.skalenmarke {
+  position: absolute; top: 0; width: 0; height: 0; margin-left: -5px;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 7px solid currentColor;
+}
+.marke--blau { color: var(--blau); }
+.marke--orange { color: var(--orange); }
+.marke--rot { color: var(--rot); top: auto; bottom: -7px; border-top: 0; border-bottom: 7px solid currentColor; }
+.tempolegende {
+  display: flex; align-items: center; gap: 10px; margin-top: 9px;
+  font-size: 9.5px; color: var(--nebel-dim); letter-spacing: 0.04em;
+}
+.tempolegende span { display: inline-flex; align-items: center; gap: 4px; }
+.tempolegende .pkt { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.tempolegende .p0 { background: var(--metall); border: 1px solid var(--naht); }
+.tempolegende .p1 { background: rgba(74, 155, 232, 0.5); }
+.tempolegende .p2 { background: rgba(240, 169, 43, 0.6); }
+.tempolegende .bremsnote { margin-left: auto; color: var(--rot); white-space: nowrap; }
+.tempolegende .legendetitel { letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ---------- Cockpit-Panel ---------- */
+
+.pflichtband {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+  border: 1px solid var(--naht); border-radius: var(--r-md);
+  padding: 8px 9px 4px; margin-bottom: 10px;
+}
+.gruppentitel {
+  display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 5px; padding: 2px 0;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; text-align: left;
+}
+.gruppentitel > span:first-child { flex: 1; }
+.gruppenwert { color: var(--nebel); font-family: var(--font-num); letter-spacing: 0; }
+.lexzeichen {
+  flex: none; width: 15px; height: 15px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 10px; font-weight: 800;
+  background: var(--panel-2); color: var(--nebel-dim); border: 1px solid var(--naht);
+}
+.slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 6px; }
+
+.slot {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: linear-gradient(180deg, var(--metall-hell) 0%, var(--metall) 100%);
+  border: 1px solid var(--naht); border-radius: var(--r-sm);
+  padding: 9px 4px 9px; min-height: 64px; justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.slot--blau { border-bottom: 2px solid var(--blau-tief); }
+.slot--orange { border-bottom: 2px solid var(--orange-tief); }
+.slot .slotname {
+  font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; text-align: center; line-height: 1.2;
+}
+.slot .anforderung { font-family: var(--font-num); font-size: 13px; color: var(--nebel); }
+.slot.belegt { background: var(--panel-2); }
+.slot.zu { opacity: 0.32; }
+.slot.gruen { border-bottom-color: var(--gruen); }
+.slot.offen {
+  border-color: var(--orange); background: rgba(240, 169, 43, 0.12);
+  animation: pochen 1.6s ease-in-out infinite;
+}
+.slot.offen .anforderung { color: var(--orange); }
+.slot--klein { min-height: 50px; padding: 6px 3px; gap: 3px; }
+.slot--klein .slotname { font-size: 7.5px; }
+.slot--klein .anforderung { font-size: 11px; }
+
+.lampe {
+  position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--rot); box-shadow: 0 0 5px rgba(226, 102, 79, 0.6);
+}
+.lampe--gruen { background: var(--gruen); box-shadow: 0 0 6px rgba(94, 201, 138, 0.7); }
+
+.bereichskopf--blau { color: var(--blau); }
+.bereichskopf--orange { color: var(--orange); }
+.meins {
+  border: 1px solid var(--naht); border-radius: var(--r-md);
+  padding: 8px 9px 6px; margin-bottom: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent);
+}
+.fremds { opacity: 0.6; }
+
+/* ---------- Würfel in Spielfarben ---------- */
+
+.wuerfel--blau { background: linear-gradient(155deg, #79bdf5 0%, #2f74b8 100%); }
+.wuerfel--orange { background: linear-gradient(155deg, #ffcd6e 0%, #d1841a 100%); }
+.wuerfel--blau i.an, .wuerfel--orange i.an { background: #0b1220; box-shadow: none; }
+.wuerfel--an { box-shadow: 0 0 0 3px var(--weiss), 0 6px 14px rgba(0, 0, 0, 0.55); }
+
+/* ---------- Fußleiste ---------- */
+
+.werkzeugleiste {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  max-width: 420px; justify-content: center;
+}
+.werkzeugleiste .trenner { flex: 1; }
+.werkzeugtext { font-size: 11px; color: var(--nebel-dim); }
+.tasse { font-size: 14px; }
+
+/* ---------- Hinweisband ---------- */
+
+.lehrband {
+  width: 100%; max-width: 460px; max-height: 34vh; overflow-y: auto;
+  background: linear-gradient(180deg, rgba(240, 169, 43, 0.13), rgba(240, 169, 43, 0.05));
+  border: 1px solid var(--orange-tief); border-radius: var(--r-md);
+  padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 7px;
+  animation: hochschieben 0.25s ease-out;
+}
+@keyframes hochschieben { from { opacity: 0; transform: translateY(8px); } }
+.lehrbandkopf {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--orange); font-weight: 700;
+}
+.lehrband p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--weiss); }
+.lehrband b { color: var(--orange); }
+.lehrband .btn { align-self: flex-start; }
+
+/* ---------- Briefing, Lexikon, Ende ---------- */
+
+.planzeile {
+  background: var(--panel); border-left: 3px solid var(--orange);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  padding: 10px 12px; font-size: 14px; margin: 14px 0 0;
+}
+.hoehenfenster {
+  text-align: right; line-height: 1.15;
+  background: var(--metall); border: 1px solid var(--naht); border-radius: 8px;
+  padding: 4px 8px;
+}
+.hoehenfenster b { font-family: var(--font-num); font-size: 16px; color: var(--orange); font-weight: 700; }
+.hoehenfenster small { display: block; font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nebel-dim); }
+.hoehenfenster.letzte { border-color: var(--rot); }
+.hoehenfenster.letzte b { color: var(--rot); }
+
+.lexzeile { border-top: 1px solid var(--naht); padding: 12px 0 2px; }
+.lexkopf { display: flex; align-items: baseline; gap: 8px; }
+.lexkopf b { color: var(--weiss); font-size: 15px; }
+.lexkopf small { color: var(--nebel-dim); font-size: 11.5px; }
+.lexzeile p { margin: 5px 0 0; font-size: 14px; }
+.lexzeile .leise { color: var(--nebel-dim); font-size: 13px; }
+.werzeile { color: var(--orange); font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; }
+.regelzeile { font-size: 14px; margin-bottom: 9px; line-height: 1.5; }
+.regelzeile b { color: var(--weiss); }
+.regelzeile small { color: var(--nebel-dim); }
+.lexpop .blatt { display: flex; flex-direction: column; justify-content: center; min-height: 100%; }
+
+.pruefzeile {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-sm);
+  padding: 9px 12px; margin-bottom: 6px; font-size: 14px;
+}
+.pruefzeile .haken { font-weight: 800; width: 18px; text-align: center; }
+.pruefzeile.ja { border-left: 3px solid var(--gruen); }
+.pruefzeile.ja .haken { color: var(--gruen); }
+.pruefzeile.nein { border-left: 3px solid var(--rot); }
+.pruefzeile.nein .haken { color: var(--rot); }
+.endzeichen svg { width: 46px; height: 46px; }
+.endkopf.gut .endzeichen svg { fill: var(--gruen); filter: none; }
+
+@media (max-height: 720px) {
+  .slot { min-height: 56px; padding: 6px 4px; }
+  .lehrband p { font-size: 12.5px; }
 }

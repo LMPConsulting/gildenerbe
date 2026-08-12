@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(join(here, p), 'utf8');
 
-const MODULE = ['src/qr.js', 'src/funk.js', 'src/engine.js', 'src/ui.js'];
+const MODULE = ['src/qr.js', 'src/funk.js', 'src/engine.js', 'src/lehre.js', 'src/ui.js'];
 
 // Alle Module landen in einem gemeinsamen Scope — gleichnamige Deklarationen in
 // zwei Dateien wären dort ein SyntaxError. Lieber hier auffallen als im Browser.
