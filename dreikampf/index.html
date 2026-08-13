@@ -408,6 +408,42 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   margin-top: 8px;
 }
 
+/* ---------- Kopplung per QR (zwei Handys im selben WLAN) ---------- */
+
+.scrollbar > .wrap { padding-block: 22px; }
+
+.qrfeld {
+  display: grid; place-items: center;
+  background: #f6f2e7; border-radius: 14px; padding: 14px; margin: 16px 0;
+}
+.qrfeld canvas { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; display: block; }
+
+.scanfenster {
+  position: relative; overflow: hidden; border-radius: 14px; background: #000;
+  aspect-ratio: 1; margin: 16px 0; border: 1px solid var(--naht, #2b423a);
+}
+.scanfenster video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanfenster::after {
+  content: ""; position: absolute; inset: 16%;
+  border: 2px solid var(--messing, #c9a227); border-radius: 12px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.45);
+}
+
+.codeklappe { margin-top: 6px; }
+.codeklappe summary { font-size: 13px; color: var(--fog-dim, #7c8a9a); cursor: pointer; padding: 8px 0; list-style: none; }
+.codeklappe summary::before { content: "▸ "; }
+.codeklappe[open] summary::before { content: "▾ "; }
+.codeklappe .btn { margin-top: 8px; }
+.codefeld {
+  width: 100%; min-height: 84px; resize: vertical; margin-top: 6px;
+  background: var(--feld, #16241f); border: 1px solid var(--naht, #2b423a); border-radius: 10px;
+  padding: 10px; color: var(--fog-dim, #7c8a9a); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px;
+  word-break: break-all; user-select: text; -webkit-user-select: text;
+}
+.warnton { color: #e2664f; }
+.scrollbar { overflow-y: auto; max-height: 100dvh; }
+.knopfsaeule { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+
 </style>
 </head>
 <body>
@@ -416,6 +452,607 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 const SEITENKOPF = "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no\">\n<meta name=\"theme-color\" content=\"#17111c\">\n<meta name=\"color-scheme\" content=\"dark\">\n<meta name=\"mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\">\n<meta name=\"description\" content=\"Dreikampf – Wissen, Wahrheit, Wagnis. Duell zu zweit an einem Handy, komplett offline.\">\n<title>Dreikampf</title>\n<link rel=\"icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2317111c%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2216%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%230e6f77%22%20transform%3D%22rotate(-11%2020%2033)%22%2F%3E%3Crect%20x%3D%2222%22%20y%3D%2214%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23a83a5c%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2216%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23cf8f1a%22%20transform%3D%22rotate(11%2044%2033)%22%2F%3E%3C%2Fsvg%3E\">\n<link rel=\"apple-touch-icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2317111c%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2216%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%230e6f77%22%20transform%3D%22rotate(-11%2020%2033)%22%2F%3E%3Crect%20x%3D%2222%22%20y%3D%2214%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23a83a5c%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2216%22%20width%3D%2220%22%20height%3D%2234%22%20rx%3D%224%22%20fill%3D%22%23cf8f1a%22%20transform%3D%22rotate(11%2044%2033)%22%2F%3E%3C%2Fsvg%3E\">\n<link rel=\"manifest\" href=\"data:application/manifest+json,%7B%22name%22%3A%22Dreikampf%22%2C%22short_name%22%3A%22Dreikampf%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%2317111c%22%2C%22theme_color%22%3A%22%2317111c%22%2C%22description%22%3A%22Wissen%2C%20Wahrheit%2C%20Wagnis%20%E2%80%94%20Duell%20zu%20zweit%20an%20einem%20Handy%2C%20mit%20Punktekonto%20f%C3%BCr%20den%20ganzen%20Urlaub.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%252317111c%2522%252F%253E%253Crect%2520x%253D%252210%2522%2520y%253D%252216%2522%2520width%253D%252220%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%25230e6f77%2522%2520transform%253D%2522rotate(-11%252020%252033)%2522%252F%253E%253Crect%2520x%253D%252222%2522%2520y%253D%252214%2522%2520width%253D%252220%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%2523a83a5c%2522%252F%253E%253Crect%2520x%253D%252234%2522%2520y%253D%252216%2522%2520width%253D%252220%2522%2520height%253D%252234%2522%2520rx%253D%25224%2522%2520fill%253D%2522%2523cf8f1a%2522%2520transform%253D%2522rotate(11%252044%252033)%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D\">";
 (function () {
 'use strict';
+// Minimaler QR-Erzeuger: Byte-Modus, Fehlerkorrektur L, Versionen 1 bis 15.
+// Eigenbau, weil das Spiel eine einzelne Datei ohne Netz bleiben soll.
+//
+// qrMatrix('text') -> { groesse, module: boolean[][] }   true = dunkel
+
+// [Gesamt-Codewörter, EC-Codewörter je Block, [Blöcke, Datenwörter], [Blöcke, Datenwörter]?]
+const VERSIONEN = {
+  1: [26, 7, [1, 19]],
+  2: [44, 10, [1, 34]],
+  3: [70, 15, [1, 55]],
+  4: [100, 20, [1, 80]],
+  5: [134, 26, [1, 108]],
+  6: [172, 18, [2, 68]],
+  7: [196, 20, [2, 78]],
+  8: [242, 24, [2, 97]],
+  9: [292, 30, [2, 116]],
+  10: [346, 18, [2, 68], [2, 69]],
+  11: [404, 20, [4, 81]],
+  12: [466, 24, [2, 92], [2, 93]],
+  13: [532, 26, [4, 107]],
+  14: [581, 30, [3, 115], [1, 116]],
+  15: [655, 22, [5, 87], [1, 88]],
+};
+
+const AUSRICHTUNG = {
+  1: [], 2: [6, 18], 3: [6, 22], 4: [6, 26], 5: [6, 30], 6: [6, 34],
+  7: [6, 22, 38], 8: [6, 24, 42], 9: [6, 26, 46], 10: [6, 28, 50],
+  11: [6, 30, 54], 12: [6, 32, 58], 13: [6, 34, 62], 14: [6, 26, 46, 66],
+  15: [6, 26, 48, 70],
+};
+
+/* ------------------------------------------------------- Galois-Feld GF(256) */
+
+const EXP = new Uint8Array(512);
+const LOG = new Uint8Array(256);
+(function tabellen() {
+  let x = 1;
+  for (let i = 0; i < 255; i++) {
+    EXP[i] = x;
+    LOG[x] = i;
+    x <<= 1;
+    if (x & 0x100) x ^= 0x11d;
+  }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+})();
+
+const mul = (a, b) => (a === 0 || b === 0 ? 0 : EXP[LOG[a] + LOG[b]]);
+
+function generator(grad) {
+  let g = [1];
+  for (let i = 0; i < grad; i++) {
+    const next = new Array(g.length + 1).fill(0);
+    // Multiplikation mit (x + α^i): der x-Anteil bleibt an Ort und Stelle,
+    // der Faktor rutscht eine Stelle nach unten. Führender Koeffizient bleibt 1.
+    for (let j = 0; j < g.length; j++) {
+      next[j] ^= g[j];
+      next[j + 1] ^= mul(g[j], EXP[i]);
+    }
+    g = next;
+  }
+  return g;
+}
+
+/** Reed-Solomon-Rest: die Fehlerkorrektur-Codewörter eines Blocks. */
+function ecBlock(daten, ecAnzahl) {
+  const g = generator(ecAnzahl);
+  const rest = new Array(ecAnzahl).fill(0);
+  for (const wort of daten) {
+    const faktor = wort ^ rest[0];
+    rest.shift();
+    rest.push(0);
+    if (faktor !== 0) for (let i = 0; i < ecAnzahl; i++) rest[i] ^= mul(g[i + 1], faktor);
+  }
+  return rest;
+}
+
+/* ------------------------------------------------------------- Datenkodierung */
+
+function datenKapazitaet(version) {
+  const [, , g1, g2] = VERSIONEN[version];
+  return g1[0] * g1[1] + (g2 ? g2[0] * g2[1] : 0);
+}
+
+function versionWaehlen(byteLaenge) {
+  for (let v = 1; v <= 15; v++) {
+    const zaehlerBits = v < 10 ? 8 : 16;
+    const noetig = Math.ceil((4 + zaehlerBits + byteLaenge * 8) / 8);
+    if (noetig <= datenKapazitaet(v)) return v;
+  }
+  throw new Error('Text zu lang für einen QR-Code dieser Größe');
+}
+
+function codewoerter(bytes, version) {
+  const zaehlerBits = version < 10 ? 8 : 16;
+  const bits = [];
+  const schiebe = (wert, anzahl) => {
+    for (let i = anzahl - 1; i >= 0; i--) bits.push((wert >> i) & 1);
+  };
+
+  schiebe(0b0100, 4);              // Byte-Modus
+  schiebe(bytes.length, zaehlerBits);
+  for (const b of bytes) schiebe(b, 8);
+
+  const kapazitaet = datenKapazitaet(version) * 8;
+  for (let i = 0; i < 4 && bits.length < kapazitaet; i++) bits.push(0);   // Terminator
+  while (bits.length % 8 !== 0) bits.push(0);
+
+  const worte = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    worte.push(bits.slice(i, i + 8).reduce((v, b) => (v << 1) | b, 0));
+  }
+  const fueller = [0xec, 0x11];
+  let f = 0;
+  while (worte.length < datenKapazitaet(version)) worte.push(fueller[f++ % 2]);
+  return worte;
+}
+
+/** Datenwörter in Blöcke schneiden, EC anhängen, beides verschachteln. */
+function endgueltigeWoerter(daten, version) {
+  const [, ecAnzahl, g1, g2] = VERSIONEN[version];
+  const gruppen = g2 ? [g1, g2] : [g1];
+
+  const datenBloecke = [];
+  let pos = 0;
+  for (const [anzahl, laenge] of gruppen) {
+    for (let i = 0; i < anzahl; i++) {
+      datenBloecke.push(daten.slice(pos, pos + laenge));
+      pos += laenge;
+    }
+  }
+  const ecBloecke = datenBloecke.map((b) => ecBlock(b, ecAnzahl));
+
+  const raus = [];
+  const maxDaten = Math.max(...datenBloecke.map((b) => b.length));
+  for (let i = 0; i < maxDaten; i++) {
+    for (const b of datenBloecke) if (i < b.length) raus.push(b[i]);
+  }
+  for (let i = 0; i < ecAnzahl; i++) for (const b of ecBloecke) raus.push(b[i]);
+  return raus;
+}
+
+/* -------------------------------------------------------------- Matrixaufbau */
+
+function leereMatrix(groesse) {
+  return Array.from({ length: groesse }, () => new Array(groesse).fill(null));
+}
+
+function sucherSetzen(m, zeile, spalte) {
+  for (let r = -1; r <= 7; r++) {
+    for (let c = -1; c <= 7; c++) {
+      const y = zeile + r;
+      const x = spalte + c;
+      if (y < 0 || y >= m.length || x < 0 || x >= m.length) continue;
+      const imSucher = r >= 0 && r <= 6 && c >= 0 && c <= 6;
+      if (!imSucher) { m[y][x] = false; continue; }   // die helle Trennlinie ringsum
+      const rahmen = r === 0 || r === 6 || c === 0 || c === 6;
+      const kern = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+      m[y][x] = rahmen || kern;
+    }
+  }
+}
+
+function funktionsMuster(version) {
+  const groesse = version * 4 + 17;
+  const m = leereMatrix(groesse);
+
+  sucherSetzen(m, 0, 0);
+  sucherSetzen(m, 0, groesse - 7);
+  sucherSetzen(m, groesse - 7, 0);
+
+  for (let i = 8; i < groesse - 8; i++) {
+    m[6][i] = i % 2 === 0;
+    m[i][6] = i % 2 === 0;
+  }
+
+  const zentren = AUSRICHTUNG[version];
+  const letzte = zentren[zentren.length - 1];
+  // Nur die drei Ecken entfallen — dort sitzen schon die Suchmuster. Muster,
+  // die bloß die Taktspur kreuzen, werden gezeichnet.
+  const beimSucher = (y, x) => (y === 6 && x === 6)
+    || (y === 6 && x === letzte) || (y === letzte && x === 6);
+  for (const zy of zentren) {
+    for (const zx of zentren) {
+      if (beimSucher(zy, zx)) continue;
+      for (let r = -2; r <= 2; r++) {
+        for (let c = -2; c <= 2; c++) {
+          m[zy + r][zx + c] = Math.max(Math.abs(r), Math.abs(c)) !== 1;
+        }
+      }
+    }
+  }
+
+  m[groesse - 8][8] = true;                       // immer dunkles Modul
+
+  // Plätze für Format- und Versionsinfo freihalten (später überschrieben)
+  for (let i = 0; i < 9; i++) {
+    if (m[8][i] === null) m[8][i] = false;
+    if (m[i][8] === null) m[i][8] = false;
+  }
+  for (let i = 0; i < 8; i++) {
+    if (m[8][groesse - 1 - i] === null) m[8][groesse - 1 - i] = false;
+    if (m[groesse - 1 - i][8] === null) m[groesse - 1 - i][8] = false;
+  }
+  if (version >= 7) {
+    for (let i = 0; i < 6; i++) {
+      for (let j = 0; j < 3; j++) {
+        m[groesse - 11 + j][i] = false;
+        m[i][groesse - 11 + j] = false;
+      }
+    }
+  }
+  return m;
+}
+
+/** Merkt sich, welche Felder zu Funktionsmustern gehören. */
+function reserviert(version) {
+  const m = funktionsMuster(version);
+  return m.map((zeile) => zeile.map((wert) => wert !== null));
+}
+
+function datenSetzen(m, belegt, worte) {
+  const groesse = m.length;
+  const bits = [];
+  for (const w of worte) for (let i = 7; i >= 0; i--) bits.push((w >> i) & 1);
+
+  let bit = 0;
+  let aufwaerts = true;
+  for (let spalte = groesse - 1; spalte > 0; spalte -= 2) {
+    if (spalte === 6) spalte -= 1;               // die senkrechte Taktspur überspringen
+    for (let i = 0; i < groesse; i++) {
+      const zeile = aufwaerts ? groesse - 1 - i : i;
+      for (const s of [spalte, spalte - 1]) {
+        if (belegt[zeile][s]) continue;
+        m[zeile][s] = bit < bits.length ? bits[bit++] === 1 : false;
+      }
+    }
+    aufwaerts = !aufwaerts;
+  }
+}
+
+const MASKEN = [
+  (r, c) => (r + c) % 2 === 0,
+  (r) => r % 2 === 0,
+  (r, c) => c % 3 === 0,
+  (r, c) => (r + c) % 3 === 0,
+  (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
+  (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0,
+  (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0,
+  (r, c) => (((r + c) % 2) + ((r * c) % 3)) % 2 === 0,
+];
+
+function strafe(m) {
+  const n = m.length;
+  let punkte = 0;
+
+  // Regel 1: Ketten gleicher Farbe
+  for (let i = 0; i < n; i++) {
+    for (const waagrecht of [true, false]) {
+      let lauf = 1;
+      for (let j = 1; j < n; j++) {
+        const a = waagrecht ? m[i][j] : m[j][i];
+        const b = waagrecht ? m[i][j - 1] : m[j - 1][i];
+        if (a === b) lauf++;
+        else { if (lauf >= 5) punkte += 3 + (lauf - 5); lauf = 1; }
+      }
+      if (lauf >= 5) punkte += 3 + (lauf - 5);
+    }
+  }
+
+  // Regel 2: gleichfarbige 2x2-Blöcke
+  for (let r = 0; r < n - 1; r++) {
+    for (let c = 0; c < n - 1; c++) {
+      const v = m[r][c];
+      if (v === m[r][c + 1] && v === m[r + 1][c] && v === m[r + 1][c + 1]) punkte += 3;
+    }
+  }
+
+  // Regel 3: sucherähnliche Folgen
+  const muster = [true, false, true, true, true, false, true, false, false, false, false];
+  const gedreht = muster.slice().reverse();
+  const passt = (werte, soll) => soll.every((v, i) => werte[i] === v);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j <= n - 11; j++) {
+      const waagrecht = m[i].slice(j, j + 11);
+      const senkrecht = Array.from({ length: 11 }, (_, k) => m[j + k][i]);
+      for (const reihe of [waagrecht, senkrecht]) {
+        if (passt(reihe, muster) || passt(reihe, gedreht)) punkte += 40;
+      }
+    }
+  }
+
+  // Regel 4: Abweichung vom Halbe-halbe-Verhältnis
+  let dunkel = 0;
+  for (const zeile of m) for (const v of zeile) if (v) dunkel++;
+  const anteil = (dunkel * 100) / (n * n);
+  punkte += Math.floor(Math.abs(anteil - 50) / 5) * 10;
+  return punkte;
+}
+
+function formatBits(maske) {
+  const daten = (0b01 << 3) | maske;             // Fehlerkorrektur L = 01
+  let rest = daten << 10;
+  for (let i = 14; i >= 10; i--) if ((rest >> i) & 1) rest ^= 0b10100110111 << (i - 10);
+  return ((daten << 10) | rest) ^ 0b101010000010010;
+}
+
+function versionBits(version) {
+  let rest = version << 12;
+  for (let i = 17; i >= 12; i--) if ((rest >> i) & 1) rest ^= 0b1111100100101 << (i - 12);
+  return (version << 12) | rest;
+}
+
+function infoSetzen(m, version, maske) {
+  const n = m.length;
+  const bits = formatBits(maske);
+  // Die 15 Bits werden mit dem höchsten zuerst abgelegt, an zwei Stellen.
+  const legen = (plaetze) => plaetze.forEach(([r, c], i) => {
+    m[r][c] = ((bits >> (14 - i)) & 1) === 1;
+  });
+
+  legen([[8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 7], [8, 8],
+    [7, 8], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8]]);
+
+  const zweite = [];
+  for (let i = 1; i <= 7; i++) zweite.push([n - i, 8]);
+  for (let i = 8; i >= 1; i--) zweite.push([8, n - i]);
+  legen(zweite);
+
+  m[n - 8][8] = true;                             // immer dunkles Modul
+
+  if (version >= 7) {
+    const vb = versionBits(version);
+    for (let i = 0; i < 18; i++) {
+      const wert = ((vb >> i) & 1) === 1;
+      const zeile = Math.floor(i / 3);
+      const spalte = i % 3;
+      m[n - 11 + spalte][zeile] = wert;
+      m[zeile][n - 11 + spalte] = wert;
+    }
+  }
+}
+
+function qrMatrix(text, maskeErzwingen = null) {
+  const bytes = new TextEncoder().encode(text);
+  const version = versionWaehlen(bytes.length);
+  const worte = endgueltigeWoerter(codewoerter(bytes, version), version);
+
+  const belegt = reserviert(version);
+  const roh = funktionsMuster(version);
+  datenSetzen(roh, belegt, worte);
+
+  let beste = null;
+  for (let maske = 0; maske < 8; maske++) {
+    if (maskeErzwingen !== null && maske !== maskeErzwingen) continue;
+    const m = roh.map((zeile, r) => zeile.map((wert, c) => (
+      belegt[r][c] ? wert : wert !== MASKEN[maske](r, c)
+    )));
+    infoSetzen(m, version, maske);
+    const p = strafe(m);
+    if (!beste || p < beste.punkte) beste = { punkte: p, module: m };
+  }
+
+  return { groesse: beste.module.length, version, module: beste.module };
+}
+
+/** Zeichnet den Code in ein Canvas — mit der vorgeschriebenen ruhigen Zone. */
+function qrZeichnen(canvas, text, { rand = 4, hell = '#f6f2e7', dunkel = '#16211e' } = {}) {
+  const { groesse, module } = qrMatrix(text);
+  const gesamt = groesse + rand * 2;
+  const pixel = Math.max(1, Math.floor(canvas.width / gesamt));
+  const kante = pixel * gesamt;
+
+  canvas.width = kante;
+  canvas.height = kante;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = hell;
+  ctx.fillRect(0, 0, kante, kante);
+  ctx.fillStyle = dunkel;
+  for (let r = 0; r < groesse; r++) {
+    for (let c = 0; c < groesse; c++) {
+      if (module[r][c]) ctx.fillRect((c + rand) * pixel, (r + rand) * pixel, pixel, pixel);
+    }
+  }
+  return { groesse, kante };
+}
+
+// Direktverbindung zwischen zwei Handys im selben WLAN oder Hotspot.
+//
+// Es gibt keinen Server, der vermittelt. Deshalb tauschen die Geräte ihre
+// Verbindungsdaten einmalig per QR-Code aus: Gastgeber zeigt, Gast scannt,
+// Gast zeigt zurück, Gastgeber scannt. Danach läuft alles direkt.
+//
+// Damit ein Code auf ein Handydisplay passt, wird die Beschreibung auf das
+// Nötigste eingedampft und auf der Gegenseite aus einer Vorlage neu gebaut.
+
+const CODE_MARKE = 'DK1';
+
+/* ------------------------------------------------- Verbindungsdaten packen */
+
+function hexZuBase64(hex) {
+  const bytes = hex.split(':').map((h) => parseInt(h, 16));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64ZuHex(b64) {
+  const roh = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+  return Array.from(roh, (c) => c.charCodeAt(0).toString(16).padStart(2, '0').toUpperCase()).join(':');
+}
+
+/** Aus einer vollständigen Beschreibung einen kurzen, scanbaren Code machen. */
+function funkCodeBauen(sdp, rolle) {
+  const hole = (muster) => (sdp.match(muster) || [])[1] || '';
+  const ufrag = hole(/^a=ice-ufrag:(.+)$/m);
+  const pwd = hole(/^a=ice-pwd:(.+)$/m);
+  const fingerabdruck = hole(/^a=fingerprint:sha-256 (.+)$/m).trim();
+
+  const kandidaten = [];
+  for (const zeile of sdp.split(/\r?\n/)) {
+    const t = zeile.match(/^a=candidate:\S+ \d+ (udp|UDP) \d+ (\S+) (\d+) typ (host|srflx)/);
+    if (t && !kandidaten.some((k) => k === `${t[2]},${t[3]}`)) kandidaten.push(`${t[2]},${t[3]}`);
+  }
+
+  return [CODE_MARKE + rolle, ufrag, pwd, hexZuBase64(fingerabdruck), ...kandidaten].join('|');
+}
+
+/** Kurzcode wieder zu einer vollständigen Beschreibung aufblasen. */
+function funkCodeLesen(code) {
+  const teile = String(code).trim().split('|');
+  const kopf = teile[0] || '';
+  if (!kopf.startsWith(CODE_MARKE)) throw new Error('Das ist kein Dreikampf-Verbindungscode.');
+  const rolle = kopf.slice(CODE_MARKE.length);
+  if (rolle !== 'O' && rolle !== 'A') throw new Error('Der Verbindungscode ist unvollständig.');
+
+  const [, ufrag, pwd, fingerBase64, ...kandidaten] = teile;
+  if (!ufrag || !pwd || !fingerBase64) throw new Error('Der Verbindungscode ist unvollständig.');
+
+  const sdp = [
+    'v=0',
+    'o=- 1 2 IN IP4 127.0.0.1',
+    's=-',
+    't=0 0',
+    'a=group:BUNDLE 0',
+    'a=msid-semantic: WMS',
+    'm=application 9 UDP/DTLS/SCTP webrtc-datachannel',
+    'c=IN IP4 0.0.0.0',
+    `a=ice-ufrag:${ufrag}`,
+    `a=ice-pwd:${pwd}`,
+    'a=ice-options:trickle',
+    `a=fingerprint:sha-256 ${base64ZuHex(fingerBase64)}`,
+    `a=setup:${rolle === 'O' ? 'actpass' : 'active'}`,
+    'a=mid:0',
+    'a=sctp-port:5000',
+    'a=max-message-size:262144',
+    '',
+  ].join('\r\n');
+
+  return {
+    typ: rolle === 'O' ? 'offer' : 'answer',
+    sdp,
+    kandidaten: kandidaten.filter(Boolean).map((k) => {
+      const [adresse, port] = k.split(',');
+      return {
+        candidate: `candidate:1 1 udp 2130706431 ${adresse} ${port} typ host generation 0 ufrag ${ufrag}`,
+        sdpMid: '0',
+        sdpMLineIndex: 0,
+      };
+    }),
+  };
+}
+
+/* ------------------------------------------------------------- Verbindung */
+
+/**
+ * Baut die Verbindung auf. `aufZustand(text, verbunden)` meldet Fortschritt,
+ * `aufNachricht(objekt)` liefert eingehende Daten.
+ */
+function funkAufbauen({ gastgeber, aufZustand, aufNachricht }) {
+  const pc = new RTCPeerConnection({ iceServers: [] });
+  let kanal = null;
+  let offen = false;
+
+  const melde = (text) => aufZustand?.(text, offen);
+
+  const kanalVerdrahten = (k) => {
+    kanal = k;
+    k.onopen = () => { offen = true; aufZustand?.('verbunden', true); };
+    k.onclose = () => { offen = false; aufZustand?.('getrennt', false); };
+    k.onmessage = (e) => {
+      try { aufNachricht?.(JSON.parse(e.data)); } catch { /* kaputte Nachricht */ }
+    };
+  };
+
+  if (gastgeber) kanalVerdrahten(pc.createDataChannel('dreikampf', { ordered: true }));
+  else pc.ondatachannel = (e) => kanalVerdrahten(e.channel);
+
+  pc.oniceconnectionstatechange = () => {
+    if (['failed', 'disconnected'].includes(pc.iceConnectionState) && !offen) {
+      melde('Keine Verbindung — blockiert euer Hotspot vielleicht den direkten Weg?');
+    }
+  };
+
+  /** Wartet, bis alle lokalen Adressen gesammelt sind (oder die Geduld endet). */
+  const adressenSammeln = () => new Promise((fertig) => {
+    if (pc.iceGatheringState === 'complete') return fertig();
+    const stopp = setTimeout(fertig, 3000);
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState === 'complete') { clearTimeout(stopp); fertig(); }
+    };
+    return undefined;
+  });
+
+  return {
+    /** Gastgeber: eigenen Code erzeugen. Gast: erst nach codeLesen aufrufen. */
+    async eigenerCode() {
+      const beschreibung = gastgeber ? await pc.createOffer() : await pc.createAnswer();
+      await pc.setLocalDescription(beschreibung);
+      await adressenSammeln();
+      return funkCodeBauen(pc.localDescription.sdp, gastgeber ? 'O' : 'A');
+    },
+
+    async codeLesen(code) {
+      const { typ, sdp, kandidaten } = funkCodeLesen(code);
+      if (gastgeber && typ !== 'answer') throw new Error('Das ist der Code des Gastgebers — du brauchst den vom Gast.');
+      if (!gastgeber && typ !== 'offer') throw new Error('Das ist der Code des Gasts — du brauchst den vom Gastgeber.');
+      await pc.setRemoteDescription({ type: typ, sdp });
+      for (const k of kandidaten) {
+        try { await pc.addIceCandidate(k); } catch { /* einzelne Adresse taugt nicht */ }
+      }
+      melde('verbinde …');
+    },
+
+    senden(objekt) {
+      if (kanal && kanal.readyState === 'open') {
+        kanal.send(JSON.stringify(objekt));
+        return true;
+      }
+      return false;
+    },
+
+    get verbunden() { return offen; },
+
+    schliessen() {
+      try { kanal?.close(); } catch { /* egal */ }
+      try { pc.close(); } catch { /* egal */ }
+    },
+  };
+}
+
+/* ---------------------------------------------------------------- Scanner */
+
+const scannerMoeglich = () => typeof window !== 'undefined'
+  && 'BarcodeDetector' in window
+  && !!navigator.mediaDevices?.getUserMedia;
+
+/**
+ * Startet die Kamera und meldet den ersten gefundenen QR-Code.
+ * Gibt eine Funktion zum Abschalten zurück.
+ */
+async function scannerStarten(videoElement, aufTreffer, aufFehler) {
+  if (!scannerMoeglich()) {
+    aufFehler?.(new Error('Dieser Browser kann keine QR-Codes lesen — nimm den Textcode.'));
+    return () => {};
+  }
+  let laeuft = true;
+  let strom = null;
+
+  try {
+    strom = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }, audio: false,
+    });
+  } catch (fehler) {
+    aufFehler?.(new Error('Kein Zugriff auf die Kamera. Erlaube ihn oder nimm den Textcode.'));
+    return () => {};
+  }
+
+  videoElement.srcObject = strom;
+  videoElement.setAttribute('playsinline', '');
+  await videoElement.play().catch(() => {});
+
+  const sucher = new window.BarcodeDetector({ formats: ['qr_code'] });
+  const schauen = async () => {
+    if (!laeuft) return;
+    try {
+      const treffer = await sucher.detect(videoElement);
+      const code = treffer.find((t) => String(t.rawValue).startsWith(CODE_MARKE));
+      if (code) { laeuft = false; aufTreffer(code.rawValue); return stoppen(); }
+    } catch { /* einzelner Fehlversuch ist egal */ }
+    setTimeout(schauen, 220);
+    return undefined;
+  };
+
+  const stoppen = () => {
+    laeuft = false;
+    strom?.getTracks().forEach((t) => t.stop());
+    videoElement.srcObject = null;
+  };
+
+  schauen();
+  return stoppen;
+}
+
 // Allgemeinwissen. Die richtige Antwort steht hier immer an erster Stelle —
 // die Engine mischt die Optionen beim Ziehen, damit die Position nichts verrät.
 //
@@ -1412,7 +2049,10 @@ function netzAufbauen({ gastgeber, code, aufZustand, aufNachricht, aufCode }) {
     while (laeuft && raum) {
       try {
         const q = new URLSearchParams({
-          sitz: String(raum.sitz), ab: String(ab), schluessel: raum.schluessel,
+          sitz: String(raum.sitz),
+          ab: String(ab),
+          voll: offen ? '1' : '0',        // der Server meldet sich, sobald sich das ändert
+          schluessel: raum.schluessel,
         });
         const daten = await ruf(`/raum/${raum.code}/holen?${q}`);
         if (!laeuft) return;
@@ -1806,9 +2446,7 @@ function renderStart() {
 
         <div style="margin-top:26px;display:flex;flex-direction:column;gap:10px">
           <button class="btn btn--gold" id="los">An einem Handy</button>
-          ${netzMoeglich() ? `
-          <button class="btn btn--geist" id="netzWirt">Auf zwei Handys — Raum öffnen</button>
-          <button class="btn btn--geist" id="netzGast">Mit Code beitreten</button>` : ''}
+          <button class="btn btn--geist" id="zweiGeraete">Auf zwei Handys</button>
           <button class="btn btn--leise" id="regeln">Wie es funktioniert</button>
         </div>
       </div>
@@ -1830,15 +2468,12 @@ function renderStart() {
     const reise = app.querySelector('#reise').value.trim() || 'Urlaub';
     return [[n0, n1], reise];
   };
-  app.querySelector('#netzWirt')?.addEventListener('click', () => {
+  app.querySelector('#zweiGeraete').onclick = () => {
     const [namen, reise] = namenLesen();
     if (!stand) stand = neuerStand(namen, reise);
-    netzStarten(true);
-  });
-  app.querySelector('#netzGast')?.addEventListener('click', () => {
-    ui.kopplung = { schritt: 'code', gastgeber: false, code: '', fehler: '' };
+    ui.kopplung = { schritt: 'rolle' };
     render();
-  });
+  };
 }
 
 /* --------------------------------------------------------------- Übersicht */
@@ -2212,9 +2847,189 @@ function renderWarten(wer, text) {
   app.appendChild(layer);
 }
 
-/** Kopplung zweier Geräte über einen kurzen Raumcode. */
+/* ------------------------------------- Kopplung ohne Server: QR im selben WLAN */
+
+/**
+ * Direktverbindung zwischen zwei Handys. Braucht keinen Server, dafür ein
+ * gemeinsames WLAN oder einen Hotspot — funktioniert damit auch im Flugzeug.
+ * Nach außen sieht sie aus wie die Durchreiche: senden, verbunden, schliessen.
+ */
+async function funkStarten(gastgeber) {
+  ui.modus = 'online';
+  ui.gastgeber = gastgeber;
+  ui.meinIndex = gastgeber ? 0 : 1;
+  ui.kopplung = { schritt: 'moment', gastgeber, ueberQr: true, hinweis: '', fehler: '' };
+  render();
+
+  ui.netz = funkAufbauen({
+    gastgeber,
+    aufZustand: (text, verbunden) => {
+      if (verbunden) return verbindungSteht();
+      if (ui.kopplung && ui.kopplung.schritt !== 'scannen') {
+        ui.kopplung.hinweis = text;
+        render();
+      }
+      return undefined;
+    },
+    aufNachricht: nachrichtVerarbeiten,
+  });
+
+  if (gastgeber) {
+    ui.kopplung.code = await ui.netz.eigenerCode();
+    ui.kopplung.schritt = 'zeigen';
+  } else {
+    ui.kopplung.schritt = 'scannen';
+  }
+  render();
+}
+
+async function fremdenCodeAnnehmen(code) {
+  const k = ui.kopplung;
+  try {
+    await ui.netz.codeLesen(code);
+    if (!ui.kopplung) return;                  // war schon verbunden
+    if (!k.gastgeber) {
+      ui.kopplung.code = await ui.netz.eigenerCode();
+      ui.kopplung.schritt = 'zeigen';
+    } else {
+      ui.kopplung.schritt = 'warten';
+    }
+    k.fehler = '';
+  } catch (fehler) {
+    if (!ui.kopplung) return;
+    k.fehler = fehler.message || 'Der Code passt nicht.';
+  }
+  render();
+}
+
+/** Kopplung zweier Geräte — über das Netz oder direkt per QR. */
 function renderKopplung() {
   const k = ui.kopplung;
+
+  if (k.schritt === 'rolle') {
+    app.innerHTML = `
+      <div class="screen"><div class="wrap">
+        <h2>Auf zwei Handys</h2>
+        <p>Beide spielen gleichzeitig, jeder auf seinem eigenen Gerät.
+          Es gibt zwei Wege — nimm den, der zu eurer Lage passt.</p>
+        ${netzMoeglich() ? `
+        <div class="feldlabel">Über das Internet</div>
+        <p>Egal wo ihr seid. Einer öffnet einen Raum, der andere tippt den Code ein.</p>
+        <div class="knopfsaeule">
+          <button class="btn btn--gold" id="netzWirt">Raum öffnen</button>
+          <button class="btn btn--geist" id="netzGast">Mit Code beitreten</button>
+        </div>` : ''}
+        <div class="feldlabel">Im selben WLAN oder Hotspot</div>
+        <p>Ohne Server, direkt von Handy zu Handy — geht auch ohne Internet,
+          etwa über einen Hotspot im Flugzeug. Ihr zeigt euch dafür QR-Codes.</p>
+        <div class="knopfsaeule">
+          <button class="btn btn--geist" id="qrWirt">QR zeigen</button>
+          <button class="btn btn--geist" id="qrGast">QR scannen</button>
+        </div>
+        <div class="knopfsaeule">
+          <button class="btn btn--leise" id="abbruch">Doch an einem Handy</button>
+        </div>
+      </div></div>`;
+    app.querySelector('#netzWirt')?.addEventListener('click', () => netzStarten(true));
+    app.querySelector('#netzGast')?.addEventListener('click', () => {
+      ui.kopplung = { schritt: 'code', gastgeber: false, code: '', fehler: '' };
+      render();
+    });
+    app.querySelector('#qrWirt').onclick = () => funkStarten(true);
+    app.querySelector('#qrGast').onclick = () => funkStarten(false);
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'moment') {
+    app.innerHTML = `<div class="screen"><div class="wrap">
+      <h2>Einen Moment</h2>
+      <p>Verbindungsdaten werden vorbereitet …</p></div></div>`;
+    return;
+  }
+
+  if (k.schritt === 'warten') {
+    app.innerHTML = `<div class="screen"><div class="wrap">
+      <h2>Verbinde …</h2>
+      <p>${esc(k.hinweis || 'Die Handys suchen sich gerade.')}</p>
+      <p>Dauert es länger als ein paar Sekunden, blockiert der Hotspot
+        vermutlich den direkten Weg. Dann hilft nur: beide ins gleiche WLAN.</p>
+      <div class="knopfsaeule">
+        <button class="btn btn--leise" id="abbruch">Abbrechen</button></div>
+    </div></div>`;
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'zeigen') {
+    app.innerHTML = `
+      <div class="screen"><div class="scrollbar"><div class="wrap">
+        <h2>${k.gastgeber ? 'Zeig diesen Code' : 'Jetzt du zurück'}</h2>
+        <p>${k.gastgeber
+          ? 'Die andere Person scannt ihn mit „QR scannen“.'
+          : 'Halt den Code dem ersten Handy hin — es scannt ihn.'}</p>
+        <div class="qrfeld"><canvas id="qr" width="720" height="720"></canvas></div>
+        <details class="codeklappe">
+          <summary>Kamera streikt? Code als Text</summary>
+          <textarea class="codefeld" id="raus" readonly>${esc(k.code || '')}</textarea>
+          <button class="btn btn--geist" id="kopieren">Kopieren</button>
+        </details>
+        <div class="knopfsaeule">
+          <button class="btn btn--gold" id="weiterKoppeln">${k.gastgeber
+            ? 'Weiter — jetzt den anderen Code scannen' : 'Fertig, warte auf Verbindung'}</button>
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+    try {
+      qrZeichnen(app.querySelector('#qr'), k.code, { hell: '#f6f2e7', dunkel: '#16211e' });
+    } catch {
+      app.querySelector('.qrfeld').textContent = 'Code zu lang für einen QR — nimm den Textcode.';
+    }
+    app.querySelector('#kopieren').onclick = async (e) => {
+      try { await navigator.clipboard.writeText(k.code); e.currentTarget.textContent = 'Kopiert'; }
+      catch { app.querySelector('#raus').select(); }
+    };
+    app.querySelector('#weiterKoppeln').onclick = () => {
+      ui.kopplung.schritt = k.gastgeber ? 'scannen' : 'warten';
+      ui.kopplung.scannerVersucht = false;
+      render();
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'scannen') {
+    app.innerHTML = `
+      <div class="screen"><div class="scrollbar"><div class="wrap">
+        <h2>Code scannen</h2>
+        <p>Halte die Kamera auf den Code des anderen Handys.</p>
+        <div class="scanfenster"><video id="kamera" muted playsinline></video></div>
+        ${k.fehler ? `<p><span class="warnton">${esc(k.fehler)}</span></p>` : ''}
+        <details class="codeklappe" ${scannerMoeglich() ? '' : 'open'}>
+          <summary>Kamera streikt? Code eintippen oder einfügen</summary>
+          <textarea class="codefeld" id="rein" placeholder="DK1O|…"></textarea>
+          <button class="btn btn--geist" id="uebernehmen">Code übernehmen</button>
+        </details>
+        <div class="knopfsaeule">
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button></div>
+      </div></div></div>`;
+    app.querySelector('#uebernehmen').onclick = () => {
+      const code = app.querySelector('#rein').value.trim();
+      if (code) fremdenCodeAnnehmen(code);
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    // Nur einmal versuchen: ein fehlgeschlagener Start rendert neu und würde
+    // sich sonst selbst wieder aufrufen.
+    if (!k.scannerVersucht) {
+      k.scannerVersucht = true;
+      scannerStarten(
+        app.querySelector('#kamera'),
+        (code) => { k.scannerStoppen = null; fremdenCodeAnnehmen(code); },
+        (fehler) => { k.fehler = fehler.message; render(); },
+      ).then((stoppen) => { if (ui.kopplung === k) k.scannerStoppen = stoppen; else stoppen(); });
+    }
+    return;
+  }
 
   if (k.schritt === 'code') {
     app.innerHTML = `

@@ -13,7 +13,7 @@ const read = (p) => readFileSync(join(here, p), 'utf8');
 
 const css = read('src/style.css');
 
-const MODULE = ['src/engine.js', 'src/netz.js', 'src/ui.js'];
+const MODULE = ['src/qr.js', 'src/funk.js', 'src/netz.js', 'src/engine.js', 'src/ui.js'];
 
 // Alle Module landen in einem gemeinsamen Scope — gleichnamige Deklarationen in
 // zwei Dateien wären dort ein SyntaxError. Lieber hier auffallen als im Browser.

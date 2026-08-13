@@ -391,3 +391,39 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   font-family: var(--font-num); font-size: 28px; text-transform: uppercase;
   margin-top: 8px;
 }
+
+/* ---------- Kopplung per QR (zwei Handys im selben WLAN) ---------- */
+
+.scrollbar > .wrap { padding-block: 22px; }
+
+.qrfeld {
+  display: grid; place-items: center;
+  background: #f6f2e7; border-radius: 14px; padding: 14px; margin: 16px 0;
+}
+.qrfeld canvas { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; display: block; }
+
+.scanfenster {
+  position: relative; overflow: hidden; border-radius: 14px; background: #000;
+  aspect-ratio: 1; margin: 16px 0; border: 1px solid var(--naht, #2b423a);
+}
+.scanfenster video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanfenster::after {
+  content: ""; position: absolute; inset: 16%;
+  border: 2px solid var(--messing, #c9a227); border-radius: 12px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.45);
+}
+
+.codeklappe { margin-top: 6px; }
+.codeklappe summary { font-size: 13px; color: var(--fog-dim, #7c8a9a); cursor: pointer; padding: 8px 0; list-style: none; }
+.codeklappe summary::before { content: "▸ "; }
+.codeklappe[open] summary::before { content: "▾ "; }
+.codeklappe .btn { margin-top: 8px; }
+.codefeld {
+  width: 100%; min-height: 84px; resize: vertical; margin-top: 6px;
+  background: var(--feld, #16241f); border: 1px solid var(--naht, #2b423a); border-radius: 10px;
+  padding: 10px; color: var(--fog-dim, #7c8a9a); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px;
+  word-break: break-all; user-select: text; -webkit-user-select: text;
+}
+.warnton { color: #e2664f; }
+.scrollbar { overflow-y: auto; max-height: 100dvh; }
+.knopfsaeule { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }

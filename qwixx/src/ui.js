@@ -7,6 +7,8 @@ import {
   whiteSum, rightmostCross, crossCount, playerScore, standings, endReason,
 } from './engine.js';
 import { netzAufbauen, netzMoeglich } from './netz.js';
+import { qrZeichnen } from './qr.js';
+import { funkAufbauen, scannerStarten, scannerMoeglich } from './funk.js';
 
 const SAVE_KEY = 'qwixx.save.v1';
 const PREFS_KEY = 'qwixx.prefs.v1';
@@ -497,11 +499,7 @@ function renderStart() {
                   <button class="btn btn--ghost" id="start" style="margin-top:10px">Neues Spiel</button>`
                : `<button class="btn btn--primary" id="start">Spiel starten</button>`}
 
-      ${netzMoeglich() ? `
-      <div class="btnrow" style="margin-top:10px">
-        <button class="btn btn--ghost" id="netzWirt">Auf zwei Handys</button>
-        <button class="btn btn--ghost" id="netzGast">Mit Code beitreten</button>
-      </div>` : ''}
+      <button class="btn btn--ghost" id="zweiGeraete" style="margin-top:10px">Auf zwei Handys</button>
 
       <button class="btn btn--quiet" id="rules" style="margin-top:12px">Spielregeln lesen</button>
     </div>`;
@@ -513,14 +511,11 @@ function renderStart() {
   app.querySelector('#rmPlayer').onclick = () => { prefs.names = readNames().slice(0, -1); save(); render(); };
   app.querySelector('#rules').onclick = () => { ui.overlay = 'rules'; render(); };
   app.querySelector('#start').onclick = () => { prefs.names = readNames(); save(); startGame(readNames()); };
-  app.querySelector('#netzWirt')?.addEventListener('click', () => {
-    prefs.names = readNames().slice(0, 2); save(); netzStarten(true);
-  });
-  app.querySelector('#netzGast')?.addEventListener('click', () => {
+  app.querySelector('#zweiGeraete').onclick = () => {
     prefs.names = readNames().slice(0, 2); save();
-    ui.kopplung = { schritt: 'code', gastgeber: false, code: '', fehler: '' };
+    ui.kopplung = { schritt: 'rolle' };
     render();
-  });
+  };
   if (resume) {
     app.querySelector('#resume').onclick = () => {
       game = resume.game;
@@ -753,9 +748,189 @@ function renderWarten(need) {
   app.appendChild(layer);
 }
 
-/** Kopplung zweier Geräte über einen kurzen Raumcode. */
+/* ------------------------------------- Kopplung ohne Server: QR im selben WLAN */
+
+/**
+ * Direktverbindung zwischen zwei Handys. Braucht keinen Server, dafür ein
+ * gemeinsames WLAN oder einen Hotspot — funktioniert damit auch im Flugzeug.
+ * Nach außen sieht sie aus wie die Durchreiche: senden, verbunden, schliessen.
+ */
+async function funkStarten(gastgeber) {
+  ui.modus = 'online';
+  ui.gastgeber = gastgeber;
+  ui.meinIndex = gastgeber ? 0 : 1;
+  ui.kopplung = { schritt: 'moment', gastgeber, ueberQr: true, hinweis: '', fehler: '' };
+  render();
+
+  ui.netz = funkAufbauen({
+    gastgeber,
+    aufZustand: (text, verbunden) => {
+      if (verbunden) return verbindungSteht();
+      if (ui.kopplung && ui.kopplung.schritt !== 'scannen') {
+        ui.kopplung.hinweis = text;
+        render();
+      }
+      return undefined;
+    },
+    aufNachricht: nachrichtVerarbeiten,
+  });
+
+  if (gastgeber) {
+    ui.kopplung.code = await ui.netz.eigenerCode();
+    ui.kopplung.schritt = 'zeigen';
+  } else {
+    ui.kopplung.schritt = 'scannen';
+  }
+  render();
+}
+
+async function fremdenCodeAnnehmen(code) {
+  const k = ui.kopplung;
+  try {
+    await ui.netz.codeLesen(code);
+    if (!ui.kopplung) return;                  // war schon verbunden
+    if (!k.gastgeber) {
+      ui.kopplung.code = await ui.netz.eigenerCode();
+      ui.kopplung.schritt = 'zeigen';
+    } else {
+      ui.kopplung.schritt = 'warten';
+    }
+    k.fehler = '';
+  } catch (fehler) {
+    if (!ui.kopplung) return;
+    k.fehler = fehler.message || 'Der Code passt nicht.';
+  }
+  render();
+}
+
+/** Kopplung zweier Geräte — über das Netz oder direkt per QR. */
 function renderKopplung() {
   const k = ui.kopplung;
+
+  if (k.schritt === 'rolle') {
+    app.innerHTML = `
+      <div class="screen"><div class="wrap">
+        <h2 class="h2">Auf zwei Handys</h2>
+        <p class="lead">Beide spielen gleichzeitig, jeder auf seinem eigenen Gerät.
+          Es gibt zwei Wege — nimm den, der zu eurer Lage passt.</p>
+        ${netzMoeglich() ? `
+        <div class="feldlabel">Über das Internet</div>
+        <p class="lead">Egal wo ihr seid. Einer öffnet einen Raum, der andere tippt den Code ein.</p>
+        <div class="knopfsaeule">
+          <button class="btn btn--primary" id="netzWirt">Raum öffnen</button>
+          <button class="btn btn--ghost" id="netzGast">Mit Code beitreten</button>
+        </div>` : ''}
+        <div class="feldlabel">Im selben WLAN oder Hotspot</div>
+        <p class="lead">Ohne Server, direkt von Handy zu Handy — geht auch ohne Internet,
+          etwa über einen Hotspot im Flugzeug. Ihr zeigt euch dafür QR-Codes.</p>
+        <div class="knopfsaeule">
+          <button class="btn btn--ghost" id="qrWirt">QR zeigen</button>
+          <button class="btn btn--ghost" id="qrGast">QR scannen</button>
+        </div>
+        <div class="knopfsaeule">
+          <button class="btn btn--quiet" id="abbruch">Doch an einem Handy</button>
+        </div>
+      </div></div>`;
+    app.querySelector('#netzWirt')?.addEventListener('click', () => netzStarten(true));
+    app.querySelector('#netzGast')?.addEventListener('click', () => {
+      ui.kopplung = { schritt: 'code', gastgeber: false, code: '', fehler: '' };
+      render();
+    });
+    app.querySelector('#qrWirt').onclick = () => funkStarten(true);
+    app.querySelector('#qrGast').onclick = () => funkStarten(false);
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'moment') {
+    app.innerHTML = `<div class="screen"><div class="wrap">
+      <h2 class="h2">Einen Moment</h2>
+      <p class="lead">Verbindungsdaten werden vorbereitet …</p></div></div>`;
+    return;
+  }
+
+  if (k.schritt === 'warten') {
+    app.innerHTML = `<div class="screen"><div class="wrap">
+      <h2 class="h2">Verbinde …</h2>
+      <p class="lead">${esc(k.hinweis || 'Die Handys suchen sich gerade.')}</p>
+      <p class="lead">Dauert es länger als ein paar Sekunden, blockiert der Hotspot
+        vermutlich den direkten Weg. Dann hilft nur: beide ins gleiche WLAN.</p>
+      <div class="knopfsaeule">
+        <button class="btn btn--quiet" id="abbruch">Abbrechen</button></div>
+    </div></div>`;
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'zeigen') {
+    app.innerHTML = `
+      <div class="screen"><div class="scrollbar"><div class="wrap">
+        <h2 class="h2">${k.gastgeber ? 'Zeig diesen Code' : 'Jetzt du zurück'}</h2>
+        <p class="lead">${k.gastgeber
+          ? 'Die andere Person scannt ihn mit „QR scannen“.'
+          : 'Halt den Code dem ersten Handy hin — es scannt ihn.'}</p>
+        <div class="qrfeld"><canvas id="qr" width="720" height="720"></canvas></div>
+        <details class="codeklappe">
+          <summary>Kamera streikt? Code als Text</summary>
+          <textarea class="codefeld" id="raus" readonly>${esc(k.code || '')}</textarea>
+          <button class="btn btn--ghost" id="kopieren">Kopieren</button>
+        </details>
+        <div class="knopfsaeule">
+          <button class="btn btn--primary" id="weiterKoppeln">${k.gastgeber
+            ? 'Weiter — jetzt den anderen Code scannen' : 'Fertig, warte auf Verbindung'}</button>
+          <button class="btn btn--quiet" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+    try {
+      qrZeichnen(app.querySelector('#qr'), k.code, { hell: '#f3f2ee', dunkel: '#10161f' });
+    } catch {
+      app.querySelector('.qrfeld').textContent = 'Code zu lang für einen QR — nimm den Textcode.';
+    }
+    app.querySelector('#kopieren').onclick = async (e) => {
+      try { await navigator.clipboard.writeText(k.code); e.currentTarget.textContent = 'Kopiert'; }
+      catch { app.querySelector('#raus').select(); }
+    };
+    app.querySelector('#weiterKoppeln').onclick = () => {
+      ui.kopplung.schritt = k.gastgeber ? 'scannen' : 'warten';
+      ui.kopplung.scannerVersucht = false;
+      render();
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'scannen') {
+    app.innerHTML = `
+      <div class="screen"><div class="scrollbar"><div class="wrap">
+        <h2 class="h2">Code scannen</h2>
+        <p class="lead">Halte die Kamera auf den Code des anderen Handys.</p>
+        <div class="scanfenster"><video id="kamera" muted playsinline></video></div>
+        ${k.fehler ? `<p class="lead"><span class="warnton">${esc(k.fehler)}</span></p>` : ''}
+        <details class="codeklappe" ${scannerMoeglich() ? '' : 'open'}>
+          <summary>Kamera streikt? Code eintippen oder einfügen</summary>
+          <textarea class="codefeld" id="rein" placeholder="QX1O|…"></textarea>
+          <button class="btn btn--ghost" id="uebernehmen">Code übernehmen</button>
+        </details>
+        <div class="knopfsaeule">
+          <button class="btn btn--quiet" id="abbruch">Abbrechen</button></div>
+      </div></div></div>`;
+    app.querySelector('#uebernehmen').onclick = () => {
+      const code = app.querySelector('#rein').value.trim();
+      if (code) fremdenCodeAnnehmen(code);
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    // Nur einmal versuchen: ein fehlgeschlagener Start rendert neu und würde
+    // sich sonst selbst wieder aufrufen.
+    if (!k.scannerVersucht) {
+      k.scannerVersucht = true;
+      scannerStarten(
+        app.querySelector('#kamera'),
+        (code) => { k.scannerStoppen = null; fremdenCodeAnnehmen(code); },
+        (fehler) => { k.fehler = fehler.message; render(); },
+      ).then((stoppen) => { if (ui.kopplung === k) k.scannerStoppen = stoppen; else stoppen(); });
+    }
+    return;
+  }
 
   if (k.schritt === 'code') {
     app.innerHTML = `
