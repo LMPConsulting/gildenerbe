@@ -393,6 +393,21 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   }
 }
 
+/* ---------- Raumcode für zwei Handys über das Internet ---------- */
+
+.raumcode {
+  font-family: var(--font-num);
+  font-size: clamp(38px, 13vw, 58px); font-weight: 800; letter-spacing: 0.14em;
+  text-align: center; padding: 18px 10px; margin: 16px 0;
+  border-radius: 14px; user-select: all; -webkit-user-select: all;
+  background: var(--feld); color: var(--karton, #f6f2e7); border: 2px solid var(--messing, #c9a227);
+}
+.feld--code {
+  width: 100%; text-align: center; letter-spacing: 0.3em;
+  font-family: var(--font-num); font-size: 28px; text-transform: uppercase;
+  margin-top: 8px;
+}
+
 </style>
 </head>
 <body>
@@ -1351,6 +1366,113 @@ function ausCode(code) {
   return null;
 }
 
+// Zwei Handys über das Internet verbinden — für die Fassung auf der Webseite.
+//
+// Anders als funk.js braucht das kein gemeinsames WLAN und keine Kamera: Der
+// Server hält nur einen Raum mit einem kurzen Code offen und reicht Nachrichten
+// durch. Er versteht kein Spiel; er merkt sich, wer was noch nicht abgeholt hat.
+//
+// Nach außen sieht das genauso aus wie eine Direktverbindung — `senden`,
+// `verbunden`, `schliessen` — damit die Oberfläche nichts davon wissen muss.
+
+const NETZ_BASIS = (typeof SPIELE_BASIS === 'string' ? SPIELE_BASIS : '.').replace(/\/$/, '');
+
+/** Steht dieser Weg überhaupt zur Verfügung? Nur in der Webfassung. */
+const netzMoeglich = () => typeof SPIELE_BASIS === 'string';
+
+async function ruf(pfad, optionen = {}) {
+  const antwort = await fetch(`${NETZ_BASIS}/api${pfad}`, {
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    ...optionen,
+  });
+  let daten = null;
+  try { daten = await antwort.json(); } catch { /* leere Antwort */ }
+  if (!antwort.ok) throw new Error((daten && daten.fehler) || `Server meldet ${antwort.status}.`);
+  return daten || {};
+}
+
+/**
+ * Raum aufmachen oder beitreten und danach dauerhaft lauschen.
+ *
+ * `aufZustand(text, verbunden)` meldet Fortschritt, `aufNachricht(objekt)`
+ * liefert alles, was die Gegenseite schickt, `aufCode(code)` den Raumcode,
+ * sobald er feststeht.
+ */
+function netzAufbauen({ gastgeber, code, aufZustand, aufNachricht, aufCode }) {
+  let raum = null;         // { code, sitz, schluessel }
+  let ab = 0;
+  let offen = false;
+  let laeuft = true;
+  let fehlversuche = 0;
+
+  const melde = (text, verbunden = offen) => aufZustand?.(text, verbunden);
+
+  async function lauschen() {
+    while (laeuft && raum) {
+      try {
+        const q = new URLSearchParams({
+          sitz: String(raum.sitz), ab: String(ab), schluessel: raum.schluessel,
+        });
+        const daten = await ruf(`/raum/${raum.code}/holen?${q}`);
+        if (!laeuft) return;
+        fehlversuche = 0;
+
+        if (daten.voll && !offen) { offen = true; aufZustand?.('verbunden', true); }
+        if (!daten.voll && offen) { offen = false; aufZustand?.('getrennt', false); }
+
+        for (const n of daten.nachrichten || []) {
+          ab = Math.max(ab, n.nr);
+          try { aufNachricht?.(n.inhalt); } catch { /* kaputte Nachricht */ }
+        }
+        if (typeof daten.stand === 'number') ab = Math.max(ab, Math.min(ab, daten.stand));
+      } catch (fehler) {
+        if (!laeuft) return;
+        fehlversuche += 1;
+        if (fehlversuche >= 4) {
+          offen = false;
+          aufZustand?.(`Verbindung abgerissen: ${fehler.message}`, false);
+        }
+        // Kurz warten, dann weiter — kurze Aussetzer sollen das Spiel nicht beenden.
+        await new Promise((w) => setTimeout(w, Math.min(4000, 500 * fehlversuche)));
+      }
+    }
+  }
+
+  const bereit = (async () => {
+    melde(gastgeber ? 'Raum wird geöffnet …' : 'Raum wird gesucht …', false);
+    raum = gastgeber
+      ? await ruf('/raum', { method: 'POST', body: '{}' })
+      : await ruf(`/raum/${String(code || '').trim().toUpperCase()}/beitreten`,
+        { method: 'POST', body: '{}' });
+    aufCode?.(raum.code);
+    melde(gastgeber ? 'Warte auf das zweite Handy …' : 'Verbinde …', false);
+    lauschen();
+    return raum.code;
+  })();
+
+  return {
+    bereit,                                   // Promise: fertig, sobald der Raum steht
+    get code() { return raum && raum.code; },
+    get verbunden() { return offen; },
+
+    senden(objekt) {
+      if (!raum) return false;
+      ruf(`/raum/${raum.code}/senden`, {
+        method: 'POST',
+        body: JSON.stringify({ sitz: raum.sitz, schluessel: raum.schluessel, nachricht: objekt }),
+      }).catch(() => { /* der Lauscher merkt den Ausfall */ });
+      return true;
+    },
+
+    schliessen() {
+      laeuft = false;
+      offen = false;
+      raum = null;
+    },
+  };
+}
+
 // Dreikampf — Oberfläche. Ein Handy, zwei Leute, ein Punktekonto für den ganzen Urlaub.
 
 
@@ -1358,7 +1480,14 @@ const KEY = 'dreikampf.v1';
 const app = document.getElementById('app');
 
 let stand = null;
-let ui = { screen: 'start', overlay: null, wahl: null, halter: 0, codeStatus: '' };
+let ui = {
+  screen: 'start', overlay: null, wahl: null, halter: 0, codeStatus: '',
+  modus: 'lokal',     // 'lokal' | 'online'
+  meinIndex: 0,       // online: welcher Spieler dieses Gerät ist
+  gastgeber: true,    // online: dieses Gerät rechnet
+  netz: null,
+  kopplung: null,
+};
 
 /* ------------------------------------------------------------------ Hilfen */
 
@@ -1395,7 +1524,142 @@ function braucht() {
 }
 
 function nachAenderung() {
+  if (ui.modus === 'online') {
+    ui.halter = ui.meinIndex;
+    if (ui.gastgeber) standSenden();
+    render();
+    return;
+  }
   sichern();
+  render();
+}
+
+/* ---------------------------------------------------- Zwei Handys, ein Spiel */
+
+const gegenIndex = () => (ui.meinIndex === 0 ? 1 : 0);
+
+/**
+ * Was das andere Gerät zu sehen bekommt. Solange eine Wissensrunde läuft, wird
+ * die Antwort der Gegenseite herausgefiltert — verdeckt heißt verdeckt.
+ */
+function standFuer(quelle, empfaenger) {
+  const k = JSON.parse(JSON.stringify(quelle));
+  const r = k.aktuell;
+  if (r && r.schritte[r.i] && r.schritte[r.i].art !== 'auflösung') {
+    const anderer = empfaenger === 0 ? 1 : 0;
+    if (Array.isArray(r.antworten)) r.antworten[anderer] = r.antworten[anderer] === null ? null : -1;
+  }
+  return k;
+}
+
+function standSenden() {
+  ui.netz?.senden({ typ: 'stand', stand: standFuer(stand, gegenIndex()) });
+}
+
+/** Wer muss diesen Schritt machen? null = beide dürfen. */
+function amZug() {
+  const s = schritt(stand);
+  return s && typeof s.p === 'number' ? s.p : null;
+}
+
+/** Zug ausführen (Gastgeber) oder hinüberschicken (Gast). */
+function tun(name, wert) {
+  if (ui.modus === 'online' && !ui.gastgeber) {
+    ui.netz?.senden({ typ: 'aktion', name, wert, i: stand.aktuell ? stand.aktuell.i : -1 });
+    render();
+    return false;
+  }
+  return true;
+}
+
+function nachrichtVerarbeiten(m) {
+  if (m.typ === 'namen' && !ui.gastgeber) {
+    ui.meinIndex = m.meinIndex === 1 ? 1 : 0;
+    return;
+  }
+  if (m.typ === 'stand' && !ui.gastgeber) {
+    stand = m.stand;
+    ui.halter = ui.meinIndex;
+    ui.screen = stand.aktuell ? 'runde' : 'hub';
+    render();
+    return;
+  }
+  if (m.typ !== 'aktion' || !ui.gastgeber || !stand) return;
+
+  // Nur handeln lassen, wer wirklich dran ist — und nur am erwarteten Schritt.
+  const wer = amZug();
+  if (wer !== null && wer !== gegenIndex()) return;
+  if (stand.aktuell && m.i !== stand.aktuell.i) return;
+
+  if (m.name === 'neueRunde' && !stand.aktuell) {
+    if (stand.dran !== gegenIndex()) return;
+    neueRunde(stand, m.wert);
+    ui.screen = 'runde';
+  } else if (m.name === 'antworten') {
+    antworten(stand, m.wert);
+  } else if (m.name === 'bewerten') {
+    bewerten(stand, !!m.wert);
+  } else if (m.name === 'weiter') {
+    weiter(stand);
+  } else if (m.name === 'abschliessen') {
+    if (!rundeFertig(stand)) return;
+    rundeAbschliessen(stand);
+    ui.screen = 'hub';
+  } else {
+    return;
+  }
+  nachAenderung();
+}
+
+function kopplungAbbrechen() {
+  ui.netz?.schliessen();
+  ui.netz = null;
+  ui.kopplung = null;
+  ui.modus = 'lokal';
+  ui.meinIndex = 0;
+  ui.gastgeber = true;
+  render();
+}
+
+async function netzStarten(gastgeber, code) {
+  ui.modus = 'online';
+  ui.gastgeber = gastgeber;
+  ui.meinIndex = gastgeber ? 0 : 1;
+  ui.kopplung = { schritt: 'raum', gastgeber, code: '', hinweis: '', fehler: '' };
+  render();
+
+  ui.netz = netzAufbauen({
+    gastgeber,
+    code,
+    aufZustand: (text, verbunden) => {
+      if (verbunden) return verbindungSteht();
+      if (ui.kopplung) { ui.kopplung.hinweis = text; render(); }
+      return undefined;
+    },
+    aufNachricht: nachrichtVerarbeiten,
+    aufCode: (c) => { if (ui.kopplung) { ui.kopplung.code = c; render(); } },
+  });
+
+  try {
+    await ui.netz.bereit;
+  } catch (fehler) {
+    if (!ui.kopplung) return;
+    ui.kopplung.fehler = fehler.message || 'Das hat nicht geklappt.';
+    ui.kopplung.schritt = gastgeber ? 'raum' : 'code';
+    render();
+  }
+}
+
+function verbindungSteht() {
+  ui.kopplung = null;
+  if (ui.gastgeber) {
+    // Der Punktestand dieses Geräts gilt — er wird komplett hinübergeschickt.
+    if (!stand) stand = neuerStand();
+    ui.halter = ui.meinIndex;
+    ui.screen = stand.aktuell ? 'runde' : 'hub';
+    ui.netz?.senden({ typ: 'namen', meinIndex: 1 });
+    standSenden();
+  }
   render();
 }
 
@@ -1435,6 +1699,16 @@ function browserDownload(dateiname, html) {
  * Rückgabe: 'ok' | 'txt' | 'abgelehnt' | 'dev'
  */
 async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  // Auf der Webseite liegt die Einzeldatei fertig daneben — dann einfach die holen.
+  if (typeof OFFLINE_DATEI === 'string') {
+    const a = document.createElement('a');
+    a.href = OFFLINE_DATEI;
+    a.download = dateiname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return 'ok';
+  }
   const html = seitenQuelltext(cssId, jsId, ersatzTitel);
   if (!html) return 'dev';
 
@@ -1468,6 +1742,19 @@ async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
  * Rückgabe: 'ok' | 'abgelehnt' | 'geht-nicht' | 'dev'
  */
 async function spielTeilen(cssId, jsId, dateiname, titel) {
+  // Auf der Webseite ist der Link das Nützlichste, was man weitergeben kann.
+  if (typeof OFFLINE_DATEI === 'string') {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: titel, url: location.href });
+        return 'ok';
+      }
+      await navigator.clipboard.writeText(location.href);
+      return 'kopiert';
+    } catch (fehler) {
+      return fehler && fehler.name === 'AbortError' ? 'abgelehnt' : 'geht-nicht';
+    }
+  }
   const html = seitenQuelltext(cssId, jsId, titel);
   if (!html) return 'dev';
   try {
@@ -1484,6 +1771,7 @@ async function spielTeilen(cssId, jsId, dateiname, titel) {
 
 const TEILEN_TEXT = {
   ok: 'Weitergegeben',
+  kopiert: 'Link kopiert',
   abgelehnt: 'Abgebrochen',
   'geht-nicht': 'Geht hier nicht — erst sichern, dann aus den Dateien teilen',
   dev: 'Geht nur in der fertigen Version',
@@ -1517,7 +1805,10 @@ function renderStart() {
         <div class="feldreihe"><input class="feld" id="reise" maxlength="24" value="Wien" aria-label="Reise"></div>
 
         <div style="margin-top:26px;display:flex;flex-direction:column;gap:10px">
-          <button class="btn btn--gold" id="los">Losgehen</button>
+          <button class="btn btn--gold" id="los">An einem Handy</button>
+          ${netzMoeglich() ? `
+          <button class="btn btn--geist" id="netzWirt">Auf zwei Handys — Raum öffnen</button>
+          <button class="btn btn--geist" id="netzGast">Mit Code beitreten</button>` : ''}
           <button class="btn btn--leise" id="regeln">Wie es funktioniert</button>
         </div>
       </div>
@@ -1533,6 +1824,21 @@ function renderStart() {
     nachAenderung();
   };
   app.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+  const namenLesen = () => {
+    const n0 = app.querySelector('#n0').value.trim() || 'Spieler 1';
+    const n1 = app.querySelector('#n1').value.trim() || 'Spieler 2';
+    const reise = app.querySelector('#reise').value.trim() || 'Urlaub';
+    return [[n0, n1], reise];
+  };
+  app.querySelector('#netzWirt')?.addEventListener('click', () => {
+    const [namen, reise] = namenLesen();
+    if (!stand) stand = neuerStand(namen, reise);
+    netzStarten(true);
+  });
+  app.querySelector('#netzGast')?.addEventListener('click', () => {
+    ui.kopplung = { schritt: 'code', gastgeber: false, code: '', fehler: '' };
+    render();
+  });
 }
 
 /* --------------------------------------------------------------- Übersicht */
@@ -1655,6 +1961,11 @@ function renderWahl() {
 }
 
 function starteRunde(typ) {
+  if (ui.modus === 'online' && !ui.gastgeber) {
+    ui.netz?.senden({ typ: 'aktion', name: 'neueRunde', wert: typ, i: -1 });
+    render();
+    return;
+  }
   neueRunde(stand, typ);
   ui.screen = 'runde';
   ui.halter = stand.dran;
@@ -1733,6 +2044,7 @@ function karteAnsicht(r, s) {
           };
         });
         app.querySelector('#btnAbgeben').onclick = () => {
+          if (!tun('antworten', r.antworten[s.p])) return;
           antworten(stand, r.antworten[s.p]);
           nachAenderung();
         };
@@ -1754,7 +2066,12 @@ function karteAnsicht(r, s) {
         inhalt: karte,
         anweisung: `Beide antworten — laut und nacheinander. <b>${name(r.wer)}</b> fängt an.`,
         knoepfe: `<button class="btn btn--gold" id="btnFertig">Beide haben geantwortet</button>`,
-        binden() { app.querySelector('#btnFertig').onclick = () => { weiter(stand); nachAenderung(); }; },
+        binden() {
+        app.querySelector('#btnFertig').onclick = () => {
+          if (!tun('weiter')) return;
+          weiter(stand); nachAenderung();
+        };
+      },
       };
     }
 
@@ -1766,8 +2083,14 @@ function karteAnsicht(r, s) {
         <button class="btn btn--ja" id="btnJa">Ehrlich · ${vz(PUNKTE.wahrheitEhrlich)}</button>
       </div>`,
       binden() {
-        app.querySelector('#btnJa').onclick = () => { bewerten(stand, true); buzz(12); nachAenderung(); };
-        app.querySelector('#btnNein').onclick = () => { bewerten(stand, false); nachAenderung(); };
+        app.querySelector('#btnJa').onclick = () => {
+          if (!tun('bewerten', true)) return;
+          bewerten(stand, true); buzz(12); nachAenderung();
+        };
+        app.querySelector('#btnNein').onclick = () => {
+          if (!tun('bewerten', false)) return;
+          bewerten(stand, false); nachAenderung();
+        };
       },
     };
   }
@@ -1787,7 +2110,10 @@ function karteAnsicht(r, s) {
         <button class="btn btn--gold" id="btnErledigt">Erledigt</button>
       </div>`,
       binden() {
-        app.querySelector('#btnErledigt').onclick = () => { weiter(stand); nachAenderung(); };
+        app.querySelector('#btnErledigt').onclick = () => {
+          if (!tun('weiter')) return;
+          weiter(stand); nachAenderung();
+        };
         app.querySelector('#btnKneifen').onclick = () => {
           r.gemacht = false;
           r.i = r.schritte.length - 1;
@@ -1805,8 +2131,14 @@ function karteAnsicht(r, s) {
       <button class="btn btn--ja" id="btnJa">Ja · ${vz(PUNKTE.wagnisGemacht)}</button>
     </div>`,
     binden() {
-      app.querySelector('#btnJa').onclick = () => { bewerten(stand, true); buzz([15, 40, 20]); nachAenderung(); };
-      app.querySelector('#btnNein').onclick = () => { bewerten(stand, false); nachAenderung(); };
+      app.querySelector('#btnJa').onclick = () => {
+        if (!tun('bewerten', true)) return;
+        bewerten(stand, true); buzz([15, 40, 20]); nachAenderung();
+      };
+      app.querySelector('#btnNein').onclick = () => {
+        if (!tun('bewerten', false)) return;
+        bewerten(stand, false); nachAenderung();
+      };
     },
   };
 }
@@ -1855,6 +2187,7 @@ function aufloesung(r) {
     knoepfe: `<button class="btn btn--gold" id="btnBuchen">Punkte gutschreiben</button>`,
     binden() {
       app.querySelector('#btnBuchen').onclick = () => {
+        if (!tun('abschliessen')) return;
         rundeAbschliessen(stand);
         ui.screen = 'hub';
         ui.halter = stand.dran;
@@ -1866,6 +2199,62 @@ function aufloesung(r) {
 }
 
 /* --------------------------------------------------------------- Übergabe */
+
+/** Auf zwei Geräten wird nichts weitergereicht — man wartet einfach. */
+function renderWarten(wer, text) {
+  const layer = document.createElement('div');
+  layer.className = 'overlay uebergabe';
+  layer.innerHTML = `
+    <div class="pfeil" aria-hidden="true">⏳</div>
+    <div class="lbl">Am Zug</div>
+    <div class="name">${name(wer)}</div>
+    <p class="auftrag">${esc(text)}</p>`;
+  app.appendChild(layer);
+}
+
+/** Kopplung zweier Geräte über einen kurzen Raumcode. */
+function renderKopplung() {
+  const k = ui.kopplung;
+
+  if (k.schritt === 'code') {
+    app.innerHTML = `
+      <div class="screen"><div class="wrap">
+        <h2>Code eingeben</h2>
+        <p>Auf dem anderen Handy steht ein fünfstelliger Code.</p>
+        <input class="feld feld--code" id="raumcode" maxlength="5" autocapitalize="characters"
+          autocomplete="off" spellcheck="false" placeholder="ABCDE" value="${esc(k.code || '')}">
+        ${k.fehler ? `<p style="color:#c4553f">${esc(k.fehler)}</p>` : ''}
+        <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn--gold" id="beitreten">Mitspielen</button>
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div>`;
+    const feld = app.querySelector('#raumcode');
+    feld.focus();
+    app.querySelector('#beitreten').onclick = () => {
+      const wert = feld.value.trim().toUpperCase();
+      if (wert.length < 4) { k.fehler = 'Der Code hat fünf Zeichen.'; render(); return; }
+      netzStarten(false, wert);
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  app.innerHTML = `
+    <div class="screen"><div class="wrap">
+      <h2>${k.gastgeber ? 'Dein Raum steht' : 'Verbinde …'}</h2>
+      ${k.gastgeber
+        ? `<p>Gib diesen Code an das andere Handy — dort auf dieser Seite
+             <b>„Mit Code beitreten“</b> wählen.</p>
+           <div class="raumcode">${esc(k.code || '·····')}</div>
+           <p>Ihr müsst <b>nicht</b> im selben WLAN sein. Der Punktestand dieses
+             Geräts gilt für beide.</p>`
+        : `<p>${esc(k.hinweis || 'Der Raum wird gesucht …')}</p>`}
+      ${k.fehler ? `<p style="color:#c4553f">${esc(k.fehler)}</p>` : ''}
+      <div style="margin-top:18px"><button class="btn btn--leise" id="abbruch">Abbrechen</button></div>
+    </div></div>`;
+  app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+}
 
 function renderUebergabe(wer) {
   const layer = document.createElement('div');
@@ -2087,6 +2476,12 @@ function renderCode() {
 /* ----------------------------------------------------------------- Render */
 
 function render() {
+  if (ui.kopplung) { renderKopplung(); return; }
+  if (ui.modus === 'online' && !stand) {
+    app.innerHTML = `<div class="screen"><div class="wrap">
+      <h2>Verbunden</h2><p>Warte auf den Spielstand vom anderen Handy …</p></div></div>`;
+    return;
+  }
   if (!stand) { renderStart(); }
   else if (ui.screen === 'runde' && stand.aktuell) { renderRunde(); }
   else if (ui.screen === 'wahl') { renderWahl(); }
@@ -2097,6 +2492,18 @@ function render() {
   else if (ui.overlay === 'orte') renderOrte();
   else if (ui.overlay === 'statistik') renderStatistik();
   else if (ui.overlay === 'code') renderCode();
+  else if (ui.modus === 'online' && stand) {
+    if (stand.aktuell) {
+      const wer = amZug();
+      if (wer !== null && wer !== ui.meinIndex) {
+        renderWarten(wer, schritt(stand).art === 'antwort'
+          ? 'Die Antwort wird verdeckt gegeben — du siehst sie erst bei der Auflösung.'
+          : 'Gleich bist du wieder dran.');
+      }
+    } else if (stand.dran !== ui.meinIndex) {
+      renderWarten(stand.dran, 'Wählt gerade die Disziplin für diese Runde.');
+    }
+  }
   else if (ui.screen === 'runde' && stand?.aktuell) {
     const wer = braucht();
     if (wer !== null && wer !== ui.halter) renderUebergabe(wer);

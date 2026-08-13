@@ -4,7 +4,7 @@
 //   node qwixx/build.mjs            -> qwixx/index.html
 //   node qwixx/build.mjs --fragment out.html   (Rumpf ohne <html>/<head>, für Artifacts)
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,15 +13,37 @@ const read = (p) => readFileSync(join(here, p), 'utf8');
 
 const css = read('src/style.css');
 
-// Die Module werden zu einem klassischen Script zusammengezogen — ES-Module
-// dürfen über file:// nichts nachladen.
-const engine = read('src/engine.js').replace(/^export /gm, '');
-const uiSrc = read('src/ui.js').replace(/^import\s*\{[\s\S]*?\}\s*from\s*'\.\/engine\.js';\n/m, '');
-if (uiSrc.includes("from './engine.js'")) throw new Error('Import in ui.js nicht erkannt');
+const MODULE = ['src/engine.js', 'src/netz.js', 'src/ui.js'];
+
+// Alle Module landen in einem gemeinsamen Scope — gleichnamige Deklarationen in
+// zwei Dateien wären dort ein SyntaxError. Lieber hier auffallen als im Browser.
+function kollisionenPruefen(namen) {
+  const gesehen = new Map();
+  for (const [datei, roh] of namen) {
+    const re = /^(?:export )?(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/gm;
+    for (const treffer of roh.matchAll(re)) {
+      const id = treffer[1];
+      if (gesehen.has(id)) {
+        throw new Error(`"${id}" ist in ${gesehen.get(id)} und ${datei} deklariert — bitte umbenennen.`);
+      }
+      gesehen.set(id, datei);
+    }
+  }
+}
+
+kollisionenPruefen(MODULE.map((d) => [d, read(d)]));
+
+// ES-Module dürfen über file:// nichts nachladen — darum ein klassisches Script.
+const teile = MODULE.map((datei) => {
+  const roh = read(datei);
+  const ohneImporte = roh.replace(/^import\b[^;]*;\n/gm, '');
+  if (/^\s*import\b/m.test(ohneImporte)) throw new Error(`Import in ${datei} nicht erkannt`);
+  return ohneImporte.replace(/^export /gm, '');
+});
 
 // Wird unten mit dem Seitenkopf zusammengesetzt, damit sich die Seite selbst
 // als vollständige Datei abspeichern kann.
-const rumpf = `(function () {\n'use strict';\n${engine}\n${uiSrc}\n})();`;
+const rumpf = `(function () {\n'use strict';\n${teile.join('\n')}\n})();`;
 
 const ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
   + `<rect width="64" height="64" rx="14" fill="#0e1620"/>`
@@ -70,6 +92,35 @@ ${body}
 </body>
 </html>
 `;
+
+
+// --- Fassung für die Webseite ------------------------------------------------
+// Auf lmp-docmatch.de gilt eine strenge Content-Security-Policy ohne
+// 'unsafe-inline'. Darum wandern Stil und Skript in eigene Dateien; die
+// Einzeldatei zum Mitnehmen wird gleich mit danebengelegt.
+const webFlagge = process.argv.indexOf('--web');
+if (webFlagge !== -1) {
+  const ziel = resolve(process.argv[webFlagge + 1] || 'web');
+  mkdirSync(ziel, { recursive: true });
+  const mitnahme = 'Qwixx.html';
+  const webScript = [
+    `const SEITENKOPF = ${JSON.stringify(kopf)};`,
+    "const SPIELE_BASIS = '..';",
+    `const OFFLINE_DATEI = ${JSON.stringify(mitnahme)};`,
+    rumpf,
+  ].join('\n');
+  writeFileSync(join(ziel, 'spiel.js'), webScript);
+  writeFileSync(join(ziel, 'stil.css'), css);
+  writeFileSync(join(ziel, 'index.html'), [
+    '<!doctype html>', '<html lang="de">', '<head>', kopf,
+    '<link rel="stylesheet" href="stil.css">',
+    '<script src="spiel.js" defer></' + 'script>',
+    '</head>', '<body>', '<div id="app"></div>', '</body>', '</html>', '',
+  ].join('\n'));
+  writeFileSync(join(ziel, mitnahme), page);
+  console.log(`Webfassung: ${ziel} (index.html + spiel.js + stil.css + ${mitnahme})`);
+  process.exit(0);
+}
 
 const fragmentFlag = process.argv.indexOf('--fragment');
 if (fragmentFlag !== -1) {

@@ -1343,6 +1343,113 @@ async function scannerStarten(videoElement, aufTreffer, aufFehler) {
   return stoppen;
 }
 
+// Zwei Handys über das Internet verbinden — für die Fassung auf der Webseite.
+//
+// Anders als funk.js braucht das kein gemeinsames WLAN und keine Kamera: Der
+// Server hält nur einen Raum mit einem kurzen Code offen und reicht Nachrichten
+// durch. Er versteht kein Spiel; er merkt sich, wer was noch nicht abgeholt hat.
+//
+// Nach außen sieht das genauso aus wie eine Direktverbindung — `senden`,
+// `verbunden`, `schliessen` — damit die Oberfläche nichts davon wissen muss.
+
+const NETZ_BASIS = (typeof SPIELE_BASIS === 'string' ? SPIELE_BASIS : '.').replace(/\/$/, '');
+
+/** Steht dieser Weg überhaupt zur Verfügung? Nur in der Webfassung. */
+const netzMoeglich = () => typeof SPIELE_BASIS === 'string';
+
+async function ruf(pfad, optionen = {}) {
+  const antwort = await fetch(`${NETZ_BASIS}/api${pfad}`, {
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    ...optionen,
+  });
+  let daten = null;
+  try { daten = await antwort.json(); } catch { /* leere Antwort */ }
+  if (!antwort.ok) throw new Error((daten && daten.fehler) || `Server meldet ${antwort.status}.`);
+  return daten || {};
+}
+
+/**
+ * Raum aufmachen oder beitreten und danach dauerhaft lauschen.
+ *
+ * `aufZustand(text, verbunden)` meldet Fortschritt, `aufNachricht(objekt)`
+ * liefert alles, was die Gegenseite schickt, `aufCode(code)` den Raumcode,
+ * sobald er feststeht.
+ */
+function netzAufbauen({ gastgeber, code, aufZustand, aufNachricht, aufCode }) {
+  let raum = null;         // { code, sitz, schluessel }
+  let ab = 0;
+  let offen = false;
+  let laeuft = true;
+  let fehlversuche = 0;
+
+  const melde = (text, verbunden = offen) => aufZustand?.(text, verbunden);
+
+  async function lauschen() {
+    while (laeuft && raum) {
+      try {
+        const q = new URLSearchParams({
+          sitz: String(raum.sitz), ab: String(ab), schluessel: raum.schluessel,
+        });
+        const daten = await ruf(`/raum/${raum.code}/holen?${q}`);
+        if (!laeuft) return;
+        fehlversuche = 0;
+
+        if (daten.voll && !offen) { offen = true; aufZustand?.('verbunden', true); }
+        if (!daten.voll && offen) { offen = false; aufZustand?.('getrennt', false); }
+
+        for (const n of daten.nachrichten || []) {
+          ab = Math.max(ab, n.nr);
+          try { aufNachricht?.(n.inhalt); } catch { /* kaputte Nachricht */ }
+        }
+        if (typeof daten.stand === 'number') ab = Math.max(ab, Math.min(ab, daten.stand));
+      } catch (fehler) {
+        if (!laeuft) return;
+        fehlversuche += 1;
+        if (fehlversuche >= 4) {
+          offen = false;
+          aufZustand?.(`Verbindung abgerissen: ${fehler.message}`, false);
+        }
+        // Kurz warten, dann weiter — kurze Aussetzer sollen das Spiel nicht beenden.
+        await new Promise((w) => setTimeout(w, Math.min(4000, 500 * fehlversuche)));
+      }
+    }
+  }
+
+  const bereit = (async () => {
+    melde(gastgeber ? 'Raum wird geöffnet …' : 'Raum wird gesucht …', false);
+    raum = gastgeber
+      ? await ruf('/raum', { method: 'POST', body: '{}' })
+      : await ruf(`/raum/${String(code || '').trim().toUpperCase()}/beitreten`,
+        { method: 'POST', body: '{}' });
+    aufCode?.(raum.code);
+    melde(gastgeber ? 'Warte auf das zweite Handy …' : 'Verbinde …', false);
+    lauschen();
+    return raum.code;
+  })();
+
+  return {
+    bereit,                                   // Promise: fertig, sobald der Raum steht
+    get code() { return raum && raum.code; },
+    get verbunden() { return offen; },
+
+    senden(objekt) {
+      if (!raum) return false;
+      ruf(`/raum/${raum.code}/senden`, {
+        method: 'POST',
+        body: JSON.stringify({ sitz: raum.sitz, schluessel: raum.schluessel, nachricht: objekt }),
+      }).catch(() => { /* der Lauscher merkt den Ausfall */ });
+      return true;
+    },
+
+    schliessen() {
+      laeuft = false;
+      offen = false;
+      raum = null;
+    },
+  };
+}
+
 // Sky Team — Spiellogik ohne DOM. Kooperativ zu zweit: Pilot und Kopilot
 // landen gemeinsam ein Flugzeug, indem sie abwechselnd Würfel ins Cockpit legen.
 
@@ -2094,6 +2201,16 @@ function browserDownload(dateiname, html) {
 
 /** Speichert die laufende Seite als eigenständige HTML-Datei. */
 async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  // Auf der Webseite liegt die Einzeldatei fertig daneben — dann einfach die holen.
+  if (typeof OFFLINE_DATEI === 'string') {
+    const a = document.createElement('a');
+    a.href = OFFLINE_DATEI;
+    a.download = dateiname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return 'ok';
+  }
   const html = seitenQuelltext(cssId, jsId, ersatzTitel);
   if (!html) return 'dev';
   const dl = typeof window !== 'undefined' && window.claude ? window.claude.downloads : null;
@@ -2120,6 +2237,19 @@ async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
 
 /** Gibt die Spieldatei ans Teilen-Menü des Handys weiter. */
 async function spielTeilen(cssId, jsId, dateiname, titel) {
+  // Auf der Webseite ist der Link das Nützlichste, was man weitergeben kann.
+  if (typeof OFFLINE_DATEI === 'string') {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: titel, url: location.href });
+        return 'ok';
+      }
+      await navigator.clipboard.writeText(location.href);
+      return 'kopiert';
+    } catch (fehler) {
+      return fehler && fehler.name === 'AbortError' ? 'abgelehnt' : 'geht-nicht';
+    }
+  }
   const html = seitenQuelltext(cssId, jsId, titel);
   if (!html) return 'dev';
   try {
@@ -2136,6 +2266,7 @@ async function spielTeilen(cssId, jsId, dateiname, titel) {
 
 const TEILEN_TEXT = {
   ok: 'Weitergegeben',
+  kopiert: 'Link kopiert',
   abgelehnt: 'Abgebrochen',
   'geht-nicht': 'Geht hier nicht — erst sichern, dann aus den Dateien teilen',
   dev: 'Geht nur in der fertigen Version',
@@ -2521,6 +2652,39 @@ function nachrichtVerarbeiten(m) {
   }
 }
 
+/**
+ * Kopplung über die Webseite: kein gemeinsames WLAN, keine Kamera. Der Server
+ * hält nur einen Raum mit kurzem Code offen und reicht Nachrichten durch.
+ */
+async function netzStarten(gastgeber, rolle, code) {
+  ui.modus = 'online';
+  ui.gastgeber = gastgeber;
+  ui.meinIndex = rolle;
+  ui.kopplung = { schritt: 'raum', gastgeber, ueberNetz: true, code: '', hinweis: '', fehler: '' };
+  render();
+
+  ui.funk = netzAufbauen({
+    gastgeber,
+    code,
+    aufZustand: (text, verbunden) => {
+      if (verbunden) return verbindungSteht();
+      if (ui.kopplung) { ui.kopplung.hinweis = text; render(); }
+      return undefined;
+    },
+    aufNachricht: nachrichtVerarbeiten,
+    aufCode: (c) => { if (ui.kopplung) { ui.kopplung.code = c; render(); } },
+  });
+
+  try {
+    await ui.funk.bereit;
+  } catch (fehler) {
+    if (!ui.kopplung) return;
+    ui.kopplung.fehler = fehler.message || 'Das hat nicht geklappt.';
+    ui.kopplung.schritt = gastgeber ? 'raum' : 'code';
+    render();
+  }
+}
+
 function renderKopplung() {
   const k = ui.kopplung;
 
@@ -2533,19 +2697,93 @@ function renderKopplung() {
            Handys, ganz ohne Internet.</p>
         <p>Für Sky Team ist das die richtige Art zu spielen: <strong>jeder sieht nur seine
            eigenen Würfel</strong>, so wie hinter dem Sichtschirm am Tisch.</p>
+        ${netzMoeglich() ? `
+        <div class="knopfsaeule">
+          <button class="btn btn--bernstein" id="netzPilot">Raum öffnen — ich bin Pilot</button>
+          <button class="btn btn--bernstein" id="netzKopilot">Raum öffnen — ich bin Kopilot</button>
+          <button class="btn btn--geist" id="netzGast">Mit Code beitreten</button>
+        </div>
+        <details class="codeklappe"><summary>Ohne Internet: per QR im selben WLAN</summary>
+        <div class="knopfsaeule">
+          <button class="btn btn--geist" id="alsPilot">QR · ich bin Pilot, führe</button>
+          <button class="btn btn--geist" id="alsKopilot">QR · ich bin Kopilot, führe</button>
+          <button class="btn btn--geist" id="alsGast">QR · ich steige zu</button>
+        </div></details>
+        <div class="knopfsaeule">
+          <button class="btn btn--leise" id="zurueck">Doch an einem Handy</button>
+        </div>` : `
         <div class="knopfsaeule">
           <button class="btn btn--bernstein" id="alsPilot">Ich bin Pilot — dieses Handy führt</button>
           <button class="btn btn--bernstein" id="alsKopilot">Ich bin Kopilot — dieses Handy führt</button>
           <button class="btn btn--geist" id="alsGast">Ich steige zu — anderes Handy führt</button>
           <button class="btn btn--leise" id="zurueck">Doch an einem Handy</button>
-        </div>
+        </div>`}
         <p class="hinweiszeile">Wer führt, rechnet und würfelt. Die Rolle des anderen ergibt
            sich automatisch.</p>
       </div></div></div>`;
+    app.querySelector('#netzPilot')?.addEventListener('click', () => netzStarten(true, PILOT));
+    app.querySelector('#netzKopilot')?.addEventListener('click', () => netzStarten(true, KOPILOT));
+    app.querySelector('#netzGast')?.addEventListener('click', () => {
+      ui.kopplung = { schritt: 'code', gastgeber: false, ueberNetz: true, code: '', fehler: '' };
+      render();
+    });
     app.querySelector('#alsPilot').onclick = () => kopplungStarten(true, PILOT);
     app.querySelector('#alsKopilot').onclick = () => kopplungStarten(true, KOPILOT);
     app.querySelector('#alsGast').onclick = () => kopplungStarten(false, KOPILOT);
     app.querySelector('#zurueck').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'code') {
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>Code eingeben</h2>
+        <p>Auf dem anderen Handy steht ein fünfstelliger Code. Tipp ihn hier ein.</p>
+        <input class="feld feld--code" id="raumcode" maxlength="5" autocapitalize="characters"
+          autocomplete="off" spellcheck="false" placeholder="ABCDE" value="${esc(k.code || '')}">
+        ${k.fehler ? `<div class="hinweis hinweis--warn">${esc(k.fehler)}</div>` : ''}
+        <div class="knopfsaeule">
+          <button class="btn btn--bernstein" id="beitreten">Mitspielen</button>
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+    const feld = app.querySelector('#raumcode');
+    feld.focus();
+    app.querySelector('#beitreten').onclick = () => {
+      const wert = feld.value.trim().toUpperCase();
+      if (wert.length < 4) { k.fehler = 'Der Code hat fünf Zeichen.'; render(); return; }
+      netzStarten(false, KOPILOT, wert);
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'raum') {
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>${k.gastgeber ? 'Dein Raum steht' : 'Verbinde …'}</h2>
+        ${k.gastgeber
+          ? `<p>Gib diesen Code an das andere Handy. Dort auf dieser Seite
+               <b>„Mit Code beitreten“</b> wählen und eintippen.</p>
+             <div class="raumcode">${esc(k.code || '·····')}</div>
+             <p class="hinweiszeile">Ihr müsst <b>nicht</b> im selben WLAN sein — das geht
+               von überall, solange beide Handys online sind.</p>`
+          : `<p>${esc(k.hinweis || 'Der Raum wird gesucht …')}</p>`}
+        ${k.fehler ? `<div class="hinweis hinweis--warn">${esc(k.fehler)}</div>` : ''}
+        <div class="knopfsaeule">
+          ${k.gastgeber && k.code
+            ? '<button class="btn btn--geist" id="codeTeilen">Code weitergeben</button>' : ''}
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    app.querySelector('#codeTeilen')?.addEventListener('click', async (e) => {
+      const text = `Spielen? Geh auf ${location.href} und tipp den Code ${k.code} ein.`;
+      try {
+        if (navigator.share) await navigator.share({ text });
+        else { await navigator.clipboard.writeText(text); e.currentTarget.textContent = 'Kopiert'; }
+      } catch { /* abgebrochen */ }
+    });
     return;
   }
 

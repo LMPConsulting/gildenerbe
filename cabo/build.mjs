@@ -4,14 +4,14 @@
 //   node cabo/build.mjs            -> cabo/index.html
 //   node cabo/build.mjs --fragment out.html   (Rumpf ohne <html>/<head>, für Artifacts)
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(join(here, p), 'utf8');
 
-const MODULE = ['src/qr.js', 'src/funk.js', 'src/engine.js', 'src/ui.js'];
+const MODULE = ['src/qr.js', 'src/funk.js', 'src/netz.js', 'src/engine.js', 'src/ui.js'];
 
 // Alle Module landen in einem gemeinsamen Scope — gleichnamige Deklarationen in
 // zwei Dateien wären dort ein SyntaxError. Lieber hier auffallen als im Browser.
@@ -91,6 +91,35 @@ ${body}
 </body>
 </html>
 `;
+
+
+// --- Fassung für die Webseite ------------------------------------------------
+// Auf lmp-docmatch.de gilt eine strenge Content-Security-Policy ohne
+// 'unsafe-inline'. Darum wandern Stil und Skript in eigene Dateien; die
+// Einzeldatei zum Mitnehmen wird gleich mit danebengelegt.
+const webFlagge = process.argv.indexOf('--web');
+if (webFlagge !== -1) {
+  const ziel = resolve(process.argv[webFlagge + 1] || 'web');
+  mkdirSync(ziel, { recursive: true });
+  const mitnahme = 'Cabo.html';
+  const webScript = [
+    `const SEITENKOPF = ${JSON.stringify(kopf)};`,
+    "const SPIELE_BASIS = '..';",
+    `const OFFLINE_DATEI = ${JSON.stringify(mitnahme)};`,
+    rumpf,
+  ].join('\n');
+  writeFileSync(join(ziel, 'spiel.js'), webScript);
+  writeFileSync(join(ziel, 'stil.css'), css);
+  writeFileSync(join(ziel, 'index.html'), [
+    '<!doctype html>', '<html lang="de">', '<head>', kopf,
+    '<link rel="stylesheet" href="stil.css">',
+    '<script src="spiel.js" defer></' + 'script>',
+    '</head>', '<body>', '<div id="app"></div>', '</body>', '</html>', '',
+  ].join('\n'));
+  writeFileSync(join(ziel, mitnahme), page);
+  console.log(`Webfassung: ${ziel} (index.html + spiel.js + stil.css + ${mitnahme})`);
+  process.exit(0);
+}
 
 const fragmentFlag = process.argv.indexOf('--fragment');
 if (fragmentFlag !== -1) {

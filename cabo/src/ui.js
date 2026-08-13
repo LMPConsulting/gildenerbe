@@ -11,6 +11,7 @@ import {
 } from './engine.js';
 import { qrZeichnen } from './qr.js';
 import { funkAufbauen, scannerStarten, scannerMoeglich } from './funk.js';
+import { netzAufbauen, netzMoeglich } from './netz.js';
 
 const KEY = 'cabo.v1';
 const app = document.getElementById('app');
@@ -89,6 +90,16 @@ function browserDownload(dateiname, html) {
  * In der Claude-App über deren Speichern-Dialog, sonst als Browser-Download.
  */
 async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  // Auf der Webseite liegt die Einzeldatei fertig daneben — dann einfach die holen.
+  if (typeof OFFLINE_DATEI === 'string') {
+    const a = document.createElement('a');
+    a.href = OFFLINE_DATEI;
+    a.download = dateiname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return 'ok';
+  }
   const html = seitenQuelltext(cssId, jsId, ersatzTitel);
   if (!html) return 'dev';
   const dl = typeof window !== 'undefined' && window.claude ? window.claude.downloads : null;
@@ -119,6 +130,19 @@ async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
  * Rückgabe: 'ok' | 'abgelehnt' | 'geht-nicht' | 'dev'
  */
 async function spielTeilen(cssId, jsId, dateiname, titel) {
+  // Auf der Webseite ist der Link das Nützlichste, was man weitergeben kann.
+  if (typeof OFFLINE_DATEI === 'string') {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: titel, url: location.href });
+        return 'ok';
+      }
+      await navigator.clipboard.writeText(location.href);
+      return 'kopiert';
+    } catch (fehler) {
+      return fehler && fehler.name === 'AbortError' ? 'abgelehnt' : 'geht-nicht';
+    }
+  }
   const html = seitenQuelltext(cssId, jsId, titel);
   if (!html) return 'dev';
   try {
@@ -135,6 +159,7 @@ async function spielTeilen(cssId, jsId, dateiname, titel) {
 
 const TEILEN_TEXT = {
   ok: 'Weitergegeben',
+  kopiert: 'Link kopiert',
   abgelehnt: 'Abgebrochen',
   'geht-nicht': 'Geht hier nicht — erst sichern, dann aus den Dateien teilen',
   dev: 'Geht nur in der fertigen Version',
@@ -354,6 +379,39 @@ function nachrichtVerarbeiten(m) {
   }
 }
 
+/**
+ * Kopplung über die Webseite: kein gemeinsames WLAN, keine Kamera. Der Server
+ * hält nur einen Raum mit kurzem Code offen und reicht Nachrichten durch.
+ */
+async function netzStarten(gastgeber, rolle, code) {
+  ui.modus = 'online';
+  ui.gastgeber = gastgeber;
+  ui.meinIndex = rolle;
+  ui.kopplung = { schritt: 'raum', gastgeber, ueberNetz: true, code: '', hinweis: '', fehler: '' };
+  render();
+
+  ui.funk = netzAufbauen({
+    gastgeber,
+    code,
+    aufZustand: (text, verbunden) => {
+      if (verbunden) return verbindungSteht();
+      if (ui.kopplung) { ui.kopplung.hinweis = text; render(); }
+      return undefined;
+    },
+    aufNachricht: nachrichtVerarbeiten,
+    aufCode: (c) => { if (ui.kopplung) { ui.kopplung.code = c; render(); } },
+  });
+
+  try {
+    await ui.funk.bereit;
+  } catch (fehler) {
+    if (!ui.kopplung) return;
+    ui.kopplung.fehler = fehler.message || 'Das hat nicht geklappt.';
+    ui.kopplung.schritt = gastgeber ? 'raum' : 'code';
+    render();
+  }
+}
+
 function renderKopplung() {
   const k = ui.kopplung;
   const gastgeber = k.rolle === 'gastgeber';
@@ -365,17 +423,86 @@ function renderKopplung() {
         <p>Beide Geräte müssen im <strong>selben WLAN oder Hotspot</strong> sein. Zum Koppeln
            zeigt ihr euch gegenseitig einen QR-Code — danach läuft alles direkt zwischen den
            Handys, ganz ohne Internet.</p>
+        ${netzMoeglich() ? `
+        <div class="wahlreihe" style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn--messing" id="netzWirt">Raum öffnen — ich teile aus</button>
+          <button class="btn btn--geist" id="netzGast">Mit Code beitreten</button>
+        </div>
+        <details class="codeklappe"><summary>Ohne Internet: per QR im selben WLAN</summary>
+        <div class="wahlreihe" style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn--geist" id="alsGastgeber">QR · dieses Handy teilt aus</button>
+          <button class="btn btn--geist" id="alsGast">QR · dieses Handy macht mit</button>
+        </div></details>
+        <div style="margin-top:12px"><button class="btn btn--leise" id="zurueck">Doch an einem Handy</button></div>` : `
         <div class="wahlreihe" style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
           <button class="btn btn--messing" id="alsGastgeber">Dieses Handy teilt aus</button>
           <button class="btn btn--geist" id="alsGast">Dieses Handy macht mit</button>
           <button class="btn btn--leise" id="zurueck">Doch an einem Handy</button>
-        </div>
+        </div>`}
         <p class="hinweiszeile" style="margin-top:20px">Wer austeilt, führt Buch. Fangt beide
            gleichzeitig an — einer tippt oben, der andere unten.</p>
       </div></div></div>`;
+    app.querySelector('#netzWirt')?.addEventListener('click', () => netzStarten(true, 0));
+    app.querySelector('#netzGast')?.addEventListener('click', () => {
+      ui.kopplung = { schritt: 'code', gastgeber: false, ueberNetz: true, code: '', fehler: '' };
+      render();
+    });
     app.querySelector('#alsGastgeber').onclick = () => kopplungStarten('gastgeber');
     app.querySelector('#alsGast').onclick = () => kopplungStarten('gast');
     app.querySelector('#zurueck').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'code') {
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>Code eingeben</h2>
+        <p>Auf dem anderen Handy steht ein fünfstelliger Code. Tipp ihn hier ein.</p>
+        <input class="feld feld--code" id="raumcode" maxlength="5" autocapitalize="characters"
+          autocomplete="off" spellcheck="false" placeholder="ABCDE" value="${esc(k.code || '')}">
+        ${k.fehler ? `<div class="hinweis hinweis--warn">${esc(k.fehler)}</div>` : ''}
+        <div class="knopfsaeule">
+          <button class="btn btn--messing" id="beitreten">Mitspielen</button>
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+    const feld = app.querySelector('#raumcode');
+    feld.focus();
+    app.querySelector('#beitreten').onclick = () => {
+      const wert = feld.value.trim().toUpperCase();
+      if (wert.length < 4) { k.fehler = 'Der Code hat fünf Zeichen.'; render(); return; }
+      netzStarten(false, 1, wert);
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'raum') {
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>${k.gastgeber ? 'Dein Raum steht' : 'Verbinde …'}</h2>
+        ${k.gastgeber
+          ? `<p>Gib diesen Code an das andere Handy. Dort auf dieser Seite
+               <b>„Mit Code beitreten“</b> wählen und eintippen.</p>
+             <div class="raumcode">${esc(k.code || '·····')}</div>
+             <p class="hinweiszeile">Ihr müsst <b>nicht</b> im selben WLAN sein — das geht
+               von überall, solange beide Handys online sind.</p>`
+          : `<p>${esc(k.hinweis || 'Der Raum wird gesucht …')}</p>`}
+        ${k.fehler ? `<div class="hinweis hinweis--warn">${esc(k.fehler)}</div>` : ''}
+        <div class="knopfsaeule">
+          ${k.gastgeber && k.code
+            ? '<button class="btn btn--geist" id="codeTeilen">Code weitergeben</button>' : ''}
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    app.querySelector('#codeTeilen')?.addEventListener('click', async (e) => {
+      const text = `Spielen? Geh auf ${location.href} und tipp den Code ${k.code} ein.`;
+      try {
+        if (navigator.share) await navigator.share({ text });
+        else { await navigator.clipboard.writeText(text); e.currentTarget.textContent = 'Kopiert'; }
+      } catch { /* abgebrochen */ }
+    });
     return;
   }
 

@@ -6,6 +6,7 @@ import {
   createGame, rollDice, submit, legalMoves, colorCombos, currentStep,
   whiteSum, rightmostCross, crossCount, playerScore, standings, endReason,
 } from './engine.js';
+import { netzAufbauen, netzMoeglich } from './netz.js';
 
 const SAVE_KEY = 'qwixx.save.v1';
 const PREFS_KEY = 'qwixx.prefs.v1';
@@ -22,6 +23,11 @@ let ui = {
   overlay: null,      // 'rules' | 'menu'
   fresh: null,        // Schlüssel des zuletzt gezeichneten Kreuzes
   toast: null,
+  modus: 'lokal',     // 'lokal' | 'online'
+  meinIndex: 0,       // online: welcher Spieler dieses Gerät ist
+  gastgeber: true,    // online: dieses Gerät rechnet
+  netz: null,
+  kopplung: null,
 };
 let prefs = { sound: true, names: ['Spieler 1', 'Spieler 2'] };
 
@@ -131,6 +137,16 @@ function browserDownload(dateiname, html) {
  * Rückgabe: 'ok' | 'txt' | 'abgelehnt' | 'dev'
  */
 async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  // Auf der Webseite liegt die Einzeldatei fertig daneben — dann einfach die holen.
+  if (typeof OFFLINE_DATEI === 'string') {
+    const a = document.createElement('a');
+    a.href = OFFLINE_DATEI;
+    a.download = dateiname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return 'ok';
+  }
   const html = seitenQuelltext(cssId, jsId, ersatzTitel);
   if (!html) return 'dev';
 
@@ -164,6 +180,19 @@ async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
  * Rückgabe: 'ok' | 'abgelehnt' | 'geht-nicht' | 'dev'
  */
 async function spielTeilen(cssId, jsId, dateiname, titel) {
+  // Auf der Webseite ist der Link das Nützlichste, was man weitergeben kann.
+  if (typeof OFFLINE_DATEI === 'string') {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: titel, url: location.href });
+        return 'ok';
+      }
+      await navigator.clipboard.writeText(location.href);
+      return 'kopiert';
+    } catch (fehler) {
+      return fehler && fehler.name === 'AbortError' ? 'abgelehnt' : 'geht-nicht';
+    }
+  }
   const html = seitenQuelltext(cssId, jsId, titel);
   if (!html) return 'dev';
   try {
@@ -180,6 +209,7 @@ async function spielTeilen(cssId, jsId, dateiname, titel) {
 
 const TEILEN_TEXT = {
   ok: 'Weitergegeben',
+  kopiert: 'Link kopiert',
   abgelehnt: 'Abgebrochen',
   'geht-nicht': 'Geht hier nicht — erst sichern, dann aus den Dateien teilen',
   dev: 'Geht nur in der fertigen Version',
@@ -195,6 +225,7 @@ const SICHER_TEXT = {
 /* ------------------------------------------------------------ Speichern */
 
 function save() {
+  if (ui.modus === 'online') return;      // auf zwei Geräten führt der Gastgeber Buch
   try {
     if (game && game.phase !== 'over') {
       localStorage.setItem(SAVE_KEY, JSON.stringify({ game, holder: ui.holder }));
@@ -223,6 +254,114 @@ function loadSave() {
 }
 
 /* -------------------------------------------------------------- Ablauf */
+
+/* ---------------------------------------------------- Zwei Handys, ein Spiel */
+
+/** Der Gastgeber rechnet; das andere Gerät schickt nur seine Absicht hinüber. */
+function sendeStand() {
+  ui.netz?.senden({ typ: 'stand', game });
+}
+
+function nachrichtVerarbeiten(m) {
+  if (m.typ === 'stand' && !ui.gastgeber) {
+    game = m.game;
+    ui.screen = game.phase === 'over' ? 'over' : 'game';
+    ui.pick = null;
+    ui.holder = ui.meinIndex;
+    ui.viewPlayer = ui.meinIndex;
+    render();
+    return;
+  }
+  if (m.typ === 'namen' && !ui.gastgeber) {
+    ui.meinIndex = m.meinIndex === 1 ? 1 : 0;
+    return;
+  }
+  if (m.typ === 'aktion' && ui.gastgeber && game) {
+    // Der Gast darf nur handeln, wenn er wirklich an der Reihe ist.
+    if (requiredPlayer() !== gegenIndex()) return;
+    if (m.name === 'wuerfeln') {
+      if (game.phase !== 'roll') return;
+      rollDice(game);
+    } else if (m.name === 'submit') {
+      const wunsch = m.zug;
+      const treffer = wunsch
+        ? legalMoves(game).find((z) => z.color === wunsch.color && z.index === wunsch.index)
+        : null;
+      if (wunsch && !treffer) return;
+      submit(game, treffer || null);
+    } else {
+      return;
+    }
+    afterMutation();
+  }
+}
+
+const gegenIndex = () => (ui.meinIndex === 0 ? 1 : 0);
+
+/** Zug ausführen (Gastgeber) oder hinüberschicken (Gast). */
+function tun(name, zug) {
+  if (ui.modus === 'online' && !ui.gastgeber) {
+    ui.netz?.senden({ typ: 'aktion', name, zug: zug || null });
+    ui.pick = null;
+    render();
+    return false;
+  }
+  return true;
+}
+
+function kopplungAbbrechen() {
+  ui.netz?.schliessen();
+  ui.netz = null;
+  ui.kopplung = null;
+  ui.modus = 'lokal';
+  ui.meinIndex = 0;
+  ui.gastgeber = true;
+  render();
+}
+
+async function netzStarten(gastgeber, code) {
+  ui.modus = 'online';
+  ui.gastgeber = gastgeber;
+  ui.meinIndex = gastgeber ? 0 : 1;
+  ui.kopplung = { schritt: 'raum', gastgeber, code: '', hinweis: '', fehler: '' };
+  render();
+
+  ui.netz = netzAufbauen({
+    gastgeber,
+    code,
+    aufZustand: (text, verbunden) => {
+      if (verbunden) return verbindungSteht();
+      if (ui.kopplung) { ui.kopplung.hinweis = text; render(); }
+      return undefined;
+    },
+    aufNachricht: nachrichtVerarbeiten,
+    aufCode: (c) => { if (ui.kopplung) { ui.kopplung.code = c; render(); } },
+  });
+
+  try {
+    await ui.netz.bereit;
+  } catch (fehler) {
+    if (!ui.kopplung) return;
+    ui.kopplung.fehler = fehler.message || 'Das hat nicht geklappt.';
+    ui.kopplung.schritt = gastgeber ? 'raum' : 'code';
+    render();
+  }
+}
+
+function verbindungSteht() {
+  ui.kopplung = null;
+  if (ui.gastgeber) {
+    game = createGame(prefs.names.slice(0, 2));
+    ui.screen = 'game';
+    ui.pick = null;
+    ui.fresh = null;
+    ui.holder = ui.meinIndex;
+    ui.viewPlayer = ui.meinIndex;
+    ui.netz?.senden({ typ: 'namen', meinIndex: 1 });
+    sendeStand();
+  }
+  render();
+}
 
 function requiredPlayer() {
   if (!game || game.phase === 'over') return null;
@@ -254,6 +393,15 @@ function afterMutation() {
     sfx.win();
   }
   const need = requiredPlayer();
+  if (ui.modus === 'online') {
+    // Auf zwei Geräten wandert nichts — jeder bleibt auf seinem eigenen Blatt.
+    ui.holder = ui.meinIndex;
+    ui.viewPlayer = ui.meinIndex;
+    if (need !== ui.meinIndex) ui.pick = null;
+    if (ui.gastgeber) sendeStand();
+    render();
+    return;
+  }
   if (need !== null && need !== ui.holder) ui.pick = null;
   else if (need !== null) ui.viewPlayer = need;
   save();
@@ -273,6 +421,7 @@ function startGame(names) {
 
 function doRoll() {
   if (ui.rolling) return;
+  if (!tun('wuerfeln')) return;
   ui.rolling = true;
   sfx.rattle();
   buzz(18);
@@ -302,6 +451,7 @@ function doRoll() {
 function confirmPick() {
   const move = ui.pick && legalMoves(game).find((m) => m.color === ui.pick.color && m.index === ui.pick.index);
   if (!move) return;
+  if (!tun('submit', { color: move.color, index: move.index })) return;
   const step = currentStep(game);
   ui.fresh = cellKey(step.p, move.color, move.index);
   ui.pick = null;
@@ -313,6 +463,7 @@ function confirmPick() {
 }
 
 function passStep() {
+  if (!tun('submit', null)) return;
   const step = currentStep(game);
   const wasFehlwurf = step.p === game.active && step.kind === 'color' && !game.activeCrossed;
   ui.pick = null;
@@ -346,6 +497,12 @@ function renderStart() {
                   <button class="btn btn--ghost" id="start" style="margin-top:10px">Neues Spiel</button>`
                : `<button class="btn btn--primary" id="start">Spiel starten</button>`}
 
+      ${netzMoeglich() ? `
+      <div class="btnrow" style="margin-top:10px">
+        <button class="btn btn--ghost" id="netzWirt">Auf zwei Handys</button>
+        <button class="btn btn--ghost" id="netzGast">Mit Code beitreten</button>
+      </div>` : ''}
+
       <button class="btn btn--quiet" id="rules" style="margin-top:12px">Spielregeln lesen</button>
     </div>`;
 
@@ -356,6 +513,14 @@ function renderStart() {
   app.querySelector('#rmPlayer').onclick = () => { prefs.names = readNames().slice(0, -1); save(); render(); };
   app.querySelector('#rules').onclick = () => { ui.overlay = 'rules'; render(); };
   app.querySelector('#start').onclick = () => { prefs.names = readNames(); save(); startGame(readNames()); };
+  app.querySelector('#netzWirt')?.addEventListener('click', () => {
+    prefs.names = readNames().slice(0, 2); save(); netzStarten(true);
+  });
+  app.querySelector('#netzGast')?.addEventListener('click', () => {
+    prefs.names = readNames().slice(0, 2); save();
+    ui.kopplung = { schritt: 'code', gastgeber: false, code: '', fehler: '' };
+    render();
+  });
   if (resume) {
     app.querySelector('#resume').onclick = () => {
       game = resume.game;
@@ -575,6 +740,60 @@ function actionButtons(step, owner, viewingOther, legal) {
 
 /* ------------------------------------------------------------- Übergabe */
 
+/** Auf zwei Geräten wird nichts weitergereicht — man wartet einfach. */
+function renderWarten(need) {
+  const layer = document.createElement('div');
+  layer.className = 'overlay handover';
+  layer.innerHTML = `
+    <div class="arrow" aria-hidden="true">⏳</div>
+    <div class="lbl">Am Zug</div>
+    <div class="name">${esc(game.players[need].name)}</div>
+    <p class="task">Auf dem anderen Handy wird gerade gewürfelt oder angekreuzt.
+      Sobald es weitergeht, springt dein Blatt von selbst um.</p>`;
+  app.appendChild(layer);
+}
+
+/** Kopplung zweier Geräte über einen kurzen Raumcode. */
+function renderKopplung() {
+  const k = ui.kopplung;
+
+  if (k.schritt === 'code') {
+    app.innerHTML = `
+      <div class="screen"><div class="wrap">
+        <h2 class="h2">Code eingeben</h2>
+        <p class="lead">Auf dem anderen Handy steht ein fünfstelliger Code.</p>
+        <input class="field field--code" id="raumcode" maxlength="5" autocapitalize="characters"
+          autocomplete="off" spellcheck="false" placeholder="ABCDE" value="${esc(k.code || '')}">
+        ${k.fehler ? `<p class="lead" style="color:#e2664f">${esc(k.fehler)}</p>` : ''}
+        <button class="btn btn--primary" id="beitreten" style="margin-top:14px">Mitspielen</button>
+        <button class="btn btn--quiet" id="abbruch" style="margin-top:10px">Abbrechen</button>
+      </div></div>`;
+    const feld = app.querySelector('#raumcode');
+    feld.focus();
+    app.querySelector('#beitreten').onclick = () => {
+      const wert = feld.value.trim().toUpperCase();
+      if (wert.length < 4) { k.fehler = 'Der Code hat fünf Zeichen.'; render(); return; }
+      netzStarten(false, wert);
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  app.innerHTML = `
+    <div class="screen"><div class="wrap">
+      <h2 class="h2">${k.gastgeber ? 'Dein Raum steht' : 'Verbinde …'}</h2>
+      ${k.gastgeber
+        ? `<p class="lead">Gib diesen Code an das andere Handy — dort auf dieser Seite
+             <b>„Mit Code beitreten“</b> wählen.</p>
+           <div class="raumcode">${esc(k.code || '·····')}</div>
+           <p class="lead">Ihr müsst <b>nicht</b> im selben WLAN sein.</p>`
+        : `<p class="lead">${esc(k.hinweis || 'Der Raum wird gesucht …')}</p>`}
+      ${k.fehler ? `<p class="lead" style="color:#e2664f">${esc(k.fehler)}</p>` : ''}
+      <button class="btn btn--quiet" id="abbruch" style="margin-top:14px">Abbrechen</button>
+    </div></div>`;
+  app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+}
+
 function renderHandover(need) {
   const step = currentStep(game);
   let task;
@@ -769,6 +988,13 @@ function renderMenu() {
 /* ----------------------------------------------------------------- Render */
 
 function render() {
+  if (ui.kopplung) { renderKopplung(); return; }
+  if (ui.modus === 'online' && !game) {
+    app.innerHTML = `<div class="screen"><div class="wrap">
+      <h2 class="h2">Verbunden</h2>
+      <p class="lead">Warte auf das Blatt vom anderen Handy …</p></div></div>`;
+    return;
+  }
   if (ui.screen === 'start' || !game) renderStart();
   else if (ui.screen === 'over' || game.phase === 'over') renderOver();
   else renderGame();
@@ -777,7 +1003,9 @@ function render() {
   else if (ui.overlay === 'menu') renderMenu();
   else if (ui.screen === 'game' && game) {
     const need = requiredPlayer();
-    if (need !== null && need !== ui.holder) renderHandover(need);
+    if (need === null) return;
+    if (ui.modus === 'online') { if (need !== ui.meinIndex) renderWarten(need); }
+    else if (need !== ui.holder) renderHandover(need);
   }
 }
 

@@ -717,3 +717,18 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   .slot { min-height: 56px; padding: 6px 4px; }
   .lehrband p { font-size: 12.5px; }
 }
+
+/* ---------- Raumcode für zwei Handys über das Internet ---------- */
+
+.raumcode {
+  font-family: var(--font-num);
+  font-size: clamp(38px, 13vw, 58px); font-weight: 800; letter-spacing: 0.14em;
+  text-align: center; padding: 18px 10px; margin: 16px 0;
+  border-radius: 14px; user-select: all; -webkit-user-select: all;
+  background: var(--metall); color: var(--weiss); border: 2px solid var(--orange);
+}
+.feld--code {
+  width: 100%; text-align: center; letter-spacing: 0.3em;
+  font-family: var(--font-num); font-size: 28px; text-transform: uppercase;
+  margin-top: 8px;
+}
