@@ -13,7 +13,7 @@ const read = (p) => readFileSync(join(here, p), 'utf8');
 
 // Reihenfolge = Abhängigkeitsreihenfolge. Die Module werden zu einem klassischen
 // Script zusammengezogen, weil ES-Module über file:// nichts nachladen dürfen.
-const MODULE = ['src/wissen.js', 'src/wahrheit.js', 'src/wagnis.js', 'src/engine.js', 'src/netz.js', 'src/ui.js'];
+const MODULE = ['src/qr.js', 'src/funk.js', 'src/wissen.js', 'src/wahrheit.js', 'src/wagnis.js', 'src/engine.js', 'src/netz.js', 'src/ui.js'];
 
 // Alle Module landen in einem gemeinsamen Scope — gleichnamige Deklarationen in
 // zwei Dateien wären dort ein SyntaxError. Lieber hier auffallen als im Browser.

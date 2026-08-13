@@ -1,9 +1,9 @@
 > **Auch in diesem Repo** — vier eigenständige Reisespiele, unabhängig von Gildenerbe,
 > jeweils als eine einzige HTML-Datei und komplett offline:
 >
-> - [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx* für zwei bis vier Leute an einem Handy.
+> - [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx*, an einem Handy oder auf zweien.
 > - [`dreikampf/`](dreikampf/README.md) — *Wissen · Wahrheit · Wagnis*, ein Duell zu zweit mit
->   Punktekonto über den ganzen Urlaub.
+>   Punktekonto über den ganzen Urlaub. Auch auf zwei Handys, Antworten bleiben verdeckt.
 > - [`cabo/`](cabo/README.md) — das Kartenspiel *Cabo*: vier verdeckte Karten, Peek, Spy, Swap.
 >   Wahlweise an einem Handy oder auf zweien, per QR gekoppelt ohne Server.
 > - [`skyteam/`](skyteam/README.md) — *Sky Team*: Pilot und Kopilot landen kooperativ ein
@@ -11,7 +11,7 @@
 >
 > **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle vier plus eine Startseite.
 > Mit `--ohne-server` entsteht eine Fassung für reine Dateiablagen (GitHub Pages) — dort
-> koppeln sich zwei Handys per QR im selben WLAN. Ohne den Schalter kommt der Raumcode
+> koppeln sich zwei Handys bei **allen vier Spielen** per QR im selben WLAN oder Hotspot. Ohne den Schalter kommt der Raumcode
 > über das Internet dazu; dafür braucht es die Durchreiche aus
 > `LMPConsulting/docmatch` unter `spiele/`. Der Arbeitsablauf
 > [`.github/workflows/spiele-pages.yml`](.github/workflows/spiele-pages.yml) veröffentlicht
