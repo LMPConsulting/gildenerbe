@@ -6,6 +6,8 @@
 # koppeln stattdessen per QR im selben WLAN.
 #
 # Einmalig im Repo einschalten: Settings -> Pages -> Source: GitHub Actions.
+# Danach liegt die Sammlung unter  https://<benutzer>.github.io/<repo>/
+# Eigene Domain optional darunter unter "Custom domain".
 
 name: Spiele auf GitHub Pages
 
@@ -40,10 +42,11 @@ jobs:
           node-version: '20'
       - name: Spiele bauen
         run: node scripts/webseite.mjs --ohne-server _pages
-      - name: Eigene Domain eintragen
-        # Nur nötig, wenn die Seite unter lmp-docmatch.de laufen soll.
-        # Sonst diesen Schritt löschen — dann liegt sie unter <user>.github.io/<repo>/.
-        run: echo "spiele.lmp-docmatch.de" > _pages/CNAME
+      # Eine eigene Domain wird NICHT hier eingetragen, sondern in
+      # Settings -> Pages -> Custom domain. GitHub legt die CNAME-Datei dann
+      # selbst an und behält sie bei jedem Deploy. Andersherum wäre es eine
+      # Falle: Eine CNAME-Datei ohne passenden DNS-Eintrag macht die Seite
+      # auch unter <user>.github.io unerreichbar.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _pages
