@@ -1,0 +1,3542 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b1220">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Sky Team – kooperatives Würfelspiel für zwei. Pilot und Kopilot landen gemeinsam ein Flugzeug, komplett offline.">
+<title>Sky Team</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230b1220%22%2F%3E%3Cpath%20d%3D%22M8%2050h48%22%20stroke%3D%22%2329364a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M14%2050h8M28%2050h8M42%2050h8%22%20stroke%3D%22%23f0a92b%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M50%2014%20L26%2033%20L16%2029%20L12%2033%20L21%2039%20L24%2046%20L28%2042%20L26%2033%22%20fill%3D%22none%22%20stroke%3D%22%23e9eff7%22%20stroke-width%3D%223%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2214%22%20r%3D%224%22%20fill%3D%22%23f0a92b%22%2F%3E%3C%2Fsvg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230b1220%22%2F%3E%3Cpath%20d%3D%22M8%2050h48%22%20stroke%3D%22%2329364a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M14%2050h8M28%2050h8M42%2050h8%22%20stroke%3D%22%23f0a92b%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M50%2014%20L26%2033%20L16%2029%20L12%2033%20L21%2039%20L24%2046%20L28%2042%20L26%2033%22%20fill%3D%22none%22%20stroke%3D%22%23e9eff7%22%20stroke-width%3D%223%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2214%22%20r%3D%224%22%20fill%3D%22%23f0a92b%22%2F%3E%3C%2Fsvg%3E">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Sky%20Team%22%2C%22short_name%22%3A%22Sky%20Team%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%230b1220%22%2C%22theme_color%22%3A%22%230b1220%22%2C%22description%22%3A%22Sky%20Team%20%E2%80%94%20Pilot%20und%20Kopilot%20landen%20zu%20zweit%20ein%20Flugzeug.%20Komplett%20offline.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%25230b1220%2522%252F%253E%253Cpath%2520d%253D%2522M8%252050h48%2522%2520stroke%253D%2522%252329364a%2522%2520stroke-width%253D%25223%2522%2520stroke-linecap%253D%2522round%2522%252F%253E%253Cpath%2520d%253D%2522M14%252050h8M28%252050h8M42%252050h8%2522%2520stroke%253D%2522%2523f0a92b%2522%2520stroke-width%253D%25223%2522%2520stroke-linecap%253D%2522round%2522%252F%253E%253Cpath%2520d%253D%2522M50%252014%2520L26%252033%2520L16%252029%2520L12%252033%2520L21%252039%2520L24%252046%2520L28%252042%2520L26%252033%2522%2520fill%253D%2522none%2522%2520stroke%253D%2522%2523e9eff7%2522%2520stroke-width%253D%25223%2522%2520stroke-linejoin%253D%2522round%2522%2520stroke-linecap%253D%2522round%2522%252F%253E%253Ccircle%2520cx%253D%252250%2522%2520cy%253D%252214%2522%2520r%253D%25224%2522%2520fill%253D%2522%2523f0a92b%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D">
+<style id="skyteam-css">
+/* Sky Team — „Cockpit in der Dämmerung“: Graphit und Nachtblau, Instrumente in
+   Bernstein, der Himmel draußen kalt. Bewusst einthemig. */
+
+:root {
+  --nacht: #0b1220;
+  --nacht-2: #060a13;
+  --panel: #141d2c;
+  --panel-2: #1b2637;
+  --naht: #29364a;
+  --nebel: #9bacc4;
+  --nebel-dim: #64758c;
+
+  --weiss: #e9eff7;
+  --tinte: #0b1220;
+
+  --bernstein: #f0a92b;
+  --bernstein-dim: #8a6416;
+  --himmel: #6fbcff;
+  --gut: #5ec98a;
+  --schlecht: #e2664f;
+
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+
+  --r-sm: 9px;
+  --r-md: 13px;
+  --r-lg: 20px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+
+body {
+  background: var(--nacht);
+  background-image:
+    radial-gradient(130% 48% at 50% 0%, #1c2c45 0%, rgba(28, 44, 69, 0) 68%),
+    linear-gradient(180deg, var(--nacht) 0%, var(--nacht-2) 100%);
+  background-attachment: fixed;
+  color: var(--nebel);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--bernstein); outline-offset: 3px; }
+
+/* ---------- Gerüst ---------- */
+
+/* Kopf und Fuß stehen fest, nur die Mitte scrollt — darum die feste Höhe
+   plus min-height:0, sonst wächst das Flex-Kind über den Bildschirm hinaus. */
+#app { height: 100dvh; display: flex; flex-direction: column; }
+.screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.wrap { width: 100%; max-width: 520px; margin-inline: auto; padding: 24px 18px calc(24px + var(--safe-b)); }
+
+.kopf {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(var(--safe-t) + 10px) 16px 10px;
+  border-bottom: 1px solid var(--naht);
+  background: rgba(6, 10, 19, 0.7);
+}
+.kopf .titel { flex: 1; min-width: 0; }
+.kopf .ober {
+  font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.kopf h1 {
+  margin: 0; font-size: 17px; font-weight: 650; color: var(--weiss);
+  letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.werkzeuge { display: flex; align-items: center; gap: 8px; }
+.hoehe { text-align: right; line-height: 1.1; }
+.hoehe b { font-family: var(--font-num); font-size: 17px; color: var(--bernstein); font-weight: 700; }
+.hoehe small { display: block; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--nebel-dim); }
+.werkzeug {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--panel); border: 1px solid var(--naht); color: var(--nebel); font-size: 14px;
+}
+
+/* ---------- Knöpfe ---------- */
+
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 15px 16px; border-radius: var(--r-md);
+  font-weight: 650; font-size: 15.5px; letter-spacing: -0.01em;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.btn:active { transform: scale(0.985); }
+.btn:disabled { opacity: 0.35; transform: none; box-shadow: none; }
+.btn--bernstein { background: var(--bernstein); color: #2a1c00; box-shadow: 0 8px 24px rgba(240, 169, 43, 0.16); }
+.btn--geist { background: var(--panel); color: var(--weiss); border: 1px solid var(--naht); }
+.btn--leise { background: none; color: var(--nebel-dim); font-weight: 500; font-size: 15px; padding: 12px; }
+.btn--warn { background: var(--panel); color: #f2a294; border: 1px solid #4c2c27; }
+.btn--klein { width: auto; padding: 7px 14px; font-size: 14px; border-radius: 9px; background: var(--panel-2); border: 1px solid var(--naht); color: var(--weiss); }
+.knopfsaeule { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+
+/* ---------- Startbildschirm ---------- */
+
+.start { text-align: center; }
+.marke { padding: 6px 0 4px; }
+.horizont {
+  height: 54px; border-radius: 999px 999px 0 0;
+  background: linear-gradient(180deg, #24405f 0%, #101a2a 100%);
+  border: 1px solid var(--naht); border-bottom: 0;
+  display: grid; place-items: center; margin-bottom: 14px;
+  overflow: hidden; position: relative;
+}
+.horizont::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bernstein), transparent);
+}
+.flieger { font-size: 26px; color: var(--bernstein); transform: rotate(-14deg); }
+.wortmarke {
+  font-size: clamp(34px, 11vw, 50px); font-weight: 800; margin: 0;
+  letter-spacing: 0.2em; text-indent: 0.2em; color: var(--weiss); line-height: 1;
+}
+.unterzeile { margin: 12px 0 4px; font-size: 13.5px; color: var(--nebel-dim); text-wrap: balance; }
+
+.feldreihe { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.feld {
+  flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--naht);
+  border-radius: var(--r-md); padding: 13px 14px; color: var(--weiss); font-size: 16px;
+  user-select: text; -webkit-user-select: text;
+}
+.rollenschild {
+  flex: none; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  font-weight: 700; color: var(--bernstein); background: rgba(240, 169, 43, 0.1);
+  border: 1px solid var(--bernstein-dim); border-radius: 999px; padding: 6px 10px;
+}
+.feldlabel {
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; text-align: left; margin: 20px 0 8px;
+}
+
+.zielliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.ziel {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-md);
+  padding: 10px 12px; text-align: left;
+}
+.ziel--an { border-color: var(--bernstein); background: var(--panel-2); box-shadow: 0 0 0 1px var(--bernstein-dim) inset; }
+.ziel .kuerzel { font-family: var(--font-num); font-size: 15px; font-weight: 700; color: var(--weiss); letter-spacing: 0.06em; }
+.ziel .ort { font-size: 12.5px; color: var(--nebel-dim); }
+.ziel .schwer { font-size: 8px; letter-spacing: 0.24em; color: var(--bernstein); margin-top: 3px; }
+.ziel .schwer .aus { color: var(--naht); }
+
+.schalter {
+  display: flex; align-items: center; gap: 11px; text-align: left;
+  margin-top: 18px; font-size: 13.5px; color: var(--nebel-dim);
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-md); padding: 12px 14px;
+}
+.schalter input { width: 20px; height: 20px; flex: none; accent-color: var(--bernstein); }
+
+/* ---------- Instrumente ---------- */
+
+.cockpit .scroll { padding: 12px 14px 0; }
+.instrumente { display: flex; flex-direction: column; gap: 9px; }
+.instrumentpaar { display: grid; grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.5fr); gap: 9px; }
+
+.instrument, .anflug {
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-md); padding: 9px 11px;
+}
+.instrument { display: flex; flex-direction: column; justify-content: space-between; }
+.instrumentkopf, .anflugkopf {
+  display: flex; justify-content: space-between; gap: 8px;
+  font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; margin-bottom: 7px;
+}
+.instrumentwert { font-size: 10.5px; color: var(--nebel-dim); margin-top: 6px; font-family: var(--font-num); }
+.windzeichen { color: var(--himmel); }
+
+.bahn { display: flex; gap: 3px; }
+.zelle {
+  flex: 1; aspect-ratio: 1; min-width: 0; border-radius: 6px;
+  background: var(--panel-2); border: 1px solid var(--naht);
+  display: grid; place-items: center;
+}
+.zelle .zeichen { font-size: 13px; line-height: 1; color: var(--nebel-dim); }
+.zelle--bahn { background: repeating-linear-gradient(90deg, #223047 0 4px, #1b2637 4px 8px); border-color: var(--nebel-dim); }
+.zelle--fremd { border-color: var(--schlecht); }
+.zelle--fremd .zeichen { color: var(--schlecht); }
+.zelle--hier { background: rgba(240, 169, 43, 0.16); border-color: var(--bernstein); }
+.zelle--hier .zeichen { color: var(--bernstein); font-size: 15px; }
+
+.lageskala { display: flex; gap: 4px; align-items: center; justify-content: space-between; }
+.lagepunkt {
+  flex: 1; height: 9px; border-radius: 3px;
+  background: var(--panel-2); border: 1px solid var(--naht);
+}
+.lagepunkt.mitte { border-color: var(--nebel-dim); }
+.lagepunkt.an { background: var(--bernstein); border-color: var(--bernstein); box-shadow: 0 0 10px rgba(240, 169, 43, 0.5); }
+.lagepunkt.an.mitte { background: var(--gut); border-color: var(--gut); box-shadow: 0 0 10px rgba(94, 201, 138, 0.5); }
+
+.tempoleiste { display: flex; gap: 2px; }
+.tempofeld {
+  flex: 1; text-align: center; font-family: var(--font-num); font-size: 9.5px; font-weight: 700;
+  border-radius: 4px; padding: 4px 0; border: 1px solid var(--naht);
+}
+.tempofeld.t0 { background: var(--panel-2); color: var(--nebel-dim); }
+.tempofeld.t1 { background: rgba(111, 188, 255, 0.14); color: var(--himmel); border-color: rgba(111, 188, 255, 0.35); }
+.tempofeld.t2 { background: rgba(240, 169, 43, 0.18); color: var(--bernstein); border-color: var(--bernstein-dim); }
+
+/* ---------- Cockpit-Felder ---------- */
+
+.panel { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.bereichskopf {
+  font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700;
+  color: var(--bernstein); margin: 6px 0 2px;
+}
+.bereichskopf--fremd { color: var(--nebel-dim); }
+.fremds { opacity: 0.62; }
+
+.gruppe { margin-bottom: 2px; }
+.gruppentitel {
+  display: flex; justify-content: space-between; gap: 8px; margin: 0 0 5px;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700;
+}
+.gruppenwert { color: var(--nebel); font-family: var(--font-num); letter-spacing: 0; }
+.slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); gap: 6px; }
+
+.feld-slot {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-sm);
+  padding: 8px 4px 9px; min-height: 62px; justify-content: center;
+}
+.feld-slot .slotname {
+  font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; text-align: center; line-height: 1.2;
+}
+.feld-slot .anforderung { font-family: var(--font-num); font-size: 13px; color: var(--nebel-dim); }
+.feld-slot.belegt { background: var(--panel-2); border-color: var(--nebel-dim); }
+.feld-slot.zu { opacity: 0.35; }
+.feld-slot.offen {
+  border-color: var(--bernstein); background: rgba(240, 169, 43, 0.1);
+  animation: pochen 1.6s ease-in-out infinite;
+}
+.feld-slot.offen .anforderung { color: var(--bernstein); }
+@keyframes pochen {
+  50% { box-shadow: 0 0 0 3px rgba(240, 169, 43, 0.22); }
+}
+
+.platzhalter { height: 14px; }
+
+/* ---------- Würfel ---------- */
+
+.wuerfel {
+  --b: 46px;
+  width: var(--b); height: var(--b); flex: none; padding: 4px;
+  display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); gap: 1px;
+  background: linear-gradient(155deg, #f4f7fb 0%, #ccd6e4 100%);
+  border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  position: relative;
+}
+.wuerfel i { display: block; border-radius: 50%; }
+.wuerfel i.an { background: var(--tinte); box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.25); }
+.wuerfel--klein { --b: 30px; padding: 3px; border-radius: 7px; }
+.wuerfel--mini { --b: 22px; padding: 2px; border-radius: 6px; }
+.wuerfel--zu {
+  background: repeating-linear-gradient(45deg, #223047 0 4px, #1b2637 4px 8px);
+  border: 1px solid var(--naht); display: grid; place-items: center; box-shadow: none;
+}
+.wuerfel--zu .fragezeichen { color: var(--nebel-dim); font-weight: 700; font-size: calc(var(--b) * 0.4); }
+.wuerfel--an { box-shadow: 0 0 0 3px var(--bernstein), 0 6px 14px rgba(0, 0, 0, 0.5); transform: translateY(-4px); }
+.wuerfel--tot { opacity: 0.4; }
+
+/* ---------- Fuß: eigene Würfel, Kaffee, Ansage ---------- */
+
+.fuss {
+  padding: 9px 14px calc(11px + var(--safe-b));
+  border-top: 1px solid var(--naht);
+  background: rgba(6, 10, 19, 0.9); backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.fremdreihe { display: flex; align-items: center; gap: 6px; }
+.fremdlabel {
+  font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700;
+}
+.wuerfelreihe { display: flex; gap: 10px; justify-content: center; }
+.kaffeeleiste { display: flex; align-items: center; gap: 9px; }
+.tassen { display: flex; gap: 3px; }
+.tasse { font-size: 15px; filter: grayscale(1); opacity: 0.3; }
+.tasse.voll { filter: none; opacity: 1; }
+.kaffeetext { font-size: 11.5px; color: var(--nebel-dim); }
+.ansage { text-align: center; font-size: 13.5px; color: var(--nebel); min-height: 20px; margin: 0; text-wrap: balance; }
+.ansage b { color: var(--weiss); font-weight: 650; }
+
+/* ---------- Blätter, Overlays ---------- */
+
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: var(--nacht-2);
+  display: flex; flex-direction: column; min-height: 0;
+  animation: aufblenden 0.18s ease-out;
+}
+@keyframes aufblenden { from { opacity: 0; } }
+
+.blatt { padding: calc(var(--safe-t) + 18px) 18px calc(20px + var(--safe-b)); width: 100%; max-width: 520px; margin-inline: auto; }
+.blatt h2 { font-size: 23px; color: var(--weiss); margin: 0 0 8px; font-weight: 700; letter-spacing: -0.01em; }
+.blatt h3 {
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--bernstein-dim); font-weight: 700; margin: 22px 0 8px;
+}
+.blatt p, .blatt li { font-size: 15px; line-height: 1.6; color: var(--nebel); }
+.blatt p { margin: 0 0 10px; }
+.blatt ul, .blatt ol { margin: 0 0 10px; padding-left: 20px; }
+.blatt li { margin-bottom: 6px; }
+.blatt strong { color: var(--weiss); font-weight: 650; }
+.blatt em { color: var(--bernstein); font-style: normal; }
+.lesbar { user-select: text; -webkit-user-select: text; }
+.lbl { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--nebel-dim); font-weight: 700; }
+.hinweiszeile { font-size: 12.5px; color: var(--nebel-dim); margin: 14px 0 0; text-wrap: balance; }
+.hinweis {
+  font-size: 13px; color: var(--nebel); background: var(--panel);
+  border: 1px solid var(--naht); border-radius: var(--r-md); padding: 11px 13px; margin-top: 14px;
+}
+.hinweis--warn { border-color: #4c2c27; color: #f2a294; }
+
+.rueckblick { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 4px; }
+.rzeile {
+  display: flex; justify-content: space-between; gap: 12px;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-sm);
+  padding: 9px 12px; font-size: 13.5px;
+}
+.rzeile span:first-child { color: var(--nebel-dim); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 10px; align-self: center; }
+.rzeile span:last-child { color: var(--weiss); font-family: var(--font-num); font-size: 13px; text-align: right; }
+
+.briefingzahlen {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 4px;
+}
+.briefingzahlen div {
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-sm);
+  padding: 10px 6px; text-align: center;
+}
+.briefingzahlen b { display: block; font-family: var(--font-num); font-size: 20px; color: var(--weiss); font-weight: 700; line-height: 1.2; }
+.briefingzahlen small { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nebel-dim); }
+
+.regeltabelle { display: grid; grid-template-columns: 1fr; gap: 0; margin: 10px 0; }
+.regeltabelle > div { font-size: 14px; line-height: 1.55; }
+.regeltabelle > div:nth-child(odd) {
+  margin-top: 10px; color: var(--weiss);
+}
+.regeltabelle > div:nth-child(odd) small { color: var(--nebel-dim); font-size: 12px; margin-left: 6px; }
+.regeltabelle > div:nth-child(even) { color: var(--nebel); padding-left: 2px; }
+
+.endkopf { text-align: center; padding: 10px 0 4px; }
+.endzeichen { font-size: 42px; line-height: 1; }
+.endkopf.gut .endzeichen { color: var(--gut); }
+.endkopf.schlecht .endzeichen { color: var(--schlecht); }
+.endkopf h2 { margin: 6px 0 8px; }
+.endgrund { color: var(--nebel); max-width: 34ch; margin-inline: auto; }
+
+/* ---------- Übergabe ---------- */
+
+.uebergabe {
+  justify-content: center; align-items: center; text-align: center;
+  padding: 26px calc(24px + var(--safe-b));
+  background-image: radial-gradient(90% 50% at 50% 40%, #1c2c45 0%, rgba(28, 44, 69, 0) 70%);
+}
+.uebergabe .pfeil { font-size: 38px; animation: schubs 1.5s ease-in-out infinite; }
+@keyframes schubs { 50% { transform: translateX(10px); } }
+.uebergabe .lbl { margin-top: 6px; }
+.uebergabe .name { font-size: clamp(28px, 9vw, 40px); font-weight: 700; color: var(--weiss); line-height: 1.1; margin: 4px 0 6px; }
+.uebergabe .auftrag { color: var(--nebel); margin: 0 0 26px; max-width: 30ch; }
+.uebergabe .btn { max-width: 320px; }
+
+/* ---------- Kopplung zweier Geräte ---------- */
+
+.qrfeld {
+  display: grid; place-items: center;
+  background: var(--weiss); border-radius: var(--r-md);
+  padding: 14px; margin: 16px 0;
+}
+.qrfeld canvas { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; display: block; }
+
+.scanfenster {
+  position: relative; overflow: hidden;
+  border-radius: var(--r-md); background: #000;
+  aspect-ratio: 1; margin: 16px 0;
+  border: 1px solid var(--naht);
+}
+.scanfenster video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanfenster::after {
+  content: ""; position: absolute; inset: 16%;
+  border: 2px solid var(--bernstein); border-radius: 12px;
+  box-shadow: 0 0 0 999px rgba(6, 10, 19, 0.45);
+}
+
+.codeklappe { margin-top: 6px; }
+.codeklappe summary { font-size: 13px; color: var(--nebel-dim); cursor: pointer; padding: 8px 0; list-style: none; }
+.codeklappe summary::before { content: "▸ "; }
+.codeklappe[open] summary::before { content: "▾ "; }
+.codefeld {
+  width: 100%; min-height: 84px; resize: vertical; margin-top: 6px;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: 10px;
+  padding: 10px; color: var(--nebel); font-family: var(--font-num); font-size: 11px;
+  word-break: break-all; user-select: text; -webkit-user-select: text;
+}
+.codeklappe .btn { margin-top: 8px; }
+
+/* ---------- Enger und breiter ---------- */
+
+@media (max-height: 720px) {
+  .wuerfel { --b: 40px; }
+  .feld-slot { min-height: 56px; padding: 6px 4px 7px; }
+  .zelle .zeichen { font-size: 11px; }
+}
+
+@media (min-width: 640px) {
+  .cockpit .scroll { padding-inline: max(14px, calc((100% - 620px) / 2)); }
+  .fuss { padding-inline: max(14px, calc((100% - 620px) / 2)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===========================================================================
+   Zweite Fassung: näher am echten Brett — blaue Pilotenseite, orange
+   Kopilotenseite, Schalter mit Lämpchen, Zeigerinstrument, echte Würfelfarben.
+   =========================================================================== */
+
+:root {
+  --blau: #4a9be8;
+  --blau-tief: #1d4f80;
+  --blau-hauch: rgba(74, 155, 232, 0.12);
+  --orange: #f0a92b;
+  --orange-tief: #8a6416;
+  --orange-hauch: rgba(240, 169, 43, 0.12);
+  --rot: #e2664f;
+  --gruen: #5ec98a;
+  --metall: #1a2434;
+  --metall-hell: #22304a;
+}
+
+/* ---------- Startbildschirm: Cockpitfenster statt Balken ---------- */
+
+.marke { padding: 4px 0 2px; }
+.fenster {
+  position: relative; height: 78px; margin-bottom: 14px; overflow: hidden;
+  border: 2px solid var(--naht); border-bottom: 0;
+  border-radius: 46px 46px 8px 8px;
+  background: linear-gradient(180deg, #16304f 0%, #2a4a6d 45%, #101b2b 100%);
+}
+.himmel { position: absolute; inset: 0; }
+.sonne {
+  position: absolute; left: 50%; bottom: 6px; width: 46px; height: 46px;
+  margin-left: -23px; border-radius: 50%;
+  background: radial-gradient(circle, #ffd894 0%, #f0a92b 55%, rgba(240, 169, 43, 0) 72%);
+}
+.bahnlicht {
+  position: absolute; left: 12%; right: 12%; bottom: 0; height: 3px;
+  background: repeating-linear-gradient(90deg, var(--orange) 0 12px, transparent 12px 24px);
+  opacity: 0.85;
+}
+
+.zielkopf { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; width: 100%; }
+.ziel .schwer { font-size: 7.5px; letter-spacing: 0.14em; color: var(--orange); }
+.ziel .zielzeile { font-size: 10.5px; color: var(--nebel-dim); margin-top: 3px; line-height: 1.3; }
+.rollenschild--blau { color: var(--blau); background: var(--blau-hauch); border-color: var(--blau-tief); }
+.rollenschild--orange { color: var(--orange); background: var(--orange-hauch); border-color: var(--orange-tief); }
+.schalterzeile {
+  display: flex; align-items: center; gap: 11px; text-align: left;
+  margin-top: 18px; font-size: 13.5px; color: var(--nebel-dim);
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-md); padding: 12px 14px;
+}
+.schalterzeile input { width: 20px; height: 20px; flex: none; accent-color: var(--orange); }
+
+.btn--lehre { margin-top: 18px; justify-content: flex-start; gap: 10px; font-size: 14.5px; }
+.lehrezeichen {
+  display: inline-grid; place-items: center; flex: none;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--orange); color: #2a1c00; font-weight: 800; font-size: 14px;
+}
+
+/* ---------- Einweisung ---------- */
+
+.einweisung .blatt { display: flex; flex-direction: column; justify-content: center; min-height: 100%; }
+.lehrbild {
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-lg);
+  padding: 12px; margin: 10px 0 16px;
+}
+.lehrbild svg { width: 100%; height: auto; display: block; }
+.lehrtext { font-size: 15.5px; line-height: 1.65; }
+.punkte { display: flex; gap: 6px; justify-content: center; margin-top: 18px; }
+.punkte .punkt { width: 7px; height: 7px; border-radius: 50%; background: var(--naht); }
+.punkte .punkt.an { background: var(--orange); }
+
+/* ---------- Anflugstreifen ---------- */
+
+.bahn { display: flex; gap: 3px; align-items: stretch; }
+.zelle {
+  flex: 1; aspect-ratio: 1; min-width: 0; border-radius: 6px; position: relative;
+  background: linear-gradient(180deg, var(--metall-hell) 0%, var(--metall) 100%);
+  border: 1px solid var(--naht);
+  display: grid; place-items: center; overflow: hidden;
+}
+.zelle--bahn {
+  background: linear-gradient(180deg, #2c3c56 0%, #1a2536 100%);
+  border-color: var(--nebel-dim);
+}
+.bahnstreifen {
+  position: absolute; inset: auto 3px 4px 3px; height: 3px; border-radius: 2px;
+  background: repeating-linear-gradient(90deg, var(--orange) 0 4px, transparent 4px 8px);
+}
+.verkehrszeichen { font-size: 8px; color: var(--nebel-dim); }
+.zelle--fremd { border-color: var(--rot); background: rgba(226, 102, 79, 0.14); }
+.zelle--neu { animation: aufblitzen 1.4s ease-out 2; }
+@keyframes aufblitzen { 50% { box-shadow: 0 0 0 3px rgba(226, 102, 79, 0.45); } }
+.zelle--hier { border-color: var(--orange); background: rgba(240, 169, 43, 0.16); }
+
+.flieger { width: 66%; height: 66%; }
+.flieger--eigen { fill: var(--orange); filter: drop-shadow(0 0 4px rgba(240, 169, 43, 0.5)); }
+.flieger--fremd { fill: var(--rot); transform: scaleX(-1); opacity: 0.9; }
+
+/* ---------- Fluglage als Zeigerinstrument ---------- */
+
+.lagescheibe { width: 100%; height: auto; display: block; margin: 2px 0 4px; }
+.lagescheibe .bogen { fill: none; stroke: var(--naht); stroke-width: 2; }
+.lagescheibe .strich { stroke: var(--nebel-dim); stroke-width: 1.6; }
+.lagescheibe .strich--mitte { stroke: var(--gruen); stroke-width: 2.4; }
+.lagescheibe .strich--x { stroke: var(--rot); stroke-width: 2.4; }
+.lagescheibe .zeiger { stroke: var(--weiss); stroke-width: 2.4; stroke-linecap: round; }
+.lagescheibe .zeigerspitze { fill: var(--weiss); }
+.lagescheibe .nabe { fill: var(--panel-2); stroke: var(--nebel-dim); stroke-width: 1.5; }
+.instrumentwert.gut { color: var(--gruen); }
+.instrumentwert.warn { color: var(--orange); }
+
+/* ---------- Geschwindigkeitsskala ---------- */
+
+.tempoleiste { position: relative; padding-top: 9px; }
+.tempofelder { display: flex; gap: 2px; }
+.tempofeld {
+  /* flex-basis 0 plus min-width 0: alle elf Felder wirklich gleich breit,
+     sonst stimmen die Positionen der Marken darüber nicht. */
+  flex: 1 1 0; min-width: 0;
+  text-align: center; font-family: var(--font-num); font-size: 9px; font-weight: 700;
+  letter-spacing: -0.08em; border-radius: 4px; padding: 5px 0; border: 1px solid var(--naht);
+}
+.tempofeld.t0 { background: var(--metall); color: var(--nebel-dim); }
+.tempofeld.t1 { background: rgba(74, 155, 232, 0.16); color: var(--blau); border-color: var(--blau-tief); }
+.tempofeld.t2 { background: rgba(240, 169, 43, 0.18); color: var(--orange); border-color: var(--orange-tief); }
+.skalenmarke {
+  position: absolute; top: 0; width: 0; height: 0; margin-left: -5px;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 7px solid currentColor;
+}
+.marke--blau { color: var(--blau); }
+.marke--orange { color: var(--orange); }
+.marke--rot { color: var(--rot); top: auto; bottom: -7px; border-top: 0; border-bottom: 7px solid currentColor; }
+.tempolegende {
+  display: flex; align-items: center; gap: 10px; margin-top: 9px;
+  font-size: 9.5px; color: var(--nebel-dim); letter-spacing: 0.04em;
+}
+.tempolegende span { display: inline-flex; align-items: center; gap: 4px; }
+.tempolegende .pkt { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.tempolegende .p0 { background: var(--metall); border: 1px solid var(--naht); }
+.tempolegende .p1 { background: rgba(74, 155, 232, 0.5); }
+.tempolegende .p2 { background: rgba(240, 169, 43, 0.6); }
+.tempolegende .bremsnote { margin-left: auto; color: var(--rot); white-space: nowrap; }
+.tempolegende .legendetitel { letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ---------- Cockpit-Panel ---------- */
+
+.pflichtband {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+  border: 1px solid var(--naht); border-radius: var(--r-md);
+  padding: 8px 9px 4px; margin-bottom: 10px;
+}
+.gruppentitel {
+  display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 5px; padding: 2px 0;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; text-align: left;
+}
+.gruppentitel > span:first-child { flex: 1; }
+.gruppenwert { color: var(--nebel); font-family: var(--font-num); letter-spacing: 0; }
+.lexzeichen {
+  flex: none; width: 15px; height: 15px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 10px; font-weight: 800;
+  background: var(--panel-2); color: var(--nebel-dim); border: 1px solid var(--naht);
+}
+.slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 6px; }
+
+.slot {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: linear-gradient(180deg, var(--metall-hell) 0%, var(--metall) 100%);
+  border: 1px solid var(--naht); border-radius: var(--r-sm);
+  padding: 9px 4px 9px; min-height: 64px; justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.slot--blau { border-bottom: 2px solid var(--blau-tief); }
+.slot--orange { border-bottom: 2px solid var(--orange-tief); }
+.slot .slotname {
+  font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; text-align: center; line-height: 1.2;
+}
+.slot .anforderung { font-family: var(--font-num); font-size: 13px; color: var(--nebel); }
+.slot.belegt { background: var(--panel-2); }
+.slot.zu { opacity: 0.32; }
+.slot.gruen { border-bottom-color: var(--gruen); }
+.slot.offen {
+  border-color: var(--orange); background: rgba(240, 169, 43, 0.12);
+  animation: pochen 1.6s ease-in-out infinite;
+}
+.slot.offen .anforderung { color: var(--orange); }
+.slot--klein { min-height: 50px; padding: 6px 3px; gap: 3px; }
+.slot--klein .slotname { font-size: 7.5px; }
+.slot--klein .anforderung { font-size: 11px; }
+
+.lampe {
+  position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--rot); box-shadow: 0 0 5px rgba(226, 102, 79, 0.6);
+}
+.lampe--gruen { background: var(--gruen); box-shadow: 0 0 6px rgba(94, 201, 138, 0.7); }
+
+.bereichskopf--blau { color: var(--blau); }
+.bereichskopf--orange { color: var(--orange); }
+.meins {
+  border: 1px solid var(--naht); border-radius: var(--r-md);
+  padding: 8px 9px 6px; margin-bottom: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent);
+}
+.fremds { opacity: 0.6; }
+
+/* ---------- Würfel in Spielfarben ---------- */
+
+.wuerfel--blau { background: linear-gradient(155deg, #79bdf5 0%, #2f74b8 100%); }
+.wuerfel--orange { background: linear-gradient(155deg, #ffcd6e 0%, #d1841a 100%); }
+.wuerfel--blau i.an, .wuerfel--orange i.an { background: #0b1220; box-shadow: none; }
+.wuerfel--an { box-shadow: 0 0 0 3px var(--weiss), 0 6px 14px rgba(0, 0, 0, 0.55); }
+
+/* ---------- Fußleiste ---------- */
+
+.werkzeugleiste {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  max-width: 420px; justify-content: center;
+}
+.werkzeugleiste .trenner { flex: 1; }
+.werkzeugtext { font-size: 11px; color: var(--nebel-dim); }
+.tasse { font-size: 14px; }
+
+/* ---------- Hinweisband ---------- */
+
+.lehrband {
+  width: 100%; max-width: 460px; max-height: 34vh; overflow-y: auto;
+  background: linear-gradient(180deg, rgba(240, 169, 43, 0.13), rgba(240, 169, 43, 0.05));
+  border: 1px solid var(--orange-tief); border-radius: var(--r-md);
+  padding: 10px 12px 11px; display: flex; flex-direction: column; gap: 7px;
+  animation: hochschieben 0.25s ease-out;
+}
+@keyframes hochschieben { from { opacity: 0; transform: translateY(8px); } }
+.lehrbandkopf {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--orange); font-weight: 700;
+}
+.lehrband p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--weiss); }
+.lehrband b { color: var(--orange); }
+.lehrband .btn { align-self: flex-start; }
+
+/* ---------- Briefing, Lexikon, Ende ---------- */
+
+.planzeile {
+  background: var(--panel); border-left: 3px solid var(--orange);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  padding: 10px 12px; font-size: 14px; margin: 14px 0 0;
+}
+.hoehenfenster {
+  text-align: right; line-height: 1.15;
+  background: var(--metall); border: 1px solid var(--naht); border-radius: 8px;
+  padding: 4px 8px;
+}
+.hoehenfenster b { font-family: var(--font-num); font-size: 16px; color: var(--orange); font-weight: 700; }
+.hoehenfenster small { display: block; font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nebel-dim); }
+.hoehenfenster.letzte { border-color: var(--rot); }
+.hoehenfenster.letzte b { color: var(--rot); }
+
+.lexzeile { border-top: 1px solid var(--naht); padding: 12px 0 2px; }
+.lexkopf { display: flex; align-items: baseline; gap: 8px; }
+.lexkopf b { color: var(--weiss); font-size: 15px; }
+.lexkopf small { color: var(--nebel-dim); font-size: 11.5px; }
+.lexzeile p { margin: 5px 0 0; font-size: 14px; }
+.lexzeile .leise { color: var(--nebel-dim); font-size: 13px; }
+.werzeile { color: var(--orange); font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; }
+.regelzeile { font-size: 14px; margin-bottom: 9px; line-height: 1.5; }
+.regelzeile b { color: var(--weiss); }
+.regelzeile small { color: var(--nebel-dim); }
+.lexpop .blatt { display: flex; flex-direction: column; justify-content: center; min-height: 100%; }
+
+.pruefzeile {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-sm);
+  padding: 9px 12px; margin-bottom: 6px; font-size: 14px;
+}
+.pruefzeile .haken { font-weight: 800; width: 18px; text-align: center; }
+.pruefzeile.ja { border-left: 3px solid var(--gruen); }
+.pruefzeile.ja .haken { color: var(--gruen); }
+.pruefzeile.nein { border-left: 3px solid var(--rot); }
+.pruefzeile.nein .haken { color: var(--rot); }
+.endzeichen svg { width: 46px; height: 46px; }
+.endkopf.gut .endzeichen svg { fill: var(--gruen); filter: none; }
+
+@media (max-height: 720px) {
+  .slot { min-height: 56px; padding: 6px 4px; }
+  .lehrband p { font-size: 12.5px; }
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script id="skyteam-js">
+const SEITENKOPF = "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no\">\n<meta name=\"theme-color\" content=\"#0b1220\">\n<meta name=\"color-scheme\" content=\"dark\">\n<meta name=\"mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\">\n<meta name=\"description\" content=\"Sky Team – kooperatives Würfelspiel für zwei. Pilot und Kopilot landen gemeinsam ein Flugzeug, komplett offline.\">\n<title>Sky Team</title>\n<link rel=\"icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230b1220%22%2F%3E%3Cpath%20d%3D%22M8%2050h48%22%20stroke%3D%22%2329364a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M14%2050h8M28%2050h8M42%2050h8%22%20stroke%3D%22%23f0a92b%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M50%2014%20L26%2033%20L16%2029%20L12%2033%20L21%2039%20L24%2046%20L28%2042%20L26%2033%22%20fill%3D%22none%22%20stroke%3D%22%23e9eff7%22%20stroke-width%3D%223%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2214%22%20r%3D%224%22%20fill%3D%22%23f0a92b%22%2F%3E%3C%2Fsvg%3E\">\n<link rel=\"apple-touch-icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230b1220%22%2F%3E%3Cpath%20d%3D%22M8%2050h48%22%20stroke%3D%22%2329364a%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M14%2050h8M28%2050h8M42%2050h8%22%20stroke%3D%22%23f0a92b%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M50%2014%20L26%2033%20L16%2029%20L12%2033%20L21%2039%20L24%2046%20L28%2042%20L26%2033%22%20fill%3D%22none%22%20stroke%3D%22%23e9eff7%22%20stroke-width%3D%223%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2214%22%20r%3D%224%22%20fill%3D%22%23f0a92b%22%2F%3E%3C%2Fsvg%3E\">\n<link rel=\"manifest\" href=\"data:application/manifest+json,%7B%22name%22%3A%22Sky%20Team%22%2C%22short_name%22%3A%22Sky%20Team%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%230b1220%22%2C%22theme_color%22%3A%22%230b1220%22%2C%22description%22%3A%22Sky%20Team%20%E2%80%94%20Pilot%20und%20Kopilot%20landen%20zu%20zweit%20ein%20Flugzeug.%20Komplett%20offline.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%25230b1220%2522%252F%253E%253Cpath%2520d%253D%2522M8%252050h48%2522%2520stroke%253D%2522%252329364a%2522%2520stroke-width%253D%25223%2522%2520stroke-linecap%253D%2522round%2522%252F%253E%253Cpath%2520d%253D%2522M14%252050h8M28%252050h8M42%252050h8%2522%2520stroke%253D%2522%2523f0a92b%2522%2520stroke-width%253D%25223%2522%2520stroke-linecap%253D%2522round%2522%252F%253E%253Cpath%2520d%253D%2522M50%252014%2520L26%252033%2520L16%252029%2520L12%252033%2520L21%252039%2520L24%252046%2520L28%252042%2520L26%252033%2522%2520fill%253D%2522none%2522%2520stroke%253D%2522%2523e9eff7%2522%2520stroke-width%253D%25223%2522%2520stroke-linejoin%253D%2522round%2522%2520stroke-linecap%253D%2522round%2522%252F%253E%253Ccircle%2520cx%253D%252250%2522%2520cy%253D%252214%2522%2520r%253D%25224%2522%2520fill%253D%2522%2523f0a92b%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D\">";
+(function () {
+'use strict';
+// Minimaler QR-Erzeuger: Byte-Modus, Fehlerkorrektur L, Versionen 1 bis 15.
+// Eigenbau, weil das Spiel eine einzelne Datei ohne Netz bleiben soll.
+//
+// qrMatrix('text') -> { groesse, module: boolean[][] }   true = dunkel
+
+// [Gesamt-Codewörter, EC-Codewörter je Block, [Blöcke, Datenwörter], [Blöcke, Datenwörter]?]
+const VERSIONEN = {
+  1: [26, 7, [1, 19]],
+  2: [44, 10, [1, 34]],
+  3: [70, 15, [1, 55]],
+  4: [100, 20, [1, 80]],
+  5: [134, 26, [1, 108]],
+  6: [172, 18, [2, 68]],
+  7: [196, 20, [2, 78]],
+  8: [242, 24, [2, 97]],
+  9: [292, 30, [2, 116]],
+  10: [346, 18, [2, 68], [2, 69]],
+  11: [404, 20, [4, 81]],
+  12: [466, 24, [2, 92], [2, 93]],
+  13: [532, 26, [4, 107]],
+  14: [581, 30, [3, 115], [1, 116]],
+  15: [655, 22, [5, 87], [1, 88]],
+};
+
+const AUSRICHTUNG = {
+  1: [], 2: [6, 18], 3: [6, 22], 4: [6, 26], 5: [6, 30], 6: [6, 34],
+  7: [6, 22, 38], 8: [6, 24, 42], 9: [6, 26, 46], 10: [6, 28, 50],
+  11: [6, 30, 54], 12: [6, 32, 58], 13: [6, 34, 62], 14: [6, 26, 46, 66],
+  15: [6, 26, 48, 70],
+};
+
+/* ------------------------------------------------------- Galois-Feld GF(256) */
+
+const EXP = new Uint8Array(512);
+const LOG = new Uint8Array(256);
+(function tabellen() {
+  let x = 1;
+  for (let i = 0; i < 255; i++) {
+    EXP[i] = x;
+    LOG[x] = i;
+    x <<= 1;
+    if (x & 0x100) x ^= 0x11d;
+  }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+})();
+
+const mul = (a, b) => (a === 0 || b === 0 ? 0 : EXP[LOG[a] + LOG[b]]);
+
+function generator(grad) {
+  let g = [1];
+  for (let i = 0; i < grad; i++) {
+    const next = new Array(g.length + 1).fill(0);
+    // Multiplikation mit (x + α^i): der x-Anteil bleibt an Ort und Stelle,
+    // der Faktor rutscht eine Stelle nach unten. Führender Koeffizient bleibt 1.
+    for (let j = 0; j < g.length; j++) {
+      next[j] ^= g[j];
+      next[j + 1] ^= mul(g[j], EXP[i]);
+    }
+    g = next;
+  }
+  return g;
+}
+
+/** Reed-Solomon-Rest: die Fehlerkorrektur-Codewörter eines Blocks. */
+function ecBlock(daten, ecAnzahl) {
+  const g = generator(ecAnzahl);
+  const rest = new Array(ecAnzahl).fill(0);
+  for (const wort of daten) {
+    const faktor = wort ^ rest[0];
+    rest.shift();
+    rest.push(0);
+    if (faktor !== 0) for (let i = 0; i < ecAnzahl; i++) rest[i] ^= mul(g[i + 1], faktor);
+  }
+  return rest;
+}
+
+/* ------------------------------------------------------------- Datenkodierung */
+
+function datenKapazitaet(version) {
+  const [, , g1, g2] = VERSIONEN[version];
+  return g1[0] * g1[1] + (g2 ? g2[0] * g2[1] : 0);
+}
+
+function versionWaehlen(byteLaenge) {
+  for (let v = 1; v <= 15; v++) {
+    const zaehlerBits = v < 10 ? 8 : 16;
+    const noetig = Math.ceil((4 + zaehlerBits + byteLaenge * 8) / 8);
+    if (noetig <= datenKapazitaet(v)) return v;
+  }
+  throw new Error('Text zu lang für einen QR-Code dieser Größe');
+}
+
+function codewoerter(bytes, version) {
+  const zaehlerBits = version < 10 ? 8 : 16;
+  const bits = [];
+  const schiebe = (wert, anzahl) => {
+    for (let i = anzahl - 1; i >= 0; i--) bits.push((wert >> i) & 1);
+  };
+
+  schiebe(0b0100, 4);              // Byte-Modus
+  schiebe(bytes.length, zaehlerBits);
+  for (const b of bytes) schiebe(b, 8);
+
+  const kapazitaet = datenKapazitaet(version) * 8;
+  for (let i = 0; i < 4 && bits.length < kapazitaet; i++) bits.push(0);   // Terminator
+  while (bits.length % 8 !== 0) bits.push(0);
+
+  const worte = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    worte.push(bits.slice(i, i + 8).reduce((v, b) => (v << 1) | b, 0));
+  }
+  const fueller = [0xec, 0x11];
+  let f = 0;
+  while (worte.length < datenKapazitaet(version)) worte.push(fueller[f++ % 2]);
+  return worte;
+}
+
+/** Datenwörter in Blöcke schneiden, EC anhängen, beides verschachteln. */
+function endgueltigeWoerter(daten, version) {
+  const [, ecAnzahl, g1, g2] = VERSIONEN[version];
+  const gruppen = g2 ? [g1, g2] : [g1];
+
+  const datenBloecke = [];
+  let pos = 0;
+  for (const [anzahl, laenge] of gruppen) {
+    for (let i = 0; i < anzahl; i++) {
+      datenBloecke.push(daten.slice(pos, pos + laenge));
+      pos += laenge;
+    }
+  }
+  const ecBloecke = datenBloecke.map((b) => ecBlock(b, ecAnzahl));
+
+  const raus = [];
+  const maxDaten = Math.max(...datenBloecke.map((b) => b.length));
+  for (let i = 0; i < maxDaten; i++) {
+    for (const b of datenBloecke) if (i < b.length) raus.push(b[i]);
+  }
+  for (let i = 0; i < ecAnzahl; i++) for (const b of ecBloecke) raus.push(b[i]);
+  return raus;
+}
+
+/* -------------------------------------------------------------- Matrixaufbau */
+
+function leereMatrix(groesse) {
+  return Array.from({ length: groesse }, () => new Array(groesse).fill(null));
+}
+
+function sucherSetzen(m, zeile, spalte) {
+  for (let r = -1; r <= 7; r++) {
+    for (let c = -1; c <= 7; c++) {
+      const y = zeile + r;
+      const x = spalte + c;
+      if (y < 0 || y >= m.length || x < 0 || x >= m.length) continue;
+      const imSucher = r >= 0 && r <= 6 && c >= 0 && c <= 6;
+      if (!imSucher) { m[y][x] = false; continue; }   // die helle Trennlinie ringsum
+      const rahmen = r === 0 || r === 6 || c === 0 || c === 6;
+      const kern = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+      m[y][x] = rahmen || kern;
+    }
+  }
+}
+
+function funktionsMuster(version) {
+  const groesse = version * 4 + 17;
+  const m = leereMatrix(groesse);
+
+  sucherSetzen(m, 0, 0);
+  sucherSetzen(m, 0, groesse - 7);
+  sucherSetzen(m, groesse - 7, 0);
+
+  for (let i = 8; i < groesse - 8; i++) {
+    m[6][i] = i % 2 === 0;
+    m[i][6] = i % 2 === 0;
+  }
+
+  const zentren = AUSRICHTUNG[version];
+  const letzte = zentren[zentren.length - 1];
+  // Nur die drei Ecken entfallen — dort sitzen schon die Suchmuster. Muster,
+  // die bloß die Taktspur kreuzen, werden gezeichnet.
+  const beimSucher = (y, x) => (y === 6 && x === 6)
+    || (y === 6 && x === letzte) || (y === letzte && x === 6);
+  for (const zy of zentren) {
+    for (const zx of zentren) {
+      if (beimSucher(zy, zx)) continue;
+      for (let r = -2; r <= 2; r++) {
+        for (let c = -2; c <= 2; c++) {
+          m[zy + r][zx + c] = Math.max(Math.abs(r), Math.abs(c)) !== 1;
+        }
+      }
+    }
+  }
+
+  m[groesse - 8][8] = true;                       // immer dunkles Modul
+
+  // Plätze für Format- und Versionsinfo freihalten (später überschrieben)
+  for (let i = 0; i < 9; i++) {
+    if (m[8][i] === null) m[8][i] = false;
+    if (m[i][8] === null) m[i][8] = false;
+  }
+  for (let i = 0; i < 8; i++) {
+    if (m[8][groesse - 1 - i] === null) m[8][groesse - 1 - i] = false;
+    if (m[groesse - 1 - i][8] === null) m[groesse - 1 - i][8] = false;
+  }
+  if (version >= 7) {
+    for (let i = 0; i < 6; i++) {
+      for (let j = 0; j < 3; j++) {
+        m[groesse - 11 + j][i] = false;
+        m[i][groesse - 11 + j] = false;
+      }
+    }
+  }
+  return m;
+}
+
+/** Merkt sich, welche Felder zu Funktionsmustern gehören. */
+function reserviert(version) {
+  const m = funktionsMuster(version);
+  return m.map((zeile) => zeile.map((wert) => wert !== null));
+}
+
+function datenSetzen(m, belegt, worte) {
+  const groesse = m.length;
+  const bits = [];
+  for (const w of worte) for (let i = 7; i >= 0; i--) bits.push((w >> i) & 1);
+
+  let bit = 0;
+  let aufwaerts = true;
+  for (let spalte = groesse - 1; spalte > 0; spalte -= 2) {
+    if (spalte === 6) spalte -= 1;               // die senkrechte Taktspur überspringen
+    for (let i = 0; i < groesse; i++) {
+      const zeile = aufwaerts ? groesse - 1 - i : i;
+      for (const s of [spalte, spalte - 1]) {
+        if (belegt[zeile][s]) continue;
+        m[zeile][s] = bit < bits.length ? bits[bit++] === 1 : false;
+      }
+    }
+    aufwaerts = !aufwaerts;
+  }
+}
+
+const MASKEN = [
+  (r, c) => (r + c) % 2 === 0,
+  (r) => r % 2 === 0,
+  (r, c) => c % 3 === 0,
+  (r, c) => (r + c) % 3 === 0,
+  (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
+  (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0,
+  (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0,
+  (r, c) => (((r + c) % 2) + ((r * c) % 3)) % 2 === 0,
+];
+
+function strafe(m) {
+  const n = m.length;
+  let punkte = 0;
+
+  // Regel 1: Ketten gleicher Farbe
+  for (let i = 0; i < n; i++) {
+    for (const waagrecht of [true, false]) {
+      let lauf = 1;
+      for (let j = 1; j < n; j++) {
+        const a = waagrecht ? m[i][j] : m[j][i];
+        const b = waagrecht ? m[i][j - 1] : m[j - 1][i];
+        if (a === b) lauf++;
+        else { if (lauf >= 5) punkte += 3 + (lauf - 5); lauf = 1; }
+      }
+      if (lauf >= 5) punkte += 3 + (lauf - 5);
+    }
+  }
+
+  // Regel 2: gleichfarbige 2x2-Blöcke
+  for (let r = 0; r < n - 1; r++) {
+    for (let c = 0; c < n - 1; c++) {
+      const v = m[r][c];
+      if (v === m[r][c + 1] && v === m[r + 1][c] && v === m[r + 1][c + 1]) punkte += 3;
+    }
+  }
+
+  // Regel 3: sucherähnliche Folgen
+  const muster = [true, false, true, true, true, false, true, false, false, false, false];
+  const gedreht = muster.slice().reverse();
+  const passt = (werte, soll) => soll.every((v, i) => werte[i] === v);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j <= n - 11; j++) {
+      const waagrecht = m[i].slice(j, j + 11);
+      const senkrecht = Array.from({ length: 11 }, (_, k) => m[j + k][i]);
+      for (const reihe of [waagrecht, senkrecht]) {
+        if (passt(reihe, muster) || passt(reihe, gedreht)) punkte += 40;
+      }
+    }
+  }
+
+  // Regel 4: Abweichung vom Halbe-halbe-Verhältnis
+  let dunkel = 0;
+  for (const zeile of m) for (const v of zeile) if (v) dunkel++;
+  const anteil = (dunkel * 100) / (n * n);
+  punkte += Math.floor(Math.abs(anteil - 50) / 5) * 10;
+  return punkte;
+}
+
+function formatBits(maske) {
+  const daten = (0b01 << 3) | maske;             // Fehlerkorrektur L = 01
+  let rest = daten << 10;
+  for (let i = 14; i >= 10; i--) if ((rest >> i) & 1) rest ^= 0b10100110111 << (i - 10);
+  return ((daten << 10) | rest) ^ 0b101010000010010;
+}
+
+function versionBits(version) {
+  let rest = version << 12;
+  for (let i = 17; i >= 12; i--) if ((rest >> i) & 1) rest ^= 0b1111100100101 << (i - 12);
+  return (version << 12) | rest;
+}
+
+function infoSetzen(m, version, maske) {
+  const n = m.length;
+  const bits = formatBits(maske);
+  // Die 15 Bits werden mit dem höchsten zuerst abgelegt, an zwei Stellen.
+  const legen = (plaetze) => plaetze.forEach(([r, c], i) => {
+    m[r][c] = ((bits >> (14 - i)) & 1) === 1;
+  });
+
+  legen([[8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 7], [8, 8],
+    [7, 8], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8]]);
+
+  const zweite = [];
+  for (let i = 1; i <= 7; i++) zweite.push([n - i, 8]);
+  for (let i = 8; i >= 1; i--) zweite.push([8, n - i]);
+  legen(zweite);
+
+  m[n - 8][8] = true;                             // immer dunkles Modul
+
+  if (version >= 7) {
+    const vb = versionBits(version);
+    for (let i = 0; i < 18; i++) {
+      const wert = ((vb >> i) & 1) === 1;
+      const zeile = Math.floor(i / 3);
+      const spalte = i % 3;
+      m[n - 11 + spalte][zeile] = wert;
+      m[zeile][n - 11 + spalte] = wert;
+    }
+  }
+}
+
+function qrMatrix(text, maskeErzwingen = null) {
+  const bytes = new TextEncoder().encode(text);
+  const version = versionWaehlen(bytes.length);
+  const worte = endgueltigeWoerter(codewoerter(bytes, version), version);
+
+  const belegt = reserviert(version);
+  const roh = funktionsMuster(version);
+  datenSetzen(roh, belegt, worte);
+
+  let beste = null;
+  for (let maske = 0; maske < 8; maske++) {
+    if (maskeErzwingen !== null && maske !== maskeErzwingen) continue;
+    const m = roh.map((zeile, r) => zeile.map((wert, c) => (
+      belegt[r][c] ? wert : wert !== MASKEN[maske](r, c)
+    )));
+    infoSetzen(m, version, maske);
+    const p = strafe(m);
+    if (!beste || p < beste.punkte) beste = { punkte: p, module: m };
+  }
+
+  return { groesse: beste.module.length, version, module: beste.module };
+}
+
+/** Zeichnet den Code in ein Canvas — mit der vorgeschriebenen ruhigen Zone. */
+function qrZeichnen(canvas, text, { rand = 4, hell = '#f6f2e7', dunkel = '#16211e' } = {}) {
+  const { groesse, module } = qrMatrix(text);
+  const gesamt = groesse + rand * 2;
+  const pixel = Math.max(1, Math.floor(canvas.width / gesamt));
+  const kante = pixel * gesamt;
+
+  canvas.width = kante;
+  canvas.height = kante;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = hell;
+  ctx.fillRect(0, 0, kante, kante);
+  ctx.fillStyle = dunkel;
+  for (let r = 0; r < groesse; r++) {
+    for (let c = 0; c < groesse; c++) {
+      if (module[r][c]) ctx.fillRect((c + rand) * pixel, (r + rand) * pixel, pixel, pixel);
+    }
+  }
+  return { groesse, kante };
+}
+
+// Direktverbindung zwischen zwei Handys im selben WLAN oder Hotspot.
+//
+// Es gibt keinen Server, der vermittelt. Deshalb tauschen die Geräte ihre
+// Verbindungsdaten einmalig per QR-Code aus: Gastgeber zeigt, Gast scannt,
+// Gast zeigt zurück, Gastgeber scannt. Danach läuft alles direkt.
+//
+// Damit ein Code auf ein Handydisplay passt, wird die Beschreibung auf das
+// Nötigste eingedampft und auf der Gegenseite aus einer Vorlage neu gebaut.
+
+const CODE_MARKE = 'ST1';
+
+/* ------------------------------------------------- Verbindungsdaten packen */
+
+function hexZuBase64(hex) {
+  const bytes = hex.split(':').map((h) => parseInt(h, 16));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64ZuHex(b64) {
+  const roh = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+  return Array.from(roh, (c) => c.charCodeAt(0).toString(16).padStart(2, '0').toUpperCase()).join(':');
+}
+
+/** Aus einer vollständigen Beschreibung einen kurzen, scanbaren Code machen. */
+function alsCode(sdp, rolle) {
+  const hole = (muster) => (sdp.match(muster) || [])[1] || '';
+  const ufrag = hole(/^a=ice-ufrag:(.+)$/m);
+  const pwd = hole(/^a=ice-pwd:(.+)$/m);
+  const fingerabdruck = hole(/^a=fingerprint:sha-256 (.+)$/m).trim();
+
+  const kandidaten = [];
+  for (const zeile of sdp.split(/\r?\n/)) {
+    const t = zeile.match(/^a=candidate:\S+ \d+ (udp|UDP) \d+ (\S+) (\d+) typ (host|srflx)/);
+    if (t && !kandidaten.some((k) => k === `${t[2]},${t[3]}`)) kandidaten.push(`${t[2]},${t[3]}`);
+  }
+
+  return [CODE_MARKE + rolle, ufrag, pwd, hexZuBase64(fingerabdruck), ...kandidaten].join('|');
+}
+
+/** Kurzcode wieder zu einer vollständigen Beschreibung aufblasen. */
+function ausCode(code) {
+  const teile = String(code).trim().split('|');
+  const kopf = teile[0] || '';
+  if (!kopf.startsWith(CODE_MARKE)) throw new Error('Das ist kein Sky-Team-Verbindungscode.');
+  const rolle = kopf.slice(CODE_MARKE.length);
+  if (rolle !== 'O' && rolle !== 'A') throw new Error('Der Verbindungscode ist unvollständig.');
+
+  const [, ufrag, pwd, fingerBase64, ...kandidaten] = teile;
+  if (!ufrag || !pwd || !fingerBase64) throw new Error('Der Verbindungscode ist unvollständig.');
+
+  const sdp = [
+    'v=0',
+    'o=- 1 2 IN IP4 127.0.0.1',
+    's=-',
+    't=0 0',
+    'a=group:BUNDLE 0',
+    'a=msid-semantic: WMS',
+    'm=application 9 UDP/DTLS/SCTP webrtc-datachannel',
+    'c=IN IP4 0.0.0.0',
+    `a=ice-ufrag:${ufrag}`,
+    `a=ice-pwd:${pwd}`,
+    'a=ice-options:trickle',
+    `a=fingerprint:sha-256 ${base64ZuHex(fingerBase64)}`,
+    `a=setup:${rolle === 'O' ? 'actpass' : 'active'}`,
+    'a=mid:0',
+    'a=sctp-port:5000',
+    'a=max-message-size:262144',
+    '',
+  ].join('\r\n');
+
+  return {
+    typ: rolle === 'O' ? 'offer' : 'answer',
+    sdp,
+    kandidaten: kandidaten.filter(Boolean).map((k) => {
+      const [adresse, port] = k.split(',');
+      return {
+        candidate: `candidate:1 1 udp 2130706431 ${adresse} ${port} typ host generation 0 ufrag ${ufrag}`,
+        sdpMid: '0',
+        sdpMLineIndex: 0,
+      };
+    }),
+  };
+}
+
+/* ------------------------------------------------------------- Verbindung */
+
+/**
+ * Baut die Verbindung auf. `aufZustand(text, verbunden)` meldet Fortschritt,
+ * `aufNachricht(objekt)` liefert eingehende Daten.
+ */
+function funkAufbauen({ gastgeber, aufZustand, aufNachricht }) {
+  const pc = new RTCPeerConnection({ iceServers: [] });
+  let kanal = null;
+  let offen = false;
+
+  const melde = (text) => aufZustand?.(text, offen);
+
+  const kanalVerdrahten = (k) => {
+    kanal = k;
+    k.onopen = () => { offen = true; aufZustand?.('verbunden', true); };
+    k.onclose = () => { offen = false; aufZustand?.('getrennt', false); };
+    k.onmessage = (e) => {
+      try { aufNachricht?.(JSON.parse(e.data)); } catch { /* kaputte Nachricht */ }
+    };
+  };
+
+  if (gastgeber) kanalVerdrahten(pc.createDataChannel('skyteam', { ordered: true }));
+  else pc.ondatachannel = (e) => kanalVerdrahten(e.channel);
+
+  pc.oniceconnectionstatechange = () => {
+    if (['failed', 'disconnected'].includes(pc.iceConnectionState) && !offen) {
+      melde('Keine Verbindung — blockiert euer Hotspot vielleicht den direkten Weg?');
+    }
+  };
+
+  /** Wartet, bis alle lokalen Adressen gesammelt sind (oder die Geduld endet). */
+  const adressenSammeln = () => new Promise((fertig) => {
+    if (pc.iceGatheringState === 'complete') return fertig();
+    const stopp = setTimeout(fertig, 3000);
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState === 'complete') { clearTimeout(stopp); fertig(); }
+    };
+    return undefined;
+  });
+
+  return {
+    /** Gastgeber: eigenen Code erzeugen. Gast: erst nach codeLesen aufrufen. */
+    async eigenerCode() {
+      const beschreibung = gastgeber ? await pc.createOffer() : await pc.createAnswer();
+      await pc.setLocalDescription(beschreibung);
+      await adressenSammeln();
+      return alsCode(pc.localDescription.sdp, gastgeber ? 'O' : 'A');
+    },
+
+    async codeLesen(code) {
+      const { typ, sdp, kandidaten } = ausCode(code);
+      if (gastgeber && typ !== 'answer') throw new Error('Das ist der Code des Gastgebers — du brauchst den vom Gast.');
+      if (!gastgeber && typ !== 'offer') throw new Error('Das ist der Code des Gasts — du brauchst den vom Gastgeber.');
+      await pc.setRemoteDescription({ type: typ, sdp });
+      for (const k of kandidaten) {
+        try { await pc.addIceCandidate(k); } catch { /* einzelne Adresse taugt nicht */ }
+      }
+      melde('verbinde …');
+    },
+
+    senden(objekt) {
+      if (kanal && kanal.readyState === 'open') {
+        kanal.send(JSON.stringify(objekt));
+        return true;
+      }
+      return false;
+    },
+
+    get verbunden() { return offen; },
+
+    schliessen() {
+      try { kanal?.close(); } catch { /* egal */ }
+      try { pc.close(); } catch { /* egal */ }
+    },
+  };
+}
+
+/* ---------------------------------------------------------------- Scanner */
+
+const scannerMoeglich = () => typeof window !== 'undefined'
+  && 'BarcodeDetector' in window
+  && !!navigator.mediaDevices?.getUserMedia;
+
+/**
+ * Startet die Kamera und meldet den ersten gefundenen QR-Code.
+ * Gibt eine Funktion zum Abschalten zurück.
+ */
+async function scannerStarten(videoElement, aufTreffer, aufFehler) {
+  if (!scannerMoeglich()) {
+    aufFehler?.(new Error('Dieser Browser kann keine QR-Codes lesen — nimm den Textcode.'));
+    return () => {};
+  }
+  let laeuft = true;
+  let strom = null;
+
+  try {
+    strom = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }, audio: false,
+    });
+  } catch (fehler) {
+    aufFehler?.(new Error('Kein Zugriff auf die Kamera. Erlaube ihn oder nimm den Textcode.'));
+    return () => {};
+  }
+
+  videoElement.srcObject = strom;
+  videoElement.setAttribute('playsinline', '');
+  await videoElement.play().catch(() => {});
+
+  const sucher = new window.BarcodeDetector({ formats: ['qr_code'] });
+  const schauen = async () => {
+    if (!laeuft) return;
+    try {
+      const treffer = await sucher.detect(videoElement);
+      const code = treffer.find((t) => String(t.rawValue).startsWith(CODE_MARKE));
+      if (code) { laeuft = false; aufTreffer(code.rawValue); return stoppen(); }
+    } catch { /* einzelner Fehlversuch ist egal */ }
+    setTimeout(schauen, 220);
+    return undefined;
+  };
+
+  const stoppen = () => {
+    laeuft = false;
+    strom?.getTracks().forEach((t) => t.stop());
+    videoElement.srcObject = null;
+  };
+
+  schauen();
+  return stoppen;
+}
+
+// Zwei Handys über das Internet verbinden — für die Fassung auf der Webseite.
+//
+// Anders als funk.js braucht das kein gemeinsames WLAN und keine Kamera: Der
+// Server hält nur einen Raum mit einem kurzen Code offen und reicht Nachrichten
+// durch. Er versteht kein Spiel; er merkt sich, wer was noch nicht abgeholt hat.
+//
+// Nach außen sieht das genauso aus wie eine Direktverbindung — `senden`,
+// `verbunden`, `schliessen` — damit die Oberfläche nichts davon wissen muss.
+
+const NETZ_BASIS = (typeof SPIELE_BASIS === 'string' ? SPIELE_BASIS : '.').replace(/\/$/, '');
+
+/** Steht dieser Weg überhaupt zur Verfügung? Nur in der Webfassung. */
+const netzMoeglich = () => typeof SPIELE_BASIS === 'string';
+
+async function ruf(pfad, optionen = {}) {
+  const antwort = await fetch(`${NETZ_BASIS}/api${pfad}`, {
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    ...optionen,
+  });
+  let daten = null;
+  try { daten = await antwort.json(); } catch { /* leere Antwort */ }
+  if (!antwort.ok) throw new Error((daten && daten.fehler) || `Server meldet ${antwort.status}.`);
+  return daten || {};
+}
+
+/**
+ * Raum aufmachen oder beitreten und danach dauerhaft lauschen.
+ *
+ * `aufZustand(text, verbunden)` meldet Fortschritt, `aufNachricht(objekt)`
+ * liefert alles, was die Gegenseite schickt, `aufCode(code)` den Raumcode,
+ * sobald er feststeht.
+ */
+function netzAufbauen({ gastgeber, code, aufZustand, aufNachricht, aufCode }) {
+  let raum = null;         // { code, sitz, schluessel }
+  let ab = 0;
+  let offen = false;
+  let laeuft = true;
+  let fehlversuche = 0;
+
+  const melde = (text, verbunden = offen) => aufZustand?.(text, verbunden);
+
+  async function lauschen() {
+    while (laeuft && raum) {
+      try {
+        const q = new URLSearchParams({
+          sitz: String(raum.sitz), ab: String(ab), schluessel: raum.schluessel,
+        });
+        const daten = await ruf(`/raum/${raum.code}/holen?${q}`);
+        if (!laeuft) return;
+        fehlversuche = 0;
+
+        if (daten.voll && !offen) { offen = true; aufZustand?.('verbunden', true); }
+        if (!daten.voll && offen) { offen = false; aufZustand?.('getrennt', false); }
+
+        for (const n of daten.nachrichten || []) {
+          ab = Math.max(ab, n.nr);
+          try { aufNachricht?.(n.inhalt); } catch { /* kaputte Nachricht */ }
+        }
+        if (typeof daten.stand === 'number') ab = Math.max(ab, Math.min(ab, daten.stand));
+      } catch (fehler) {
+        if (!laeuft) return;
+        fehlversuche += 1;
+        if (fehlversuche >= 4) {
+          offen = false;
+          aufZustand?.(`Verbindung abgerissen: ${fehler.message}`, false);
+        }
+        // Kurz warten, dann weiter — kurze Aussetzer sollen das Spiel nicht beenden.
+        await new Promise((w) => setTimeout(w, Math.min(4000, 500 * fehlversuche)));
+      }
+    }
+  }
+
+  const bereit = (async () => {
+    melde(gastgeber ? 'Raum wird geöffnet …' : 'Raum wird gesucht …', false);
+    raum = gastgeber
+      ? await ruf('/raum', { method: 'POST', body: '{}' })
+      : await ruf(`/raum/${String(code || '').trim().toUpperCase()}/beitreten`,
+        { method: 'POST', body: '{}' });
+    aufCode?.(raum.code);
+    melde(gastgeber ? 'Warte auf das zweite Handy …' : 'Verbinde …', false);
+    lauschen();
+    return raum.code;
+  })();
+
+  return {
+    bereit,                                   // Promise: fertig, sobald der Raum steht
+    get code() { return raum && raum.code; },
+    get verbunden() { return offen; },
+
+    senden(objekt) {
+      if (!raum) return false;
+      ruf(`/raum/${raum.code}/senden`, {
+        method: 'POST',
+        body: JSON.stringify({ sitz: raum.sitz, schluessel: raum.schluessel, nachricht: objekt }),
+      }).catch(() => { /* der Lauscher merkt den Ausfall */ });
+      return true;
+    },
+
+    schliessen() {
+      laeuft = false;
+      offen = false;
+      raum = null;
+    },
+  };
+}
+
+// Sky Team — Spiellogik ohne DOM. Kooperativ zu zweit: Pilot und Kopilot
+// landen gemeinsam ein Flugzeug, indem sie abwechselnd Würfel ins Cockpit legen.
+
+const PILOT = 0;
+const KOPILOT = 1;
+const ROLLE = ['Pilot', 'Kopilot'];
+
+const WUERFEL_JE_RUNDE = 4;
+const FLUGLAGE_GRENZE = 2;        // ±2 ist noch gut, ab ±3 trudelt es
+const KAFFEE_MAX = 3;
+const NEUWURF_MARKEN = 2;         // je Spiel, beide würfeln davon neu
+
+// Geschwindigkeitsskala: Motorsumme ≤ blau -> 0 Felder, ≤ orange -> 1 Feld, darüber 2.
+// Startpositionen wie im Original: blau zwischen 4 und 5, orange zwischen 8 und 9.
+const AERO_START = { blau: 4, orange: 8 };
+
+// Bremsmarke: startet links der 2, jede Bremse schiebt sie ein Feld weiter.
+// Der Wert ist die höchste Geschwindigkeit, die beim Aufsetzen noch zu bremsen ist.
+const BREMSWERTE = [1, 2, 3, 4];
+
+// Welche Augenzahlen ein Schalter verlangt. Bremsen wollen exakt 2, 4 und 6.
+const FAHRWERK_WERTE = [[1, 2], [3, 4], [5, 6]];
+const KLAPPEN_WERTE = [[1, 2], [2, 3], [3, 4], [4, 5]];
+const BREMSEN_WERTE = [[2], [4], [6]];
+
+/**
+ * Elf Flughäfen mit steigender Schwierigkeit. Höhe bestimmt die Rundenzahl
+ * (1000 Fuß pro Runde), `anflug` die Zahl der Felder bis zur Landebahn.
+ *
+ * `flugzeuge`  fremde Maschinen, die von Anfang an im Anflug stehen (Feldnummer)
+ * `verkehr`    Felder, auf denen zu Rundenbeginn der Verkehrswürfel rollt und
+ *              eine neue Maschine irgendwo voraus einsetzt
+ * `wind`       böig: die Schräglage schiebt zusätzlich auf die Geschwindigkeit
+ *
+ * Die Tabelle ist per Simulation auf eine ansteigende Kurve eingestellt.
+ */
+const FLUGHAEFEN = [
+  { kuerzel: 'YUL', name: 'Montréal', hoehe: 8000, anflug: 4, flugzeuge: [], verkehr: [], wind: false },
+  { kuerzel: 'ZRH', name: 'Zürich', hoehe: 8000, anflug: 5, flugzeuge: [3], verkehr: [], wind: false },
+  { kuerzel: 'GRU', name: 'São Paulo', hoehe: 8000, anflug: 6, flugzeuge: [3, 5], verkehr: [], wind: false },
+  { kuerzel: 'ORD', name: 'Chicago', hoehe: 8000, anflug: 7, flugzeuge: [2, 5], verkehr: [], wind: false },
+  { kuerzel: 'CPT', name: 'Kapstadt', hoehe: 8000, anflug: 7, flugzeuge: [3, 6], verkehr: [], wind: true },
+  { kuerzel: 'LHR', name: 'London', hoehe: 8000, anflug: 8, flugzeuge: [3, 5, 7], verkehr: [], wind: false },
+  { kuerzel: 'ATL', name: 'Atlanta', hoehe: 8000, anflug: 7, flugzeuge: [2, 4], verkehr: [3], wind: false },
+  { kuerzel: 'SYD', name: 'Sydney', hoehe: 7000, anflug: 6, flugzeuge: [2, 5], verkehr: [], wind: true },
+  { kuerzel: 'KEF', name: 'Reykjavík', hoehe: 8000, anflug: 8, flugzeuge: [3, 6], verkehr: [2, 5], wind: true },
+  { kuerzel: 'MEX', name: 'Mexiko-Stadt', hoehe: 9000, anflug: 10, flugzeuge: [2, 5, 8], verkehr: [1, 6], wind: true },
+  { kuerzel: 'HND', name: 'Tokio', hoehe: 9000, anflug: 11, flugzeuge: [2, 4, 6, 9], verkehr: [1, 4, 7], wind: true },
+];
+
+/* --------------------------------------------------------------- Cockpit */
+
+/** Alle Felder des Cockpits. `wer` = wessen Würfel dort liegen dürfen. */
+const FELDER = [
+  { id: 'achseP', wer: PILOT, gruppe: 'achse', titel: 'Ruder links', pflicht: true },
+  { id: 'achseK', wer: KOPILOT, gruppe: 'achse', titel: 'Ruder rechts', pflicht: true },
+  { id: 'motorP', wer: PILOT, gruppe: 'motor', titel: 'Schub links', pflicht: true },
+  { id: 'motorK', wer: KOPILOT, gruppe: 'motor', titel: 'Schub rechts', pflicht: true },
+
+  { id: 'fahrwerk0', wer: PILOT, gruppe: 'fahrwerk', nr: 0, titel: 'Fahrwerk 1' },
+  { id: 'fahrwerk1', wer: PILOT, gruppe: 'fahrwerk', nr: 1, titel: 'Fahrwerk 2' },
+  { id: 'fahrwerk2', wer: PILOT, gruppe: 'fahrwerk', nr: 2, titel: 'Fahrwerk 3' },
+
+  { id: 'klappe0', wer: KOPILOT, gruppe: 'klappe', nr: 0, titel: 'Klappe 1' },
+  { id: 'klappe1', wer: KOPILOT, gruppe: 'klappe', nr: 1, titel: 'Klappe 2' },
+  { id: 'klappe2', wer: KOPILOT, gruppe: 'klappe', nr: 2, titel: 'Klappe 3' },
+  { id: 'klappe3', wer: KOPILOT, gruppe: 'klappe', nr: 3, titel: 'Klappe 4' },
+
+  { id: 'bremse0', wer: PILOT, gruppe: 'bremse', nr: 0, titel: 'Bremse 1' },
+  { id: 'bremse1', wer: PILOT, gruppe: 'bremse', nr: 1, titel: 'Bremse 2' },
+  { id: 'bremse2', wer: PILOT, gruppe: 'bremse', nr: 2, titel: 'Bremse 3' },
+
+  { id: 'funkP', wer: PILOT, gruppe: 'funk', titel: 'Funk' },
+  { id: 'funkK1', wer: KOPILOT, gruppe: 'funk', titel: 'Funk 1' },
+  { id: 'funkK2', wer: KOPILOT, gruppe: 'funk', titel: 'Funk 2' },
+
+  { id: 'kaffeeP', wer: PILOT, gruppe: 'kaffee', titel: 'Kaffee' },
+  { id: 'kaffeeK', wer: KOPILOT, gruppe: 'kaffee', titel: 'Kaffee' },
+];
+
+const feldMit = (id) => FELDER.find((f) => f.id === id);
+
+/** Welche Augenzahlen verlangt dieses Feld? null = alle. */
+function feldWerte(feld) {
+  if (feld.gruppe === 'fahrwerk') return FAHRWERK_WERTE[feld.nr];
+  if (feld.gruppe === 'klappe') return KLAPPEN_WERTE[feld.nr];
+  if (feld.gruppe === 'bremse') return BREMSEN_WERTE[feld.nr];
+  return null;
+}
+
+/* ----------------------------------------------------------------- Aufbau */
+
+function neuesSpiel(flughafenIndex = 0, namen = ['Pilot', 'Kopilot']) {
+  const f = FLUGHAEFEN[flughafenIndex];
+  return {
+    v: 2,
+    flughafen: flughafenIndex,
+    namen: namen.slice(0, 2),
+    runde: 1,
+    runden: f.hoehe / 1000,
+    hoehe: f.hoehe,
+    anflugLaenge: f.anflug,
+    position: 0,
+    flugzeuge: f.flugzeuge.slice(),
+    verkehr: (f.verkehr || []).slice(),
+    wind: f.wind,
+    fluglage: 0,
+    aero: { ...AERO_START },
+    fahrwerk: [false, false, false],
+    klappen: [false, false, false, false],
+    bremsen: [false, false, false],
+    kaffee: 0,
+    neuwurf: NEUWURF_MARKEN,
+    wuerfel: [[], []],
+    belegt: {},
+    dran: PILOT,
+    startspieler: PILOT,
+    phase: 'briefing',      // 'briefing' | 'setzen' | 'gewonnen' | 'verloren'
+    letzteRunde: null,
+    neueMaschinen: [],      // was der Verkehrswürfel zuletzt eingesetzt hat
+    grund: '',
+  };
+}
+
+const bremswert = (s) => BREMSWERTE[s.bremsen.filter(Boolean).length];
+const alleFahrwerke = (s) => s.fahrwerk.every(Boolean);
+const alleKlappen = (s) => s.klappen.every(Boolean);
+const luftraumFrei = (s) => s.flugzeuge.length === 0;
+const istLanderunde = (s) => s.runde >= s.runden;
+
+/* ------------------------------------------------------------- Würfeln */
+
+function d6(rnd) { return 1 + Math.floor(rnd() * 6); }
+
+function wuerfeln(s, rnd = Math.random) {
+  if (s.phase !== 'briefing') return s;
+
+  // Verkehrswürfel: steht das Flugzeug auf einem Feld mit Verkehrszeichen,
+  // rollt für jedes Zeichen ein Würfel und setzt eine Maschine so viele
+  // Felder voraus ein.
+  s.neueMaschinen = [];
+  for (const feld of s.verkehr) {
+    if (feld !== s.position) continue;
+    const ziel = s.position + d6(rnd);
+    if (ziel <= s.anflugLaenge && !s.flugzeuge.includes(ziel)) {
+      s.flugzeuge.push(ziel);
+      s.neueMaschinen.push(ziel);
+    }
+  }
+
+  s.wuerfel = [
+    Array.from({ length: WUERFEL_JE_RUNDE }, () => d6(rnd)),
+    Array.from({ length: WUERFEL_JE_RUNDE }, () => d6(rnd)),
+  ];
+  s.belegt = {};
+  s.dran = s.startspieler;
+  s.phase = 'setzen';
+  return s;
+}
+
+/**
+ * Neuwurf-Marke ausgeben: beide Seiten würfeln alle noch nicht gesetzten
+ * Würfel neu. Kostet eine der zwei Marken pro Spiel.
+ */
+function neuWuerfeln(s, rnd = Math.random) {
+  if (s.phase !== 'setzen' || s.neuwurf < 1) return s;
+  s.neuwurf -= 1;
+  s.wuerfel = s.wuerfel.map((satz) => satz.map(() => d6(rnd)));
+  return s;
+}
+
+/* ------------------------------------------------------------ Würfel setzen */
+
+/** Ist dieses Feld für diese Person noch frei? */
+function feldFrei(s, feld) {
+  if (s.belegt[feld.id] !== undefined) return false;
+  if (feld.gruppe === 'fahrwerk') return !s.fahrwerk[feld.nr];
+  if (feld.gruppe === 'klappe') {
+    if (s.klappen[feld.nr]) return false;
+    return feld.nr === 0 || s.klappen[feld.nr - 1];      // nur der Reihe nach
+  }
+  if (feld.gruppe === 'bremse') {
+    if (s.bremsen[feld.nr]) return false;
+    return feld.nr === 0 || s.bremsen[feld.nr - 1];
+  }
+  if (feld.gruppe === 'kaffee') return s.kaffee < KAFFEE_MAX;
+  return true;
+}
+
+/** Wie viele Pflichtfelder muss diese Person noch belegen? */
+function offenePflicht(s, wer) {
+  return FELDER.filter((f) => f.pflicht && f.wer === wer && s.belegt[f.id] === undefined).length;
+}
+
+/**
+ * Passt der Würfel auf das Feld? Prüft Besitz, Verfügbarkeit, geforderte
+ * Augenzahl und ob danach noch genug Würfel für die Pflichtfelder bleiben —
+ * aber nicht, wer gerade dran ist. So lässt sich auch die Gegenseite prüfen.
+ */
+function passt(s, wer, feldId, wert) {
+  if (s.phase !== 'setzen') return false;
+  const feld = feldMit(feldId);
+  if (!feld || feld.wer !== wer) return false;
+  if (!feldFrei(s, feld)) return false;
+  if (!s.wuerfel[wer].includes(wert)) return false;
+
+  const werte = feldWerte(feld);
+  if (werte && !werte.includes(wert)) return false;
+
+  if (!feld.pflicht) {
+    const uebrigDanach = s.wuerfel[wer].length - 1;
+    if (uebrigDanach < offenePflicht(s, wer)) return false;
+  }
+  return true;
+}
+
+/** Zusätzlich zur Passform: ist diese Person überhaupt am Zug? */
+function darfSetzen(s, wer, feldId, wert) {
+  return s.dran === wer && passt(s, wer, feldId, wert);
+}
+
+function moeglicheFelder(s, wer, wert) {
+  return FELDER.filter((f) => passt(s, wer, f.id, wert)).map((f) => f.id);
+}
+
+function kannUeberhauptSetzen(s, wer) {
+  return s.wuerfel[wer].some((w) => moeglicheFelder(s, wer, w).length > 0);
+}
+
+/** Kaffee ausgeben: einen eigenen Würfel um ±1 verändern. */
+function kaffeeNutzen(s, wer, index, richtung) {
+  if (s.phase !== 'setzen' || s.kaffee < 1) return s;
+  const wuerfel = s.wuerfel[wer];
+  if (index < 0 || index >= wuerfel.length) return s;
+  const neu = wuerfel[index] + (richtung < 0 ? -1 : 1);
+  if (neu < 1 || neu > 6) return s;
+  wuerfel[index] = neu;
+  s.kaffee -= 1;
+  return s;
+}
+
+/** Würfel legen. Sofortwirkungen (Fahrwerk, Klappen, Bremsen, Funk, Kaffee) greifen gleich. */
+function setzen(s, wer, feldId, wert) {
+  if (!darfSetzen(s, wer, feldId, wert)) return s;
+  const feld = feldMit(feldId);
+
+  const i = s.wuerfel[wer].indexOf(wert);
+  s.wuerfel[wer].splice(i, 1);
+  s.belegt[feldId] = wert;
+
+  if (feld.gruppe === 'fahrwerk') { s.fahrwerk[feld.nr] = true; s.aero.blau += 1; }
+  if (feld.gruppe === 'klappe') { s.klappen[feld.nr] = true; s.aero.orange += 1; }
+  if (feld.gruppe === 'bremse') { s.bremsen[feld.nr] = true; }
+  if (feld.gruppe === 'kaffee') { s.kaffee = Math.min(KAFFEE_MAX, s.kaffee + 1); }
+  if (feld.gruppe === 'funk') {
+    const ziel = s.position + wert;
+    const j = s.flugzeuge.indexOf(ziel);
+    if (j !== -1) s.flugzeuge.splice(j, 1);
+  }
+
+  naechsterDran(s);
+  if (s.wuerfel[PILOT].length === 0 && s.wuerfel[KOPILOT].length === 0) rundeAuswerten(s);
+  return s;
+}
+
+/** Wer eigene Würfel nicht mehr unterbringt, wird übersprungen. */
+function naechsterDran(s) {
+  const anderer = s.dran === PILOT ? KOPILOT : PILOT;
+  if (s.wuerfel[anderer].length > 0 && kannUeberhauptSetzen(s, anderer)) { s.dran = anderer; return; }
+  if (s.wuerfel[s.dran].length > 0 && kannUeberhauptSetzen(s, s.dran)) return;
+  // Keiner kann mehr: die übrigen Würfel verfallen.
+  s.wuerfel = [[], []];
+}
+
+/* ---------------------------------------------------------- Rundenauswertung */
+
+function geschwindigkeit(s, summe) {
+  if (summe <= s.aero.blau) return 0;
+  if (summe <= s.aero.orange) return 1;
+  return 2;
+}
+
+/**
+ * Der Wind greift das schräg liegende Flugzeug von der Seite an: je weiter
+ * die Fluglage aus der Mitte, desto mehr Tempo kommt oben drauf. Liegt das
+ * Flugzeug gerade, ist auch bei Wind nichts zu spüren.
+ */
+const windAufschlag = (s) => (s.wind ? Math.abs(s.fluglage) : 0);
+
+/** Tempo dieser Runde: Motorsumme plus Wind. */
+const tempoWert = (s, motorSumme) => motorSumme + windAufschlag(s);
+
+function verloren(s, grund) {
+  s.phase = 'verloren';
+  s.grund = grund;
+  return s;
+}
+
+function rundeAuswerten(s) {
+  const achseP = s.belegt.achseP;
+  const achseK = s.belegt.achseK;
+  const motorP = s.belegt.motorP;
+  const motorK = s.belegt.motorK;
+
+  if (achseP === undefined || achseK === undefined) {
+    return verloren(s, 'Das Ruder blieb unbedient — das Flugzeug bricht aus.');
+  }
+  if (motorP === undefined || motorK === undefined) {
+    return verloren(s, 'Der Schub blieb unbedient — die Triebwerke fallen aus.');
+  }
+
+  // Fluglage: die Differenz der beiden Ruderwürfel kippt das Flugzeug und
+  // bleibt liegen — sie summiert sich über die Runden.
+  s.fluglage += achseP - achseK;
+  if (Math.abs(s.fluglage) > FLUGLAGE_GRENZE) {
+    return verloren(s, `Schräglage ${s.fluglage > 0 ? '+' : ''}${s.fluglage} — das Flugzeug trudelt.`);
+  }
+
+  // Schub: Motorsumme plus Wind, gegen die beiden Marker der Skala.
+  const summe = motorP + motorK;
+  const wind = windAufschlag(s);
+  const tempo = summe + wind;
+  const felder = geschwindigkeit(s, tempo);
+  const ziel = s.position + felder;
+
+  for (let feld = s.position + 1; feld <= Math.min(ziel, s.anflugLaenge); feld++) {
+    if (s.flugzeuge.includes(feld)) {
+      return verloren(s, `Zusammenstoß mit einer fremden Maschine ${feld - s.position} Felder voraus.`);
+    }
+  }
+  if (ziel > s.anflugLaenge) {
+    return verloren(s, 'Zu schnell — ihr schießt über die Landebahn hinaus.');
+  }
+
+  s.position = ziel;
+  s.letzteRunde = { achseP, achseK, motorP, motorK, summe, wind, tempo, felder, fluglage: s.fluglage };
+  s.hoehe -= 1000;
+
+  if (s.hoehe > 0) {
+    s.runde += 1;
+    s.startspieler = s.startspieler === PILOT ? KOPILOT : PILOT;
+    s.phase = 'briefing';
+    return s;
+  }
+  return landung(s, tempo);
+}
+
+function landung(s, tempo) {
+  const fehler = [];
+  if (s.position < s.anflugLaenge) fehler.push('Die Landebahn ist noch nicht erreicht');
+  if (s.fluglage !== 0) fehler.push('Das Flugzeug liegt schräg');
+  if (!alleFahrwerke(s)) fehler.push('Das Fahrwerk ist nicht komplett ausgefahren');
+  if (!alleKlappen(s)) fehler.push('Die Landeklappen sind nicht komplett ausgefahren');
+  if (!luftraumFrei(s)) fehler.push('Es sind noch fremde Maschinen im Anflug');
+  if (tempo > bremswert(s)) fehler.push(`Zu schnell zum Bremsen (Tempo ${tempo}, Bremse hält ${bremswert(s)})`);
+
+  if (fehler.length) {
+    s.phase = 'verloren';
+    s.grund = `${fehler.join('. ')}.`;
+  } else {
+    s.phase = 'gewonnen';
+    s.grund = 'Sauber aufgesetzt. Willkommen am Boden.';
+  }
+  return s;
+}
+
+/* ------------------------------------------------------------- Auswertung */
+
+/** Kurzer Statusüberblick für die Anzeige. */
+function lage(s) {
+  return {
+    flughafen: FLUGHAEFEN[s.flughafen],
+    runde: s.runde,
+    runden: s.runden,
+    hoehe: s.hoehe,
+    position: s.position,
+    rest: s.anflugLaenge - s.position,
+    fluglage: s.fluglage,
+    bremswert: bremswert(s),
+    windAufschlag: windAufschlag(s),
+    letzteRunde: istLanderunde(s),
+    tempoGrenzen: { blau: s.aero.blau, orange: s.aero.orange },
+    offen: {
+      fahrwerk: s.fahrwerk.filter((x) => !x).length,
+      klappen: s.klappen.filter((x) => !x).length,
+      flugzeuge: s.flugzeuge.length,
+    },
+  };
+}
+
+// Sky Team — alles zum Erklären: Einweisung vor dem ersten Flug, Hinweise, die
+// im richtigen Moment aufpoppen, und ein Nachschlagewerk fürs Cockpit.
+//
+// Kein DOM hier drin, nur Text und die Frage „passt das gerade?“.
+
+
+/* ------------------------------------------------ Einweisung vor dem Start */
+
+/** Die Karten, die vor dem allerersten Flug durchgeblättert werden. */
+const EINWEISUNG = [
+  {
+    bild: 'crew',
+    titel: 'Ihr fliegt zusammen',
+    text: `Einer sitzt links und ist <b>Pilot</b>, einer rechts und ist <b>Kopilot</b>.
+      Ihr spielt nicht gegeneinander, sondern gemeinsam gegen das Flugzeug.
+      Ihr landet zusammen — oder ihr stürzt zusammen ab.`,
+  },
+  {
+    bild: 'schweigen',
+    titel: 'Und ihr schweigt dabei',
+    text: `Sobald die Würfel liegen, wird <b>kein Wort</b> mehr gesagt. Keine Zahlen,
+      keine Andeutungen, kein „mach du mal“. Geredet wird nur im Briefing zwischen
+      den Runden — da dürft ihr alles besprechen.`,
+  },
+  {
+    bild: 'wuerfel',
+    titel: 'Vier Würfel, verdeckt',
+    text: `Jede Runde wirft jeder <b>vier Würfel</b>, hinter seinem Sichtschirm.
+      Du siehst nur deine. Dann legt ihr <b>abwechselnd je einen Würfel</b> auf ein
+      Feld eurer Seite des Cockpits.`,
+  },
+  {
+    bild: 'panel',
+    titel: 'Gelegte Würfel liegen offen',
+    text: `Das ist euer einziger Draht zueinander: Was schon im Cockpit liegt,
+      sieht die andere Seite. Wer als Zweiter ans Ruder geht, kann also
+      <b>genau darauf antworten</b>. Nutzt das.`,
+  },
+  {
+    bild: 'pflicht',
+    titel: 'Zwei Felder sind Pflicht',
+    text: `<b>Ruder</b> und <b>Schub</b> müssen jede Runde von <em>beiden</em> belegt werden —
+      sonst stürzt ihr ab. Die App legt dir dafür automatisch genug Würfel beiseite.
+      Was übrig bleibt, ist frei.`,
+  },
+  {
+    bild: 'sinken',
+    titel: 'Jede Runde 1000 Fuß tiefer',
+    text: `Sind alle acht Würfel gelegt, wird ausgewertet und das Flugzeug sinkt.
+      Bei <b>0 Fuß</b> setzt ihr auf — ob es passt oder nicht. Wie viele Runden ihr
+      habt, sagt euch die Höhe beim Start.`,
+  },
+  {
+    bild: 'ziel',
+    titel: 'Was am Ende stimmen muss',
+    text: `Genau auf der Landebahn · Flugzeug <b>waagerecht</b> · Fahrwerk und Klappen
+      komplett draußen · kein fremdes Flugzeug mehr im Weg · und <b>langsam genug</b>
+      für eure Bremsen. Fünf Häkchen. Alle fünf.`,
+  },
+];
+
+/* ------------------------------------------------------ Hinweise im Spiel */
+
+const feldOffen = (s, id) => s.belegt[id] === undefined;
+
+/**
+ * Hinweise, die genau dann kommen, wenn das Thema zum ersten Mal dran ist.
+ * `wann(s, k)` bekommt den Spielstand und ein bisschen Oberflächenkontext.
+ * Jeder Hinweis erscheint einmal und wird dann weggehakt.
+ */
+const HINWEISE = [
+  {
+    id: 'ruder',
+    titel: 'Das Ruder',
+    text: `Ruder links und Ruder rechts sind <b>Pflicht</b>. Die <b>Differenz</b> der beiden
+      Würfel kippt das Flugzeug: Wer die höhere Zahl legt, zu dem kippt es.
+      Gleiche Zahlen heißen: alles bleibt, wie es ist.`,
+    wann: (s) => s.phase === 'setzen' && s.runde === 1,
+  },
+  {
+    id: 'antwort',
+    titel: 'Jetzt antworten',
+    text: `Die andere Seite hat das Ruder schon belegt — du siehst die Zahl.
+      Legst du <b>dieselbe</b>, bleibt das Flugzeug waagerecht. Genau so redet ihr
+      miteinander, ohne zu reden.`,
+    wann: (s, k) => s.phase === 'setzen' && feldOffen(s, k.meinAchse) && !feldOffen(s, k.fremdAchse),
+  },
+  {
+    id: 'schub',
+    titel: 'Der Schub',
+    text: `Beide Schubwürfel werden <b>addiert</b>. Die Summe sagt, wie weit ihr fliegt:
+      bis ${AERO_START.blau} gar nicht, bis ${AERO_START.orange} ein Feld, darüber zwei.
+      Schau auf die Skala — die Grenzen verschieben sich im Lauf des Flugs.`,
+    wann: (s, k) => s.phase === 'setzen' && feldOffen(s, k.meinMotor) && !feldOffen(s, k.meinAchse),
+  },
+  {
+    id: 'traegheit',
+    titel: 'Das Flugzeug wird träger',
+    text: `Jedes Fahrwerk schiebt die <b>blaue</b> Grenze nach rechts, jede Klappe die
+      <b>orange</b>: mehr Schub für dieselbe Strecke — dafür leichter stehen bleiben.`,
+    wann: (s) => s.aero.blau > AERO_START.blau || s.aero.orange > AERO_START.orange,
+  },
+  {
+    id: 'bremse',
+    titel: 'Bremsen sind Gold',
+    text: `Genau eine <b>2</b>, dann eine <b>4</b>, dann eine <b>6</b> — in dieser Reihenfolge.
+      Jede hebt euer Landetempo: ${BREMSWERTE.join(' → ')}. Ohne Bremsen keine Landung.`,
+    wann: (s, k) => s.phase === 'setzen' && k.ich === PILOT && s.bremsen[0] === false && s.runde <= 2,
+  },
+  {
+    id: 'funk',
+    titel: 'Funk räumt den Weg',
+    text: `Ein Würfel auf dem Funkfeld nimmt die fremde Maschine weg, die <b>genau
+      so viele Felder</b> voraus steht, wie der Würfel zeigt. Fliegt dort nichts,
+      war der Würfel umsonst.`,
+    wann: (s) => s.phase === 'setzen' && s.flugzeuge.length > 0,
+  },
+  {
+    id: 'kollision',
+    titel: 'Da steht wer im Weg',
+    text: `Direkt vor euch ist eine fremde Maschine. Fliegt ihr auf ihr Feld, war's das.
+      Entweder ihr funkt sie weg — oder ihr bleibt diese Runde stehen.`,
+    wann: (s) => s.phase === 'setzen' && s.flugzeuge.includes(s.position + 1),
+  },
+  {
+    id: 'kaffee',
+    titel: 'Kaffee verschiebt Würfel',
+    text: `Für eine Tasse darfst du einen eigenen Würfel um <b>±1</b> verändern.
+      Höchstens ${KAFFEE_MAX} Tassen auf Vorrat. Hebt euch mindestens eine für die
+      Landerunde auf — dort zählt jeder einzelne Punkt.`,
+    wann: (s) => s.kaffee > 0,
+  },
+  {
+    id: 'neuwurf',
+    titel: 'Der Neuwurf',
+    text: `Zweimal pro Flug dürft ihr <b>alle</b> noch nicht gelegten Würfel neu werfen —
+      beide Seiten gleichzeitig. Das ist eure Notbremse, wenn ein Wurf gar nichts hergibt.`,
+    wann: (s) => s.phase === 'setzen' && s.runde >= 2 && s.neuwurf > 0,
+  },
+  {
+    id: 'wind',
+    titel: 'Böiger Wind',
+    text: `Hier bläst es von der Seite. Solange ihr <b>waagerecht</b> fliegt, merkt ihr
+      nichts. Liegt das Flugzeug schräg, kommt die Schräglage als Tempo obendrauf —
+      und macht euch schneller, als euch lieb ist.`,
+    wann: (s) => s.wind && s.phase === 'setzen',
+  },
+  {
+    id: 'schraeg',
+    titel: 'Achtung, Schräglage',
+    text: `Das Flugzeug liegt schief. Ab <b>±${FLUGLAGE_GRENZE + 1}</b> trudelt es und ihr habt
+      verloren. Und zum Landen muss es <b>exakt waagerecht</b> sein — korrigiert das
+      lieber jetzt als später.`,
+    wann: (s) => Math.abs(s.fluglage) >= 1 && s.phase === 'setzen',
+  },
+  {
+    id: 'zuletzt',
+    titel: 'Die Landerunde',
+    text: `Jetzt wird nicht mehr geflogen, jetzt wird nur noch stillgehalten.
+      Der Schub muss auf <b>höchstens ${'%BREMSE%'}</b> kommen, sonst bremst ihr nicht
+      rechtzeitig. Und das Ruder muss die Lage auf <b>0</b> bringen.`,
+    wann: (s) => s.phase === 'setzen' && istLanderunde(s),
+  },
+  {
+    id: 'ankunft',
+    titel: 'Ihr seid da',
+    text: `Ihr steht auf der Landebahn. Ab jetzt gilt: <b>keinen Meter weiter</b>.
+      Haltet die Schubsumme unter der blauen Grenze — und macht das Cockpit fertig:
+      Fahrwerk, Klappen, Bremsen.`,
+    wann: (s) => s.position >= s.anflugLaenge && !istLanderunde(s) && s.phase === 'setzen',
+  },
+];
+
+/** Der nächste Hinweis, der dran ist — oder null. */
+function naechsterHinweis(s, kontext, gesehen) {
+  for (const h of HINWEISE) {
+    if (gesehen.includes(h.id)) continue;
+    if (!h.wann(s, kontext)) continue;
+    return { ...h, text: h.text.replace('%BREMSE%', String(bremswert(s))) };
+  }
+  return null;
+}
+
+/* --------------------------------------------------------- Nachschlagewerk */
+
+const reihe = (werte) => werte.map((w) => w.join(' oder ')).join(' · ');
+
+/** Was ist was im Cockpit — für das Info-Menü und den Erklärmodus. */
+const LEXIKON = [
+  {
+    gruppe: 'achse',
+    titel: 'Ruder',
+    wer: 'beide, jede Runde Pflicht',
+    kurz: 'Die Differenz beider Würfel kippt das Flugzeug.',
+    lang: `Wer die höhere Zahl legt, zu dem kippt das Flugzeug — um so viele Striche,
+      wie die Zahlen auseinanderliegen. Das bleibt liegen und summiert sich über die
+      Runden. Ab <b>±${FLUGLAGE_GRENZE + 1}</b> trudelt ihr. Zum Landen muss die Lage <b>0</b> sein.`,
+  },
+  {
+    gruppe: 'motor',
+    titel: 'Schub',
+    wer: 'beide, jede Runde Pflicht',
+    kurz: 'Die Summe beider Würfel bestimmt die Strecke.',
+    lang: `Summe bis zur <b>blauen</b> Marke: ihr bleibt stehen. Bis zur <b>orangen</b>:
+      ein Feld. Darüber: zwei Felder. Zu Beginn stehen die Marken bei
+      ${AERO_START.blau} und ${AERO_START.orange}; Fahrwerk und Klappen schieben sie
+      nach rechts.`,
+  },
+  {
+    gruppe: 'fahrwerk',
+    titel: 'Fahrwerk',
+    wer: 'Pilot · 3 Schalter',
+    kurz: `Verlangt ${reihe(FAHRWERK_WERTE)} — in beliebiger Reihenfolge.`,
+    lang: `Muss zur Landung <b>komplett</b> ausgefahren sein. Jedes Rad schiebt die
+      <b>blaue</b> Marke ein Feld nach rechts: ihr werdet langsamer, könnt aber
+      leichter stehen bleiben.`,
+  },
+  {
+    gruppe: 'klappe',
+    titel: 'Landeklappen',
+    wer: 'Kopilot · 4 Schalter',
+    kurz: `Verlangt ${reihe(KLAPPEN_WERTE)} — streng der Reihe nach.`,
+    lang: `Muss zur Landung <b>komplett</b> ausgefahren sein. Jede Klappe schiebt die
+      <b>orange</b> Marke ein Feld nach rechts — Zwei-Felder-Sprünge werden damit
+      immer unwahrscheinlicher.`,
+  },
+  {
+    gruppe: 'bremse',
+    titel: 'Bremsen',
+    wer: 'Pilot · 3 Schalter',
+    kurz: `Verlangt genau ${BREMSEN_WERTE.map((v) => v[0]).join(', dann ')}.`,
+    lang: `Jede Bremse hebt das Tempo, das ihr beim Aufsetzen noch verkraftet:
+      ${BREMSWERTE.join(' → ')}. Ohne Bremsen ist keine Landung möglich —
+      das ist der engste Punkt des ganzen Spiels.`,
+  },
+  {
+    gruppe: 'funk',
+    titel: 'Funk',
+    wer: 'Pilot 1× · Kopilot 2×',
+    kurz: 'Räumt die fremde Maschine weg, die genau so weit voraus steht.',
+    lang: `Der Würfelwert ist die <b>Entfernung</b>: eine 3 nimmt die Maschine drei
+      Felder voraus weg. Steht dort nichts, passiert nichts. Fremde Maschinen müssen
+      alle weg sein, bevor ihr landen dürft — und wer in eine hineinfliegt, verliert
+      sofort.`,
+  },
+  {
+    gruppe: 'kaffee',
+    titel: 'Kaffee',
+    wer: 'beide · je 1 Feld',
+    kurz: `Sammelt eine Tasse, höchstens ${KAFFEE_MAX} auf Vorrat.`,
+    lang: `Eine Tasse verschiebt einen deiner Würfel um <b>±1</b> (nicht über 6, nicht
+      unter 1). Das Kaffeefeld nimmt jede Augenzahl — dafür ist es der Platz für
+      Würfel, mit denen sonst nichts anzufangen ist.`,
+  },
+];
+
+const lexikonFuer = (gruppe) => LEXIKON.find((e) => e.gruppe === gruppe) || null;
+
+/* ------------------------------------------------------ Lage in Worten */
+
+/** Ein Satz, der sagt, worauf es diese Runde ankommt. */
+function ratschlag(s, ich) {
+  const rest = s.anflugLaenge - s.position;
+  const w = windAufschlag(s);
+  if (istLanderunde(s)) {
+    return `Landerunde: Schub zusammen höchstens <b>${bremswert(s)}</b>${
+      w ? ` (der Wind legt gerade ${w} drauf)` : ''}, Ruder gleich hoch, Lage auf 0.`;
+  }
+  if (rest === 0) return 'Ihr seid auf der Bahn — jetzt nur noch stehen bleiben und fertig machen.';
+  const rundenUebrig = s.runden - s.runde;
+  if (rest > rundenUebrig * 2) return 'Zu weit weg: Ihr braucht Zwei-Felder-Sprünge, also viel Schub.';
+  if (rest > rundenUebrig) return 'Es ist knapp — mindestens ein Feld pro Runde.';
+  return `Noch ${rest} Feld${rest === 1 ? '' : 'er'} in ${rundenUebrig} Runden. Zeit für die Schalter.`;
+}
+
+// Sky Team — Oberfläche. Zwei Leute, ein Cockpit, kein Wort dazwischen.
+
+
+const KEY = 'skyteam.v1';
+const app = document.getElementById('app');
+
+let spiel = null;
+let ui = {
+  overlay: null,
+  halter: -1,          // nur lokal: wer das Handy gerade hält
+  modus: 'lokal',      // 'lokal' | 'online'
+  offen: false,        // lokal: Würfel beider Seiten offen zeigen (leichter)
+  gewaehlt: null,      // Index des angetippten eigenen Würfels
+  meinIndex: PILOT,    // online: welche Rolle dieses Gerät spielt
+  gastgeber: true,     // online: dieses Gerät rechnet
+  funk: null,
+  kopplung: null,
+  namen: ['Monty', 'Christina'],
+  flughafen: 0,
+  einweisung: null,    // Index der Einweisungskarte, solange sie läuft
+  gesehen: [],         // schon gezeigte Hinweise
+  hinweis: null,       // Hinweis, der gerade unten steht
+  lexikon: null,       // Gruppe, deren Erklärung offen ist
+};
+
+/* ------------------------------------------------------------------ Hilfen */
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const name = (i) => esc(spiel.namen[i] || ROLLE[i]);
+const buzz = (ms) => { try { navigator.vibrate?.(ms); } catch { /* egal */ } };
+
+function sichern() {
+  if (ui.modus === 'online') return;      // auf zwei Geräten führt der Gastgeber Buch
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ spiel, offen: ui.offen, gesehen: ui.gesehen }));
+  } catch { /* privater Modus */ }
+}
+
+function laden() {
+  try {
+    const roh = localStorage.getItem(KEY);
+    if (!roh) return null;
+    const d = JSON.parse(roh);
+    if (d && d.spiel && d.spiel.v === 2) return d;
+  } catch { /* kaputter Stand wird ignoriert */ }
+  return null;
+}
+
+function weiter() {
+  sichern();
+  render();
+}
+
+/** Baut aus <style> und <script> der laufenden Seite wieder ein vollständiges Dokument. */
+function seitenQuelltext(cssId, jsId, ersatzTitel) {
+  const css = document.getElementById(cssId)?.textContent || '';
+  const js = document.getElementById(jsId)?.textContent || '';
+  if (!css || !js) return null;
+  const kopf = typeof SEITENKOPF === 'string'
+    ? SEITENKOPF
+    : `<meta charset="utf-8"><title>${ersatzTitel}</title>`;
+  return [
+    '<!doctype html>', '<html lang="de">', '<head>',
+    kopf,
+    `<style id="${cssId}">`, css, '</style>', '</head>', '<body>',
+    '<div id="app"></div>',
+    `<script id="${jsId}">`, js, '<' + '/script>',
+    '</body>', '</html>', ''
+  ].join('\n');
+}
+
+function browserDownload(dateiname, html) {
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = dateiname;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/** Speichert die laufende Seite als eigenständige HTML-Datei. */
+async function seiteAlsDateiSichern(cssId, jsId, dateiname, ersatzTitel) {
+  // Auf der Webseite liegt die Einzeldatei fertig daneben — dann einfach die holen.
+  if (typeof OFFLINE_DATEI === 'string') {
+    const a = document.createElement('a');
+    a.href = OFFLINE_DATEI;
+    a.download = dateiname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return 'ok';
+  }
+  const html = seitenQuelltext(cssId, jsId, ersatzTitel);
+  if (!html) return 'dev';
+  const dl = typeof window !== 'undefined' && window.claude ? window.claude.downloads : null;
+  if (dl) {
+    try {
+      await dl.save({ filename: dateiname, data: html });
+      return 'ok';
+    } catch (fehler) {
+      const code = fehler && fehler.code;
+      if (code === 'declined') return 'abgelehnt';
+      if (code === 'rejected_extension' || code === 'extension_not_enabled') {
+        try {
+          await dl.save({ filename: dateiname.replace(/\.html$/, '') + '.txt', data: html });
+          return 'txt';
+        } catch (zweiter) {
+          if (zweiter && zweiter.code === 'declined') return 'abgelehnt';
+        }
+      }
+    }
+  }
+  browserDownload(dateiname, html);
+  return 'ok';
+}
+
+/** Gibt die Spieldatei ans Teilen-Menü des Handys weiter. */
+async function spielTeilen(cssId, jsId, dateiname, titel) {
+  // Auf der Webseite ist der Link das Nützlichste, was man weitergeben kann.
+  if (typeof OFFLINE_DATEI === 'string') {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: titel, url: location.href });
+        return 'ok';
+      }
+      await navigator.clipboard.writeText(location.href);
+      return 'kopiert';
+    } catch (fehler) {
+      return fehler && fehler.name === 'AbortError' ? 'abgelehnt' : 'geht-nicht';
+    }
+  }
+  const html = seitenQuelltext(cssId, jsId, titel);
+  if (!html) return 'dev';
+  try {
+    const datei = new File([html], dateiname, { type: 'text/html' });
+    if (navigator.canShare && navigator.canShare({ files: [datei] })) {
+      await navigator.share({ files: [datei], title: titel });
+      return 'ok';
+    }
+  } catch (fehler) {
+    if (fehler && fehler.name === 'AbortError') return 'abgelehnt';
+  }
+  return 'geht-nicht';
+}
+
+const TEILEN_TEXT = {
+  ok: 'Weitergegeben',
+  kopiert: 'Link kopiert',
+  abgelehnt: 'Abgebrochen',
+  'geht-nicht': 'Geht hier nicht — erst sichern, dann aus den Dateien teilen',
+  dev: 'Geht nur in der fertigen Version',
+};
+
+const SICHER_TEXT = {
+  ok: 'Gesichert — liegt in deinen Downloads',
+  txt: 'Als .txt gesichert — bitte in %NAME% umbenennen',
+  abgelehnt: 'Abgebrochen — nichts gespeichert',
+  dev: 'Geht nur in der fertigen Version',
+};
+
+/* ------------------------------------------------ Züge ausführen oder senden */
+
+const AKTIONEN = { wuerfeln, setzen, kaffeeNutzen, neuWuerfeln };
+
+const gastIndex = () => (ui.meinIndex === PILOT ? KOPILOT : PILOT);
+
+/**
+ * Der Gastgeber rechnet, der Gast schickt nur seine Absicht hinüber.
+ * Nach Kaffee bleibt der Würfel gewählt — man will ihn ja gleich legen.
+ */
+function tun(aktion, ...args) {
+  if (aktion !== 'kaffeeNutzen') ui.gewaehlt = null;
+  if (ui.modus === 'online' && !ui.gastgeber) {
+    ui.funk?.senden({ typ: 'aktion', name: aktion, args });
+    render();
+    return;
+  }
+  AKTIONEN[aktion](spiel, ...args);
+  if (ui.modus === 'online') standSenden();
+  weiter();
+}
+
+/**
+ * Was der Gast zu sehen bekommt. Im Cockpit ist genau eine Sache geheim:
+ * die ungesetzten Würfel der anderen Seite. Alles andere liegt offen.
+ */
+function standFuer(s, empfaenger) {
+  const k = JSON.parse(JSON.stringify(s));
+  const anderer = empfaenger === PILOT ? KOPILOT : PILOT;
+  k.wuerfel[anderer] = k.wuerfel[anderer].map(() => 0);   // 0 = verdeckt
+  return k;
+}
+
+function standSenden() {
+  ui.funk?.senden({ typ: 'stand', spiel: standFuer(spiel, gastIndex()) });
+}
+
+/** Wessen Würfel zeigt dieses Gerät als „meine“? */
+function michSelbst() {
+  return ui.modus === 'online' ? ui.meinIndex : spiel.dran;
+}
+
+/** Darf an diesem Gerät gerade getippt werden? */
+function ichBinDran() {
+  if (spiel.phase === 'briefing') return true;             // würfeln darf jeder
+  return ui.modus === 'online' ? spiel.dran === ui.meinIndex : true;
+}
+
+/* ------------------------------------------------------------------ Würfel */
+
+// Wo die Augen auf einem 3×3-Raster sitzen.
+const PIPS = {
+  1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8],
+};
+
+/**
+ * Ein Würfel. `wer` färbt ihn: Pilot blau, Kopilot orange — wie im Original.
+ * Ohne Wert kommt die verdeckte Rückseite.
+ */
+function wuerfelHtml(wert, { wer = PILOT, klasse = '', attrs = '', knopf = false } = {}) {
+  const tag = knopf ? 'button' : 'div';
+  const typ = knopf ? ' type="button"' : '';
+  const farbe = wer === PILOT ? 'wuerfel--blau' : 'wuerfel--orange';
+  if (!wert) {
+    return `<${tag} class="wuerfel wuerfel--zu ${klasse}"${attrs}${typ}><span class="fragezeichen">?</span></${tag}>`;
+  }
+  const punkte = Array.from({ length: 9 }, (_, i) =>
+    `<i class="${PIPS[wert].includes(i) ? 'an' : ''}"></i>`).join('');
+  return `<${tag} class="wuerfel ${farbe} ${klasse}"${attrs}${typ} aria-label="Würfel ${wert}">${punkte}</${tag}>`;
+}
+
+/* ------------------------------------------------------------------- Start */
+
+const STUFE = (i) => Math.max(1, Math.min(5, Math.round(1 + (i / (FLUGHAEFEN.length - 1)) * 4)));
+
+function renderStart() {
+  const liste = FLUGHAEFEN.map((f, i) => {
+    const n = STUFE(i);
+    return `
+    <button class="ziel ${i === ui.flughafen ? 'ziel--an' : ''}" data-ziel="${i}" type="button">
+      <span class="zielkopf"><span class="kuerzel">${f.kuerzel}</span>
+        <span class="schwer">${'▰'.repeat(n)}<span class="aus">${'▰'.repeat(5 - n)}</span></span></span>
+      <span class="ort">${esc(f.name)}</span>
+      <span class="zielzeile">${f.hoehe / 1000} Runden · ${f.anflug} Felder${
+      f.flugzeuge.length ? ` · ${f.flugzeuge.length}✈` : ''}${f.verkehr.length ? ' · Verkehr' : ''}${
+      f.wind ? ' · Wind' : ''}</span>
+    </button>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="screen start">
+      <div class="scroll"><div class="wrap">
+        <div class="marke">
+          <div class="fenster">
+            <div class="himmel"><span class="sonne"></span></div>
+            <div class="bahnlicht"></div>
+          </div>
+          <h1 class="wortmarke">SKY TEAM</h1>
+          <p class="unterzeile">Pilot und Kopilot landen zusammen ein Flugzeug —
+            mit acht Würfeln und ohne ein Wort.</p>
+        </div>
+
+        <button class="btn btn--geist btn--lehre" id="einweisung">
+          <span class="lehrezeichen">?</span> Einweisung — was spielen wir hier?
+        </button>
+
+        <div class="feldlabel">Wer sitzt vorne?</div>
+        <div class="feldreihe">
+          <input class="feld" id="n0" maxlength="16" value="${esc(ui.namen[0])}" aria-label="Pilot">
+          <span class="rollenschild rollenschild--blau">Pilot</span>
+        </div>
+        <div class="feldreihe">
+          <input class="feld" id="n1" maxlength="16" value="${esc(ui.namen[1])}" aria-label="Kopilot">
+          <span class="rollenschild rollenschild--orange">Kopilot</span>
+        </div>
+
+        <div class="feldlabel">Wohin geht es?</div>
+        <div class="zielliste">${liste}</div>
+
+        <label class="schalterzeile">
+          <input type="checkbox" id="offen" ${ui.offen ? 'checked' : ''}>
+          <span>Würfel offen zeigen — leichter, aber nicht das echte Spiel</span>
+        </label>
+
+        <div class="knopfsaeule">
+          <button class="btn btn--bernstein" id="los">An einem Handy</button>
+          <button class="btn btn--geist" id="zweiGeraete">Auf zwei Handys</button>
+          <button class="btn btn--leise" id="regeln">Alle Regeln nachlesen</button>
+        </div>
+      </div></div>
+    </div>`;
+
+  const namenLesen = () => [0, 1].map((i) =>
+    app.querySelector(`#n${i}`).value.trim() || ROLLE[i]);
+
+  app.querySelectorAll('[data-ziel]').forEach((b) => {
+    b.onclick = () => {
+      ui.flughafen = Number(b.dataset.ziel);
+      app.querySelectorAll('[data-ziel]').forEach((x) => x.classList.remove('ziel--an'));
+      b.classList.add('ziel--an');
+      buzz(6);
+    };
+  });
+  app.querySelector('#offen').onchange = (e) => { ui.offen = e.currentTarget.checked; };
+  app.querySelector('#einweisung').onclick = () => { ui.einweisung = 0; render(); };
+  app.querySelector('#los').onclick = () => {
+    ui.modus = 'lokal';
+    ui.namen = namenLesen();
+    spielAnlegen();
+  };
+  app.querySelector('#zweiGeraete').onclick = () => {
+    ui.namen = namenLesen();
+    ui.kopplung = { schritt: 'rolle' };
+    render();
+  };
+  app.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+}
+
+function spielAnlegen() {
+  spiel = neuesSpiel(ui.flughafen, ui.namen);
+  ui.halter = -1;
+  ui.gewaehlt = null;
+  ui.hinweis = null;
+  weiter();
+}
+
+/* ---------------------------------------------------------- Einweisung */
+
+function renderEinweisung() {
+  const i = Math.max(0, Math.min(EINWEISUNG.length - 1, ui.einweisung));
+  const k = EINWEISUNG[i];
+  const punkte = EINWEISUNG.map((_, n) =>
+    `<span class="punkt ${n === i ? 'an' : ''}"></span>`).join('');
+
+  const layer = document.createElement('div');
+  layer.className = 'overlay einweisung';
+  layer.innerHTML = `
+    <div class="scroll"><div class="blatt">
+      <div class="lbl">Einweisung · ${i + 1} von ${EINWEISUNG.length}</div>
+      <div class="lehrbild">${lehrbild(k.bild)}</div>
+      <h2>${k.titel}</h2>
+      <p class="lehrtext">${k.text}</p>
+      <div class="punkte">${punkte}</div>
+      <div class="knopfsaeule">
+        <button class="btn btn--bernstein" id="weiterKarte">
+          ${i + 1 === EINWEISUNG.length ? 'Alles klar' : 'Weiter'}</button>
+        ${i > 0 ? '<button class="btn btn--geist" id="zurueckKarte">Zurück</button>' : ''}
+        ${i + 1 < EINWEISUNG.length ? '<button class="btn btn--leise" id="ueberspringen">Überspringen</button>' : ''}
+      </div>
+    </div></div>`;
+  app.appendChild(layer);
+
+  layer.querySelector('#weiterKarte').onclick = () => {
+    ui.einweisung = i + 1 < EINWEISUNG.length ? i + 1 : null;
+    buzz(6);
+    render();
+  };
+  layer.querySelector('#zurueckKarte')?.addEventListener('click', () => {
+    ui.einweisung = i - 1; render();
+  });
+  layer.querySelector('#ueberspringen')?.addEventListener('click', () => {
+    ui.einweisung = null; render();
+  });
+}
+
+/** Kleine erklärende Bilder — reines SVG, damit nichts nachgeladen wird. */
+function lehrbild(art) {
+  const f = { blau: '#5aa9f0', orange: '#f0a92b', hell: '#e9eff7', dunkel: '#29364a' };
+  if (art === 'crew') {
+    return `<svg viewBox="0 0 200 90" role="img" aria-label="Zwei Sitze im Cockpit">
+      <rect x="14" y="22" width="70" height="54" rx="10" fill="${f.blau}" opacity=".22" stroke="${f.blau}" stroke-width="2"/>
+      <rect x="116" y="22" width="70" height="54" rx="10" fill="${f.orange}" opacity=".22" stroke="${f.orange}" stroke-width="2"/>
+      <circle cx="49" cy="42" r="9" fill="${f.blau}"/><path d="M34 68c0-9 7-15 15-15s15 6 15 15z" fill="${f.blau}"/>
+      <circle cx="151" cy="42" r="9" fill="${f.orange}"/><path d="M136 68c0-9 7-15 15-15s15 6 15 15z" fill="${f.orange}"/>
+      <path d="M92 49h16M100 41l8 8-8 8" stroke="${f.hell}" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  }
+  if (art === 'schweigen') {
+    return `<svg viewBox="0 0 200 90" role="img" aria-label="Nicht sprechen">
+      <circle cx="100" cy="45" r="30" fill="none" stroke="${f.hell}" stroke-width="2.5"/>
+      <path d="M88 40c0-7 5-12 12-12s12 5 12 12v8c0 7-5 12-12 12s-12-5-12-12z" fill="${f.hell}" opacity=".85"/>
+      <path d="M80 46c0 11 9 20 20 20s20-9 20-20" stroke="${f.hell}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M74 19l52 52" stroke="#e2664f" stroke-width="5" stroke-linecap="round"/>
+    </svg>`;
+  }
+  if (art === 'wuerfel') {
+    const w = (x, farbe, augen) => `<g transform="translate(${x} 24)">
+      <rect width="34" height="34" rx="7" fill="${farbe}"/>
+      ${augen.map(([cx, cy]) => `<circle cx="${cx}" cy="${cy}" r="3.4" fill="#0b1220"/>`).join('')}</g>`;
+    return `<svg viewBox="0 0 200 90" role="img" aria-label="Blaue und orange Würfel">
+      ${w(14, f.blau, [[10, 10], [24, 24]])}${w(54, f.blau, [[10, 10], [17, 17], [24, 24]])}
+      ${w(112, f.orange, [[10, 10], [24, 10], [10, 24], [24, 24]])}${w(152, f.orange, [[17, 17]])}
+      <path d="M100 20v50" stroke="${f.dunkel}" stroke-width="2" stroke-dasharray="4 5"/>
+    </svg>`;
+  }
+  if (art === 'panel') {
+    return `<svg viewBox="0 0 200 90" role="img" aria-label="Gelegte Würfel liegen offen">
+      <rect x="12" y="18" width="176" height="56" rx="10" fill="#131c2b" stroke="${f.dunkel}" stroke-width="2"/>
+      <rect x="24" y="30" width="30" height="30" rx="6" fill="${f.blau}"/>
+      <circle cx="39" cy="45" r="3.5" fill="#0b1220"/>
+      <rect x="64" y="30" width="30" height="30" rx="6" fill="${f.orange}"/>
+      <circle cx="72" cy="38" r="3.5" fill="#0b1220"/><circle cx="86" cy="52" r="3.5" fill="#0b1220"/>
+      <rect x="108" y="30" width="30" height="30" rx="6" fill="none" stroke="${f.dunkel}" stroke-width="2" stroke-dasharray="4 4"/>
+      <rect x="146" y="30" width="30" height="30" rx="6" fill="none" stroke="${f.dunkel}" stroke-width="2" stroke-dasharray="4 4"/>
+      <circle cx="160" cy="12" r="7" fill="none" stroke="${f.hell}" stroke-width="2"/>
+      <path d="M157 12l2.5 2.5 4.5-5" stroke="${f.hell}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>`;
+  }
+  if (art === 'pflicht') {
+    return `<svg viewBox="0 0 200 90" role="img" aria-label="Ruder und Schub">
+      <rect x="16" y="20" width="78" height="24" rx="6" fill="${f.blau}" opacity=".2" stroke="${f.blau}" stroke-width="2"/>
+      <rect x="106" y="20" width="78" height="24" rx="6" fill="${f.orange}" opacity=".2" stroke="${f.orange}" stroke-width="2"/>
+      <rect x="16" y="52" width="78" height="24" rx="6" fill="${f.blau}" opacity=".2" stroke="${f.blau}" stroke-width="2"/>
+      <rect x="106" y="52" width="78" height="24" rx="6" fill="${f.orange}" opacity=".2" stroke="${f.orange}" stroke-width="2"/>
+      <text x="55" y="37" fill="${f.hell}" font-size="12" font-family="sans-serif" text-anchor="middle">RUDER</text>
+      <text x="145" y="37" fill="${f.hell}" font-size="12" font-family="sans-serif" text-anchor="middle">RUDER</text>
+      <text x="55" y="69" fill="${f.hell}" font-size="12" font-family="sans-serif" text-anchor="middle">SCHUB</text>
+      <text x="145" y="69" fill="${f.hell}" font-size="12" font-family="sans-serif" text-anchor="middle">SCHUB</text>
+    </svg>`;
+  }
+  if (art === 'sinken') {
+    return `<svg viewBox="0 0 200 90" role="img" aria-label="Sinkflug">
+      <path d="M16 16 L176 70" stroke="${f.dunkel}" stroke-width="2" stroke-dasharray="5 5"/>
+      <path d="M12 78h176" stroke="${f.hell}" stroke-width="2"/>
+      ${[0, 1, 2, 3].map((i) => `<text x="${30 + i * 46}" y="${30 + i * 15}" fill="${f.orange}" font-size="10" font-family="monospace">${8 - i * 2}000</text>`).join('')}
+      <g transform="translate(150 56) rotate(18)"><path d="M0 0l-22 -6 6 6 -6 6z" fill="${f.hell}"/></g>
+    </svg>`;
+  }
+  return `<svg viewBox="0 0 200 90" role="img" aria-label="Landebahn">
+    <rect x="12" y="30" width="176" height="34" rx="6" fill="#1b2637" stroke="${f.dunkel}" stroke-width="2"/>
+    ${[0, 1, 2, 3, 4].map((i) => `<rect x="${28 + i * 34}" y="45" width="18" height="4" rx="2" fill="${f.orange}"/>`).join('')}
+    <g transform="translate(40 22)"><path d="M0 0l24 6 -6 -6 6 -6z" fill="${f.hell}"/></g>
+  </svg>`;
+}
+/* ------------------------------------------------------------- Zwei Geräte */
+
+function kopplungAbbrechen() {
+  ui.kopplung?.scannerStoppen?.();
+  ui.funk?.schliessen();
+  ui.funk = null;
+  ui.kopplung = null;
+  ui.modus = 'lokal';
+  ui.meinIndex = PILOT;
+  ui.gastgeber = true;
+  render();
+}
+
+async function kopplungStarten(gastgeber, rolle) {
+  ui.modus = 'online';
+  ui.gastgeber = gastgeber;
+  ui.meinIndex = rolle;
+  ui.kopplung = { schritt: 'moment', gastgeber, hinweis: '', fehler: '' };
+  render();
+
+  ui.funk = funkAufbauen({
+    gastgeber,
+    aufZustand: (text, verbunden) => {
+      if (verbunden) return verbindungSteht();
+      if (ui.kopplung && ui.kopplung.schritt !== 'scannen') {
+        ui.kopplung.hinweis = text;
+        render();
+      }
+      return undefined;
+    },
+    aufNachricht: nachrichtVerarbeiten,
+  });
+
+  if (gastgeber) {
+    ui.kopplung.code = await ui.funk.eigenerCode();
+    ui.kopplung.schritt = 'zeigen';
+  } else {
+    ui.kopplung.schritt = 'scannen';
+  }
+  render();
+}
+
+async function fremdenCodeAnnehmen(code) {
+  const k = ui.kopplung;
+  try {
+    await ui.funk.codeLesen(code);
+    if (!ui.kopplung) return;                 // war schon verbunden
+    if (!k.gastgeber) {
+      ui.kopplung.code = await ui.funk.eigenerCode();
+      ui.kopplung.schritt = 'zeigen';
+    } else {
+      ui.kopplung.schritt = 'warten';
+    }
+    k.fehler = '';
+  } catch (fehler) {
+    if (!ui.kopplung) return;
+    k.fehler = fehler.message || 'Der Code passt nicht.';
+  }
+  render();
+}
+
+function verbindungSteht() {
+  ui.kopplung?.scannerStoppen?.();
+  ui.kopplung = null;
+  if (ui.gastgeber) {
+    spiel = neuesSpiel(ui.flughafen, ui.namen);
+    ui.gewaehlt = null;
+    ui.funk?.senden({ typ: 'rollen', meinIndex: gastIndex(), namen: ui.namen });
+    standSenden();
+  }
+  render();
+}
+
+function nachrichtVerarbeiten(m) {
+  if (m.typ === 'rollen' && !ui.gastgeber) {
+    ui.meinIndex = m.meinIndex === KOPILOT ? KOPILOT : PILOT;
+    ui.namen = Array.isArray(m.namen) ? m.namen : ui.namen;
+    return;
+  }
+  if (m.typ === 'stand' && !ui.gastgeber) {
+    // Die Auswahl überlebt, solange die eigenen Würfel unverändert viele sind
+    // (Kaffee ändert nur den Wert) — sonst zeigt sie ins Leere.
+    const vorher = spiel ? spiel.wuerfel[ui.meinIndex].length : -1;
+    spiel = m.spiel;
+    if (spiel.wuerfel[ui.meinIndex].length !== vorher) ui.gewaehlt = null;
+    render();
+    return;
+  }
+  if (m.typ === 'aktion' && ui.gastgeber && spiel) {
+    if (!AKTIONEN[m.name]) return;
+    const args = m.args || [];
+    // Der Gast darf nur für sich selbst handeln.
+    if ((m.name === 'setzen' || m.name === 'kaffeeNutzen') && args[0] !== gastIndex()) return;
+    AKTIONEN[m.name](spiel, ...args);
+    standSenden();
+    render();
+  }
+}
+
+/**
+ * Kopplung über die Webseite: kein gemeinsames WLAN, keine Kamera. Der Server
+ * hält nur einen Raum mit kurzem Code offen und reicht Nachrichten durch.
+ */
+async function netzStarten(gastgeber, rolle, code) {
+  ui.modus = 'online';
+  ui.gastgeber = gastgeber;
+  ui.meinIndex = rolle;
+  ui.kopplung = { schritt: 'raum', gastgeber, ueberNetz: true, code: '', hinweis: '', fehler: '' };
+  render();
+
+  ui.funk = netzAufbauen({
+    gastgeber,
+    code,
+    aufZustand: (text, verbunden) => {
+      if (verbunden) return verbindungSteht();
+      if (ui.kopplung) { ui.kopplung.hinweis = text; render(); }
+      return undefined;
+    },
+    aufNachricht: nachrichtVerarbeiten,
+    aufCode: (c) => { if (ui.kopplung) { ui.kopplung.code = c; render(); } },
+  });
+
+  try {
+    await ui.funk.bereit;
+  } catch (fehler) {
+    if (!ui.kopplung) return;
+    ui.kopplung.fehler = fehler.message || 'Das hat nicht geklappt.';
+    ui.kopplung.schritt = gastgeber ? 'raum' : 'code';
+    render();
+  }
+}
+
+function renderKopplung() {
+  const k = ui.kopplung;
+
+  if (k.schritt === 'rolle') {
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>Auf zwei Handys</h2>
+        <p>Beide Geräte müssen im <strong>selben WLAN oder Hotspot</strong> sein. Zum Koppeln
+           zeigt ihr euch gegenseitig einen QR-Code — danach läuft alles direkt zwischen den
+           Handys, ganz ohne Internet.</p>
+        <p>Für Sky Team ist das die richtige Art zu spielen: <strong>jeder sieht nur seine
+           eigenen Würfel</strong>, so wie hinter dem Sichtschirm am Tisch.</p>
+        ${netzMoeglich() ? `
+        <div class="knopfsaeule">
+          <button class="btn btn--bernstein" id="netzPilot">Raum öffnen — ich bin Pilot</button>
+          <button class="btn btn--bernstein" id="netzKopilot">Raum öffnen — ich bin Kopilot</button>
+          <button class="btn btn--geist" id="netzGast">Mit Code beitreten</button>
+        </div>
+        <details class="codeklappe"><summary>Ohne Internet: per QR im selben WLAN</summary>
+        <div class="knopfsaeule">
+          <button class="btn btn--geist" id="alsPilot">QR · ich bin Pilot, führe</button>
+          <button class="btn btn--geist" id="alsKopilot">QR · ich bin Kopilot, führe</button>
+          <button class="btn btn--geist" id="alsGast">QR · ich steige zu</button>
+        </div></details>
+        <div class="knopfsaeule">
+          <button class="btn btn--leise" id="zurueck">Doch an einem Handy</button>
+        </div>` : `
+        <div class="knopfsaeule">
+          <button class="btn btn--bernstein" id="alsPilot">Ich bin Pilot — dieses Handy führt</button>
+          <button class="btn btn--bernstein" id="alsKopilot">Ich bin Kopilot — dieses Handy führt</button>
+          <button class="btn btn--geist" id="alsGast">Ich steige zu — anderes Handy führt</button>
+          <button class="btn btn--leise" id="zurueck">Doch an einem Handy</button>
+        </div>`}
+        <p class="hinweiszeile">Wer führt, rechnet und würfelt. Die Rolle des anderen ergibt
+           sich automatisch.</p>
+      </div></div></div>`;
+    app.querySelector('#netzPilot')?.addEventListener('click', () => netzStarten(true, PILOT));
+    app.querySelector('#netzKopilot')?.addEventListener('click', () => netzStarten(true, KOPILOT));
+    app.querySelector('#netzGast')?.addEventListener('click', () => {
+      ui.kopplung = { schritt: 'code', gastgeber: false, ueberNetz: true, code: '', fehler: '' };
+      render();
+    });
+    app.querySelector('#alsPilot').onclick = () => kopplungStarten(true, PILOT);
+    app.querySelector('#alsKopilot').onclick = () => kopplungStarten(true, KOPILOT);
+    app.querySelector('#alsGast').onclick = () => kopplungStarten(false, KOPILOT);
+    app.querySelector('#zurueck').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'code') {
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>Code eingeben</h2>
+        <p>Auf dem anderen Handy steht ein fünfstelliger Code. Tipp ihn hier ein.</p>
+        <input class="feld feld--code" id="raumcode" maxlength="5" autocapitalize="characters"
+          autocomplete="off" spellcheck="false" placeholder="ABCDE" value="${esc(k.code || '')}">
+        ${k.fehler ? `<div class="hinweis hinweis--warn">${esc(k.fehler)}</div>` : ''}
+        <div class="knopfsaeule">
+          <button class="btn btn--bernstein" id="beitreten">Mitspielen</button>
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+    const feld = app.querySelector('#raumcode');
+    feld.focus();
+    app.querySelector('#beitreten').onclick = () => {
+      const wert = feld.value.trim().toUpperCase();
+      if (wert.length < 4) { k.fehler = 'Der Code hat fünf Zeichen.'; render(); return; }
+      netzStarten(false, KOPILOT, wert);
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'raum') {
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>${k.gastgeber ? 'Dein Raum steht' : 'Verbinde …'}</h2>
+        ${k.gastgeber
+          ? `<p>Gib diesen Code an das andere Handy. Dort auf dieser Seite
+               <b>„Mit Code beitreten“</b> wählen und eintippen.</p>
+             <div class="raumcode">${esc(k.code || '·····')}</div>
+             <p class="hinweiszeile">Ihr müsst <b>nicht</b> im selben WLAN sein — das geht
+               von überall, solange beide Handys online sind.</p>`
+          : `<p>${esc(k.hinweis || 'Der Raum wird gesucht …')}</p>`}
+        ${k.fehler ? `<div class="hinweis hinweis--warn">${esc(k.fehler)}</div>` : ''}
+        <div class="knopfsaeule">
+          ${k.gastgeber && k.code
+            ? '<button class="btn btn--geist" id="codeTeilen">Code weitergeben</button>' : ''}
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    app.querySelector('#codeTeilen')?.addEventListener('click', async (e) => {
+      const text = `Spielen? Geh auf ${location.href} und tipp den Code ${k.code} ein.`;
+      try {
+        if (navigator.share) await navigator.share({ text });
+        else { await navigator.clipboard.writeText(text); e.currentTarget.textContent = 'Kopiert'; }
+      } catch { /* abgebrochen */ }
+    });
+    return;
+  }
+
+  if (k.schritt === 'moment') {
+    app.innerHTML = `<div class="screen"><div class="scroll"><div class="blatt">
+      <h2>Einen Moment</h2><p>Verbindungsdaten werden vorbereitet …</p></div></div></div>`;
+    return;
+  }
+
+  if (k.schritt === 'warten') {
+    app.innerHTML = `<div class="screen"><div class="scroll"><div class="blatt">
+      <h2>Verbinde …</h2>
+      <p>${esc(k.hinweis || 'Die Handys suchen sich gerade.')}</p>
+      <div class="hinweis">Dauert es länger als ein paar Sekunden, blockiert der Hotspot
+        vermutlich den direkten Weg. Dann hilft nur: beide ins gleiche WLAN — oder doch an
+        einem Handy spielen.</div>
+      <div class="knopfsaeule"><button class="btn btn--geist" id="abbruch">Abbrechen</button></div>
+    </div></div></div>`;
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'zeigen') {
+    const weiterText = k.gastgeber ? 'Weiter — jetzt den anderen Code scannen' : 'Fertig, warte auf Verbindung';
+    app.innerHTML = `
+      <div class="screen"><div class="scroll"><div class="blatt">
+        <h2>${k.gastgeber ? 'Zeig diesen Code' : 'Jetzt du zurück'}</h2>
+        <p>${k.gastgeber
+          ? 'Die andere Person scannt ihn mit „Ich steige zu“.'
+          : 'Halt den Code dem führenden Handy hin — es scannt ihn.'}</p>
+        <div class="qrfeld"><canvas id="qr" width="720" height="720"></canvas></div>
+        <details class="codeklappe">
+          <summary>Kamera streikt? Code als Text</summary>
+          <textarea class="codefeld" id="raus" readonly>${esc(k.code || '')}</textarea>
+          <button class="btn btn--geist" id="kopieren">Kopieren</button>
+        </details>
+        <div class="knopfsaeule">
+          <button class="btn btn--bernstein" id="weiterKoppeln">${weiterText}</button>
+          <button class="btn btn--leise" id="abbruch">Abbrechen</button>
+        </div>
+      </div></div></div>`;
+
+    try {
+      qrZeichnen(app.querySelector('#qr'), k.code, { hell: '#e9eff7', dunkel: '#0b1220' });
+    } catch {
+      app.querySelector('.qrfeld').textContent = 'Code zu lang für einen QR — nimm den Textcode.';
+    }
+    app.querySelector('#kopieren').onclick = async (e) => {
+      try { await navigator.clipboard.writeText(k.code); e.currentTarget.textContent = 'Kopiert'; }
+      catch { app.querySelector('#raus').select(); }
+    };
+    app.querySelector('#weiterKoppeln').onclick = () => {
+      ui.kopplung.schritt = k.gastgeber ? 'scannen' : 'warten';
+      ui.kopplung.scannerVersucht = false;
+      render();
+    };
+    app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  // schritt === 'scannen'
+  app.innerHTML = `
+    <div class="screen"><div class="scroll"><div class="blatt">
+      <h2>Code scannen</h2>
+      <p>Halte die Kamera auf den Code des anderen Handys.</p>
+      <div class="scanfenster"><video id="kamera" muted playsinline></video></div>
+      ${k.fehler ? `<div class="hinweis hinweis--warn">${esc(k.fehler)}</div>` : ''}
+      <details class="codeklappe" ${scannerMoeglich() ? '' : 'open'}>
+        <summary>Kamera streikt? Code eintippen oder einfügen</summary>
+        <textarea class="codefeld" id="rein" placeholder="ST1O|…"></textarea>
+        <button class="btn btn--geist" id="uebernehmen">Code übernehmen</button>
+      </details>
+      <div class="knopfsaeule"><button class="btn btn--leise" id="abbruch">Abbrechen</button></div>
+    </div></div></div>`;
+
+  app.querySelector('#uebernehmen').onclick = () => {
+    const code = app.querySelector('#rein').value.trim();
+    if (code) fremdenCodeAnnehmen(code);
+  };
+  app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+
+  if (!k.scannerVersucht) {
+    k.scannerVersucht = true;
+    scannerStarten(
+      app.querySelector('#kamera'),
+      (code) => { k.scannerStoppen = null; fremdenCodeAnnehmen(code); },
+      (fehler) => { k.fehler = fehler.message; render(); },
+    ).then((stoppen) => { if (ui.kopplung === k) k.scannerStoppen = stoppen; else stoppen(); });
+  }
+}
+
+/* ------------------------------------------------------------- Instrumente */
+
+/** Der Anflugstreifen: links ihr, rechts die Bahn, dazwischen fremde Maschinen. */
+function anflugHtml() {
+  const l = lage(spiel);
+  const zellen = [];
+  for (let i = 0; i <= spiel.anflugLaenge; i++) {
+    const hier = i === spiel.position;
+    const fremd = spiel.flugzeuge.includes(i);
+    const neu = spiel.neueMaschinen?.includes(i);
+    const bahn = i === spiel.anflugLaenge;
+    const verkehrsfeld = spiel.verkehr.includes(i);
+    zellen.push(`<div class="zelle ${bahn ? 'zelle--bahn' : ''} ${fremd ? 'zelle--fremd' : ''} ${
+      hier ? 'zelle--hier' : ''} ${neu ? 'zelle--neu' : ''}">
+      ${bahn ? '<span class="bahnstreifen"></span>' : ''}
+      ${verkehrsfeld && !fremd ? '<span class="verkehrszeichen">◆</span>' : ''}
+      ${fremd ? fliegerHtml('fremd') : ''}
+      ${hier ? fliegerHtml('eigen') : ''}
+    </div>`);
+  }
+  return `<div class="anflug">
+    <div class="anflugkopf">
+      <span>Anflug ${esc(l.flughafen.kuerzel)}</span>
+      <span>${l.rest === 0 ? 'auf der Bahn' : `noch ${l.rest} Feld${l.rest === 1 ? '' : 'er'}`}</span>
+    </div>
+    <div class="bahn">${zellen.join('')}</div>
+  </div>`;
+}
+
+function fliegerHtml(art) {
+  return `<svg class="flieger flieger--${art}" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M22.6 12c0 .62-.47 1.14-1.09 1.21l-6.4.75-4.3 6.86c-.16.26-.44.42-.75.42H8.5a.62.62 0 0 1-.6-.8l1.85-6.06-3.6.42-1.5 1.86a.62.62 0 0 1-.48.23h-.8a.62.62 0 0 1-.6-.79l.72-2.1-.72-2.1a.62.62 0 0 1 .6-.79h.8c.19 0 .37.09.48.23l1.5 1.86 3.6.42L7.9 7.56a.62.62 0 0 1 .6-.8h1.56c.31 0 .59.16.75.42l4.3 6.86 6.4.75c.62.07 1.09.59 1.09 1.21z" transform="translate(0 -2.6)"/>
+  </svg>`;
+}
+
+/** Die Fluglage als echter Zeiger, wie die Scheibe auf dem Brett. */
+function lageHtml() {
+  const grad = spiel.fluglage * 22;
+  const striche = [];
+  for (let v = -FLUGLAGE_GRENZE - 1; v <= FLUGLAGE_GRENZE + 1; v++) {
+    const a = (v * 22 - 90) * (Math.PI / 180);
+    const aussen = v === 0 ? 30 : 32;
+    const innen = v === 0 ? 18 : 24;
+    const gefahr = Math.abs(v) > FLUGLAGE_GRENZE;
+    striche.push(`<line x1="${50 + Math.cos(a) * innen}" y1="${40 + Math.sin(a) * innen}"
+      x2="${50 + Math.cos(a) * aussen}" y2="${40 + Math.sin(a) * aussen}"
+      class="strich ${gefahr ? 'strich--x' : ''} ${v === 0 ? 'strich--mitte' : ''}"/>`);
+  }
+  const wind = spiel.wind
+    ? `<span class="windzeichen">Wind +${windAufschlag(spiel)}</span>` : '';
+  return `<div class="instrument">
+    <div class="instrumentkopf"><span>Fluglage</span>${wind}</div>
+    <svg class="lagescheibe" viewBox="0 0 100 46" aria-label="Fluglage ${spiel.fluglage}">
+      <path d="M12 40 A38 38 0 0 1 88 40" class="bogen"/>
+      ${striche.join('')}
+      <g transform="rotate(${grad} 50 40)">
+        <path d="M50 40 L50 12" class="zeiger"/>
+        <path d="M44 16 L50 6 L56 16 Z" class="zeigerspitze"/>
+      </g>
+      <circle cx="50" cy="40" r="4" class="nabe"/>
+    </svg>
+    <div class="instrumentwert ${spiel.fluglage === 0 ? 'gut' : 'warn'}">
+      ${spiel.fluglage === 0 ? 'waagerecht' : `${spiel.fluglage > 0 ? '+' : ''}${spiel.fluglage} — muss auf 0`}
+    </div>
+  </div>`;
+}
+
+/** Die Geschwindigkeitsskala 2–12 mit den drei Markern. */
+function tempoHtml() {
+  const zellen = [];
+  for (let summe = 2; summe <= 12; summe++) {
+    const stufe = geschwindigkeit(spiel, summe);
+    zellen.push(`<span class="tempofeld t${stufe}">${summe}</span>`);
+  }
+  const pos = (wert) => `${((wert - 1) / 11) * 100}%`;
+  const marke = (wert, klasse, titel) => (wert >= 1 && wert <= 12
+    ? `<span class="skalenmarke ${klasse}" style="left:${pos(wert)}" title="${titel}"></span>` : '');
+  return `<div class="instrument">
+    <div class="instrumentkopf"><span>Tempo</span><span>Schubsumme</span></div>
+    <div class="tempoleiste">
+      <div class="tempofelder">${zellen.join('')}</div>
+      ${marke(spiel.aero.blau, 'marke--blau', 'Fahrwerk')}
+      ${marke(spiel.aero.orange, 'marke--orange', 'Klappen')}
+      ${marke(bremswert(spiel), 'marke--rot', 'Bremsen')}
+    </div>
+    <div class="tempolegende">
+      <span class="legendetitel">Felder</span>
+      <span><i class="pkt p0"></i>0</span><span><i class="pkt p1"></i>1</span>
+      <span><i class="pkt p2"></i>2</span>
+      <span class="bremsnote">Bremse hält ${bremswert(spiel)}</span>
+    </div>
+  </div>`;
+}
+
+/* ----------------------------------------------------------------- Cockpit */
+
+function feldHtml(feld, { klein = false } = {}) {
+  const wert = spiel.belegt[feld.id];
+  const ich = michSelbst();
+  const gewaehltWert = ui.gewaehlt !== null ? spiel.wuerfel[ich][ui.gewaehlt] : null;
+  const anbietbar = !ui.hinweis && gewaehltWert && ichBinDran() && feld.wer === ich
+    && passt(spiel, ich, feld.id, gewaehltWert);
+  const werte = feldWerte(feld);
+  const erledigt = feld.gruppe === 'fahrwerk' ? spiel.fahrwerk[feld.nr]
+    : feld.gruppe === 'klappe' ? spiel.klappen[feld.nr]
+      : feld.gruppe === 'bremse' ? spiel.bremsen[feld.nr] : false;
+  const gesperrt = !wert && !erledigt && !feldFrei(spiel, feld);
+  const lampe = ['fahrwerk', 'klappe', 'bremse'].includes(feld.gruppe);
+
+  const inhalt = wert
+    ? wuerfelHtml(wert, { wer: feld.wer, klasse: 'wuerfel--klein' })
+    : `<span class="anforderung">${werte ? werte.join('·') : '1–6'}</span>`;
+
+  const tag = anbietbar ? 'button' : 'div';
+  const seite = feld.wer === PILOT ? 'blau' : 'orange';
+  return `<${tag} class="slot slot--${seite} ${wert ? 'belegt' : ''} ${anbietbar ? 'offen' : ''}
+      ${gesperrt ? 'zu' : ''} ${erledigt ? 'gruen' : ''} ${klein ? 'slot--klein' : ''}"
+      ${anbietbar ? ` type="button" data-feld="${feld.id}"` : ''}
+      data-gruppe="${feld.gruppe}">
+    ${lampe ? `<span class="lampe ${erledigt ? 'lampe--gruen' : 'lampe--rot'}"></span>` : ''}
+    <span class="slotname">${esc(feld.titel)}</span>
+    ${inhalt}
+  </${tag}>`;
+}
+
+function gruppeHtml(titel, gruppe, ids, extra = '', klein = false) {
+  return `<section class="gruppe">
+    <button class="gruppentitel" type="button" data-lex="${gruppe}">
+      <span>${titel}</span>
+      ${extra ? `<span class="gruppenwert">${extra}</span>` : ''}
+      <span class="lexzeichen">?</span>
+    </button>
+    <div class="slots">${ids.map((id) => feldHtml(feldMit(id), { klein })).join('')}</div>
+  </section>`;
+}
+
+function cockpitHtml() {
+  const ich = michSelbst();
+  const anderer = ich === PILOT ? KOPILOT : PILOT;
+  const fahrwerkOffen = spiel.fahrwerk.filter((x) => !x).length;
+  const klappenOffen = spiel.klappen.filter((x) => !x).length;
+  const bremsen = spiel.bremsen.filter(Boolean).length;
+
+  const meineGruppen = ich === PILOT
+    ? gruppeHtml('Fahrwerk', 'fahrwerk', ['fahrwerk0', 'fahrwerk1', 'fahrwerk2'],
+      fahrwerkOffen ? `${3 - fahrwerkOffen}/3` : 'komplett')
+      + gruppeHtml('Bremsen', 'bremse', ['bremse0', 'bremse1', 'bremse2'], `${bremsen}/3`)
+      + gruppeHtml('Funk & Kaffee', 'funk', ['funkP', 'kaffeeP'])
+    : gruppeHtml('Landeklappen', 'klappe', ['klappe0', 'klappe1', 'klappe2', 'klappe3'],
+      klappenOffen ? `${4 - klappenOffen}/4` : 'komplett')
+      + gruppeHtml('Funk & Kaffee', 'funk', ['funkK1', 'funkK2', 'kaffeeK']);
+
+  const fremdIds = anderer === PILOT
+    ? ['fahrwerk0', 'fahrwerk1', 'fahrwerk2', 'bremse0', 'bremse1', 'bremse2', 'funkP', 'kaffeeP']
+    : ['klappe0', 'klappe1', 'klappe2', 'klappe3', 'funkK1', 'funkK2', 'kaffeeK'];
+
+  return `
+    <div class="pflichtband">
+      ${gruppeHtml('Ruder — Pflicht für beide', 'achse', ['achseP', 'achseK'])}
+      ${gruppeHtml('Schub — Pflicht für beide', 'motor', ['motorP', 'motorK'])}
+    </div>
+    <div class="meins">
+      <div class="bereichskopf bereichskopf--${ich === PILOT ? 'blau' : 'orange'}">
+        Deine Seite · ${ROLLE[ich]}</div>
+      ${meineGruppen}
+    </div>
+    <div class="fremds">
+      <div class="bereichskopf bereichskopf--fremd">
+        ${name(anderer)} · ${ROLLE[anderer]}</div>
+      <div class="slots">${fremdIds.map((id) => feldHtml(feldMit(id), { klein: true })).join('')}</div>
+    </div>`;
+}
+
+/* ------------------------------------------------------------- Fußleiste */
+
+function meineWuerfelHtml() {
+  const ich = michSelbst();
+  const wuerfel = spiel.wuerfel[ich] || [];
+  if (!wuerfel.length) return '<p class="ansage">Alle deine Würfel liegen.</p>';
+  return `<div class="wuerfelreihe">${wuerfel.map((w, i) => {
+    const nutzbar = ichBinDran() && moeglicheFelder(spiel, ich, w).length > 0;
+    return wuerfelHtml(w, {
+      wer: ich,
+      knopf: true,
+      klasse: `${ui.gewaehlt === i ? 'wuerfel--an' : ''} ${nutzbar ? '' : 'wuerfel--tot'}`,
+      attrs: ` data-w="${i}"`,
+    });
+  }).join('')}</div>`;
+}
+
+function fremdeWuerfelHtml() {
+  const anderer = michSelbst() === PILOT ? KOPILOT : PILOT;
+  const wuerfel = spiel.wuerfel[anderer] || [];
+  const zeigen = ui.modus === 'lokal' && ui.offen;
+  return `<div class="fremdreihe">
+    <span class="fremdlabel">${name(anderer)}</span>
+    ${wuerfel.length
+      ? wuerfel.map((w) => wuerfelHtml(zeigen ? w : 0, { wer: anderer, klasse: 'wuerfel--mini' })).join('')
+      : '<span class="fremdlabel">— fertig</span>'}
+  </div>`;
+}
+
+function werkzeugHtml() {
+  const ich = michSelbst();
+  const gewaehltDa = ui.gewaehlt !== null && spiel.wuerfel[ich][ui.gewaehlt];
+  const tassen = Array.from({ length: KAFFEE_MAX }, (_, i) =>
+    `<span class="tasse ${i < spiel.kaffee ? 'voll' : ''}">☕</span>`).join('');
+  const kannKaffee = spiel.kaffee > 0 && gewaehltDa && ichBinDran();
+  const kannNeuwurf = spiel.neuwurf > 0 && ichBinDran() && !ui.hinweis;
+  return `<div class="werkzeugleiste">
+    <span class="tassen" title="Kaffee">${tassen}</span>
+    ${kannKaffee
+      ? `<button class="btn btn--klein" id="kaffeeRunter" type="button">−1</button>
+         <button class="btn btn--klein" id="kaffeeHoch" type="button">+1</button>`
+      : `<span class="werkzeugtext">${spiel.kaffee
+        ? 'Würfel wählen, dann ±1' : 'Kaffeefeld füllt den Vorrat'}</span>`}
+    <span class="trenner"></span>
+    <button class="btn btn--klein" id="neuwurf" type="button" ${kannNeuwurf ? '' : 'disabled'}>
+      ⟳ Neuwurf ${spiel.neuwurf}/${NEUWURF_MARKEN}</button>
+  </div>`;
+}
+
+function ansage() {
+  const ich = michSelbst();
+  if (!ichBinDran()) return `<b>${name(spiel.dran)}</b> legt gerade. Warten.`;
+  if (ui.gewaehlt === null) return ratschlag(spiel, ich);
+  const wert = spiel.wuerfel[ich][ui.gewaehlt];
+  const felder = moeglicheFelder(spiel, ich, wert);
+  if (!felder.length) return `Die <b>${wert}</b> passt gerade nirgendwo hin. Anderen Würfel wählen.`;
+  const pflichtOffen = FELDER.filter((f) => f.pflicht && f.wer === ich && spiel.belegt[f.id] === undefined).length;
+  const rest = spiel.wuerfel[ich].length;
+  const eng = rest <= pflichtOffen ? ' <b>Ruder und Schub müssen noch bedient werden.</b>' : '';
+  return `Die <b>${wert}</b> passt auf ${felder.length} Feld${felder.length === 1 ? '' : 'er'}.${eng}`;
+}
+
+/* ------------------------------------------------------------- Hinweisband */
+
+function hinweisHtml() {
+  if (!ui.hinweis) return '';
+  return `<div class="lehrband">
+    <div class="lehrbandkopf"><span class="lehrezeichen">?</span>${esc(ui.hinweis.titel)}</div>
+    <p>${ui.hinweis.text}</p>
+    <button class="btn btn--klein" id="hinweisWeg" type="button">Verstanden</button>
+  </div>`;
+}
+
+function hinweisSuchen() {
+  if (ui.hinweis || ui.einweisung !== null || ui.overlay) return;
+  const ich = michSelbst();
+  const kontext = {
+    ich,
+    meinAchse: ich === PILOT ? 'achseP' : 'achseK',
+    fremdAchse: ich === PILOT ? 'achseK' : 'achseP',
+    meinMotor: ich === PILOT ? 'motorP' : 'motorK',
+  };
+  ui.hinweis = naechsterHinweis(spiel, kontext, ui.gesehen);
+}
+
+/* ------------------------------------------------------ Cockpit-Bildschirm */
+
+function renderCockpit() {
+  const l = lage(spiel);
+  const ich = michSelbst();
+
+  app.innerHTML = `
+    <div class="screen cockpit">
+      <header class="kopf">
+        <div class="titel">
+          <div class="ober">${l.flughafen.kuerzel} · ${esc(l.flughafen.name)}${
+            ui.modus === 'online' ? ' · zwei Geräte' : ''}</div>
+          <h1>${spiel.phase === 'setzen'
+            ? `${name(spiel.dran)} legt` : 'Briefing'}</h1>
+        </div>
+        <div class="werkzeuge">
+          <div class="hoehenfenster ${istLanderunde(spiel) ? 'letzte' : ''}">
+            <b>${l.hoehe}</b><small>Fuß · Runde ${l.runde}/${l.runden}</small>
+          </div>
+          <button class="werkzeug" id="btnMenue" aria-label="Menü">⋯</button>
+        </div>
+      </header>
+
+      <div class="scroll">
+        <div class="instrumente">
+          ${anflugHtml()}
+          <div class="instrumentpaar">${lageHtml()}${tempoHtml()}</div>
+        </div>
+        <div class="panel">${cockpitHtml()}</div>
+        <div class="platzhalter"></div>
+      </div>
+
+      <div class="fuss">
+        ${hinweisHtml()}
+        ${fremdeWuerfelHtml()}
+        ${meineWuerfelHtml()}
+        ${werkzeugHtml()}
+        <p class="ansage">${ansage()}</p>
+      </div>
+    </div>`;
+
+  app.querySelector('#btnMenue').onclick = () => { ui.overlay = 'menue'; render(); };
+  app.querySelector('#hinweisWeg')?.addEventListener('click', () => {
+    if (ui.hinweis) ui.gesehen.push(ui.hinweis.id);
+    ui.hinweis = null;
+    sichern();
+    render();
+  });
+  app.querySelectorAll('[data-lex]').forEach((b) => {
+    b.onclick = () => { ui.lexikon = b.dataset.lex; render(); };
+  });
+  app.querySelectorAll('[data-w]').forEach((b) => {
+    b.onclick = () => {
+      const i = Number(b.dataset.w);
+      ui.gewaehlt = ui.gewaehlt === i ? null : i;
+      buzz(6);
+      render();
+    };
+  });
+  app.querySelectorAll('[data-feld]').forEach((b) => {
+    b.onclick = () => {
+      const wert = spiel.wuerfel[ich][ui.gewaehlt];
+      buzz(12);
+      tun('setzen', ich, b.dataset.feld, wert);
+    };
+  });
+  app.querySelector('#kaffeeHoch')?.addEventListener('click', () => {
+    tun('kaffeeNutzen', ich, ui.gewaehlt, +1);
+  });
+  app.querySelector('#kaffeeRunter')?.addEventListener('click', () => {
+    tun('kaffeeNutzen', ich, ui.gewaehlt, -1);
+  });
+  app.querySelector('#neuwurf')?.addEventListener('click', () => {
+    if (!confirm('Neuwurf: Beide werfen alle noch nicht gelegten Würfel neu. Marke einsetzen?')) return;
+    buzz([10, 30, 10]);
+    tun('neuWuerfeln');
+  });
+}
+
+/* ---------------------------------------------------------------- Briefing */
+
+function renderBriefing() {
+  const l = lage(spiel);
+  const r = spiel.letzteRunde;
+  const neue = spiel.neueMaschinen || [];
+
+  const rueckblick = r
+    ? `<div class="rueckblick">
+        <div class="rzeile"><span>Ruder</span><span>${r.achseP} gegen ${r.achseK}
+          → Lage ${r.fluglage > 0 ? '+' : ''}${r.fluglage}</span></div>
+        <div class="rzeile"><span>Schub</span><span>${r.motorP} + ${r.motorK} = ${r.summe}${
+          r.wind ? ` +${r.wind} Wind = ${r.tempo}` : ''} → ${r.felder} Feld${r.felder === 1 ? '' : 'er'}</span></div>
+      </div>`
+    : `<p>Ihr sitzt im Anflug auf <b>${esc(l.flughafen.name)}</b>. ${l.flughafen.wind
+      ? 'Es weht von der Seite — solange ihr gerade fliegt, stört das nicht.'
+      : 'Ruhige Luft.'}</p>`;
+
+  const layer = document.createElement('div');
+  layer.className = 'overlay briefing';
+  layer.innerHTML = `
+    <div class="scroll"><div class="blatt">
+      <div class="lbl">Briefing · Runde ${l.runde} von ${l.runden}</div>
+      <h2>${l.runde === 1 ? 'Startklar?'
+        : istLanderunde(spiel) ? 'Letzte Runde — jetzt wird aufgesetzt'
+          : `Noch ${l.hoehe} Fuß`}</h2>
+      ${rueckblick}
+      ${neue.length
+        ? `<div class="hinweis hinweis--warn">Der Funkverkehr meldet
+            ${neue.length === 1 ? 'eine neue Maschine' : `${neue.length} neue Maschinen`}
+            im Anflug — ${neue.map((f) => `${f - spiel.position} Felder voraus`).join(', ')}.</div>`
+        : ''}
+      <div class="briefingzahlen">
+        <div><b>${l.rest}</b><small>bis zur Bahn</small></div>
+        <div><b>${l.offen.fahrwerk + l.offen.klappen}</b><small>Schalter offen</small></div>
+        <div><b>${l.offen.flugzeuge}</b><small>im Weg</small></div>
+      </div>
+      <p class="planzeile">${ratschlag(spiel, michSelbst())}</p>
+      <p class="hinweiszeile">Jetzt dürft ihr reden — ab dem Wurf nicht mehr.
+        Diese Runde eröffnet <b>${name(spiel.startspieler)}</b>.</p>
+      <div class="knopfsaeule">
+        <button class="btn btn--bernstein" id="wuerfeln">${WUERFEL_JE_RUNDE * 2} Würfel werfen</button>
+        <button class="btn btn--leise" id="briefingHilfe">Was ist was?</button>
+      </div>
+    </div></div>`;
+  app.appendChild(layer);
+  layer.querySelector('#wuerfeln').onclick = () => {
+    buzz([12, 30, 12]);
+    ui.halter = -1;
+    tun('wuerfeln');
+  };
+  layer.querySelector('#briefingHilfe').onclick = () => { ui.overlay = 'lexikon'; render(); };
+}
+
+/* --------------------------------------------------------------- Übergabe */
+
+function renderUebergabe(wer) {
+  const layer = document.createElement('div');
+  layer.className = 'overlay uebergabe';
+  layer.innerHTML = `
+    <div class="pfeil" aria-hidden="true">📱</div>
+    <div class="lbl">Handy weitergeben an</div>
+    <div class="name">${name(wer)}</div>
+    <p class="auftrag">${ROLLE[wer]} — leg einen deiner Würfel. Und sag nichts dabei.</p>
+    <button class="btn btn--bernstein" id="bereit">Ich hab's</button>`;
+  app.appendChild(layer);
+  layer.querySelector('#bereit').onclick = () => { ui.halter = wer; ui.gewaehlt = null; render(); };
+}
+
+/* ------------------------------------------------------------------- Ende */
+
+function renderEnde() {
+  const gewonnen = spiel.phase === 'gewonnen';
+  const l = lage(spiel);
+  const haken = (gut, text) => `<div class="pruefzeile ${gut ? 'ja' : 'nein'}">
+    <span class="haken">${gut ? '✓' : '✕'}</span><span>${text}</span></div>`;
+  const r = spiel.letzteRunde;
+  const tempo = r ? r.tempo : null;
+
+  app.innerHTML = `
+    <div class="screen"><div class="scroll"><div class="blatt">
+      <div class="endkopf ${gewonnen ? 'gut' : 'schlecht'}">
+        <div class="endzeichen">${gewonnen ? fliegerHtml('eigen') : '✕'}</div>
+        <div class="lbl">${l.flughafen.kuerzel} · ${esc(l.flughafen.name)}</div>
+        <h2>${gewonnen ? 'Gelandet' : 'Abgestürzt'}</h2>
+        <p class="endgrund">${esc(spiel.grund)}</p>
+      </div>
+
+      <div class="feldlabel">Die fünf Häkchen</div>
+      ${haken(spiel.position >= spiel.anflugLaenge, 'Auf der Landebahn')}
+      ${haken(spiel.fluglage === 0, 'Flugzeug waagerecht')}
+      ${haken(spiel.fahrwerk.every(Boolean) && spiel.klappen.every(Boolean),
+    `Fahrwerk ${spiel.fahrwerk.filter(Boolean).length}/3 und Klappen ${spiel.klappen.filter(Boolean).length}/4`)}
+      ${haken(spiel.flugzeuge.length === 0, 'Luftraum frei')}
+      ${haken(tempo !== null && tempo <= bremswert(spiel),
+    `Tempo${tempo !== null ? ` ${tempo}` : ''} unter Bremswert ${bremswert(spiel)}`)}
+
+      <div class="knopfsaeule">
+        <button class="btn btn--bernstein" id="nochmal">Nochmal ${esc(l.flughafen.name)}</button>
+        ${gewonnen && spiel.flughafen + 1 < FLUGHAEFEN.length
+          ? `<button class="btn btn--geist" id="weiterZiel">Weiter nach ${esc(FLUGHAEFEN[spiel.flughafen + 1].name)}</button>` : ''}
+        <button class="btn btn--leise" id="zumStart">Zum Start</button>
+      </div>
+    </div></div></div>`;
+
+  const neuStarten = (index) => {
+    ui.flughafen = index;
+    if (ui.modus === 'online') {
+      if (!ui.gastgeber) return;
+      spiel = neuesSpiel(index, ui.namen);
+      ui.gewaehlt = null;
+      standSenden();
+      render();
+      return;
+    }
+    spielAnlegen();
+  };
+
+  app.querySelector('#nochmal').onclick = () => neuStarten(spiel.flughafen);
+  app.querySelector('#weiterZiel')?.addEventListener('click', () => neuStarten(spiel.flughafen + 1));
+  app.querySelector('#zumStart').onclick = () => {
+    spiel = null;
+    try { localStorage.removeItem(KEY); } catch { /* egal */ }
+    render();
+  };
+}
+
+/* --------------------------------------------------------------- Overlays */
+
+function huelle(inhalt, klasse = '') {
+  const layer = document.createElement('div');
+  layer.className = `overlay ${klasse}`;
+  layer.innerHTML = `<div class="scroll"><div class="blatt">${inhalt}</div></div>`;
+  app.appendChild(layer);
+  return layer;
+}
+
+/** Ein einzelner Lexikoneintrag als Popup. */
+function renderLexikonEintrag() {
+  const e = lexikonFuer(ui.lexikon);
+  if (!e) { ui.lexikon = null; return; }
+  const l = huelle(`
+    <div class="lbl">Cockpit · was ist das?</div>
+    <h2>${e.titel}</h2>
+    <p class="werzeile">${e.wer}</p>
+    <p><b>${e.kurz}</b></p>
+    <p>${e.lang}</p>
+    <div class="knopfsaeule">
+      <button class="btn btn--bernstein" id="zu">Weiter</button>
+      <button class="btn btn--leise" id="alles">Alles nachschlagen</button>
+    </div>`, 'lexpop');
+  l.querySelector('#zu').onclick = () => { ui.lexikon = null; render(); };
+  l.querySelector('#alles').onclick = () => { ui.lexikon = null; ui.overlay = 'lexikon'; render(); };
+}
+
+function renderLexikon() {
+  const eintraege = LEXIKON.map((e) => `
+    <div class="lexzeile">
+      <div class="lexkopf"><b>${e.titel}</b><small>${e.wer}</small></div>
+      <p>${e.kurz}</p>
+      <p class="leise">${e.lang}</p>
+    </div>`).join('');
+  const l = huelle(`
+    <div class="lesbar">
+      <h2>Was ist was im Cockpit</h2>
+      <p>Neunzehn Felder, zwei Seiten. Jedes Feld nimmt nur Würfel der eigenen Farbe.</p>
+      ${eintraege}
+      <div class="knopfsaeule">
+        <button class="btn btn--geist" id="einweisung">Einweisung nochmal ansehen</button>
+        <button class="btn btn--bernstein" id="zu">Zurück</button>
+      </div>
+    </div>`);
+  l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
+  l.querySelector('#einweisung').onclick = () => { ui.overlay = null; ui.einweisung = 0; render(); };
+}
+
+function renderRegeln() {
+  const l = huelle(`
+    <div class="lesbar">
+      <h2>Sky Team — alle Regeln</h2>
+      <p>Ihr spielt <strong>zusammen gegen das Spiel</strong>. Einer ist Pilot, einer Kopilot.
+         Gewonnen habt ihr nur gemeinsam — und verloren auch.</p>
+
+      <h3>Die eine große Regel</h3>
+      <p>Während einer Runde wird <strong>nicht geredet</strong>. Keine Zahlen, keine Andeutungen.
+         Reden dürft ihr nur im Briefing zwischen den Runden. Jeder sieht nur seine eigenen
+         Würfel — <strong>gelegte</strong> Würfel sehen beide.</p>
+
+      <h3>Eine Runde</h3>
+      <ol>
+        <li>Briefing: absprechen, was ihr vorhabt.</li>
+        <li>Beide werfen <strong>vier Würfel</strong>, verdeckt voreinander.</li>
+        <li>Abwechselnd legt jeder <strong>einen Würfel</strong> auf ein Feld seiner Seite.
+            Wer eröffnet, wechselt von Runde zu Runde.</li>
+        <li>Sind alle Würfel gelegt: Ruder auswerten, dann Schub. Das Flugzeug sinkt
+            <strong>1000 Fuß</strong>.</li>
+      </ol>
+
+      <h3>Die Felder</h3>
+      ${LEXIKON.map((e) => `<div class="regelzeile">
+        <b>${e.titel}</b> <small>${e.wer}</small><br>${e.kurz}</div>`).join('')}
+
+      <h3>Fremder Verkehr</h3>
+      <p>Fremde Maschinen stehen auf Feldern eures Anflugs. Fliegt ihr auf ihr Feld,
+         ist das Spiel sofort vorbei. An manchen Flughäfen rollt zu Rundenbeginn ein
+         <strong>Verkehrswürfel</strong> und setzt neue Maschinen ein. Alle müssen weg,
+         bevor ihr landen dürft.</p>
+
+      <h3>Neuwurf</h3>
+      <p>Zweimal pro Flug dürft ihr <strong>alle</strong> noch nicht gelegten Würfel neu
+         werfen — beide Seiten gleichzeitig.</p>
+
+      <h3>Die Landung</h3>
+      <p>In der letzten Runde muss alles zusammenpassen:</p>
+      <ul>
+        <li>Ihr steht genau auf der Landebahn.</li>
+        <li>Die Fluglage ist <strong>genau 0</strong>.</li>
+        <li>Fahrwerk und Klappen sind komplett draußen.</li>
+        <li>Kein fremdes Flugzeug mehr im Anflug.</li>
+        <li>Das Tempo ist <strong>höchstens so hoch wie euer Bremswert</strong>
+            (${BREMSWERTE.join(' → ')}).</li>
+      </ul>
+      <p>Rechnet damit, dass ihr in der Landerunde <strong>stehen bleiben</strong> müsst:
+         So wenig Schub, wie die Bremsen verlangen, bewegt das Flugzeug ohnehin nicht mehr.
+         Ihr müsst also <strong>vorher</strong> an der Bahn ankommen.</p>
+
+      <h3>An einem Handy</h3>
+      <p>Das Gerät wandert nach jedem gelegten Würfel weiter — so bleiben die Würfel geheim.
+         Wer das nicht mag, schaltet beim Start <em>„Würfel offen zeigen“</em> ein.</p>
+      <p>Auf <strong>zwei Handys</strong> braucht ihr nichts weiterzureichen: jeder sieht nur
+         seine vier Würfel, das ganze Cockpit bleibt beiden sichtbar.</p>
+
+      <div class="knopfsaeule"><button class="btn btn--bernstein" id="zu">Verstanden</button></div>
+    </div>`);
+  l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
+}
+
+function renderMenue() {
+  const l = huelle(`
+    <h2>Menü</h2>
+    <div class="knopfsaeule">
+      <button class="btn btn--geist" id="lexikon">Was ist was? — Cockpit erklärt</button>
+      <button class="btn btn--geist" id="einweisung">Einweisung nochmal</button>
+      <button class="btn btn--geist" id="regeln">Alle Regeln</button>
+      <button class="btn btn--geist" id="datei">Spiel als Datei sichern</button>
+      <button class="btn btn--bernstein" id="weitergeben">Aufs zweite Handy schicken</button>
+      <button class="btn btn--warn" id="abbruch">Flug abbrechen</button>
+      <button class="btn btn--bernstein" id="zu">Weiterfliegen</button>
+    </div>
+    <p class="hinweiszeile">Der Spielstand liegt auf diesem Gerät — die App darf zwischendurch
+      zugehen.</p>`);
+
+  l.querySelector('#lexikon').onclick = () => { ui.overlay = 'lexikon'; render(); };
+  l.querySelector('#einweisung').onclick = () => { ui.overlay = null; ui.einweisung = 0; render(); };
+  l.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
+  l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
+  l.querySelector('#weitergeben').onclick = async (e) => {
+    const knopf = e.currentTarget;
+    knopf.disabled = true;
+    knopf.textContent = 'Teilen-Menü …';
+    const erg = await spielTeilen('skyteam-css', 'skyteam-js', 'SkyTeam.html', 'Sky Team');
+    knopf.textContent = TEILEN_TEXT[erg];
+    knopf.disabled = erg === 'ok';
+  };
+  l.querySelector('#datei').onclick = async (e) => {
+    const knopf = e.currentTarget;
+    knopf.disabled = true;
+    knopf.textContent = 'Wird gespeichert …';
+    const erg = await seiteAlsDateiSichern('skyteam-css', 'skyteam-js', 'SkyTeam.html', 'Sky Team');
+    knopf.textContent = SICHER_TEXT[erg].replace('%NAME%', 'SkyTeam.html');
+    knopf.disabled = erg === 'ok' || erg === 'txt';
+  };
+  l.querySelector('#abbruch').onclick = () => {
+    if (!confirm('Laufenden Flug verwerfen?')) return;
+    spiel = null;
+    ui.overlay = null;
+    try { localStorage.removeItem(KEY); } catch { /* egal */ }
+    render();
+  };
+}
+
+/* ----------------------------------------------------------------- Render */
+
+function render() {
+  if (spiel && spiel.phase === 'setzen') hinweisSuchen();
+
+  if (ui.kopplung) {
+    renderKopplung();
+  } else if (!spiel && ui.modus === 'online') {
+    app.innerHTML = `<div class="screen"><div class="scroll"><div class="blatt">
+      <h2>Verbunden</h2><p>Warte auf das Briefing vom anderen Handy …</p></div></div></div>`;
+  } else if (!spiel) {
+    renderStart();
+  } else if (spiel.phase === 'gewonnen' || spiel.phase === 'verloren') {
+    renderEnde();
+  } else {
+    renderCockpit();
+    if (ui.einweisung === null && !ui.overlay && !ui.lexikon) {
+      if (spiel.phase === 'briefing') { renderBriefing(); return; }
+      // Ein Handy, verdeckte Würfel: vor jedem Zug wird weitergereicht.
+      if (ui.modus === 'lokal' && !ui.offen && spiel.dran !== ui.halter) {
+        renderUebergabe(spiel.dran);
+        return;
+      }
+    }
+  }
+
+  if (ui.lexikon) { renderLexikonEintrag(); return; }
+  if (ui.overlay === 'regeln') renderRegeln();
+  else if (ui.overlay === 'lexikon') renderLexikon();
+  else if (ui.overlay === 'menue') renderMenue();
+  if (ui.einweisung !== null) renderEinweisung();
+}
+
+const gespeichert = laden();
+if (gespeichert) {
+  spiel = gespeichert.spiel;
+  ui.offen = !!gespeichert.offen;
+  ui.gesehen = Array.isArray(gespeichert.gesehen) ? gespeichert.gesehen : [];
+  ui.namen = spiel.namen;
+  ui.flughafen = spiel.flughafen;
+}
+render();
+
+})();
+</script>
+</body>
+</html>

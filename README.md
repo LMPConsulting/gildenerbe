@@ -1,3 +1,22 @@
+> **Auch in diesem Repo** — vier eigenständige Reisespiele, unabhängig von Gildenerbe,
+> jeweils als eine einzige HTML-Datei und komplett offline:
+>
+> - [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx* für zwei bis vier Leute an einem Handy.
+> - [`dreikampf/`](dreikampf/README.md) — *Wissen · Wahrheit · Wagnis*, ein Duell zu zweit mit
+>   Punktekonto über den ganzen Urlaub.
+> - [`cabo/`](cabo/README.md) — das Kartenspiel *Cabo*: vier verdeckte Karten, Peek, Spy, Swap.
+>   Wahlweise an einem Handy oder auf zweien, per QR gekoppelt ohne Server.
+> - [`skyteam/`](skyteam/README.md) — *Sky Team*: Pilot und Kopilot landen kooperativ ein
+>   Flugzeug, schweigend, mit acht Würfeln pro Runde. Ebenfalls auf einem oder zwei Handys.
+>
+> **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle vier plus eine Startseite.
+> Mit `--ohne-server` entsteht eine Fassung für reine Dateiablagen (GitHub Pages) — dort
+> koppeln sich zwei Handys per QR im selben WLAN. Ohne den Schalter kommt der Raumcode
+> über das Internet dazu; dafür braucht es die Durchreiche aus
+> `LMPConsulting/docmatch` unter `spiele/`. Der Arbeitsablauf
+> [`.github/workflows/spiele-pages.yml`](.github/workflows/spiele-pages.yml) veröffentlicht
+> die serverlose Fassung automatisch auf GitHub Pages.
+
 # Gildenerbe (Guild Legacy)
 
 Ein aktives Action-RPG-Roguelite mit Automatisierungs-Meta-Progression im Classic-MMO-Stil.

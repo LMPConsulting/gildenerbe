@@ -8,7 +8,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "qwixx:build": "node qwixx/build.mjs",
+    "dreikampf:build": "node dreikampf/build.mjs",
+    "cabo:build": "node cabo/build.mjs",
+    "skyteam:build": "node skyteam/build.mjs",
+    "spiele:web": "node scripts/webseite.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.0",

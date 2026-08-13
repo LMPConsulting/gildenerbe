@@ -1,0 +1,393 @@
+/* Dreikampf — „Wiener Abend“: tiefes Aubergine als Grund, die drei Disziplinen
+   als Karten in Juwelenfarben. Bewusst einthemig, alles explizit gefärbt. */
+
+:root {
+  --ground: #17111c;
+  --ground-2: #0e0a12;
+  --panel: #221a29;
+  --panel-2: #2b2134;
+  --hairline: #3b2d46;
+  --fog: #b1a2bd;
+  --fog-dim: #7a6a87;
+  --paper: #f2edea;
+  --gold: #e2b459;
+  --gold-dim: #8e6f2e;
+
+  --wissen: #0e6f77;
+  --wissen-hell: #14929c;
+  --wahrheit: #a83a5c;
+  --wahrheit-hell: #c94f74;
+  --wagnis: #cf8f1a;
+  --wagnis-hell: #eaa92c;
+
+  --gut: #3fa46a;
+  --schlecht: #cf5a4e;
+
+  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+
+  --r-md: 14px;
+  --r-lg: 22px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+
+body {
+  background: var(--ground);
+  background-image:
+    radial-gradient(130% 60% at 50% -8%, #2c1f36 0%, rgba(44, 31, 54, 0) 62%),
+    linear-gradient(180deg, var(--ground) 0%, var(--ground-2) 100%);
+  background-attachment: fixed;
+  color: var(--fog);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- Gerüst ---------- */
+
+#app { min-height: 100dvh; display: flex; flex-direction: column; }
+.screen { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; }
+/* Flex-Spalte, damit die Bühne den Rest füllt und die Karte mittig sitzt. */
+.scroll {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column;
+}
+.wrap { width: 100%; max-width: 560px; margin-inline: auto; padding: 0 18px; }
+
+.kopf {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(var(--safe-t) + 12px) 18px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+.kopf .titel { flex: 1; min-width: 0; }
+.kopf .ober {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--fog-dim); font-weight: 700;
+}
+.kopf h1 {
+  margin: 0; font-family: var(--font-display); font-weight: 400;
+  font-size: 25px; letter-spacing: -0.01em; color: var(--paper);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.werkzeuge { display: flex; gap: 7px; }
+.werkzeug {
+  width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+  background: var(--panel); border: 1px solid var(--hairline); color: var(--fog); font-size: 15px;
+}
+
+/* ---------- Knöpfe ---------- */
+
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; padding: 16px 18px; border-radius: var(--r-md);
+  font-weight: 650; font-size: 16px; letter-spacing: -0.01em;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.btn:active { transform: scale(0.985); }
+.btn:disabled { opacity: 0.3; transform: none; box-shadow: none; filter: saturate(0.5); }
+.btn--gold { background: var(--gold); color: #2a1c02; box-shadow: 0 8px 26px rgba(226, 180, 89, 0.18); }
+.btn--hell { background: var(--paper); color: #1d1524; }
+.btn--geist { background: var(--panel); color: var(--paper); border: 1px solid var(--hairline); }
+.btn--leise { background: none; color: var(--fog-dim); font-weight: 500; font-size: 15px; padding: 13px; }
+.btn--ja { background: var(--gut); color: #05210f; }
+.btn--nein { background: var(--panel); color: #eda79d; border: 1px solid #4c2f2c; }
+.reihe { display: flex; gap: 10px; }
+.reihe .btn { width: auto; flex: 1; }
+
+/* ---------- Startbildschirm ---------- */
+
+.start { justify-content: center; text-align: center; padding: 30px 20px calc(28px + var(--safe-b)); gap: 0; }
+.wortmarke {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(38px, 12vw, 58px); line-height: 1.02; margin: 0;
+  color: var(--paper); letter-spacing: -0.02em;
+}
+.wortmarke em { font-style: italic; color: var(--gold); }
+.dreiwort {
+  display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+  margin: 14px 0 26px; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700;
+}
+.dreiwort span:nth-child(1) { color: var(--wissen-hell); }
+.dreiwort span:nth-child(2) { color: var(--wahrheit-hell); }
+.dreiwort span:nth-child(3) { color: var(--wagnis-hell); }
+.dreiwort i { color: var(--fog-dim); font-style: normal; }
+
+.feldreihe { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.feld {
+  flex: 1; background: var(--panel); border: 1px solid var(--hairline);
+  border-radius: var(--r-md); padding: 14px; color: var(--paper); font-size: 16px;
+  user-select: text; -webkit-user-select: text; width: 100%;
+}
+.feld::placeholder { color: var(--fog-dim); }
+.feldlabel {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--fog-dim); font-weight: 700; text-align: left; margin: 18px 0 7px;
+}
+
+/* ---------- Punktetafel ---------- */
+
+.tafel {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: 10px; margin: 20px 0 8px;
+  background: var(--panel); border: 1px solid var(--hairline);
+  border-radius: var(--r-lg); padding: 20px 14px;
+}
+.tafel .seite { text-align: center; min-width: 0; }
+.tafel .name {
+  font-size: 14px; line-height: 20px; height: 20px; color: var(--fog);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;
+}
+.tafel .zahl {
+  font-family: var(--font-num); font-size: clamp(34px, 11vw, 46px);
+  font-weight: 700; line-height: 1; color: var(--paper); letter-spacing: -0.03em;
+}
+.tafel .seite--vorn .zahl { color: var(--gold); }
+.tafel .seite--vorn .name::before { content: "♛ "; color: var(--gold); font-size: 12px; }
+.tafel .gegen { font-family: var(--font-display); font-size: 15px; color: var(--fog-dim); font-style: italic; }
+.tafel .dranmarke {
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold); font-weight: 700; margin-top: 4px; min-height: 14px;
+}
+
+.abstand { text-align: center; font-size: 13px; color: var(--fog-dim); margin-bottom: 20px; }
+
+/* ---------- Disziplin-Karten ---------- */
+
+.disziplinen { display: flex; flex-direction: column; gap: 12px; }
+
+.dis {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; text-align: left;
+  padding: 18px 18px; border-radius: var(--r-lg);
+  color: #fff; background: var(--c);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease;
+}
+.dis:active { transform: scale(0.985); }
+.dis--wissen { --c: var(--wissen); }
+.dis--wahrheit { --c: var(--wahrheit); }
+.dis--wagnis { --c: var(--wagnis); color: #2a1c02; }
+.dis .zahl {
+  font-family: var(--font-num); font-size: 24px; font-weight: 700;
+  width: 62px; flex: none; text-align: center; opacity: 0.92;
+}
+.dis .txt { flex: 1; min-width: 0; }
+.dis .txt b { display: block; font-family: var(--font-display); font-size: 21px; font-weight: 400; letter-spacing: 0.01em; }
+.dis .txt small { display: block; font-size: 12.5px; opacity: 0.82; line-height: 1.35; }
+.dis .rest { font-family: var(--font-num); font-size: 11px; opacity: 0.7; }
+
+/* ---------- Die Frage-Karte ---------- */
+
+.buehne { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 18px; gap: 14px; }
+
+.karte {
+  border-radius: var(--r-lg);
+  background: var(--c); color: var(--ct);
+  padding: 24px 22px 22px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+  animation: geben 0.4s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+.karte--wissen { --c: var(--wissen); --ct: #fff; }
+.karte--wahrheit { --c: var(--wahrheit); --ct: #fff; }
+.karte--wagnis { --c: var(--wagnis); --ct: #2a1c02; }
+@keyframes geben {
+  from { opacity: 0; transform: translateY(24px) rotateY(-10deg) scale(0.95); }
+}
+
+.karte .marke {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  font-weight: 700; opacity: 0.78; margin-bottom: 14px;
+}
+.karte .marke .pille {
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2); letter-spacing: 0.1em;
+}
+.karte--wagnis .marke .pille { background: rgba(42, 28, 2, 0.16); }
+.karte .frage {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(21px, 5.6vw, 28px); line-height: 1.32;
+  text-wrap: balance; margin: 0;
+}
+
+.optionen { display: flex; flex-direction: column; gap: 9px; margin-top: 18px; }
+.opt {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; text-align: left; padding: 13px 15px;
+  border-radius: 12px; font-size: 15.5px; line-height: 1.3;
+  background: rgba(255, 255, 255, 0.14); color: inherit;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+}
+.karte--wagnis .opt { background: rgba(42, 28, 2, 0.1); border-color: rgba(42, 28, 2, 0.2); }
+.opt .buchstabe {
+  width: 25px; height: 25px; flex: none; border-radius: 7px;
+  display: grid; place-items: center;
+  font-family: var(--font-num); font-size: 12px; font-weight: 700;
+  background: rgba(255, 255, 255, 0.22);
+}
+.opt--gewaehlt { background: rgba(255, 255, 255, 0.95); color: #1d1524; border-color: #fff; }
+.opt--gewaehlt .buchstabe { background: rgba(0, 0, 0, 0.12); }
+.opt--richtig { background: var(--gut); border-color: var(--gut); color: #fff; }
+.opt--richtig .buchstabe { background: rgba(0, 0, 0, 0.2); }
+.opt--falsch { background: rgba(0, 0, 0, 0.28); border-color: rgba(0, 0, 0, 0.3); color: rgba(255, 255, 255, 0.72); }
+.opt .wer {
+  margin-left: auto; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  font-weight: 700; opacity: 0.85; text-align: right; flex: none;
+}
+
+.anweisung {
+  text-align: center; font-size: 14.5px; color: var(--fog);
+  padding: 0 4px; text-wrap: balance;
+}
+.anweisung b { color: var(--paper); font-weight: 650; }
+
+.fuss {
+  padding: 12px 18px calc(14px + var(--safe-b));
+  border-top: 1px solid var(--hairline);
+  display: flex; flex-direction: column; gap: 9px;
+  background: rgba(14, 10, 18, 0.86); backdrop-filter: blur(8px);
+}
+
+/* ---------- Ergebnis ---------- */
+
+.bilanz { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 4px; }
+.bilanzzeile {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--panel); border: 1px solid var(--hairline);
+  border-radius: var(--r-md); padding: 13px 15px;
+}
+.bilanzzeile .wer { flex: 1; color: var(--paper); font-weight: 600; min-width: 0; }
+.bilanzzeile .was { font-size: 13px; color: var(--fog-dim); }
+.bilanzzeile .pkt { font-family: var(--font-num); font-weight: 700; font-size: 18px; flex: none; }
+.pkt--plus { color: var(--gut); }
+.pkt--null { color: var(--fog-dim); }
+.pkt--minus { color: var(--schlecht); }
+
+/* ---------- Verlauf ---------- */
+
+.verlauf { display: flex; flex-direction: column; gap: 7px; }
+.eintrag {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: 12px;
+  background: var(--panel); border: 1px solid var(--hairline);
+}
+.eintrag .marker { width: 4px; align-self: stretch; border-radius: 3px; flex: none; }
+.eintrag--wissen .marker { background: var(--wissen-hell); }
+.eintrag--wahrheit .marker { background: var(--wahrheit-hell); }
+.eintrag--wagnis .marker { background: var(--wagnis-hell); }
+.eintrag .txt { flex: 1; min-width: 0; }
+.eintrag .txt b { display: block; font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--fog-dim); }
+.eintrag .txt span {
+  display: block; font-size: 13.5px; color: var(--fog);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.eintrag .delta { font-family: var(--font-num); font-size: 12.5px; flex: none; text-align: right; line-height: 1.3; }
+
+/* ---------- Overlays ---------- */
+
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: var(--ground-2);
+  display: flex; flex-direction: column;
+  animation: einblenden 0.18s ease-out;
+}
+@keyframes einblenden { from { opacity: 0; } }
+
+.uebergabe {
+  justify-content: center; align-items: center; text-align: center;
+  padding: 26px calc(24px + var(--safe-b));
+  background-image: radial-gradient(90% 50% at 50% 40%, #2c1f36 0%, rgba(44, 31, 54, 0) 70%);
+}
+.uebergabe .pfeil { font-size: 40px; animation: schubs 1.5s ease-in-out infinite; }
+@keyframes schubs { 50% { transform: translateX(10px); } }
+.uebergabe .lbl { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--fog-dim); font-weight: 700; margin-top: 4px; }
+.uebergabe .name {
+  font-family: var(--font-display); font-size: clamp(30px, 9vw, 42px);
+  color: var(--paper); line-height: 1.1; margin: 4px 0 6px;
+}
+.uebergabe .auftrag { color: var(--fog); margin: 0 0 26px; max-width: 30ch; }
+.uebergabe .btn { max-width: 340px; }
+
+.blatt { padding: calc(var(--safe-t) + 16px) 18px calc(18px + var(--safe-b)); width: 100%; max-width: 560px; margin-inline: auto; }
+.blatt h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; color: var(--paper); margin: 0 0 6px; }
+.blatt h3 {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--gold-dim); font-weight: 700; margin: 24px 0 8px;
+}
+.blatt p, .blatt li { font-size: 15px; line-height: 1.6; color: var(--fog); }
+.blatt p { margin: 0 0 10px; }
+.blatt ul { margin: 0 0 10px; padding-left: 20px; }
+.blatt li { margin-bottom: 6px; }
+.blatt strong { color: var(--paper); font-weight: 650; }
+.lesbar { user-select: text; -webkit-user-select: text; }
+
+.wahlreihe { display: flex; flex-direction: column; gap: 8px; }
+.wahl {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 13px 15px; border-radius: var(--r-md);
+  background: var(--panel); border: 1px solid var(--hairline); color: var(--fog);
+}
+.wahl b { display: block; color: var(--paper); font-size: 15px; }
+.wahl small { display: block; font-size: 12.5px; color: var(--fog-dim); }
+.wahl--an { border-color: var(--gold); background: var(--panel-2); }
+.wahl--an::after { content: "✓"; margin-left: auto; color: var(--gold); font-weight: 700; }
+
+.code {
+  width: 100%; min-height: 116px; resize: vertical;
+  background: var(--panel); border: 1px solid var(--hairline); border-radius: 12px;
+  padding: 12px; color: var(--fog); font-family: var(--font-num); font-size: 11px;
+  word-break: break-all; user-select: text; -webkit-user-select: text;
+}
+
+.statz { display: grid; grid-template-columns: 1fr auto auto; gap: 8px 14px; align-items: baseline; }
+.statz .k { font-size: 13.5px; color: var(--fog); }
+.statz .v { font-family: var(--font-num); font-size: 14px; color: var(--paper); text-align: right; min-width: 34px; }
+.statz .kopfz { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fog-dim); font-weight: 700; text-align: right; }
+
+.hinweis {
+  background: var(--panel); border: 1px solid var(--hairline);
+  border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--fog-dim); line-height: 1.5;
+}
+
+@media (min-width: 720px) {
+  .buehne { max-width: 620px; margin-inline: auto; width: 100%; }
+  .fuss > * { max-width: 560px; margin-inline: auto; width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Raumcode für zwei Handys über das Internet ---------- */
+
+.raumcode {
+  font-family: var(--font-num);
+  font-size: clamp(38px, 13vw, 58px); font-weight: 800; letter-spacing: 0.14em;
+  text-align: center; padding: 18px 10px; margin: 16px 0;
+  border-radius: 14px; user-select: all; -webkit-user-select: all;
+  background: var(--feld); color: var(--karton, #f6f2e7); border: 2px solid var(--messing, #c9a227);
+}
+.feld--code {
+  width: 100%; text-align: center; letter-spacing: 0.3em;
+  font-family: var(--font-num); font-size: 28px; text-transform: uppercase;
+  margin-top: 8px;
+}

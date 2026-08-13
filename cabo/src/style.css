@@ -1,0 +1,424 @@
+/* Cabo — „Kartentisch bei Nacht“: dunkler Filz, burgunderrote Rückseiten,
+   cremefarbene Kartenflächen, Messing als Akzent. Bewusst einthemig. */
+
+:root {
+  --filz: #0e1a17;
+  --filz-2: #07110e;
+  --feld: #16241f;
+  --feld-2: #1d2f28;
+  --naht: #2b423a;
+  --nebel: #93a8a0;
+  --nebel-dim: #62776f;
+
+  --karton: #f6f2e7;
+  --karton-2: #e6e0d0;
+  --tinte: #16211e;
+  --ruecken: #6b2230;
+  --ruecken-hell: #8a2c3d;
+
+  --messing: #c9a227;
+  --messing-dim: #7e661a;
+  --gut: #3e9b6b;
+  --schlecht: #c4553f;
+
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+
+  --r-md: 13px;
+  --r-lg: 20px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+
+body {
+  background: var(--filz);
+  background-image:
+    radial-gradient(120% 55% at 50% 42%, #1a2c26 0%, rgba(26, 44, 38, 0) 70%),
+    linear-gradient(180deg, var(--filz) 0%, var(--filz-2) 100%);
+  background-attachment: fixed;
+  color: var(--nebel);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--messing); outline-offset: 3px; }
+
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- Gerüst ---------- */
+
+#app { min-height: 100dvh; display: flex; flex-direction: column; }
+.screen { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; }
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
+.wrap { width: 100%; max-width: 520px; margin-inline: auto; padding: 0 18px; }
+
+.kopf {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(var(--safe-t) + 11px) 18px 11px;
+  border-bottom: 1px solid var(--naht);
+}
+.kopf .titel { flex: 1; min-width: 0; }
+.kopf .ober { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--nebel-dim); font-weight: 700; }
+.kopf h1 {
+  margin: 0; font-size: 17px; font-weight: 650; color: var(--karton);
+  letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.werkzeuge { display: flex; gap: 7px; }
+.werkzeug {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--feld); border: 1px solid var(--naht); color: var(--nebel); font-size: 14px;
+}
+
+/* ---------- Knöpfe ---------- */
+
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 15px 16px; border-radius: var(--r-md);
+  font-weight: 650; font-size: 15.5px; letter-spacing: -0.01em;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.btn:active { transform: scale(0.985); }
+.btn:disabled { opacity: 0.3; transform: none; box-shadow: none; }
+.btn--messing { background: var(--messing); color: #241c00; box-shadow: 0 8px 24px rgba(201, 162, 39, 0.16); }
+.btn--karton { background: var(--karton); color: var(--tinte); }
+.btn--geist { background: var(--feld); color: var(--karton); border: 1px solid var(--naht); }
+.btn--leise { background: none; color: var(--nebel-dim); font-weight: 500; font-size: 15px; padding: 12px; }
+.btn--warn { background: var(--feld); color: #f0a79d; border: 1px solid #4b2b28; }
+.reihe { display: flex; gap: 9px; }
+.reihe .btn { width: auto; flex: 1; }
+
+/* ---------- Startbildschirm ---------- */
+
+.start { justify-content: center; text-align: center; padding: 30px 20px calc(28px + var(--safe-b)); }
+.wortmarke {
+  font-size: clamp(44px, 15vw, 66px); font-weight: 800; margin: 0;
+  letter-spacing: 0.22em; text-indent: 0.22em; color: var(--messing); line-height: 1;
+}
+.unterzeile { margin: 12px 0 26px; font-size: 13.5px; color: var(--nebel-dim); }
+
+.feldreihe { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.feld {
+  flex: 1; width: 100%; background: var(--feld); border: 1px solid var(--naht);
+  border-radius: var(--r-md); padding: 13px 14px; color: var(--karton); font-size: 16px;
+  user-select: text; -webkit-user-select: text;
+}
+.feld::placeholder { color: var(--nebel-dim); }
+.feldlabel {
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; text-align: left; margin: 18px 0 7px;
+}
+
+/* ---------- Der Tisch ---------- */
+
+/* Gegner oben, Stapel in der Mitte, eigene Hand unten am Daumen. */
+.tisch {
+  flex: 1; display: flex; flex-direction: column; justify-content: space-between;
+  gap: 4px; padding: 12px 14px 6px; min-height: 0;
+}
+
+.gegner { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.gegnerblock { text-align: center; }
+.gegnerblock .wer {
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; margin-bottom: 5px;
+}
+.gegnerblock .wer b { color: var(--karton); font-weight: 700; }
+
+.mitte {
+  display: flex; align-items: center; justify-content: center; gap: 26px;
+  padding: 12px 0; margin: 4px 0;
+  position: relative;
+}
+.mitte::before, .mitte::after {
+  content: ""; position: absolute; left: 8%; right: 8%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--naht), transparent);
+}
+.mitte::before { top: 0; }
+.mitte::after { bottom: 0; }
+
+.platz { text-align: center; }
+.platz .lbl {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--nebel-dim); font-weight: 700; margin-top: 6px;
+}
+
+.eigene { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 4px; }
+.eigene .wer { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--messing); font-weight: 700; }
+
+.hand { display: flex; gap: 9px; justify-content: center; }
+
+/* ---------- Karten ---------- */
+
+.karte {
+  --b: 76px;
+  width: var(--b); aspect-ratio: 2 / 3; flex: none;
+  border-radius: 9px; position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.32s cubic-bezier(0.3, 0.8, 0.3, 1);
+  padding: 0;
+}
+.karte--klein { --b: 52px; }
+.karte--gross { --b: 116px; }
+
+.karte .seite {
+  position: absolute; inset: 0; border-radius: 9px;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  display: grid; place-items: center;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+/* Rückseite: burgunderrot mit feinem Rautenmuster und Kartonrand */
+.karte .zu {
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0 3px, transparent 3px 7px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.09) 0 3px, transparent 3px 7px),
+    var(--ruecken);
+  border: 2.5px solid var(--karton);
+}
+.karte .zu::after {
+  content: ""; position: absolute; inset: 5px; border-radius: 4px;
+  border: 1px solid rgba(246, 242, 231, 0.35);
+}
+
+/* Vorderseite: Kartonweiß mit großer Zahl */
+.karte .auf {
+  background: linear-gradient(160deg, var(--karton) 0%, var(--karton-2) 100%);
+  color: var(--tinte);
+  transform: rotateY(180deg);
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: calc(var(--b) * 0.44);
+  letter-spacing: -0.05em;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+.karte .auf .ecke {
+  position: absolute; top: 4px; left: 6px;
+  font-size: calc(var(--b) * 0.16); font-weight: 700; opacity: 0.5; letter-spacing: 0;
+}
+.karte .auf .kraftzeichen {
+  position: absolute; bottom: 4px; right: 6px;
+  font-size: calc(var(--b) * 0.12); font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.55;
+}
+
+.karte--offen { transform: rotateY(180deg); }
+
+.karte--waehlbar .zu, .karte--waehlbar .auf {
+  box-shadow: 0 0 0 2.5px var(--messing), 0 6px 16px rgba(0, 0, 0, 0.5);
+  animation: pochen 1.5s ease-in-out infinite;
+}
+@keyframes pochen { 50% { box-shadow: 0 0 0 4.5px var(--messing), 0 6px 16px rgba(0, 0, 0, 0.5); } }
+
+.karte--markiert { transform: translateY(-10px); }
+.karte--markiert .zu { box-shadow: 0 0 0 3px var(--karton), 0 10px 20px rgba(0, 0, 0, 0.55); }
+
+.karte--leer .zu {
+  background: none; border: 2px dashed var(--naht); box-shadow: none;
+}
+.karte--leer .zu::after { display: none; }
+
+.stapelhaufen { position: relative; }
+.stapelhaufen::before, .stapelhaufen::after {
+  content: ""; position: absolute; inset: 0; border-radius: 9px;
+  background: var(--ruecken); border: 2.5px solid rgba(246, 242, 231, 0.55);
+  z-index: -1;
+}
+.stapelhaufen::before { transform: translate(3px, 3px); }
+.stapelhaufen::after { transform: translate(6px, 6px); opacity: 0.6; }
+
+.austeilen { animation: einfliegen 0.4s cubic-bezier(0.2, 0.8, 0.25, 1) both; }
+@keyframes einfliegen { from { opacity: 0; transform: translateY(-40px) scale(0.8) rotate(-8deg); } }
+
+/* ---------- Statuszeile und Aktionen ---------- */
+
+.cabobanner {
+  text-align: center; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  font-weight: 700; color: var(--messing);
+  background: rgba(201, 162, 39, 0.1); border: 1px solid var(--messing-dim);
+  border-radius: 999px; padding: 5px 12px; margin: 0 auto;
+}
+
+.fuss {
+  padding: 10px 14px calc(12px + var(--safe-b));
+  border-top: 1px solid var(--naht);
+  background: rgba(7, 17, 14, 0.86); backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ansage { text-align: center; font-size: 14px; color: var(--nebel); min-height: 20px; text-wrap: balance; }
+.ansage b { color: var(--karton); font-weight: 650; }
+.ansage .kraftname { color: var(--messing); font-weight: 700; }
+
+/* ---------- Aufdeck-Moment ---------- */
+
+.merken {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(7, 17, 14, 0.94);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; padding: 24px calc(24px + var(--safe-b));
+  animation: aufblenden 0.2s ease-out;
+}
+@keyframes aufblenden { from { opacity: 0; } }
+.merken .lbl { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--nebel-dim); font-weight: 700; }
+.merken .karten { display: flex; gap: 14px; }
+.merken .karte { animation: drehen 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) both; }
+@keyframes drehen { from { transform: rotateY(0deg) scale(0.9); } to { transform: rotateY(180deg) scale(1); } }
+.merken .hinweis { font-size: 13.5px; color: var(--nebel-dim); text-align: center; max-width: 30ch; }
+.merken .btn { max-width: 320px; }
+
+/* ---------- Punktetafel und Auswertung ---------- */
+
+.tafel {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+  background: var(--feld); border: 1px solid var(--naht);
+  border-radius: var(--r-lg); padding: 18px 14px; margin: 18px 0 6px;
+}
+.tafel .seite { text-align: center; min-width: 0; }
+.tafel .name {
+  font-size: 13.5px; line-height: 19px; height: 19px; color: var(--nebel);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tafel .zahl { font-family: var(--font-num); font-size: clamp(30px, 10vw, 42px); font-weight: 700; color: var(--karton); line-height: 1.1; }
+.tafel .seite--vorn .zahl { color: var(--gut); }
+.tafel .gegen { font-size: 13px; color: var(--nebel-dim); letter-spacing: 0.1em; }
+.hinweiszeile { text-align: center; font-size: 12.5px; color: var(--nebel-dim); margin: 0 0 18px; }
+
+.rundenzeile {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--feld); border: 1px solid var(--naht);
+  border-radius: var(--r-md); padding: 11px 13px; margin-bottom: 8px;
+}
+.rundenzeile.gewinner { border-color: var(--messing); background: var(--feld-2); }
+.rundenzeile .wer { flex: 1; min-width: 0; }
+.rundenzeile .wer b { display: block; color: var(--karton); font-weight: 650; }
+.rundenzeile .wer small { display: block; font-size: 12px; color: var(--nebel-dim); }
+.rundenzeile .karten { display: flex; gap: 4px; }
+.rundenzeile .mini {
+  font-family: var(--font-num); font-size: 12px; font-weight: 700;
+  background: var(--karton); color: var(--tinte);
+  border-radius: 4px; padding: 3px 5px; min-width: 22px; text-align: center;
+}
+.rundenzeile .pkt { font-family: var(--font-num); font-weight: 700; font-size: 17px; flex: none; min-width: 40px; text-align: right; }
+.pkt--null { color: var(--gut); }
+.pkt--viel { color: var(--schlecht); }
+.pkt--mittel { color: var(--karton); }
+
+.blatt { padding: calc(var(--safe-t) + 16px) 18px calc(18px + var(--safe-b)); width: 100%; max-width: 520px; margin-inline: auto; }
+.blatt h2 { font-size: 23px; color: var(--karton); margin: 0 0 6px; font-weight: 700; letter-spacing: -0.01em; }
+.blatt h3 {
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--messing-dim); font-weight: 700; margin: 22px 0 8px;
+}
+.blatt p, .blatt li { font-size: 15px; line-height: 1.6; color: var(--nebel); }
+.blatt p { margin: 0 0 10px; }
+.blatt ul { margin: 0 0 10px; padding-left: 20px; }
+.blatt li { margin-bottom: 6px; }
+.blatt strong { color: var(--karton); font-weight: 650; }
+.lesbar { user-select: text; -webkit-user-select: text; }
+
+.kraftliste { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.kraftzeile {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--feld); border: 1px solid var(--naht); border-radius: var(--r-md); padding: 10px 12px;
+}
+.kraftzeile .werte {
+  font-family: var(--font-num); font-weight: 700; font-size: 14px;
+  background: var(--karton); color: var(--tinte); border-radius: 6px; padding: 4px 8px; flex: none;
+}
+.kraftzeile b { color: var(--karton); display: block; font-size: 14.5px; }
+.kraftzeile small { color: var(--nebel-dim); font-size: 12.5px; }
+
+/* ---------- Übergabe ---------- */
+
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: var(--filz-2);
+  display: flex; flex-direction: column;
+  animation: aufblenden 0.18s ease-out;
+}
+.uebergabe {
+  justify-content: center; align-items: center; text-align: center;
+  padding: 26px calc(24px + var(--safe-b));
+  background-image: radial-gradient(90% 50% at 50% 40%, #1a2c26 0%, rgba(26, 44, 38, 0) 70%);
+}
+.uebergabe .pfeil { font-size: 38px; animation: schubs 1.5s ease-in-out infinite; }
+@keyframes schubs { 50% { transform: translateX(10px); } }
+.uebergabe .lbl { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--nebel-dim); font-weight: 700; margin-top: 4px; }
+.uebergabe .name { font-size: clamp(28px, 9vw, 40px); font-weight: 700; color: var(--karton); line-height: 1.1; margin: 4px 0 6px; }
+.uebergabe .auftrag { color: var(--nebel); margin: 0 0 26px; max-width: 30ch; }
+.uebergabe .btn { max-width: 320px; }
+
+@media (max-height: 700px) {
+  .karte { --b: 66px; }
+  .karte--klein { --b: 46px; }
+  .mitte { padding: 8px 0; gap: 20px; }
+  .tisch { gap: 2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Kopplung zweier Geräte ---------- */
+
+.qrfeld {
+  display: grid; place-items: center;
+  background: var(--karton); border-radius: var(--r-md);
+  padding: 14px; margin: 16px 0;
+}
+.qrfeld canvas { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; display: block; }
+
+.scanfenster {
+  position: relative; overflow: hidden;
+  border-radius: var(--r-md); background: #000;
+  aspect-ratio: 1; margin: 16px 0;
+  border: 1px solid var(--naht);
+}
+.scanfenster video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanfenster::after {
+  content: ""; position: absolute; inset: 16%;
+  border: 2px solid var(--messing); border-radius: 12px;
+  box-shadow: 0 0 0 999px rgba(7, 17, 14, 0.45);
+}
+
+.codeklappe { margin-top: 6px; }
+.codeklappe summary {
+  font-size: 13px; color: var(--nebel-dim); cursor: pointer;
+  padding: 8px 0; list-style: none;
+}
+.codeklappe summary::before { content: "▸ "; }
+.codeklappe[open] summary::before { content: "▾ "; }
+
+.codefeld {
+  width: 100%; min-height: 84px; resize: vertical; margin-top: 6px;
+  background: var(--feld); border: 1px solid var(--naht); border-radius: 10px;
+  padding: 10px; color: var(--nebel); font-family: var(--font-num); font-size: 11px;
+  word-break: break-all; user-select: text; -webkit-user-select: text;
+}
+
+/* ---------- Raumcode für zwei Handys über das Internet ---------- */
+
+.raumcode {
+  font-family: var(--font-num);
+  font-size: clamp(38px, 13vw, 58px); font-weight: 800; letter-spacing: 0.14em;
+  text-align: center; padding: 18px 10px; margin: 16px 0;
+  border-radius: 14px; user-select: all; -webkit-user-select: all;
+  background: var(--feld); color: var(--karton); border: 2px solid var(--messing);
+}
+.feld--code {
+  width: 100%; text-align: center; letter-spacing: 0.3em;
+  font-family: var(--font-num); font-size: 28px; text-transform: uppercase;
+  margin-top: 8px;
+}
