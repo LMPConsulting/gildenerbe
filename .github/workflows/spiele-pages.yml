@@ -42,11 +42,12 @@ jobs:
           node-version: '20'
       - name: Spiele bauen
         run: node scripts/webseite.mjs --ohne-server _pages
-      # Eine eigene Domain wird NICHT hier eingetragen, sondern in
-      # Settings -> Pages -> Custom domain. GitHub legt die CNAME-Datei dann
-      # selbst an und behält sie bei jedem Deploy. Andersherum wäre es eine
-      # Falle: Eine CNAME-Datei ohne passenden DNS-Eintrag macht die Seite
-      # auch unter <user>.github.io unerreichbar.
+      - name: Eigene Domain ins Artefakt legen
+        # Bei Pages über Actions muss die CNAME-Datei Teil des Artefakts sein —
+        # sonst kann ein späterer Deploy die in den Einstellungen gesetzte
+        # Domain wieder abräumen. Der DNS-Eintrag dafür steht:
+        # spiele.lmp-docmatch.de -> CNAME lmpconsulting.github.io
+        run: echo "spiele.lmp-docmatch.de" > _pages/CNAME
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _pages
