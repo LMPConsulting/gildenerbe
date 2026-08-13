@@ -19,7 +19,9 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const wurzel = resolve(here, '..');
-const ziel = resolve(process.argv[2] || join(wurzel, 'web'));
+const argumente = process.argv.slice(2).filter((a) => a !== '--ohne-server');
+const ohneServer = process.argv.includes('--ohne-server');
+const ziel = resolve(argumente[0] || join(wurzel, 'web'));
 
 const SPIELE = [
   {
@@ -29,7 +31,8 @@ const SPIELE = [
     text: 'Zwei weiße und vier farbige Würfel, vier Reihen, immer nur von links nach rechts. '
       + 'Kurz, schnell, jedes Mal anders.',
     dauer: '15 Minuten',
-    zwei: 'Beide gleichzeitig auf zwei Handys',
+    zwei: 'Zwei Handys',
+    zweiOhne: 'Ein Handy zum Weiterreichen',
     farbe: '#2a6ed4',
     icon: '<circle cx="18" cy="18" r="8"/><circle cx="46" cy="18" r="8"/>'
       + '<circle cx="18" cy="46" r="8"/><circle cx="46" cy="46" r="8"/>',
@@ -41,7 +44,8 @@ const SPIELE = [
     text: 'Allgemeinwissen gegeneinander, ehrliche Fragen übereinander, Mutproben für unterwegs. '
       + 'Die Punkte laufen über den ganzen Urlaub weiter.',
     dauer: 'so lange ihr wollt',
-    zwei: 'Auf zwei Handys, Antworten bleiben verdeckt',
+    zwei: 'Zwei Handys, Antworten verdeckt',
+    zweiOhne: 'Ein Handy zum Weiterreichen',
     farbe: '#c9a227',
     icon: '<path d="M32 8 L54 46 H10 Z" fill="none" stroke-width="6" stroke-linejoin="round"/>',
   },
@@ -52,7 +56,8 @@ const SPIELE = [
     text: 'Wer am wenigsten hat, gewinnt — wenn er sich traut, Cabo zu rufen. '
       + 'Peek, Spy, Swap und Pärchen abwerfen.',
     dauer: '20 Minuten',
-    zwei: 'Auf zwei Handys, fremde Karten bleiben geheim',
+    zwei: 'Zwei Handys, fremde Karten geheim',
+    zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#8a2c3d',
     icon: '<rect x="12" y="10" width="26" height="38" rx="4" fill="none" stroke-width="5"/>'
       + '<rect x="26" y="16" width="26" height="38" rx="4" fill="none" stroke-width="5"/>',
@@ -64,7 +69,8 @@ const SPIELE = [
     text: 'Pilot und Kopilot bringen ein Flugzeug herunter. Acht Würfel pro Runde, '
       + 'zwei Pflichthebel, und ab dem Wurf wird nicht mehr geredet.',
     dauer: '20 Minuten',
-    zwei: 'Auf zwei Handys, jeder sieht nur seine Würfel',
+    zwei: 'Zwei Handys, eigene Würfel geheim',
+    zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#f0a92b',
     icon: '<path d="M56 32 L20 39 L11 54 H6 L13 38 L4 34 V30 L13 26 L6 10 H11 L20 25 Z"/>',
   },
@@ -73,8 +79,10 @@ const SPIELE = [
 mkdirSync(ziel, { recursive: true });
 
 for (const spiel of SPIELE) {
-  execFileSync('node', [join(wurzel, spiel.ordner, 'build.mjs'), '--web', join(ziel, spiel.ordner)],
-    { stdio: 'inherit' });
+  execFileSync('node', [
+    join(wurzel, spiel.ordner, 'build.mjs'), '--web', join(ziel, spiel.ordner),
+    ...(ohneServer ? ['--ohne-server'] : []),
+  ], { stdio: 'inherit' });
 }
 
 /* ------------------------------------------------------------- Startseite */
@@ -100,7 +108,7 @@ const kachel = (s) => `
           <h2>${s.titel}</h2>
           <p class="zeile">${s.zeile}</p>
           <p class="beschreibung">${s.text}</p>
-          <p class="fakten"><span>${s.dauer}</span><span>${s.zwei}</span></p>
+          <p class="fakten"><span>${s.dauer}</span><span>${ohneServer ? s.zweiOhne : s.zwei}</span></p>
         </div>
         <span class="pfeil" aria-hidden="true">→</span>
       </a>`;
@@ -125,10 +133,15 @@ const startseite = `<!doctype html>
   <header class="kopf">
     <p class="ober">Für zwei</p>
     <h1>Spiele</h1>
-    <p class="unter">Vier Spiele, die ihr zu zweit spielen könnt — jedes auf einem Handy
-      zum Weiterreichen oder auf <strong>zwei Handys gleichzeitig</strong>. Für zwei Handys
-      öffnet einer einen Raum und gibt den fünfstelligen Code weiter; ihr müsst
-      <strong>nicht</strong> im selben WLAN sein.</p>
+    <p class="unter">${ohneServer
+      ? `Vier Spiele für zwei. <strong>Cabo</strong> und <strong>Sky Team</strong> laufen auf
+         <strong>zwei Handys gleichzeitig</strong> — koppeln per QR-Code, dafür müsst ihr im
+         selben WLAN oder Hotspot sein. <strong>Qwixx</strong> und <strong>Dreikampf</strong>
+         spielt ihr an einem Handy, das ihr euch hin und her gebt.`
+      : `Vier Spiele, die ihr zu zweit spielen könnt — jedes auf einem Handy zum
+         Weiterreichen oder auf <strong>zwei Handys gleichzeitig</strong>. Dafür öffnet einer
+         einen Raum und gibt den fünfstelligen Code weiter; ihr müsst <strong>nicht</strong>
+         im selben WLAN sein.`}</p>
   </header>
 
   <main class="liste">${SPIELE.map(kachel).join('')}

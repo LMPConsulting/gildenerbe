@@ -102,9 +102,12 @@ if (webFlagge !== -1) {
   const ziel = resolve(process.argv[webFlagge + 1] || 'web');
   mkdirSync(ziel, { recursive: true });
   const mitnahme = 'Cabo.html';
+  // Ohne Durchreiche (z.B. auf einer reinen Dateiablage wie GitHub Pages) gibt
+  // es keinen Raumcode — die Spiele blenden die Knöpfe dann selbst aus.
+  const ohneServer = process.argv.includes('--ohne-server');
   const webScript = [
     `const SEITENKOPF = ${JSON.stringify(kopf)};`,
-    "const SPIELE_BASIS = '..';",
+    ohneServer ? 'const SPIELE_BASIS = null;' : "const SPIELE_BASIS = '..';",
     `const OFFLINE_DATEI = ${JSON.stringify(mitnahme)};`,
     rumpf,
   ].join('\n');

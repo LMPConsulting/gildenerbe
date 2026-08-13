@@ -1,0 +1,59 @@
+# Baut die vier Spiele und veröffentlicht sie auf GitHub Pages.
+#
+# Damit läuft die Spielesammlung ohne eigenen Server: eine reine Dateiablage
+# mit HTTPS. Der Raumcode über das Internet braucht eine Durchreiche und ist
+# in dieser Fassung deshalb ausgeblendet (--ohne-server) — Cabo und Sky Team
+# koppeln stattdessen per QR im selben WLAN.
+#
+# Einmalig im Repo einschalten: Settings -> Pages -> Source: GitHub Actions.
+
+name: Spiele auf GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'qwixx/**'
+      - 'dreikampf/**'
+      - 'cabo/**'
+      - 'skyteam/**'
+      - 'scripts/webseite.mjs'
+      - '.github/workflows/spiele-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  bauen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Spiele bauen
+        run: node scripts/webseite.mjs --ohne-server _pages
+      - name: Eigene Domain eintragen
+        # Nur nötig, wenn die Seite unter lmp-docmatch.de laufen soll.
+        # Sonst diesen Schritt löschen — dann liegt sie unter <user>.github.io/<repo>/.
+        run: echo "spiele.lmp-docmatch.de" > _pages/CNAME
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _pages
+
+  veroeffentlichen:
+    needs: bauen
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - id: pages
+        uses: actions/deploy-pages@v4
