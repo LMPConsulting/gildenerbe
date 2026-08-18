@@ -815,6 +815,14 @@ function lageTakten() {
   }, 500);
 }
 
+/** Kopplung von vorn: alte Verbindung weg, gleiche Rolle noch einmal. */
+function kopplungNeu() {
+  const gastgeber = ui.kopplung?.gastgeber ?? true;
+  ui.netz?.schliessen();
+  ui.netz = null;
+  funkStarten(gastgeber);
+}
+
 async function funkStarten(gastgeber) {
   ui.modus = 'online';
   ui.gastgeber = gastgeber;
@@ -955,8 +963,10 @@ function renderKopplung() {
       <p class="lead">Dauert es länger als ein paar Sekunden, sagt die Zeile darunter, woran es liegt.</p>
       <p class="lage" id="lage"></p>
       <div class="knopfsaeule">
+        <button class="btn btn--ghost" id="nochmal">Von vorn versuchen</button>
         <button class="btn btn--quiet" id="abbruch">Abbrechen</button></div>
     </div></div>`;
+    app.querySelector('#nochmal').onclick = () => kopplungNeu();
     app.querySelector('#abbruch').onclick = kopplungAbbrechen;
     return;
   }

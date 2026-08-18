@@ -1930,6 +1930,14 @@ function lageTakten() {
   }, 500);
 }
 
+/** Kopplung von vorn: alte Verbindung weg, gleiche Rolle noch einmal. */
+function kopplungNeu() {
+  const rolle = ui.kopplung?.rolle || 'gastgeber';
+  ui.funk?.schliessen();
+  ui.funk = null;
+  kopplungStarten(rolle);
+}
+
 async function kopplungStarten(rolle) {
   ui.modus = 'online';
   ui.meinIndex = rolle === 'gastgeber' ? 0 : 1;
@@ -2184,8 +2192,11 @@ function renderKopplung() {
       <p>${esc(k.hinweis || 'Die Handys suchen sich gerade.')}</p>
       <div class="hinweis" style="margin-top:16px">Dauert es länger als ein paar Sekunden, sagt die Zeile darunter, woran es liegt.</div>
       <p class="lage" id="lage"></p>
-      <div style="margin-top:20px"><button class="btn btn--geist" id="abbruch">Abbrechen</button></div>
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn--geist" id="nochmal">Von vorn versuchen</button>
+        <button class="btn btn--leise" id="abbruch">Abbrechen</button></div>
     </div></div></div>`;
+    app.querySelector('#nochmal').onclick = () => kopplungNeu();
     app.querySelector('#abbruch').onclick = kopplungAbbrechen;
     return;
   }
