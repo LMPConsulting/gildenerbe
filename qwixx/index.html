@@ -2350,26 +2350,39 @@ function renderWarten(need) {
 /* ---------------------------------------------- Fehlersuche beim Koppeln */
 
 /** Was die Direktverbindung gerade weiß — in einer Zeile, für den Ernstfall. */
+/** Womit hängt dieses Handy gerade am Netz? Chrome kennt die Antwort. */
+function netzArt() {
+  const c = navigator.connection || navigator.mozConnection || {};
+  if (c.type) return c.type === 'none' ? 'kein Netz' : c.type;
+  return navigator.onLine ? 'verbunden' : 'kein Netz';
+}
+
 function lageText(l, ausfuehrlich) {
   if (!l) return '';
+  const kamera = ui.kopplung?.kamera;
   const stumm = l.mdns && !l.eigene.length;         // nur .local statt echter Adresse
   const leer = !l.mdns && !l.eigene.length && l.sammeln === 'fertig';  // gar nichts gefunden
   if (!ausfuehrlich && !stumm && !leer) return '';  // läuft alles: keine Technik im Weg
   const teile = [];
   if (ausfuehrlich) {
     teile.push(`Eigene Adresse: ${l.eigene.length ? l.eigene.join('  ') : 'noch keine'}`,
-      `Gegenseite: ${l.fremde}`, `Stand: ${l.stand}`);
+      `Gegenseite: ${l.fremde}`, `Stand: ${l.stand}`,
+      `Kamera: ${kamera === undefined ? '?' : (kamera ? 'frei' : 'abgelehnt')}`,
+      `Netz: ${netzArt()}`);
   }
   if (stumm) {
     teile.push('Dieses Handy gibt seine WLAN-Adresse nicht heraus. Erlaube der Seite die '
       + 'Kamera (Schloss-Symbol neben der Adresse → Berechtigungen → Kamera) und koppelt neu.');
   }
-  if (leer) {
-    teile.push('Dieses Handy hat überhaupt keine Netzwerkadresse gefunden. Fast immer fehlt '
-      + 'die Kamera-Freigabe — Chrome merkt sich ein früheres „Blockieren" und fragt nicht '
-      + 'noch einmal. Einstellungen → Apps → „Spiele" → Berechtigungen → Kamera → Zulassen, '
-      + 'App schließen, neu öffnen. Hilft das nicht: das andere Handy den Hotspot aufmachen '
-      + 'lassen und dieses damit verbinden.');
+  if (leer && kamera === false) {
+    teile.push('Dieses Handy hat keine Netzwerkadresse gefunden — und die Kamera ist nicht '
+      + 'freigegeben. Ohne sie gibt Chrome keine Adresse heraus. Erst freigeben, dann neu koppeln.');
+  } else if (leer) {
+    teile.push('Dieses Handy hat keine Netzwerkadresse gefunden, obwohl die Kamera frei ist. '
+      + 'Chrome sieht hier also kein Netz. Läuft auf diesem Handy der Hotspot? Ein Handy, das '
+      + 'selbst den Hotspot aufspannt, meldet Android oft gar kein Netz — dann kann es nicht '
+      + 'mitspielen. Abhilfe: beide Handys in dasselbe WLAN einwählen. Gibt es keins, spielt '
+      + 'an einem Handy und reicht es hin und her.');
   }
   return teile.join(' · ');
 }
@@ -2413,6 +2426,7 @@ async function funkStarten(gastgeber) {
     frei = await kameraFreigeben();
   }
   if (!ui.kopplung) return;
+  ui.kopplung.kamera = frei;
   ui.kopplung.schritt = 'moment';
   render();
 
@@ -2530,10 +2544,7 @@ function renderKopplung() {
     app.innerHTML = `<div class="screen"><div class="wrap">
       <h2 class="h2">Verbinde …</h2>
       <p class="lead">${esc(k.hinweis || 'Die Handys suchen sich gerade.')}</p>
-      <p class="lead">Dauert es länger als ein paar Sekunden, schaut auf die Zeile darunter: Steht dort
-        <em>Eigene Adresse: noch keine</em>, hat dieses Handy die Kamera nicht freigegeben —
-        ohne sie rückt Chrome die WLAN-Adresse nicht heraus. Sonst blockiert der Hotspot
-        den direkten Weg; dann hilft nur ein gemeinsames WLAN.</p>
+      <p class="lead">Dauert es länger als ein paar Sekunden, sagt die Zeile darunter, woran es liegt.</p>
       <p class="lage" id="lage"></p>
       <div class="knopfsaeule">
         <button class="btn btn--quiet" id="abbruch">Abbrechen</button></div>

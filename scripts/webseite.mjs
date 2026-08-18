@@ -156,10 +156,14 @@ const startseite = `<!doctype html>
       auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle vier Spiele
       sind dann auf dem Gerät gespeichert.</p>
     <p><span class="offlineampel" id="offlineampel">wird gespeichert …</span></p>
-    <p>Zu zweit ohne Internet: Einer macht seinen <strong>Hotspot</strong> an, der andere
-      verbindet sich damit. Dann im Spiel <em>Auf zwei Handys → QR zeigen</em> bzw.
-      <em>QR scannen</em>. Es wird kein Internet gebraucht, nur die Funkstrecke zwischen
-      euren beiden Geräten.</p>
+    <p>Zu zweit ohne Internet: beide Handys ins <strong>selbe WLAN</strong>, dann im Spiel
+      <em>Auf zwei Handys → QR zeigen</em> bzw. <em>QR scannen</em>. Es wird kein Internet
+      gebraucht, nur die Funkstrecke zwischen euren beiden Geräten.</p>
+    <p><strong>Achtung beim Hotspot:</strong> Ein Handy, das den Hotspot selbst aufspannt,
+      meldet Android oft gar kein Netz — Chrome findet dort keine Adresse, und die Kopplung
+      läuft ins Leere. Zeigt die Technikzeile beim Koppeln <em>Eigene Adresse: noch keine</em>,
+      ist genau das der Fall. Dann braucht ihr ein WLAN, in das sich <em>beide</em> einwählen —
+      oder ihr spielt an einem Handy und reicht es hin und her.</p>
     <p><strong>Wichtig beim Koppeln:</strong> Wenn ein Handy nach der <em>Kamera</em> fragt,
       erlaubt sie — auf beiden Geräten, auch auf dem, das nur den Code zeigt. Ohne diese
       Freigabe verrät Chrome die eigene WLAN-Adresse nicht, und die Handys suchen sich
