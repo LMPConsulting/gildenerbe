@@ -163,7 +163,9 @@ const startseite = `<!doctype html>
     <p><strong>Wichtig beim Koppeln:</strong> Wenn ein Handy nach der <em>Kamera</em> fragt,
       erlaubt sie — auf beiden Geräten, auch auf dem, das nur den Code zeigt. Ohne diese
       Freigabe verrät Chrome die eigene WLAN-Adresse nicht, und die Handys suchen sich
-      vergeblich.</p>
+      vergeblich. Wurde die Kamera einmal abgelehnt, fragt Chrome nicht wieder: dann unter
+      <em>Einstellungen &rarr; Apps &rarr; „Spiele“ &rarr; Berechtigungen &rarr; Kamera</em>
+      auf <em>Zulassen</em> stellen und die App einmal schließen.</p>
     <p>Wer lieber eine einzelne Datei mitnimmt: in jedem Spiel unter
       <em>Menü → Spiel als Datei sichern</em>.</p>
   </section>

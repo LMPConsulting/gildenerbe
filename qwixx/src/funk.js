@@ -150,7 +150,7 @@ export function funkAufbauen({ gastgeber, aufZustand, aufNachricht }) {
   /** Wartet, bis alle lokalen Adressen gesammelt sind (oder die Geduld endet). */
   const adressenSammeln = () => new Promise((fertig) => {
     if (pc.iceGatheringState === 'complete') { lage.sammeln = 'fertig'; return fertig(); }
-    const stopp = setTimeout(fertig, 6000);
+    const stopp = setTimeout(() => { lage.sammeln = 'fertig'; fertig(); }, 6000);
     pc.onicegatheringstatechange = () => {
       lage.sammeln = pc.iceGatheringState === 'complete' ? 'fertig' : pc.iceGatheringState;
       if (pc.iceGatheringState === 'complete') { clearTimeout(stopp); fertig(); }
