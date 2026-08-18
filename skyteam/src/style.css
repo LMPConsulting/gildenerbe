@@ -732,3 +732,12 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   font-family: var(--font-num); font-size: 28px; text-transform: uppercase;
   margin-top: 8px;
 }
+
+/* Technikzeile beim Koppeln: klein, ruhig, darf umbrechen. */
+.lage {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.55;
+  opacity: 0.62;
+  word-break: break-word;
+}

@@ -82,6 +82,27 @@ export function ausCode(code) {
   };
 }
 
+/* -------------------------------------------------------- Kamera-Freigabe */
+
+// Chrome verrät die echte WLAN-Adresse eines Handys nicht einfach so: statt
+// 192.168.x.y steht in den Verbindungsdaten ein zufälliger „….local"-Name
+// (mDNS). Die Gegenseite müsste diesen Namen per Multicast auflösen — und
+// genau das lassen Handy-Hotspots meistens nicht durch. Hat die Seite aber
+// einmal die Erlaubnis für die Kamera, gibt Chrome die echte Adresse heraus.
+// Also holen wir die Erlaubnis, *bevor* die Verbindung entsteht; die Kamera
+// geht sofort wieder aus. Zum Scannen brauchen wir sie ohnehin gleich.
+export async function kameraFreigeben() {
+  try {
+    const strom = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }, audio: false,
+    });
+    strom.getTracks().forEach((spur) => spur.stop());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /* ------------------------------------------------------------- Verbindung */
 
 /**
@@ -92,6 +113,7 @@ export function funkAufbauen({ gastgeber, aufZustand, aufNachricht }) {
   const pc = new RTCPeerConnection({ iceServers: [] });
   let kanal = null;
   let offen = false;
+  const lage = { eigene: [], fremde: 0, mdns: false, stand: 'neu', sammeln: 'läuft' };
 
   const melde = (text) => aufZustand?.(text, offen);
 
@@ -107,17 +129,30 @@ export function funkAufbauen({ gastgeber, aufZustand, aufNachricht }) {
   if (gastgeber) kanalVerdrahten(pc.createDataChannel('skyteam', { ordered: true }));
   else pc.ondatachannel = (e) => kanalVerdrahten(e.channel);
 
+  // Mitschreiben, was das Handy findet — sonst steht man bei „Verbinde …" im Dunkeln.
+  pc.onicecandidate = (e) => {
+    if (!e.candidate) return;
+    const roh = e.candidate.candidate;
+    if (/\.local\b/.test(roh)) { lage.mdns = true; return; }
+    const t = roh.match(/ (\S+) (\d+) typ (?:host|srflx)/);
+    if (t && !lage.eigene.includes(`${t[1]}:${t[2]}`)) lage.eigene.push(`${t[1]}:${t[2]}`);
+  };
+
   pc.oniceconnectionstatechange = () => {
+    lage.stand = pc.iceConnectionState;
     if (['failed', 'disconnected'].includes(pc.iceConnectionState) && !offen) {
-      melde('Keine Verbindung — blockiert euer Hotspot vielleicht den direkten Weg?');
+      melde(lage.mdns && !lage.eigene.length
+        ? 'Keine Verbindung — dieses Handy hat seine WLAN-Adresse nicht herausgegeben.'
+        : 'Keine Verbindung — blockiert euer Hotspot vielleicht den direkten Weg?');
     }
   };
 
   /** Wartet, bis alle lokalen Adressen gesammelt sind (oder die Geduld endet). */
   const adressenSammeln = () => new Promise((fertig) => {
-    if (pc.iceGatheringState === 'complete') return fertig();
-    const stopp = setTimeout(fertig, 3000);
+    if (pc.iceGatheringState === 'complete') { lage.sammeln = 'fertig'; return fertig(); }
+    const stopp = setTimeout(fertig, 6000);
     pc.onicegatheringstatechange = () => {
+      lage.sammeln = pc.iceGatheringState === 'complete' ? 'fertig' : pc.iceGatheringState;
       if (pc.iceGatheringState === 'complete') { clearTimeout(stopp); fertig(); }
     };
     return undefined;
@@ -138,7 +173,7 @@ export function funkAufbauen({ gastgeber, aufZustand, aufNachricht }) {
       if (!gastgeber && typ !== 'offer') throw new Error('Das ist der Code des Gasts — du brauchst den vom Gastgeber.');
       await pc.setRemoteDescription({ type: typ, sdp });
       for (const k of kandidaten) {
-        try { await pc.addIceCandidate(k); } catch { /* einzelne Adresse taugt nicht */ }
+        try { await pc.addIceCandidate(k); lage.fremde += 1; } catch { /* einzelne Adresse taugt nicht */ }
       }
       melde('verbinde …');
     },
@@ -152,6 +187,9 @@ export function funkAufbauen({ gastgeber, aufZustand, aufNachricht }) {
     },
 
     get verbunden() { return offen; },
+
+    /** Momentaufnahme für die Fehlersuche — reine Lesekopie. */
+    get lage() { return { ...lage, eigene: lage.eigene.slice() }; },
 
     schliessen() {
       try { kanal?.close(); } catch { /* egal */ }

@@ -160,6 +160,10 @@ const startseite = `<!doctype html>
       verbindet sich damit. Dann im Spiel <em>Auf zwei Handys → QR zeigen</em> bzw.
       <em>QR scannen</em>. Es wird kein Internet gebraucht, nur die Funkstrecke zwischen
       euren beiden Geräten.</p>
+    <p><strong>Wichtig beim Koppeln:</strong> Wenn ein Handy nach der <em>Kamera</em> fragt,
+      erlaubt sie — auf beiden Geräten, auch auf dem, das nur den Code zeigt. Ohne diese
+      Freigabe verrät Chrome die eigene WLAN-Adresse nicht, und die Handys suchen sich
+      vergeblich.</p>
     <p>Wer lieber eine einzelne Datei mitnimmt: in jedem Spiel unter
       <em>Menü → Spiel als Datei sichern</em>.</p>
   </section>

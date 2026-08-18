@@ -8,7 +8,7 @@ import {
 } from './engine.js';
 import { netzAufbauen, netzMoeglich } from './netz.js';
 import { qrZeichnen } from './qr.js';
-import { funkAufbauen, scannerStarten, scannerMoeglich } from './funk.js';
+import { funkAufbauen, kameraFreigeben, scannerStarten, scannerMoeglich } from './funk.js';
 
 const SAVE_KEY = 'qwixx.save.v1';
 const PREFS_KEY = 'qwixx.prefs.v1';
@@ -755,12 +755,48 @@ function renderWarten(need) {
  * gemeinsames WLAN oder einen Hotspot — funktioniert damit auch im Flugzeug.
  * Nach außen sieht sie aus wie die Durchreiche: senden, verbunden, schliessen.
  */
+/* ---------------------------------------------- Fehlersuche beim Koppeln */
+
+/** Was die Direktverbindung gerade weiß — in einer Zeile, für den Ernstfall. */
+function lageText(l, ausfuehrlich) {
+  if (!l) return '';
+  const stumm = l.mdns && !l.eigene.length;   // Handy rückt die eigene Adresse nicht raus
+  if (!ausfuehrlich && !stumm) return '';     // läuft alles: keine Technik im Weg
+  const teile = [];
+  if (ausfuehrlich) {
+    teile.push(`Eigene Adresse: ${l.eigene.length ? l.eigene.join('  ') : 'noch keine'}`,
+      `Gegenseite: ${l.fremde}`, `Stand: ${l.stand}`);
+  }
+  if (stumm) {
+    teile.push('Dieses Handy gibt seine WLAN-Adresse nicht heraus. Erlaube der Seite die '
+      + 'Kamera (Schloss-Symbol neben der Adresse → Berechtigungen → Kamera) und koppelt neu.');
+  }
+  return teile.join(' · ');
+}
+
+/** Hält die Technikzeile aktuell, solange gekoppelt wird. */
+function lageTakten() {
+  if (ui.lageTakt) clearInterval(ui.lageTakt);
+  ui.lageTakt = setInterval(() => {
+    if (!ui.kopplung || !ui.netz) { clearInterval(ui.lageTakt); ui.lageTakt = null; return; }
+    const feld = document.getElementById('lage');
+    // Beim Warten die ganze Zeile — sonst nur, wenn wirklich etwas fehlt.
+    if (feld) feld.textContent = lageText(ui.netz.lage, ui.kopplung.schritt === 'warten');
+  }, 500);
+}
+
 async function funkStarten(gastgeber) {
   ui.modus = 'online';
   ui.gastgeber = gastgeber;
   ui.meinIndex = gastgeber ? 0 : 1;
   ui.kopplung = { schritt: 'moment', gastgeber, ueberQr: true, hinweis: '', fehler: '' };
   render();
+
+  // Erst die Kamera-Erlaubnis, dann die Verbindung. Ohne sie versteckt Chrome die
+  // echte WLAN-Adresse hinter einem .local-Namen, den ein Handy-Hotspot nicht
+  // auflöst — dann suchen sich die Geräte ewig. Scannen müssen wir gleich ohnehin.
+  await kameraFreigeben();
+  if (!ui.kopplung) return;                   // in der Zwischenzeit abgebrochen
 
   ui.netz = funkAufbauen({
     gastgeber,
@@ -774,6 +810,7 @@ async function funkStarten(gastgeber) {
     },
     aufNachricht: nachrichtVerarbeiten,
   });
+  lageTakten();
 
   if (gastgeber) {
     ui.kopplung.code = await ui.netz.eigenerCode();
@@ -845,7 +882,7 @@ function renderKopplung() {
   if (k.schritt === 'moment') {
     app.innerHTML = `<div class="screen"><div class="wrap">
       <h2 class="h2">Einen Moment</h2>
-      <p class="lead">Verbindungsdaten werden vorbereitet …</p></div></div>`;
+      <p class="lead">Verbindungsdaten werden vorbereitet. Falls nach der Kamera gefragt wird: erlauben — ohne die Freigabe finden sich die Handys im Hotspot nicht.</p></div></div>`;
     return;
   }
 
@@ -853,8 +890,11 @@ function renderKopplung() {
     app.innerHTML = `<div class="screen"><div class="wrap">
       <h2 class="h2">Verbinde …</h2>
       <p class="lead">${esc(k.hinweis || 'Die Handys suchen sich gerade.')}</p>
-      <p class="lead">Dauert es länger als ein paar Sekunden, blockiert der Hotspot
-        vermutlich den direkten Weg. Dann hilft nur: beide ins gleiche WLAN.</p>
+      <p class="lead">Dauert es länger als ein paar Sekunden, schaut auf die Zeile darunter: Steht dort
+        <em>Eigene Adresse: noch keine</em>, hat dieses Handy die Kamera nicht freigegeben —
+        ohne sie rückt Chrome die WLAN-Adresse nicht heraus. Sonst blockiert der Hotspot
+        den direkten Weg; dann hilft nur ein gemeinsames WLAN.</p>
+      <p class="lage" id="lage"></p>
       <div class="knopfsaeule">
         <button class="btn btn--quiet" id="abbruch">Abbrechen</button></div>
     </div></div>`;
@@ -874,6 +914,7 @@ function renderKopplung() {
           <summary>Kamera streikt? Code als Text</summary>
           <textarea class="codefeld" id="raus" readonly>${esc(k.code || '')}</textarea>
           <button class="btn btn--ghost" id="kopieren">Kopieren</button>
+        <p class="lage" id="lage"></p>
         </details>
         <div class="knopfsaeule">
           <button class="btn btn--primary" id="weiterKoppeln">${k.gastgeber
