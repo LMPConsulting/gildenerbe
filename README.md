@@ -11,7 +11,10 @@
 >
 > **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle vier plus eine Startseite.
 > Mit `--ohne-server` entsteht eine Fassung für reine Dateiablagen (GitHub Pages) — dort
-> koppeln sich zwei Handys bei **allen vier Spielen** per QR im selben WLAN oder Hotspot. Ohne den Schalter kommt der Raumcode
+> koppeln sich zwei Handys bei **allen vier Spielen** per QR im selben WLAN oder Hotspot.
+> Dabei muss auf **beiden** Geräten die Kamera freigegeben sein — auch auf dem, das nur den
+> Code zeigt: ohne diese Freigabe verschleiert Chrome die eigene WLAN-Adresse hinter einem
+> `.local`-Namen, den ein Handy-Hotspot nicht auflöst. Ohne den Schalter kommt der Raumcode
 > über das Internet dazu; dafür braucht es die Durchreiche aus
 > `LMPConsulting/docmatch` unter `spiele/`. Der Arbeitsablauf
 > [`.github/workflows/spiele-pages.yml`](.github/workflows/spiele-pages.yml) veröffentlicht
