@@ -13,7 +13,8 @@
 // die Durchreiche unter ../api.
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -127,6 +128,7 @@ const startseite = `<!doctype html>
 <link rel="apple-touch-icon" href="${symbolUrl}">
 <link rel="manifest" href="${manifestUrl}">
 <link rel="stylesheet" href="stil.css">
+<script src="sw-reg.js" defer></script>
 </head>
 <body>
 <div class="blatt">
@@ -148,13 +150,18 @@ const startseite = `<!doctype html>
   </main>
 
   <section class="hinweiskasten">
-    <h3>Ohne Netz, im Flugzeug</h3>
-    <p>Jedes Spiel gibt es auch als <strong>einzelne Datei</strong>: im Spiel unter
-      <em>Menü → Spiel als Datei sichern</em>. Die liegt danach in den Downloads, läuft
-      komplett offline und lässt sich weitergeben. Zwei Handys ohne Internet koppeln sich
-      dann per QR-Code im selben WLAN oder Hotspot.</p>
-    <p>Oder legt euch die Seite über <em>Zum Startbildschirm hinzufügen</em> wie eine App
-      auf den Homescreen.</p>
+    <h3>Vor dem Flug: einmal installieren</h3>
+    <p><strong>Auf beiden Handys</strong> im Chrome-Menü (⋮) auf
+      <em>Zum Startbildschirm hinzufügen</em> tippen. Danach liegt „Spiele“ wie eine App
+      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle vier Spiele
+      sind dann auf dem Gerät gespeichert.</p>
+    <p><span class="offlineampel" id="offlineampel">wird gespeichert …</span></p>
+    <p>Zu zweit ohne Internet: Einer macht seinen <strong>Hotspot</strong> an, der andere
+      verbindet sich damit. Dann im Spiel <em>Auf zwei Handys → QR zeigen</em> bzw.
+      <em>QR scannen</em>. Es wird kein Internet gebraucht, nur die Funkstrecke zwischen
+      euren beiden Geräten.</p>
+    <p>Wer lieber eine einzelne Datei mitnimmt: in jedem Spiel unter
+      <em>Menü → Spiel als Datei sichern</em>.</p>
   </section>
 
   <footer class="fuss">Privat. Keine Konten, keine Werbung, keine Auswertung.</footer>
@@ -239,6 +246,13 @@ body {
 
 .fuss { margin-top: 24px; text-align: center; font-size: 12px; color: var(--leise); }
 
+.offlineampel {
+  display: inline-block; font-size: 12.5px; font-weight: 650;
+  border: 1px solid var(--naht); border-radius: 999px; padding: 4px 12px;
+}
+.offlineampel.bereit { color: #5ec98a; border-color: #2f6b48; }
+.offlineampel.fehlt { color: #e2a34f; border-color: #6b532f; }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 `;
 
@@ -246,3 +260,119 @@ writeFileSync(join(ziel, 'index.html'), startseite);
 writeFileSync(join(ziel, 'stil.css'), stil);
 console.log(`\nStartseite geschrieben: ${join(ziel, 'index.html')}`);
 console.log(`Fertig — ${SPIELE.length} Spiele unter ${ziel}`);
+
+/* ------------------------------------------------- Offline: Service Worker */
+
+// Alle erzeugten Dateien einsammeln — genau die kommen in den Vorrat.
+function dateienSammeln(ordner, praefix = '') {
+  const raus = [];
+  for (const eintrag of readdirSync(ordner).sort()) {
+    const voll = join(ordner, eintrag);
+    if (statSync(voll).isDirectory()) raus.push(...dateienSammeln(voll, `${praefix}${eintrag}/`));
+    else raus.push({ pfad: `${praefix}${eintrag}`, inhalt: readFileSync(voll) });
+  }
+  return raus;
+}
+
+// sw.js und sw-reg.js bleiben aussen vor: sonst sammelt ein zweiter Lauf die
+// Ergebnisse des ersten mit ein und die Marke waere bei gleichem Inhalt anders.
+const dateien = dateienSammeln(ziel).filter((d) => d.pfad !== 'sw.js' && d.pfad !== 'sw-reg.js');
+// Der Name des Vorrats hängt am Inhalt: neue Fassung -> neuer Name -> alter Vorrat fliegt raus.
+const stempel = createHash('sha1');
+for (const d of dateien) stempel.update(d.pfad).update(d.inhalt);
+const marke = stempel.digest('hex').slice(0, 12);
+
+// Die dicken Einzeldateien zum Mitnehmen sind im Vorrat verzichtbar — sie laufen
+// ohnehin für sich allein und würden den Erstbesuch unnötig aufblähen.
+const vorrat = [
+  './',
+  './sw-reg.js',
+  // Die Spiele werden als Verzeichnis aufgerufen (/qwixx/), im Vorrat liegt aber
+  // die Datei darin. Beide Adressen aufnehmen, sonst greift offline nur der
+  // Notnagel und liefert die Startseite.
+  ...SPIELE.map((sp) => `./${sp.ordner}/`),
+  ...dateien.map((d) => `./${d.pfad}`).filter((pf) => !/\/[A-Z][A-Za-z]*\.html$/.test(pf)),
+];
+
+writeFileSync(join(ziel, 'sw.js'), `// Erzeugt von scripts/webseite.mjs — nicht von Hand ändern.
+//
+// Aufgabe: die Sammlung beim ersten Besuch vollstaendig auf das Geraet legen,
+// damit sie im Flugzeug ohne Netz startet. Danach wird immer zuerst aus dem
+// Vorrat geliefert und im Hintergrund nach einer neuen Fassung geschaut.
+
+const VORRAT = 'spiele-${marke}';
+const DATEIEN = ${JSON.stringify(vorrat, null, 2)};
+
+self.addEventListener('install', (e) => {
+  e.waitUntil((async () => {
+    const c = await caches.open(VORRAT);
+    // Einzeln, damit eine fehlende Datei nicht die ganze Installation kippt.
+    await Promise.all(DATEIEN.map((d) => c.add(new Request(d, { cache: 'reload' })).catch(() => {})));
+    self.skipWaiting();
+  })());
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
+    for (const name of await caches.keys()) if (name !== VORRAT) await caches.delete(name);
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', (e) => {
+  const anfrage = e.request;
+  if (anfrage.method !== 'GET') return;
+  const url = new URL(anfrage.url);
+  if (url.origin !== self.location.origin) return;
+
+  e.respondWith((async () => {
+    const c = await caches.open(VORRAT);
+    // Verzeichnis -> index.html darin; erst danach der Notnagel Startseite.
+    const alsIndex = url.pathname.endsWith('/')
+      ? new URL(url.pathname + 'index.html', url.origin).href : null;
+    const treffer = await c.match(anfrage, { ignoreSearch: true })
+      || (alsIndex ? await c.match(alsIndex, { ignoreSearch: true }) : null)
+      || (anfrage.mode === 'navigate' ? await c.match('./') : null);
+    // Im Hintergrund auffrischen, aber niemals auf das Netz warten.
+    const frisch = fetch(anfrage).then((antwort) => {
+      if (antwort && antwort.ok && antwort.type === 'basic') c.put(anfrage, antwort.clone());
+      return antwort;
+    }).catch(() => null);
+    return treffer || (await frisch) || new Response('Offline und nicht im Vorrat.', {
+      status: 504, headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
+  })());
+});
+`);
+
+writeFileSync(join(ziel, 'sw-reg.js'), `// Meldet den Service Worker an. Liegt als eigene Datei vor, weil die Seiten
+// unter einer strengen Content-Security-Policy ohne Inline-Skripte laufen.
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  var hier = document.currentScript && document.currentScript.src;
+  var ziel = hier ? new URL('sw.js', hier).href : '/sw.js';
+  var wurzel = hier ? new URL('./', hier).href : '/';
+  navigator.serviceWorker.register(ziel, { scope: wurzel }).then(function (reg) {
+    var ampel = document.getElementById('offlineampel');
+    if (!ampel) return;
+    var zeigen = function () {
+      var fertig = navigator.serviceWorker.controller || reg.active;
+      ampel.textContent = fertig
+        ? 'Offline bereit — funktioniert ohne Netz'
+        : 'wird gespeichert …';
+      ampel.className = 'offlineampel ' + (fertig ? 'bereit' : '');
+    };
+    zeigen();
+    navigator.serviceWorker.addEventListener('controllerchange', zeigen);
+    if (reg.installing) reg.installing.addEventListener('statechange', zeigen);
+  }).catch(function () {
+    var ampel = document.getElementById('offlineampel');
+    if (ampel) {
+      ampel.textContent = 'Offline-Vorrat nicht möglich (kein HTTPS?)';
+      ampel.className = 'offlineampel fehlt';
+    }
+  });
+})();
+`);
+
+console.log(`Offline-Vorrat: sw.js mit ${vorrat.length} Dateien (Marke ${marke})`);

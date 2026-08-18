@@ -118,6 +118,7 @@ if (webFlagge !== -1) {
     '<!doctype html>', '<html lang="de">', '<head>', kopf,
     '<link rel="stylesheet" href="stil.css">',
     '<script src="spiel.js" defer></' + 'script>',
+    '<script src="../sw-reg.js" defer></' + 'script>',
     '</head>', '<body>', '<div id="app"></div>', '</body>', '</html>', '',
   ].join('\n'));
   writeFileSync(join(ziel, mitnahme), seite);
