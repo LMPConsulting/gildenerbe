@@ -760,8 +760,9 @@ function renderWarten(need) {
 /** Was die Direktverbindung gerade weiß — in einer Zeile, für den Ernstfall. */
 function lageText(l, ausfuehrlich) {
   if (!l) return '';
-  const stumm = l.mdns && !l.eigene.length;   // Handy rückt die eigene Adresse nicht raus
-  if (!ausfuehrlich && !stumm) return '';     // läuft alles: keine Technik im Weg
+  const stumm = l.mdns && !l.eigene.length;         // nur .local statt echter Adresse
+  const leer = !l.mdns && !l.eigene.length && l.sammeln === 'fertig';  // gar nichts gefunden
+  if (!ausfuehrlich && !stumm && !leer) return '';  // läuft alles: keine Technik im Weg
   const teile = [];
   if (ausfuehrlich) {
     teile.push(`Eigene Adresse: ${l.eigene.length ? l.eigene.join('  ') : 'noch keine'}`,
@@ -771,7 +772,23 @@ function lageText(l, ausfuehrlich) {
     teile.push('Dieses Handy gibt seine WLAN-Adresse nicht heraus. Erlaube der Seite die '
       + 'Kamera (Schloss-Symbol neben der Adresse → Berechtigungen → Kamera) und koppelt neu.');
   }
+  if (leer) {
+    teile.push('Dieses Handy hat überhaupt keine Netzwerkadresse gefunden. Fast immer fehlt '
+      + 'die Kamera-Freigabe — Chrome merkt sich ein früheres „Blockieren" und fragt nicht '
+      + 'noch einmal. Einstellungen → Apps → „Spiele" → Berechtigungen → Kamera → Zulassen, '
+      + 'App schließen, neu öffnen. Hilft das nicht: das andere Handy den Hotspot aufmachen '
+      + 'lassen und dieses damit verbinden.');
+  }
   return teile.join(' · ');
+}
+
+/** Zeigt den Kamera-Bildschirm und wartet, wie es weitergehen soll. */
+function kameraFrage() {
+  return new Promise((fertig) => {
+    ui.kopplung.schritt = 'kamera';
+    ui.kopplung.kameraAntwort = fertig;
+    render();
+  });
 }
 
 /** Hält die Technikzeile aktuell, solange gekoppelt wird. */
@@ -792,11 +809,20 @@ async function funkStarten(gastgeber) {
   ui.kopplung = { schritt: 'moment', gastgeber, ueberQr: true, hinweis: '', fehler: '' };
   render();
 
-  // Erst die Kamera-Erlaubnis, dann die Verbindung. Ohne sie versteckt Chrome die
-  // echte WLAN-Adresse hinter einem .local-Namen, den ein Handy-Hotspot nicht
-  // auflöst — dann suchen sich die Geräte ewig. Scannen müssen wir gleich ohnehin.
-  await kameraFreigeben();
-  if (!ui.kopplung) return;                   // in der Zwischenzeit abgebrochen
+  // Erst die Kamera-Erlaubnis, dann die Verbindung. Ohne sie gibt Chrome die eigene
+  // Netzwerkadresse nicht heraus — das Handy findet dann gar keine oder nur einen
+  // .local-Namen, den ein Hotspot nicht auflöst. Scannen müssen wir gleich ohnehin.
+  let frei = await kameraFreigeben();
+  while (!frei) {
+    if (!ui.kopplung) return;                 // in der Zwischenzeit abgebrochen
+    const wahl = await kameraFrage();
+    if (!ui.kopplung || wahl === 'abbruch') return;
+    if (wahl === 'weiter') break;
+    frei = await kameraFreigeben();
+  }
+  if (!ui.kopplung) return;
+  ui.kopplung.schritt = 'moment';
+  render();
 
   ui.netz = funkAufbauen({
     gastgeber,
@@ -876,6 +902,28 @@ function renderKopplung() {
     app.querySelector('#qrWirt').onclick = () => funkStarten(true);
     app.querySelector('#qrGast').onclick = () => funkStarten(false);
     app.querySelector('#abbruch').onclick = kopplungAbbrechen;
+    return;
+  }
+
+  if (k.schritt === 'kamera') {
+    app.innerHTML = `<div class="screen"><div class="scrollbar"><div class="wrap">
+      <h2 class="h2">Kamera freigeben</h2>
+      <p class="lead">Dieses Handy hat die Kamera nicht freigegeben. Ohne sie kann es weder
+        den QR-Code scannen noch seine eigene Netzwerkadresse herausgeben — die beiden
+        Handys finden sich dann nicht.</p>
+      <p class="lead"><strong>So geht es:</strong> Handy-Einstellungen → Apps → „Spiele“ →
+        Berechtigungen → Kamera → <em>Zulassen</em>. Im Browser stattdessen: Schloss-Symbol
+        neben der Adresse → Berechtigungen → Kamera. Danach hier auf <em>Nochmal fragen</em>.</p>
+      <div class="knopfsaeule">
+        <button class="btn btn--primary" id="kameraNochmal">Nochmal fragen</button>
+        <button class="btn btn--ghost" id="kameraTrotzdem">Trotzdem versuchen</button>
+        <button class="btn btn--quiet" id="abbruch">Abbrechen</button>
+      </div>
+    </div></div></div>`;
+    const antwort = (was) => { const f = k.kameraAntwort; k.kameraAntwort = null; f?.(was); };
+    app.querySelector('#kameraNochmal').onclick = () => antwort('nochmal');
+    app.querySelector('#kameraTrotzdem').onclick = () => antwort('weiter');
+    app.querySelector('#abbruch').onclick = () => { antwort('abbruch'); kopplungAbbrechen(); };
     return;
   }
 
