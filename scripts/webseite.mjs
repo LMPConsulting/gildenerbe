@@ -1,10 +1,10 @@
-// Baut alle vier Reisespiele als Webfassung in einen Ordner und schreibt die
+// Baut alle fünf Reisespiele als Webfassung in einen Ordner und schreibt die
 // Startseite dazu. Aufruf:
 //
 //   node scripts/webseite.mjs <zielordner>
 //
 // Ergebnis:
-//   <ziel>/index.html          Startseite mit den vier Kacheln
+//   <ziel>/index.html          Startseite mit den fünf Kacheln
 //   <ziel>/stil.css            Stil der Startseite
 //   <ziel>/<spiel>/index.html  das Spiel (Stil und Skript als eigene Dateien)
 //   <ziel>/<spiel>/Spiel.html  dieselbe Fassung als eine Datei zum Mitnehmen
@@ -33,7 +33,7 @@ const SPIELE = [
       + 'Kurz, schnell, jedes Mal anders.',
     dauer: '15 Minuten',
     zwei: 'Zwei Handys',
-    zweiOhne: 'Ein Handy zum Weiterreichen',
+    zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#2a6ed4',
     icon: '<circle cx="18" cy="18" r="8"/><circle cx="46" cy="18" r="8"/>'
       + '<circle cx="18" cy="46" r="8"/><circle cx="46" cy="46" r="8"/>',
@@ -46,7 +46,7 @@ const SPIELE = [
       + 'Die Punkte laufen über den ganzen Urlaub weiter.',
     dauer: 'so lange ihr wollt',
     zwei: 'Zwei Handys, Antworten verdeckt',
-    zweiOhne: 'Ein Handy zum Weiterreichen',
+    zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#c9a227',
     icon: '<path d="M32 8 L54 46 H10 Z" fill="none" stroke-width="6" stroke-linejoin="round"/>',
   },
@@ -75,6 +75,20 @@ const SPIELE = [
     farbe: '#f0a92b',
     icon: '<path d="M56 32 L20 39 L11 54 H6 L13 38 L4 34 V30 L13 26 L6 10 H11 L20 25 Z"/>',
   },
+  {
+    ordner: 'hangman',
+    titel: 'Galgenmännchen',
+    zeile: 'Ein Wort, elf Fehlgriffe',
+    text: 'Einer denkt sich ein Wort aus, der andere rät Buchstaben. Jeder Fehlgriff '
+      + 'zeichnet einen Strich. Wer nicht mag, lässt das Handy eins aus 270 Wörtern ziehen.',
+    dauer: '5 Minuten je Runde',
+    zwei: 'Zwei Handys, das Wort bleibt geheim',
+    zweiOhne: 'Zwei Handys per QR im selben WLAN',
+    farbe: '#7fd1b9',
+    icon: '<g fill="none" stroke-width="5" stroke-linecap="round">'
+      + '<path d="M10 50h18M15 50V14h20"/><path d="M35 14v7"/>'
+      + '<circle cx="35" cy="27" r="6"/><path d="M35 33v13"/></g>',
+  },
 ];
 
 mkdirSync(ziel, { recursive: true });
@@ -88,17 +102,29 @@ for (const spiel of SPIELE) {
 
 /* ------------------------------------------------------------- Startseite */
 
-// Vier Punkte in den Farben der vier Spiele — reicht als Symbol und spart einen
-// zusätzlichen Abruf (und damit einen 404 auf /favicon.ico).
+// Ein Punkt je Spiel, in dessen Farbe — reicht als Symbol und spart einen
+// zusätzlichen Abruf (und damit einen 404 auf /favicon.ico). Die Punkte werden
+// zeilenweise verteilt und jede Zeile für sich zentriert, damit auch eine
+// ungerade Zahl von Spielen ordentlich aussieht.
+const SPALTEN = SPIELE.length <= 4 ? 2 : 3;
+const ZEILEN = Math.ceil(SPIELE.length / SPALTEN);
+const punkt = (s, i) => {
+  const zeile = Math.floor(i / SPALTEN);
+  const inZeile = Math.min(SPALTEN, SPIELE.length - zeile * SPALTEN);
+  const abstand = 64 / (SPALTEN + 1);
+  const cx = 32 + ((i % SPALTEN) - (inZeile - 1) / 2) * abstand;
+  const cy = 32 + (zeile - (ZEILEN - 1) / 2) * abstand;
+  return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${SPALTEN === 2 ? 9 : 7}" fill="${s.farbe}"/>`;
+};
 const SYMBOL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
   + '<rect width="64" height="64" rx="14" fill="#11151c"/>'
-  + SPIELE.map((s, i) => `<circle cx="${i % 2 ? 42 : 22}" cy="${i < 2 ? 22 : 42}" r="9" fill="${s.farbe}"/>`).join('')
+  + SPIELE.map(punkt).join('')
   + '</svg>';
 const symbolUrl = 'data:image/svg+xml,' + encodeURIComponent(SYMBOL);
 const manifestUrl = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify({
   name: 'Spiele', short_name: 'Spiele', start_url: '.', display: 'standalone',
   background_color: '#11151c', theme_color: '#11151c',
-  description: 'Vier Reisespiele für zwei Handys.',
+  description: 'Fünf Reisespiele für zwei Handys.',
   icons: [{ src: symbolUrl, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
 }));
 
@@ -122,7 +148,7 @@ const startseite = `<!doctype html>
 <meta name="theme-color" content="#11151c">
 <meta name="color-scheme" content="dark">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Vier Reisespiele für zwei Handys — Qwixx, Dreikampf, Cabo und Sky Team.">
+<meta name="description" content="Fünf Reisespiele für zwei Handys — Qwixx, Dreikampf, Cabo, Sky Team und Galgenmännchen.">
 <title>Spiele</title>
 <link rel="icon" href="${symbolUrl}">
 <link rel="apple-touch-icon" href="${symbolUrl}">
@@ -136,11 +162,10 @@ const startseite = `<!doctype html>
     <p class="ober">Für zwei</p>
     <h1>Spiele</h1>
     <p class="unter">${ohneServer
-      ? `Vier Spiele für zwei. <strong>Cabo</strong> und <strong>Sky Team</strong> laufen auf
-         <strong>zwei Handys gleichzeitig</strong> — koppeln per QR-Code, dafür müsst ihr im
-         selben WLAN oder Hotspot sein. <strong>Qwixx</strong> und <strong>Dreikampf</strong>
-         spielt ihr an einem Handy, das ihr euch hin und her gebt.`
-      : `Vier Spiele, die ihr zu zweit spielen könnt — jedes auf einem Handy zum
+      ? `Fünf Spiele für zwei. Jedes läuft an <strong>einem Handy</strong>, das ihr euch
+         hin und her gebt — oder auf <strong>zwei Handys gleichzeitig</strong>, gekoppelt per
+         QR-Code. Dafür müssen beide Geräte im <strong>selben WLAN</strong> sein.`
+      : `Fünf Spiele, die ihr zu zweit spielen könnt — jedes auf einem Handy zum
          Weiterreichen oder auf <strong>zwei Handys gleichzeitig</strong>. Dafür öffnet einer
          einen Raum und gibt den fünfstelligen Code weiter; ihr müsst <strong>nicht</strong>
          im selben WLAN sein.`}</p>
@@ -153,7 +178,7 @@ const startseite = `<!doctype html>
     <h3>Vor dem Flug: einmal installieren</h3>
     <p><strong>Auf beiden Handys</strong> im Chrome-Menü (⋮) auf
       <em>Zum Startbildschirm hinzufügen</em> tippen. Danach liegt „Spiele“ wie eine App
-      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle vier Spiele
+      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle fünf Spiele
       sind dann auf dem Gerät gespeichert.</p>
     <p><span class="offlineampel" id="offlineampel">wird gespeichert …</span></p>
     <p>Zu zweit ohne Internet: beide Handys ins <strong>selbe WLAN</strong>, dann im Spiel

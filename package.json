@@ -13,6 +13,7 @@
     "dreikampf:build": "node dreikampf/build.mjs",
     "cabo:build": "node cabo/build.mjs",
     "skyteam:build": "node skyteam/build.mjs",
+    "hangman:build": "node hangman/build.mjs",
     "spiele:web": "node scripts/webseite.mjs"
   },
   "devDependencies": {

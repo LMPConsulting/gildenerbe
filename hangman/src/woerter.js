@@ -1,0 +1,88 @@
+// Wörter für die Runden gegen das Handy. Reines Deutsch, alles in Großbuchstaben.
+// Umlaute sind eigene Tasten; ß gibt es nicht — in Großschrift steht dafür SS.
+//
+// Die Kategorie ist zugleich der Tipp, den der Rater sieht. Deshalb sind die
+// Listen thematisch eng gehalten: „Sehenswürdigkeit in Wien“ hilft, „Wort“ nicht.
+
+export const KATEGORIEN = [
+  { id: 'allerlei', titel: 'Allerlei', tipp: 'Irgendein Wort' },
+  { id: 'reise', titel: 'Reise', tipp: 'Unterwegs und im Urlaub' },
+  { id: 'wien', titel: 'Wien', tipp: 'Wien und Österreich' },
+  { id: 'essen', titel: 'Essen & Trinken', tipp: 'Kommt auf den Tisch' },
+  { id: 'natur', titel: 'Tiere & Natur', tipp: 'Draußen, lebendig' },
+  { id: 'zuhause', titel: 'Zuhause', tipp: 'Findet sich in der Wohnung' },
+  { id: 'schwer', titel: 'Knifflig', tipp: 'Lang und gemein' },
+];
+
+export const WOERTER = {
+  allerlei: [
+    'FENSTER', 'SCHATTEN', 'GEDANKE', 'MORGEN', 'FREUNDIN', 'ANTWORT', 'MUSIK',
+    'KALENDER', 'TASCHE', 'BRIEF', 'WOLKE', 'SPIEGEL', 'GEHEIMNIS', 'LACHEN',
+    'ZUFALL', 'WINTER', 'SCHLÜSSEL', 'GESCHICHTE', 'ABENTEUER', 'RUHE',
+    'FARBE', 'STIMME', 'TREPPE', 'WUNDER', 'KNOTEN', 'SPRACHE', 'FEIERTAG',
+    'NACHBAR', 'GEDULD', 'SEKUNDE', 'MÄRCHEN', 'HOFFNUNG', 'SCHRITT',
+    'WERKZEUG', 'ERINNERUNG', 'BÜHNE', 'MUSTER', 'GLÜCK', 'SPUR', 'RÄTSEL',
+  ],
+  reise: [
+    'FLUGHAFEN', 'KOFFER', 'BAHNSTEIG', 'REISEPASS', 'LANDKARTE', 'HOTEL',
+    'RUCKSACK', 'FAHRKARTE', 'GEPÄCK', 'ANKUNFT', 'ABFLUG', 'SITZPLATZ',
+    'ZOLL', 'FERNWEH', 'STADTPLAN', 'HANDGEPÄCK', 'SOUVENIR', 'POSTKARTE',
+    'SONNENCREME', 'BADETUCH', 'FLUGZEUG', 'NACHTZUG', 'HERBERGE', 'AUSSICHT',
+    'WANDERWEG', 'GRENZE', 'ZEITZONE', 'UMSTEIGEN', 'VERSPÄTUNG', 'TRINKGELD',
+    'STADTFÜHRUNG', 'WECHSELSTUBE', 'STRANDKORB', 'MITBRINGSEL', 'SCHLAFWAGEN',
+    'AUSFLUG', 'HAFEN', 'FÄHRE', 'ROLLKOFFER', 'REISEFÜHRER',
+  ],
+  wien: [
+    'STEPHANSDOM', 'PRATER', 'RIESENRAD', 'SCHÖNBRUNN', 'HOFBURG', 'DONAU',
+    'FIAKER', 'HEURIGER', 'KAFFEEHAUS', 'MELANGE', 'SACHERTORTE', 'NASCHMARKT',
+    'RINGSTRASSE', 'BURGTHEATER', 'STAATSOPER', 'WALZER', 'BELVEDERE',
+    'HUNDERTWASSER', 'GRINZING', 'KAHLENBERG', 'STRASSENBAHN', 'BEISL',
+    'SCHNITZEL', 'ALBERTINA', 'RATHAUS', 'VOLKSGARTEN', 'BALLSAISON',
+    'SCHANIGARTEN', 'MARILLE', 'KAISERIN', 'SEMMEL', 'AUGARTEN',
+    'ZENTRALFRIEDHOF', 'SPANISCHE HOFREITSCHULE', 'WIENERWALD', 'ALPEN',
+    'SALZBURG', 'MOZART', 'STRUDEL', 'BUSCHENSCHANK',
+  ],
+  essen: [
+    'FRÜHSTÜCK', 'BROTZEIT', 'KARTOFFEL', 'SUPPE', 'ZWIEBEL', 'KNOBLAUCH',
+    'SCHOKOLADE', 'ERDBEERE', 'PFANNKUCHEN', 'NUDELN', 'KÄSE', 'HONIG',
+    'ZIMTSCHNECKE', 'APFELSTRUDEL', 'ORANGENSAFT', 'SPARGEL', 'GURKENSALAT',
+    'ROTWEIN', 'LEBERKÄSE', 'BROTKORB', 'MARMELADE', 'SPIEGELEI', 'GRIESSBREI',
+    'HOLUNDER', 'KÜRBISKERN', 'BUTTERBROT', 'PFEFFERMINZE', 'BACKOFEN',
+    'SAHNETORTE', 'GEWÜRZE', 'LIMONADE', 'RÄUCHERLACHS', 'WEINGLAS',
+    'SENFGURKE', 'BLAUBEERE', 'ZUCKERGUSS', 'MITTAGESSEN', 'NACHTISCH',
+    'HEFETEIG', 'ESSIGGURKE',
+  ],
+  natur: [
+    'EICHHÖRNCHEN', 'SCHMETTERLING', 'REGENBOGEN', 'GEWITTER', 'AMEISE',
+    'SEEROSE', 'NEBEL', 'BUCHENWALD', 'IGEL', 'FUCHSBAU', 'MEERESRAUSCHEN',
+    'SANDDÜNE', 'BERGGIPFEL', 'WASSERFALL', 'MÖWE', 'SEEHUND', 'TANNENZAPFEN',
+    'LÖWENZAHN', 'GRASHALM', 'MONDLICHT', 'STERNBILD', 'MORGENTAU',
+    'WILDSCHWEIN', 'STORCH', 'LIBELLE', 'FELDMAUS', 'BIRKE', 'HOLZWURM',
+    'BERGBACH', 'SCHNEEFALL', 'KROKUS', 'NACHTIGALL', 'MAULWURF', 'HIRSCH',
+    'ADLERHORST', 'PFÜTZE', 'GLETSCHER', 'SEEUFER', 'KIESELSTEIN', 'WEIDE',
+  ],
+  zuhause: [
+    'KÜHLSCHRANK', 'BETTDECKE', 'STAUBSAUGER', 'BÜCHERREGAL', 'WASCHMASCHINE',
+    'TÜRKLINKE', 'LICHTSCHALTER', 'BADEWANNE', 'ZAHNBÜRSTE', 'SOFAKISSEN',
+    'TEEKANNE', 'WANDUHR', 'HAUSSCHUHE', 'BLUMENTOPF', 'SCHREIBTISCH',
+    'GARDINE', 'HEIZKÖRPER', 'KLEIDERBÜGEL', 'SPÜLBECKEN', 'FUSSMATTE',
+    'BRIEFKASTEN', 'STECKDOSE', 'TEPPICHBODEN', 'NACHTTISCH', 'HANDTUCH',
+    'MÜLLEIMER', 'SCHUHREGAL', 'DACHBODEN', 'WÄSCHEKORB', 'KAFFEEMASCHINE',
+    'BALKONTÜR', 'BILDERRAHMEN', 'SCHUBLADE', 'KERZENSTÄNDER', 'TÜRSCHILD',
+    'FERNBEDIENUNG', 'GIESSKANNE', 'TREPPENHAUS', 'SPIEGELSCHRANK', 'KOPFKISSEN',
+  ],
+  schwer: [
+    'DONAUDAMPFSCHIFFFAHRT', 'FEUERWEHRSCHLAUCH', 'HANDSCHUHFACH',
+    'ZWETSCHGENKNÖDEL', 'RÜCKSICHTNAHME', 'AUGENBLICKLICH',
+    'SCHACHTELHALM', 'QUERFLÖTE', 'ZAHNARZTTERMIN', 'PFLAUMENMUS',
+    'JAHRHUNDERTWENDE', 'SPAZIERSTOCK', 'KAMINFEGER', 'VOLKSHOCHSCHULE',
+    'BAHNHOFSVORPLATZ', 'GLÜHBIRNE', 'SCHNEEGLÖCKCHEN', 'WÜRFELZUCKER',
+    'TASCHENLAMPE', 'BÜRGERSTEIG', 'MITTAGSPAUSE', 'FLASCHENÖFFNER',
+    'HOCHZEITSTORTE', 'STRASSENLATERNE', 'WINTERMANTEL', 'ZWISCHENSTOPP',
+    'HAFERFLOCKEN', 'PFERDEKUTSCHE', 'SCHAUKELSTUHL', 'ZUCKERWATTE',
+  ],
+};
+
+/** Alle Wörter mit ihrer Kategorie — praktisch für „Allerlei quer durch alles“. */
+export const ALLE = Object.entries(WOERTER).flatMap(([kat, liste]) =>
+  liste.map((wort) => ({ wort, kategorie: kat })));
