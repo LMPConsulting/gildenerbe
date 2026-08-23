@@ -1,10 +1,10 @@
-// Baut alle sechs Reisespiele als Webfassung in einen Ordner und schreibt die
+// Baut alle sieben Reisespiele als Webfassung in einen Ordner und schreibt die
 // Startseite dazu. Aufruf:
 //
 //   node scripts/webseite.mjs <zielordner>
 //
 // Ergebnis:
-//   <ziel>/index.html          Startseite mit den sechs Kacheln
+//   <ziel>/index.html          Startseite mit den sieben Kacheln
 //   <ziel>/stil.css            Stil der Startseite
 //   <ziel>/<spiel>/index.html  das Spiel (Stil und Skript als eigene Dateien)
 //   <ziel>/<spiel>/Spiel.html  dieselbe Fassung als eine Datei zum Mitnehmen
@@ -102,6 +102,21 @@ const SPIELE = [
     icon: '<circle cx="22" cy="22" r="9"/><circle cx="42" cy="42" r="9"/>'
       + '<circle cx="42" cy="22" r="3.5"/><circle cx="22" cy="42" r="3.5"/>',
   },
+  {
+    ordner: 'seeschlacht',
+    titel: 'Seeschlacht',
+    zeile: 'Zehn Schiffe, zehn mal zehn Felder',
+    text: 'Flotte verstecken, Feld für Feld suchen. Treffer bringt einen weiteren Schuss. '
+      + 'Von allen Spielen das, was am besten auf zwei Handys passt.',
+    dauer: '15 Minuten',
+    zwei: 'Zwei Handys, Flotten bleiben geheim',
+    zweiOhne: 'Zwei Handys per QR im selben WLAN',
+    farbe: '#e2603c',
+    icon: '<g fill="none" stroke-width="4"><rect x="10" y="10" width="44" height="44" rx="5"/>'
+      + '<path d="M25 10v44M39 10v44M10 25h44M10 39h44"/></g>'
+      + '<rect x="13" y="13" width="9" height="9" rx="2" stroke="none"/>'
+      + '<rect x="42" y="42" width="9" height="9" rx="2" stroke="none"/>',
+  },
 ];
 
 mkdirSync(ziel, { recursive: true });
@@ -137,7 +152,7 @@ const symbolUrl = 'data:image/svg+xml,' + encodeURIComponent(SYMBOL);
 const manifestUrl = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify({
   name: 'Spiele', short_name: 'Spiele', start_url: '.', display: 'standalone',
   background_color: '#11151c', theme_color: '#11151c',
-  description: 'Sechs Reisespiele für zwei Handys.',
+  description: 'Sieben Reisespiele für zwei Handys.',
   icons: [{ src: symbolUrl, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
 }));
 
@@ -161,7 +176,7 @@ const startseite = `<!doctype html>
 <meta name="theme-color" content="#11151c">
 <meta name="color-scheme" content="dark">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Sechs Reisespiele für zwei Handys — Qwixx, Dreikampf, Cabo, Sky Team, Galgenmännchen und Ärger.">
+<meta name="description" content="Sieben Reisespiele für zwei Handys — Qwixx, Dreikampf, Cabo, Sky Team, Galgenmännchen, Ärger und Seeschlacht.">
 <title>Spiele</title>
 <link rel="icon" href="${symbolUrl}">
 <link rel="apple-touch-icon" href="${symbolUrl}">
@@ -175,10 +190,10 @@ const startseite = `<!doctype html>
     <p class="ober">Für zwei</p>
     <h1>Spiele</h1>
     <p class="unter">${ohneServer
-      ? `Sechs Spiele für zwei. Jedes läuft an <strong>einem Handy</strong>, das ihr euch
+      ? `Sieben Spiele für zwei. Jedes läuft an <strong>einem Handy</strong>, das ihr euch
          hin und her gebt — oder auf <strong>zwei Handys gleichzeitig</strong>, gekoppelt per
          QR-Code. Dafür müssen beide Geräte im <strong>selben WLAN</strong> sein.`
-      : `Sechs Spiele, die ihr zu zweit spielen könnt — jedes auf einem Handy zum
+      : `Sieben Spiele, die ihr zu zweit spielen könnt — jedes auf einem Handy zum
          Weiterreichen oder auf <strong>zwei Handys gleichzeitig</strong>. Dafür öffnet einer
          einen Raum und gibt den fünfstelligen Code weiter; ihr müsst <strong>nicht</strong>
          im selben WLAN sein.`}</p>
@@ -191,7 +206,7 @@ const startseite = `<!doctype html>
     <h3>Vor dem Flug: einmal installieren</h3>
     <p><strong>Auf beiden Handys</strong> im Chrome-Menü (⋮) auf
       <em>Zum Startbildschirm hinzufügen</em> tippen. Danach liegt „Spiele“ wie eine App
-      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle sechs Spiele
+      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle sieben Spiele
       sind dann auf dem Gerät gespeichert.</p>
     <p><span class="offlineampel" id="offlineampel">wird gespeichert …</span></p>
     <p>Zu zweit ohne Internet: beide Handys ins <strong>selbe WLAN</strong>, dann im Spiel
