@@ -1,0 +1,341 @@
+/* Wiener Runde — Brett in Creme auf dunklem Samt. Bewusst einthemig,
+   alles explizit gefärbt. */
+
+:root {
+  --tisch: #221a24;
+  --tisch-2: #150f17;
+  --panel: #302436;
+  --panel-2: #3c2e44;
+  --naht: #4a3a54;
+  --schrift: #f0e8f2;
+  --schrift-dim: #b7a8bd;
+  --schrift-blass: #877a8d;
+
+  --brett: #f4ece0;
+  --brett-rand: #c9b8a3;
+  --linie: #bcaa96;
+  --feld: #fdf9f2;
+
+  --rot: #b5323f;
+  --rot-hell: #dd5c68;
+  --blau: #2e7d6b;
+  --blau-hell: #4aa993;
+  --gold: #d9a441;
+  --gut: #6aa96f;
+
+  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+
+  --r-md: 14px;
+  --r-lg: 22px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+
+body {
+  background: var(--tisch);
+  background-image:
+    radial-gradient(120% 60% at 50% -10%, #38294010 0%, rgba(56, 41, 64, 0) 60%),
+    linear-gradient(180deg, var(--tisch) 0%, var(--tisch-2) 100%);
+  background-attachment: fixed;
+  color: var(--schrift-dim);
+  font-family: var(--font-ui);
+  font-size: 16px; line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- Gerüst ---------- */
+
+#app { min-height: 100dvh; display: flex; flex-direction: column; }
+.screen { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; }
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; min-height: 0; }
+.scrollbar { overflow-y: auto; max-height: 100dvh; }
+.wrap { width: 100%; max-width: 560px; margin-inline: auto; padding: 22px 18px calc(18px + var(--safe-b)); }
+.blatt { padding: calc(var(--safe-t) + 16px) 18px calc(18px + var(--safe-b)); width: 100%; max-width: 560px; margin-inline: auto; }
+
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; color: var(--schrift); margin: 0 0 6px; }
+h3 { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin: 24px 0 8px; }
+p, li { font-size: 15px; line-height: 1.6; color: var(--schrift-dim); }
+strong { color: var(--schrift); }
+em { color: var(--gold); font-style: italic; }
+
+.kopf {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(var(--safe-t) + 12px) 16px 10px;
+  border-bottom: 1px solid var(--naht);
+}
+.kopf .titel { flex: 1; min-width: 0; }
+.kopf .ober { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--schrift-blass); font-weight: 700; }
+.kopf h1 {
+  margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 23px;
+  color: var(--schrift); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.kopf h1 .wer--0 { color: var(--rot-hell); }
+.kopf h1 .wer--1 { color: var(--blau-hell); }
+.werkzeuge { display: flex; gap: 7px; }
+.werkzeug {
+  width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+  background: var(--panel); border: 1px solid var(--naht); color: var(--schrift-dim); font-size: 15px;
+}
+
+/* ---------- Knöpfe ---------- */
+
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; padding: 16px 18px; border-radius: var(--r-md);
+  font-weight: 650; font-size: 16px; letter-spacing: -0.01em;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.btn:active { transform: scale(0.985); }
+.btn:disabled { opacity: 0.3; transform: none; box-shadow: none; filter: saturate(0.5); }
+.btn--rot { background: var(--gold); color: #2a1c05; box-shadow: 0 8px 26px rgba(217, 164, 65, 0.18); }
+.btn--hell { background: var(--brett); color: #241c17; }
+.btn--geist { background: var(--panel); color: var(--schrift); border: 1px solid var(--naht); }
+.btn--leise { background: none; color: var(--schrift-blass); font-weight: 500; font-size: 15px; padding: 13px; }
+.knopfsaeule { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.reihe { display: flex; gap: 10px; }
+.reihe .btn { width: auto; flex: 1; }
+
+/* ---------- Startbildschirm ---------- */
+
+.start { justify-content: center; text-align: center; padding: 30px 20px calc(28px + var(--safe-b)); }
+.wortmarke {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(38px, 13vw, 56px); line-height: 1.02; margin: 0;
+  color: var(--schrift); letter-spacing: -0.02em;
+}
+.wortmarke em { font-style: italic; color: var(--gold); }
+.unterzeile { color: var(--schrift-blass); margin: 10px 0 26px; }
+
+/* ---------- Das Brett ---------- */
+
+.tischplatte { flex: 1; display: grid; place-items: center; padding: 10px 12px 0; min-height: 0; }
+.brett {
+  width: 100%; max-width: min(96vw, 54dvh); aspect-ratio: 1;
+  background: var(--brett);
+  border: 3px solid var(--brett-rand);
+  border-radius: 18px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  display: block;
+}
+/* ---------- Würfel und Leiste ---------- */
+
+.leiste {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px calc(14px + var(--safe-b));
+  max-width: 560px; margin-inline: auto; width: 100%;
+}
+.wuerfel {
+  width: 66px; height: 66px; flex: 0 0 auto; border-radius: 16px;
+  background: var(--feld); border: 2px solid var(--brett-rand);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+  padding: 9px; gap: 2px;
+}
+.wuerfel:disabled { opacity: 0.45; box-shadow: none; }
+.wuerfel .auge { width: 100%; height: 100%; border-radius: 50%; background: #2a201a; }
+.wuerfel .auge--leer { background: none; }
+.wuerfel--rollt { animation: schuetteln 0.4s ease; }
+@keyframes schuetteln {
+  25% { transform: rotate(-9deg) scale(1.05); }
+  75% { transform: rotate(9deg) scale(1.05); }
+}
+.wuerfel--frage { display: grid; place-items: center; font-size: 26px; color: #2a201a; font-weight: 700; }
+
+.sagt { flex: 1; min-width: 0; }
+.sagt .zeile1 { color: var(--schrift); font-size: 15px; line-height: 1.35; }
+.sagt .zeile2 { color: var(--schrift-blass); font-size: 13px; margin-top: 2px; }
+.sagt .warnung { color: var(--gold); }
+
+/* ---------- Punktetafel ---------- */
+
+.tafel {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: 10px; background: var(--panel); border: 1px solid var(--naht);
+  border-radius: var(--r-lg); padding: 16px 14px; margin: 16px 0;
+}
+.tafel .seite { text-align: center; min-width: 0; }
+.tafel .wer { font-size: 12px; color: var(--schrift-blass); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tafel .zahl { font-family: var(--font-num); font-size: 34px; font-weight: 800; line-height: 1.1; }
+.tafel .seite--0 .zahl { color: var(--rot-hell); }
+.tafel .seite--1 .zahl { color: var(--blau-hell); }
+.tafel .strichlein { width: 1px; height: 40px; background: var(--naht); }
+
+.feld {
+  background: var(--panel); border: 1px solid var(--naht);
+  border-radius: var(--r-md); padding: 14px; color: var(--schrift); font-size: 16px;
+  user-select: text; -webkit-user-select: text; width: 100%;
+}
+.feld::placeholder { color: var(--schrift-blass); }
+.feld--code {
+  width: 100%; text-align: center; letter-spacing: 0.3em;
+  font-family: var(--font-num); font-size: 28px; text-transform: uppercase; margin-top: 8px;
+}
+.feldlabel { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--schrift-blass); font-weight: 700; text-align: left; margin: 18px 0 7px; }
+.warnton { color: var(--rot-hell); }
+
+.wahlliste { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.wahl {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r-md); padding: 13px 15px;
+}
+.wahl--an { border-color: var(--gold); background: #3a2c18; }
+.wahl .haupt { flex: 1; min-width: 0; }
+.wahl .oben { color: var(--schrift); font-weight: 650; }
+.wahl .unten { font-size: 13px; color: var(--schrift-blass); }
+.wahl .haken { color: var(--gold); font-size: 18px; }
+
+/* ---------- Overlays ---------- */
+
+.overlay {
+  position: fixed; inset: 0; z-index: 50; background: var(--tisch-2);
+  display: flex; flex-direction: column; animation: einblenden 0.18s ease-out;
+}
+@keyframes einblenden { from { opacity: 0; } }
+
+.jubel {
+  justify-content: center; align-items: center; text-align: center;
+  padding: 26px calc(24px + var(--safe-b));
+  /* Deckende Grundfarbe muss hier noch einmal stehen: das Verlaufsbild allein
+     ließe das Brett durchscheinen. */
+  background-color: var(--tisch-2);
+  background-image: radial-gradient(90% 50% at 50% 40%, #382940 0%, rgba(56, 41, 64, 0) 70%);
+}
+.jubel p { max-width: 30ch; }
+.jubel .btn { width: min(340px, 100%); }
+.jubel .krone { font-size: 46px; }
+.jubel .name { font-family: var(--font-display); font-size: clamp(30px, 9vw, 44px); color: var(--schrift); line-height: 1.1; margin: 6px 0; }
+.jubel .btn { max-width: 340px; }
+
+/* ---------- Kopplung per QR ---------- */
+
+.qrfeld { display: grid; place-items: center; background: var(--brett); border-radius: 14px; padding: 14px; margin: 16px 0; }
+.qrfeld canvas { width: 100%; max-width: 300px; height: auto; image-rendering: pixelated; display: block; }
+
+.scanfenster {
+  position: relative; overflow: hidden; border-radius: 14px; background: #000;
+  aspect-ratio: 1; margin: 16px 0; border: 1px solid var(--naht);
+}
+.scanfenster video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanfenster::after {
+  content: ""; position: absolute; inset: 16%;
+  border: 2px solid var(--gold); border-radius: 12px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.45);
+}
+
+.raumcode {
+  font-family: var(--font-num); font-size: clamp(38px, 13vw, 58px); font-weight: 800;
+  letter-spacing: 0.14em; text-align: center; padding: 18px 10px; margin: 16px 0;
+  border-radius: 14px; user-select: all; -webkit-user-select: all;
+  background: var(--panel); color: var(--schrift); border: 2px solid var(--gold);
+}
+
+.codeklappe { margin-top: 6px; }
+.codeklappe summary { font-size: 13px; color: var(--schrift-blass); cursor: pointer; padding: 8px 0; list-style: none; }
+.codeklappe summary::before { content: "▸ "; }
+.codeklappe[open] summary::before { content: "▾ "; }
+.codeklappe .btn { margin-top: 8px; }
+.codefeld {
+  width: 100%; min-height: 84px; resize: vertical; margin-top: 6px;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: 10px;
+  padding: 10px; color: var(--schrift-blass); font-family: var(--font-num); font-size: 11px;
+  word-break: break-all; user-select: text; -webkit-user-select: text;
+}
+.lage { margin-top: 12px; font-size: 12px; line-height: 1.55; opacity: 0.62; word-break: break-word; }
+
+/* ---------- Quer: Brett links, Bedienung rechts ---------- */
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .screen--spiel { flex-direction: row; align-items: stretch; }
+  .screen--spiel .kopf { display: none; }
+  .tischplatte { padding: 8px; }
+  .brett { max-width: min(46vw, 92dvh); }
+  .leiste { flex-direction: column; align-items: stretch; justify-content: center; max-width: 320px; padding: 10px 14px; }
+  .leiste .wuerfel { align-self: center; }
+}
+
+/* ---------- Das Brett ---------- */
+
+.brett .zelle { fill: var(--feld); stroke: var(--linie); stroke-width: 0.35; }
+.brett .zelle--ecke { fill: #efe6d8; }
+.brett .zelle--wahl { cursor: pointer; }
+.brett .zelle--jetzt { stroke: var(--gold); stroke-width: 0.9; }
+.brett .band { stroke: rgba(0, 0, 0, 0.25); stroke-width: 0.2; }
+.brett .marke { stroke: rgba(0, 0, 0, 0.3); stroke-width: 0.25; }
+.brett .marke--0 { fill: var(--rot); }
+.brett .marke--1 { fill: var(--blau); }
+.brett .haus { fill: #4f9d69; stroke: #23472f; stroke-width: 0.2; }
+.brett .hotel { fill: var(--rot); stroke: #4d1219; stroke-width: 0.2; }
+.brett .hyp { fill: none; stroke: var(--rot); stroke-width: 0.5; }
+.brett .figur { stroke: #fff; stroke-width: 0.5; }
+.brett .figur--0 { fill: var(--rot); }
+.brett .figur--1 { fill: var(--blau); }
+.brett .kuerzel {
+  font-family: var(--font-ui); font-size: 2.5px; font-weight: 700;
+  fill: #6b5c4c; text-anchor: middle; dominant-baseline: central;
+}
+.brett .mitteschrift {
+  font-family: var(--font-display); font-size: 6px; fill: var(--linie);
+  text-anchor: middle; dominant-baseline: central;
+}
+.brett .mittezeile {
+  font-family: var(--font-ui); font-size: 3px; font-weight: 700; letter-spacing: 0.1em;
+  fill: var(--brett-rand); text-anchor: middle; dominant-baseline: central;
+}
+
+/* ---------- Konten und Karten ---------- */
+
+.konten { display: flex; gap: 8px; padding: 0 14px; max-width: 560px; margin-inline: auto; width: 100%; }
+.konto {
+  flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--naht);
+  border-radius: 12px; padding: 8px 10px;
+}
+.konto--dran { border-color: var(--gold); }
+.konto .wer { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.konto--0 .wer { color: var(--rot-hell); }
+.konto--1 .wer { color: var(--blau-hell); }
+.konto .geld { font-family: var(--font-num); font-size: 19px; font-weight: 800; color: var(--schrift); }
+.konto .klein { font-size: 11px; color: var(--schrift-blass); }
+
+.karte {
+  background: var(--feld); color: #2a2028; border-radius: 14px; overflow: hidden;
+  margin: 12px 0; border: 1px solid var(--brett-rand);
+}
+.karte .kopfband { height: 26px; display: grid; place-items: center; color: #fff;
+  font-weight: 700; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+.karte .rumpf { padding: 12px 14px 14px; }
+.karte h4 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; font-size: 21px; color: #241c22; }
+.karte table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.karte td { padding: 3px 0; color: #4a3f48; }
+.karte td:last-child { text-align: right; font-family: var(--font-num); font-weight: 700; color: #241c22; }
+.karte tr.jetzt td { color: #b5323f; }
+.karte .fuss { font-size: 13px; color: #6b5c66; margin-top: 8px; }
+
+.ereigniskarte {
+  background: var(--feld); color: #2a2028; border-radius: 14px; padding: 16px;
+  margin: 12px 0; border: 1px solid var(--brett-rand); text-align: center;
+}
+.ereigniskarte .art { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #8a7a86; font-weight: 700; }
+.ereigniskarte .text { font-family: var(--font-display); font-size: 18px; margin-top: 8px; color: #241c22; }
+
+.besitzliste { display: flex; flex-direction: column; gap: 6px; }
+.besitzzeile {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: 10px; padding: 9px 11px;
+}
+.besitzzeile .streifen { width: 6px; align-self: stretch; border-radius: 3px; }
+.besitzzeile .nam { flex: 1; min-width: 0; color: var(--schrift); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.besitzzeile .wert { font-family: var(--font-num); font-size: 13px; color: var(--schrift-blass); }
+.besitzzeile--hyp { opacity: 0.5; }
+.gruppenhinweis { font-size: 13px; color: var(--gold); margin-top: 8px; }
