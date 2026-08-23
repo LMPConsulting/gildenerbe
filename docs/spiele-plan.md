@@ -107,13 +107,22 @@ Erst wenn das alles steht, geht ein Spiel live.
 
 | Regel | Umsetzung |
 |---|---|
-| Brett | Ring aus 24 Feldern, vier Höfe in den Ecken |
-| Hüte | 4 je Spieler, Start im eigenen Hof, Ziel ist der gegenüberliegende Hof |
-| Ziehen | ein Hut je Wurf, im Uhrzeigersinn |
+| Brett | Ring aus 20 Feldern — der Rand eines 6 × 6-Rasters, Höfe in zwei gegenüberliegenden Ecken |
+| Hüte | 4 je Spieler, Start im eigenen Hof |
+| Weg | **einmal ganz herum und wieder in den eigenen Hof** (20 Schritte) |
+| Ziehen | ein Hut je Wurf, im Uhrzeigersinn, keine Sechs zum Loslaufen nötig |
 | Fangen | Landen auf einem fremden Hut nimmt ihn unter den eigenen; der Stapel zieht zusammen |
-| Befreien | erreicht ein Stapel das Ziel, werden gefangene Hüte an ihren Besitzer zurückgegeben — in dessen Hof |
-| Einlaufen | der Zielhof muss genau getroffen werden |
-| Sieg | alle vier eigenen Hüte stehen im Zielhof |
+| Befreien | kommt ein Stapel heim, gehen die gefangenen Hüte an ihren Besitzer zurück — in dessen Hof, also ganz von vorn |
+| Einlaufen | der eigene Hof muss genau getroffen werden |
+| Sieg | alle vier eigenen Hüte sind heimgekehrt |
+
+> **Korrektur während der Arbeit.** Zuerst stand hier: Ring aus 24 Feldern, Ziel ist der
+> gegenüberliegende Hof. Alle Einzeltests dazu waren grün — aber in 2000 Probepartien fiel
+> **kein einziger Fang**. Der Grund: bei 24 Feldern und 12 Schritten benutzt jede Seite ihre
+> eigene Ringhälfte, die Wege überschneiden sich nirgends. Ausgerechnet die Regel, die dem
+> Spiel den Namen gibt, konnte nie greifen. Mit dem Rundlauf teilen sich beide jedes Feld;
+> gemessen sind es jetzt 4,1 Fänge je Partie und 13 von 2000 Partien ohne Fang. Seitdem
+> gehört „wird überhaupt gefangen?" als eigener Test dazu.
 
 ### Wiener Runde
 

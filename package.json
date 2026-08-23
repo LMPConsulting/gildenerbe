@@ -16,6 +16,7 @@
     "hangman:build": "node hangman/build.mjs",
     "aerger:build": "node aerger/build.mjs",
     "seeschlacht:build": "node seeschlacht/build.mjs",
+    "hut:build": "node hut/build.mjs",
     "spiele:web": "node scripts/webseite.mjs"
   },
   "devDependencies": {
