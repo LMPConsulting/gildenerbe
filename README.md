@@ -1,4 +1,4 @@
-> **Auch in diesem Repo** — acht eigenständige Reisespiele, unabhängig von Gildenerbe,
+> **Auch in diesem Repo** — neun eigenständige Reisespiele, unabhängig von Gildenerbe,
 > jeweils als eine einzige HTML-Datei und komplett offline:
 >
 > - [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx*, an einem Handy oder auf zweien.
@@ -18,10 +18,12 @@
 >   Schiffe finden. Auf zwei Handys bleiben beide Flotten wirklich geheim.
 > - [`hut/`](hut/README.md) — *Hütchenjagd*: einmal ums Brett und heim — wer auf deinen Hut
 >   tritt, nimmt ihn mit und du fängst von vorn an.
+> - [`wienerrunde/`](wienerrunde/README.md) — *Wiener Runde*: das Straßenkaufspiel mit
+>   Wiener Orten, in 40 Runden zu Ende. Kaufen, bauen, handeln, Miete kassieren.
 >
-> **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle acht plus eine Startseite.
+> **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle neun plus eine Startseite.
 > Mit `--ohne-server` entsteht eine Fassung für reine Dateiablagen (GitHub Pages) — dort
-> koppeln sich zwei Handys bei **allen acht Spielen** per QR im selben WLAN.
+> koppeln sich zwei Handys bei **allen neun Spielen** per QR im selben WLAN.
 > Dabei muss auf **beiden** Geräten die Kamera freigegeben sein — auch auf dem, das nur den
 > Code zeigt: ohne diese Freigabe verschleiert Chrome die eigene WLAN-Adresse hinter einem
 > `.local`-Namen, den ein Handy-Hotspot nicht auflöst. Ohne den Schalter kommt der Raumcode

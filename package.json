@@ -17,6 +17,7 @@
     "aerger:build": "node aerger/build.mjs",
     "seeschlacht:build": "node seeschlacht/build.mjs",
     "hut:build": "node hut/build.mjs",
+    "wienerrunde:build": "node wienerrunde/build.mjs",
     "spiele:web": "node scripts/webseite.mjs"
   },
   "devDependencies": {
