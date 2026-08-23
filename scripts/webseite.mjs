@@ -1,10 +1,10 @@
-// Baut alle fünf Reisespiele als Webfassung in einen Ordner und schreibt die
+// Baut alle sechs Reisespiele als Webfassung in einen Ordner und schreibt die
 // Startseite dazu. Aufruf:
 //
 //   node scripts/webseite.mjs <zielordner>
 //
 // Ergebnis:
-//   <ziel>/index.html          Startseite mit den fünf Kacheln
+//   <ziel>/index.html          Startseite mit den sechs Kacheln
 //   <ziel>/stil.css            Stil der Startseite
 //   <ziel>/<spiel>/index.html  das Spiel (Stil und Skript als eigene Dateien)
 //   <ziel>/<spiel>/Spiel.html  dieselbe Fassung als eine Datei zum Mitnehmen
@@ -89,6 +89,19 @@ const SPIELE = [
       + '<path d="M10 50h18M15 50V14h20"/><path d="M35 14v7"/>'
       + '<circle cx="35" cy="27" r="6"/><path d="M35 33v13"/></g>',
   },
+  {
+    ordner: 'aerger',
+    titel: 'Ärger',
+    zeile: 'Vier Figuren, ein Würfel',
+    text: 'Der Klassiker: nur mit einer Sechs heraus, wer auf dich trifft schickt dich '
+      + 'zurück. Kurze Partie mit zwei Figuren einstellbar.',
+    dauer: '15 Minuten',
+    zwei: 'Zwei Handys, dasselbe Brett',
+    zweiOhne: 'Zwei Handys per QR im selben WLAN',
+    farbe: '#c2453c',
+    icon: '<circle cx="22" cy="22" r="9"/><circle cx="42" cy="42" r="9"/>'
+      + '<circle cx="42" cy="22" r="3.5"/><circle cx="22" cy="42" r="3.5"/>',
+  },
 ];
 
 mkdirSync(ziel, { recursive: true });
@@ -124,7 +137,7 @@ const symbolUrl = 'data:image/svg+xml,' + encodeURIComponent(SYMBOL);
 const manifestUrl = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify({
   name: 'Spiele', short_name: 'Spiele', start_url: '.', display: 'standalone',
   background_color: '#11151c', theme_color: '#11151c',
-  description: 'Fünf Reisespiele für zwei Handys.',
+  description: 'Sechs Reisespiele für zwei Handys.',
   icons: [{ src: symbolUrl, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
 }));
 
@@ -148,7 +161,7 @@ const startseite = `<!doctype html>
 <meta name="theme-color" content="#11151c">
 <meta name="color-scheme" content="dark">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Fünf Reisespiele für zwei Handys — Qwixx, Dreikampf, Cabo, Sky Team und Galgenmännchen.">
+<meta name="description" content="Sechs Reisespiele für zwei Handys — Qwixx, Dreikampf, Cabo, Sky Team, Galgenmännchen und Ärger.">
 <title>Spiele</title>
 <link rel="icon" href="${symbolUrl}">
 <link rel="apple-touch-icon" href="${symbolUrl}">
@@ -162,10 +175,10 @@ const startseite = `<!doctype html>
     <p class="ober">Für zwei</p>
     <h1>Spiele</h1>
     <p class="unter">${ohneServer
-      ? `Fünf Spiele für zwei. Jedes läuft an <strong>einem Handy</strong>, das ihr euch
+      ? `Sechs Spiele für zwei. Jedes läuft an <strong>einem Handy</strong>, das ihr euch
          hin und her gebt — oder auf <strong>zwei Handys gleichzeitig</strong>, gekoppelt per
          QR-Code. Dafür müssen beide Geräte im <strong>selben WLAN</strong> sein.`
-      : `Fünf Spiele, die ihr zu zweit spielen könnt — jedes auf einem Handy zum
+      : `Sechs Spiele, die ihr zu zweit spielen könnt — jedes auf einem Handy zum
          Weiterreichen oder auf <strong>zwei Handys gleichzeitig</strong>. Dafür öffnet einer
          einen Raum und gibt den fünfstelligen Code weiter; ihr müsst <strong>nicht</strong>
          im selben WLAN sein.`}</p>
@@ -178,7 +191,7 @@ const startseite = `<!doctype html>
     <h3>Vor dem Flug: einmal installieren</h3>
     <p><strong>Auf beiden Handys</strong> im Chrome-Menü (⋮) auf
       <em>Zum Startbildschirm hinzufügen</em> tippen. Danach liegt „Spiele“ wie eine App
-      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle fünf Spiele
+      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle sechs Spiele
       sind dann auf dem Gerät gespeichert.</p>
     <p><span class="offlineampel" id="offlineampel">wird gespeichert …</span></p>
     <p>Zu zweit ohne Internet: beide Handys ins <strong>selbe WLAN</strong>, dann im Spiel

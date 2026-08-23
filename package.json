@@ -14,6 +14,7 @@
     "cabo:build": "node cabo/build.mjs",
     "skyteam:build": "node skyteam/build.mjs",
     "hangman:build": "node hangman/build.mjs",
+    "aerger:build": "node aerger/build.mjs",
     "spiele:web": "node scripts/webseite.mjs"
   },
   "devDependencies": {

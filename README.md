@@ -1,4 +1,4 @@
-> **Auch in diesem Repo** — fünf eigenständige Reisespiele, unabhängig von Gildenerbe,
+> **Auch in diesem Repo** — sechs eigenständige Reisespiele, unabhängig von Gildenerbe,
 > jeweils als eine einzige HTML-Datei und komplett offline:
 >
 > - [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx*, an einem Handy oder auf zweien.
@@ -11,10 +11,13 @@
 > - [`hangman/`](hangman/README.md) — *Galgenmännchen*: einer stellt das Wort, der andere
 >   rät Buchstaben. 270 deutsche Wörter für Runden gegen das Handy, Punkte über den ganzen
 >   Urlaub. Auf einem Handy zum Weiterreichen oder auf zweien.
+> - [`aerger/`](aerger/README.md) — *Ärger*: der Würfelklassiker, nur mit einer Sechs
+>   heraus und zurück in die Ecke, wenn dich jemand trifft. Brett als SVG, 1000 Partien
+>   Selbstspiel im Test.
 >
-> **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle fünf plus eine Startseite.
+> **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle sechs plus eine Startseite.
 > Mit `--ohne-server` entsteht eine Fassung für reine Dateiablagen (GitHub Pages) — dort
-> koppeln sich zwei Handys bei **allen fünf Spielen** per QR im selben WLAN.
+> koppeln sich zwei Handys bei **allen sechs Spielen** per QR im selben WLAN.
 > Dabei muss auf **beiden** Geräten die Kamera freigegeben sein — auch auf dem, das nur den
 > Code zeigt: ohne diese Freigabe verschleiert Chrome die eigene WLAN-Adresse hinter einem
 > `.local`-Namen, den ein Handy-Hotspot nicht auflöst. Ohne den Schalter kommt der Raumcode
@@ -73,6 +76,7 @@ src/systems/   Pure Logik: Kampf-Sim, Stats/Schaden, Leveln, Loot, Crafting, Ang
 src/ui/        Screens: Kampf, Charakter, Werkstatt (Angeln/Schmieden/Verzaubern), Gildenhalle
 src/audio/     Prozedurale Chiptune (4 Themes) + 9 SFX via Web Audio — keine Audiodateien
 docs/superpowers/   Design-Spec + Milestone-Pläne (1–6)
+docs/spiele-plan.md Plan für die Reisespiele: was, wie gebaut, wie geprüft
 ```
 
 ## Meilensteine (git tags)
