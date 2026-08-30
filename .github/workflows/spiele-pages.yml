@@ -25,6 +25,7 @@ on:
       - 'hut/**'
       - 'wienerrunde/**'
       - 'sperre/**'
+      - 'mauern/**'
       - 'scripts/webseite.mjs'
       - '.github/workflows/spiele-pages.yml'
   workflow_dispatch:

@@ -19,6 +19,7 @@
     "hut:build": "node hut/build.mjs",
     "wienerrunde:build": "node wienerrunde/build.mjs",
     "sperre:build": "node sperre/build.mjs",
+    "mauern:build": "node mauern/build.mjs",
     "spiele:web": "node scripts/webseite.mjs"
   },
   "devDependencies": {
