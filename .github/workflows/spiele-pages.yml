@@ -1,4 +1,4 @@
-# Baut die vier Spiele und veröffentlicht sie auf GitHub Pages.
+# Baut alle Spiele und veröffentlicht sie auf GitHub Pages.
 #
 # Damit läuft die Spielesammlung ohne eigenen Server: eine reine Dateiablage
 # mit HTTPS. Der Raumcode über das Internet braucht eine Durchreiche und ist
@@ -19,6 +19,12 @@ on:
       - 'dreikampf/**'
       - 'cabo/**'
       - 'skyteam/**'
+      - 'hangman/**'
+      - 'aerger/**'
+      - 'seeschlacht/**'
+      - 'hut/**'
+      - 'wienerrunde/**'
+      - 'sperre/**'
       - 'scripts/webseite.mjs'
       - '.github/workflows/spiele-pages.yml'
   workflow_dispatch:
