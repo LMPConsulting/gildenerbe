@@ -140,3 +140,88 @@ Erst wenn das alles steht, geht ein Spiel live.
 | Hypothek | Orte beleihen und auslösen |
 | Handel | Angebot Ort gegen Geld, die Gegenseite nimmt an oder lehnt ab |
 | Sieg | Gegenseite ist zahlungsunfähig — oder, in der kurzen Partie, nach 30 Runden das größere Vermögen |
+
+---
+
+# Nachtrag: das zehnte Spiel — Sperrsteine
+
+Auf Wunsch von Monty: „so ein barricade game … mit allen Regeln". Gemeint ist
+**Barricade** bzw. **Malefiz** (Ravensburger, 1960) — das Spiel mit den weißen Steinen,
+die den Weg versperren und die man selbst weitersetzen darf.
+
+## Warum es „Sperrsteine" heißt
+
+| Was | Frei? |
+|---|---|
+| Der Ablauf — Figuren über ein Wegenetz nach oben, Sperren blockieren, wer eine trifft setzt sie neu | **ja**, Spielregeln sind nicht schutzfähig |
+| Die Namen *Malefiz* und *Barricade* | **nein**, Marken von Ravensburger |
+| Die Brettgestaltung (Wegführung, Farben, Grafik) | **nein**, Werk des Verlags |
+
+Also dieselbe Vorgehensweise wie bei Ärger, Hütchenjagd und der Wiener Runde: die Regeln
+übernehmen, **Name und Brett sind eigene**. Das Brett unten ist neu entworfen und für zwei
+Spieler spiegelsymmetrisch — beim Original stehen vier Spieler nebeneinander am unteren
+Rand und haben dadurch verschieden weite Wege. Zu zweit ist Symmetrie besser.
+
+## Das Brett
+
+Ein Netz aus Punkten und Linien, 12 Reihen hoch und 11 Spalten breit. Es wechseln sich
+**Straßen** (lange waagerechte Reihen) und **Leitern** (wenige senkrechte Verbindungen)
+ab — genau dieser Wechsel macht die Sperren gefährlich: eine Leiter ist ein Nadelöhr,
+eine Straße nicht.
+
+```
+Reihe  0                        Z                    Ziel
+Reihe  1                   o    o    o
+Reihe  2         o    o    o    o    o    o    o     Straße
+Reihe  3         o              o              o     Leitern
+Reihe  4    o o o o o o o o o o o                    Straße
+Reihe  5    o         o         o         o          Leitern
+Reihe  6    o o o o o o o o o o o                    Straße
+Reihe  7         o              o              o     Leitern
+Reihe  8    o o o o o o o o o o o                    Straße
+Reihe  9    o         o         o         o          Leitern
+Reihe 10    o o o o o o o o o o o                    unterste Straße
+Reihe 11    A A A A A   B B B B B                    Heimfelder
+```
+
+Das Ziel hängt an drei Wegen (von Reihe 1 aus links, mitte, rechts) — **kein einzelner
+Stein kann es zusperren.** Vom entferntesten Heimfeld bis zum Ziel sind es 17 Schritte,
+vom nächsten 15. Beide Seiten haben dieselben Entfernungen, Feld für Feld gespiegelt —
+nachgemessen, nicht geschätzt: [16, 17, 16, 15, 16] für die eine Seite, spiegelgleich für
+die andere.
+
+**Elf Sperrsteine** stehen zu Beginn auf den Leitern: Reihe 7 (3), Reihe 5 (4), Reihe 3
+(3) und Reihe 1 in der Mitte (1). Das sind drei geschlossene Mauern zwischen Heimat und
+Ziel — der Weg nach oben muss also erst aufgebrochen werden.
+
+## Regeln, die programmiert werden
+
+| Regel | Umsetzung |
+|---|---|
+| Figuren | 5 je Spieler, sie stehen von Anfang an auf den eigenen Heimfeldern |
+| Würfeln | ein Würfel, ein Zug — kein Herauskommen mit Sechs nötig |
+| Ziehen | **genau** die gewürfelte Zahl, entlang der Linien, Richtung frei |
+| Kein Zurück | innerhalb eines Zuges darf nicht auf das gerade verlassene Feld zurückgegangen werden |
+| Überspringen | Figuren dürfen übersprungen werden — **nur Sperrsteine nicht** |
+| Sperre treffen | wer genau auf einem Sperrstein landet, nimmt ihn und **setzt ihn auf ein beliebiges freies Feld** |
+| Wohin nicht | nicht auf das Ziel, nicht auf Heimfelder, nicht auf die unterste Straße — sonst könnte man jemanden im eigenen Heim einmauern |
+| Schlagen | genau auf einer gegnerischen Figur landen schickt sie zurück auf ein freies eigenes Heimfeld |
+| Eigene Figur | darf nicht das Ziel eines Zuges sein (übersprungen werden darf sie) |
+| Heim | einmal verlassen, ist das eigene Heim kein Feld mehr — nur Geschlagene kommen dorthin zurück |
+| Ziel | muss **genau** getroffen werden und darf nicht überlaufen werden |
+| Zugzwang | gibt es einen gültigen Zug, muss einer gemacht werden; gibt es keinen, ist die andere Seite dran |
+| Sieg | **die erste** Figur im Ziel gewinnt die Partie |
+
+## Wie geprüft wird
+
+Dieselben acht Schritte wie oben, mit zwei zusätzlichen Messungen, die aus der
+Hütchenjagd-Panne gelernt sind — grüne Einzeltests sind **kein** Beleg dafür, dass ein
+Spiel funktioniert:
+
+1. **Werden Sperren überhaupt getroffen und neu gesetzt?** Ein Spiel, in dem die Steine
+   stehen bleiben, wo sie stehen, ist kein Sperrsteine-Spiel.
+2. **Wird überhaupt geschlagen?** Sonst laufen beide Seiten aneinander vorbei.
+3. **Wie lange dauert eine Partie?** Gemessen in Zügen; zu lang fürs Handy wird korrigiert,
+   indem an Brettgröße oder Steinzahl gedreht wird — nicht an der Regel.
+4. **Keine Sackgasse.** In keiner Selbstspiel-Partie darf ein Zustand entstehen, in dem
+   beide Seiten dauerhaft nicht ziehen können.
