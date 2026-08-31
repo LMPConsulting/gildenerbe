@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
-  RING, HAUSLAENGE, START,
+  RING, HAUSLAENGE, START, MODI,
   neuerStand, wuerfeln, zuege, ziehen, ziehbar, feldVon, gewinner,
   figurenAuf, alleImHaus, wuerfeErlaubt, zugBeenden, partieNeu, alsCode, ausCode, vorbei,
+  offeneWuerfe, wurfWaehlen,
 } from '../../aerger/src/engine.js';
 
 /** Ein Stand mit gesetzten Figuren — kürzt das Aufbauen in den Tests ab. */
@@ -439,5 +440,172 @@ describe('Brettgeometrie', () => {
     const alle = [...RINGFELDER, ...HAUSFELDER.flat(), ...BASISFELDER.flat()]
       .map(([x, y]) => `${x},${y}`);
     expect(new Set(alle).size).toBe(alle.length);
+  });
+});
+
+
+/* ==================================================================== Modi */
+
+describe('Modi', () => {
+  const modus = (id) => MODI.find((m) => m.id === id);
+
+  it('kennt vier Fassungen, jede mit eigener Kennung und Erklärung', () => {
+    expect(MODI).toHaveLength(4);
+    expect(new Set(MODI.map((m) => m.id)).size).toBe(4);
+    expect(MODI[0].id).toBe('klassisch');
+    for (const m of MODI) {
+      expect(typeof m.titel).toBe('string');
+      expect(typeof m.zeile).toBe('string');
+      expect(m.regeln).toBeTruthy();
+    }
+  });
+
+  it('behält die Regeln im Spielstand — damit sie beim Koppeln mitreisen', () => {
+    const s = neuerStand(['A', 'B'], modus('blitz').regeln);
+    expect(JSON.parse(JSON.stringify(s)).regeln.figuren).toBe(2);
+  });
+
+  it('Blitz: zwei Figuren, und jede Zahl bringt aus der Basis heraus', () => {
+    const s = neuerStand(['A', 'B'], modus('blitz').regeln);
+    expect(s.figuren[0]).toHaveLength(2);
+    expect(s.regeln.sechsNoetig).toBe(false);
+    s.wurf = 3;
+    const z = zuege(s);
+    expect(z.length).toBeGreaterThan(0);
+    expect(z.some((x) => x.von.ort === 'basis' && x.nach.schritt === 0)).toBe(true);
+  });
+
+  it('Blitz: gibt nur einen Wurf, auch wenn nichts auf der Bahn steht', () => {
+    const s = neuerStand(['A', 'B'], modus('blitz').regeln);
+    expect(wuerfeErlaubt(s, 0)).toBe(1);
+  });
+
+  it('Blitz: lässt trotzdem nicht auf die eigene Figur am Startfeld', () => {
+    const s = neuerStand(['A', 'B'], modus('blitz').regeln);
+    s.figuren[0][0] = bahn(0);
+    s.wurf = 3;
+    expect(zuege(s).some((z) => z.von.ort === 'basis')).toBe(false);
+  });
+
+  it('Klassisch: braucht weiterhin eine Sechs', () => {
+    const s = neuerStand(['A', 'B'], modus('klassisch').regeln);
+    expect(s.figuren[0]).toHaveLength(4);
+    s.wurf = 3;
+    expect(zuege(s)).toEqual([]);
+  });
+
+  it('Bösartig: lässt nur noch schlagende Züge zu', () => {
+    const s = neuerStand(['A', 'B'], modus('boesartig').regeln);
+    s.figuren[0] = [bahn(0), bahn(5), basis(), basis()];
+    s.figuren[1] = [bahn(23), basis(), basis(), basis()];   // absolut 3 — von 0 aus mit 3
+    s.wurf = 3;
+    const z = zuege(s);
+    expect(z.length).toBe(1);
+    expect(z[0].schlaegt).toBeTruthy();
+  });
+
+  it('Zwei Würfel: wirft zwei Zahlen, und erst die Wahl gibt Züge frei', () => {
+    const s = neuerStand(['A', 'B'], modus('zweiWuerfel').regeln);
+    wuerfeln(s, folge(6, 2));
+    expect(offeneWuerfe(s)).toEqual([6, 2]);
+    expect(s.wurf).toBeNull();
+    expect(zuege(s)).toEqual([]);              // solange nicht gewählt ist, geht nichts
+    wurfWaehlen(s, 0);
+    expect(s.wurf).toBe(6);
+    expect(offeneWuerfe(s)).toEqual([]);
+    expect(zuege(s).length).toBeGreaterThan(0);
+  });
+
+  it('Zwei Würfel: die nicht gewählte Zahl verfällt', () => {
+    const s = neuerStand(['A', 'B'], modus('zweiWuerfel').regeln);
+    s.figuren[0][0] = bahn(0);
+    wuerfeln(s, folge(2, 5));
+    wurfWaehlen(s, 1);
+    ziehen(s, 0);
+    expect(s.figuren[0][0]).toEqual(bahn(5));
+    expect(offeneWuerfe(s)).toEqual([]);
+    expect(s.dran).toBe(1);
+  });
+
+  it('Zwei Würfel: eine gewählte Sechs bringt einen weiteren Wurf', () => {
+    const s = neuerStand(['A', 'B'], modus('zweiWuerfel').regeln);
+    wuerfeln(s, folge(6, 1));
+    wurfWaehlen(s, 0);
+    ziehen(s, 0);
+    expect(s.dran).toBe(0);
+    expect(s.wuerfeUebrig).toBe(1);
+  });
+
+  it('Zwei Würfel: nimmt keine Zahl an, die nicht geworfen wurde', () => {
+    const s = neuerStand(['A', 'B'], modus('zweiWuerfel').regeln);
+    wuerfeln(s, folge(3, 4));
+    expect(() => wurfWaehlen(s, 2)).toThrow();
+    expect(() => wurfWaehlen(s, -1)).toThrow();
+  });
+
+  it('Zwei Würfel: gibt zwei Würfe, solange nichts auf der Bahn steht', () => {
+    const s = neuerStand(['A', 'B'], modus('zweiWuerfel').regeln);
+    expect(wuerfeErlaubt(s, 0)).toBe(2);
+    s.figuren[0][0] = bahn(4);
+    expect(wuerfeErlaubt(s, 0)).toBe(1);
+  });
+
+  it('ohne den Modus verhält sich alles wie bisher — ein Wurf, eine Zahl', () => {
+    const s = neuerStand(['A', 'B']);
+    wuerfeln(s, folge(4));
+    expect(offeneWuerfe(s)).toEqual([]);
+    expect(s.wurf).toBe(4);
+  });
+});
+
+describe('Jeder Modus läuft zu Ende', () => {
+  /* Ein Modus, der hängen bleibt oder ewig dauert, ist keine Zugabe, sondern
+     ein Fehler. Gemessen wird darum jede Fassung einzeln. */
+  function partieSpielen(saat, regeln, grenze = 20000) {
+    let x = saat;
+    const rnd = () => { x = (x * 1103515245 + 12345) % 2147483648; return x / 2147483648; };
+    const s = neuerStand(['A', 'B'], regeln);
+    let schritte = 0;
+    while (!vorbei(s) && schritte < grenze) {
+      schritte += 1;
+      if (offeneWuerfe(s).length) {
+        wurfWaehlen(s, Math.floor(rnd() * offeneWuerfe(s).length));
+        continue;
+      }
+      if (s.wurf === null) {
+        if (s.wuerfeUebrig <= 0) { zugBeenden(s); continue; }
+        wuerfeln(s, rnd);
+        continue;
+      }
+      const moeglich = zuege(s);
+      if (moeglich.length) ziehen(s, moeglich[Math.floor(rnd() * moeglich.length)].figur);
+      else zugBeenden(s);
+    }
+    return { s, schritte };
+  }
+
+  for (const m of MODI) {
+    it(`${m.titel}: 60 Partien, keine hängt`, () => {
+      let summe = 0;
+      for (let saat = 1; saat <= 60; saat++) {
+        const { s, schritte } = partieSpielen(saat, m.regeln);
+        expect(vorbei(s), `${m.id}, Saat ${saat} hängt nach ${schritte} Schritten`).toBe(true);
+        summe += schritte;
+      }
+      // Alle Fassungen sollen fürs Handy taugen.
+      expect(summe / 60, `${m.id} dauert im Schnitt ${(summe / 60).toFixed(0)} Schritte`)
+        .toBeLessThan(900);
+    });
+  }
+
+  it('Blitz ist deutlich kürzer als Klassisch — sonst hieße er nicht so', () => {
+    const mittel = (regeln) => {
+      let summe = 0;
+      for (let saat = 1; saat <= 60; saat++) summe += partieSpielen(saat, regeln).schritte;
+      return summe / 60;
+    };
+    const klassisch = mittel(MODI.find((m) => m.id === 'klassisch').regeln);
+    const blitz = mittel(MODI.find((m) => m.id === 'blitz').regeln);
+    expect(blitz).toBeLessThan(klassisch * 0.6);
   });
 });
