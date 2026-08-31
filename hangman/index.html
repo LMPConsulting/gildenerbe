@@ -1215,6 +1215,53 @@ const STUFEN = {
 
 const BUCHSTABEN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'.split('');
 
+/** Vokale — nur die Fassung „Vokale kosten" interessiert sich dafür. */
+const VOKALE = ['A', 'E', 'I', 'O', 'U', 'Ä', 'Ö', 'Ü'];
+
+const VORGABE = {
+  vokaleKosten: false,   // A, E, I, O, U kosten auch bei einem Treffer
+  doppelwort: false,     // das Handy zieht zwei Wörter statt einem
+  tippZeigen: true,      // den Tipp bzw. die Wortliste anzeigen
+};
+
+const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: 'Ein Wort, Schwierigkeit im Menü einstellbar',
+    regeln: {},
+  },
+  {
+    id: 'hart',
+    titel: 'Hart',
+    zeile: 'Nur sieben Fehler — und keine Tipps',
+    regeln: { tippZeigen: false },
+    stufe: 'schwer',
+  },
+  {
+    id: 'vokale',
+    titel: 'Vokale kosten',
+    zeile: 'A, E, I, O, U kosten einen Fehler — auch wenn sie drin sind',
+    regeln: { vokaleKosten: true },
+  },
+  {
+    id: 'doppelwort',
+    titel: 'Doppelwort',
+    zeile: 'Zwei Wörter auf einmal, ein einziger Strichvorrat',
+    regeln: { doppelwort: true },
+  },
+];
+
+/**
+ * Regel lesen, mit Rückfall auf die Vorgabe. Ein Spielstand von vor den
+ * Fassungen kennt die Schlüssel nicht und soll sich wie der Klassiker
+ * verhalten.
+ */
+const regel = (stand, name) => {
+  const wert = stand && stand.regeln ? stand.regeln[name] : undefined;
+  return wert === undefined ? VORGABE[name] : wert;
+};
+
 const PUNKTE = {
   grundGewonnen: 10,     // fürs Erraten überhaupt
   jeUebrigerFehler: 3,   // pro nicht verbrauchtem Fehlversuch
@@ -1283,14 +1330,26 @@ function wortZiehen(stand, kategorie = 'allerlei', rnd = Math.random) {
   const frisch = quelle.filter((e) => !stand.benutzt.includes(e.wort));
   const topf = frisch.length ? frisch : quelle;
   if (!frisch.length) stand.benutzt = [];
-  return mischen(topf, rnd)[0];
+  const gemischt = mischen(topf, rnd);
+  if (!regel(stand, 'doppelwort')) return gemischt[0];
+
+  // Doppelwort: zwei Wörter, durch ein Leerzeichen getrennt. Leerzeichen sind
+  // ohnehin Trenner und stehen von Anfang an da — es braucht also keine zweite
+  // Runde nebenher, und beide Wörter teilen sich denselben Strichvorrat.
+  const zweites = gemischt.find((e) => e.wort !== gemischt[0].wort) || gemischt[0];
+  return {
+    wort: `${gemischt[0].wort} ${zweites.wort}`,
+    kategorie: gemischt[0].kategorie,
+    doppelt: [gemischt[0].wort, zweites.wort],
+  };
 }
 
 /* ------------------------------------------------------------------- Stand */
 
-function neuerStand(namen = ['Monty', 'Christina']) {
+function neuerStand(namen = ['Monty', 'Christina'], regeln = {}) {
   return {
     v: SAVE_VERSION,
+    regeln: { ...VORGABE, ...regeln },
     spieler: namen.map((name) => ({ name })),
     punkte: namen.map(() => 0),
     runde: 1,
@@ -1367,16 +1426,21 @@ function raten(stand, buchstabe) {
   if (!r || r.fertig || !IST_BUCHSTABE(b) || !offen(r, b)) return null;
 
   const treffer = r.wort.includes(b);
+  // „Vokale kosten": ein Vokal zieht auch dann einen Fehler nach sich, wenn er
+  // im Wort steht. Man muss also mit Konsonanten anfangen.
+  const kostet = regel(stand, 'vokaleKosten') && VOKALE.includes(b);
   if (treffer) {
     r.geraten.push(b);
     r.muster = musterBauen(r.wort, r.geraten);
+    if (kostet) r.fehler += 1;
     if (r.muster.every((z) => z !== null)) beenden(stand, 'gewonnen');
+    else if (kostet && r.fehler >= r.erlaubt) beenden(stand, 'verloren');
   } else {
     r.daneben.push(b);
     r.fehler += 1;
     if (r.fehler >= r.erlaubt) beenden(stand, 'verloren');
   }
-  return { treffer, fertig: r.fertig };
+  return { treffer, kostet, fertig: r.fertig };
 }
 
 /**
@@ -1577,6 +1641,7 @@ const app = document.getElementById('app');
 
 let stand = null;
 let ui = {
+  modusWahl: 'klassisch',
   screen: 'start',    // 'start' | 'hub' | 'stellen' | 'spiel'
   overlay: null,
   halter: 0,          // wer das Handy gerade in der Hand hat (nur lokal)
@@ -1847,25 +1912,40 @@ const SICHER_TEXT = {
 
 function renderStart() {
   app.innerHTML = `
-    <div class="screen start">
-      <div class="wrap">
-        <h1 class="wortmarke">Galgen<em>männchen</em></h1>
-        <p class="unterzeile">Einer denkt sich ein Wort aus, der andere rät.
-          Elf Fehlgriffe — dann hängt es.</p>
-        <div class="feldlabel">Wer spielt?</div>
-        <input class="feld" id="n1" maxlength="14" placeholder="Erster Name" value="Monty">
-        <div style="height:10px"></div>
-        <input class="feld" id="n2" maxlength="14" placeholder="Zweiter Name" value="Christina">
-        <div class="knopfsaeule">
-          <button class="btn btn--kreide" id="los">Los geht's</button>
-          <button class="btn btn--leise" id="regeln">Wie geht das?</button>
-        </div>
+    <div class="screen"><div class="scroll"><div class="wrap" style="text-align:center">
+      <h1 class="wortmarke">Galgen<em>männchen</em></h1>
+      <p class="unterzeile">Einer denkt sich ein Wort aus, der andere rät.
+        Elf Fehlgriffe — dann hängt es.</p>
+      <div class="feldlabel">Wer spielt?</div>
+      <input class="feld" id="n1" maxlength="14" placeholder="Erster Name" value="Monty">
+      <div style="height:10px"></div>
+      <input class="feld" id="n2" maxlength="14" placeholder="Zweiter Name" value="Christina">
+      <div class="feldlabel">Welche Fassung?</div>
+      <div class="wahlliste">
+        ${MODI.map((m) => `
+          <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+            <div class="haupt">
+              <div class="oben">${esc(m.titel)}</div>
+              <div class="unten">${esc(m.zeile)}</div>
+            </div>
+            <div class="haken">${m.id === ui.modusWahl ? '✓' : ''}</div>
+          </button>`).join('')}
       </div>
-    </div>`;
+      <div class="knopfsaeule">
+        <button class="btn btn--kreide" id="los">Los geht's</button>
+        <button class="btn btn--leise" id="regeln">Wie geht das?</button>
+      </div>
+    </div></div></div>`;
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     const a = app.querySelector('#n1').value.trim() || 'Eins';
     const b = app.querySelector('#n2').value.trim() || 'Zwei';
-    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)]);
+    const m = MODI.find((x) => x.id === ui.modusWahl) || MODI[0];
+    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)], m.regeln);
+    stand.modusId = m.id;
+    if (m.stufe) stand.stufe = m.stufe;
     ui.screen = 'hub';
     nachAenderung();
   };
@@ -2100,7 +2180,8 @@ function renderSpiel() {
       <div class="buehne">
         <div class="galgenfeld">${galgenSvg(gezeichnet(r), { vorab: r.vorab, zustand })}</div>
         ${wortfeld(r, fertig)}
-        <div class="tippzeile">${r.tipp ? `Tipp: <b>${esc(r.tipp)}</b>` : ''}</div>
+        <div class="tippzeile">${r.tipp && regel(stand, 'tippZeigen')
+    ? `Tipp: <b>${esc(r.tipp)}</b>` : ''}</div>
         ${fertig ? abschluss(r) : `
           ${fehlerLeiste(r)}
           <div class="tastatur">${tastatur}</div>
@@ -2174,7 +2255,8 @@ function renderUebergabe(wer) {
     <div class="lbl">Handy weitergeben an</div>
     <div class="name">${name(wer)}</div>
     <p class="auftrag">${auftrag}</p>
-    ${r && ui.screen === 'spiel' && r.tipp ? `<p class="auftrag">Tipp: ${esc(r.tipp)}</p>` : ''}
+    ${r && ui.screen === 'spiel' && r.tipp && regel(stand, 'tippZeigen')
+    ? `<p class="auftrag">Tipp: ${esc(r.tipp)}</p>` : ''}
     <button class="btn btn--kreide" id="btnBereit">Ich hab's</button>`;
   app.appendChild(layer);
   layer.querySelector('#btnBereit').onclick = () => { ui.halter = wer; render(); };

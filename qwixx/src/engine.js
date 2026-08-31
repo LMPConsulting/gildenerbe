@@ -21,6 +21,61 @@ export const LOCKS_TO_END = 2;
 // Kreuze (inkl. Schloss) -> Punkte. Dreieckszahlen, 12 Kreuze = 78.
 export const SCORE_TABLE = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78];
 
+export const VORGABE = {
+  gemischt: false,    // Zahlen jeder Reihe in zufälliger Reihenfolge
+  maxFehler: MAX_PENALTIES,
+};
+
+export const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: 'Rot und Gelb aufsteigend, Grün und Blau absteigend',
+    regeln: {},
+  },
+  {
+    id: 'gemischt',
+    titel: 'Gemischt',
+    zeile: 'Die Zahlen jeder Reihe stehen kreuz und quer — jedes Mal neu',
+    regeln: { gemischt: true },
+  },
+  {
+    id: 'kurz',
+    titel: 'Kurz',
+    zeile: 'Schon zwei Fehlwürfe beenden das Spiel',
+    regeln: { maxFehler: 2 },
+  },
+];
+
+/**
+ * Die Zahlenreihen dieser Partie. Im Klassiker die gewohnten; gemischt stehen
+ * sie im Spielstand. Ältere Stände kennen das Feld nicht — die bekommen den
+ * Klassiker, damit sich ein laufendes Spiel nach dem Update nicht ändert.
+ */
+export const zeilenWerte = (state) => (state && state.rowValues) || ROW_VALUES;
+
+/** Wie viele Fehlwürfe beenden das Spiel? */
+export const maxFehler = (state) =>
+  (state && state.regeln && state.regeln.maxFehler) || MAX_PENALTIES;
+
+/** Ist die Partie zu Ende — zwei Reihen gesperrt oder jemand am Fehlwurf-Limit? */
+export function istVorbei(state) {
+  if (state.phase === 'over') return true;
+  const gesperrt = COLORS.filter((c) => state.lockedRows[c]).length;
+  const schlimmste = Math.max(...state.players.map((p) => p.penalties));
+  return gesperrt >= LOCKS_TO_END || schlimmste >= maxFehler(state);
+}
+
+/** Mischt eine Kopie der Liste. Fisher-Yates, mit gesetztem Zufall testbar. */
+function mischen(liste, rnd) {
+  const a = [...liste];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const emptyRow = () => new Array(11).fill(false);
 
 function makePlayer(name) {
@@ -32,10 +87,15 @@ function makePlayer(name) {
   };
 }
 
-export function createGame(names) {
+export function createGame(names, regeln = {}, rnd = Math.random) {
+  const r = { ...VORGABE, ...regeln };
   return {
     v: 1,
     players: names.map(makePlayer),
+    regeln: r,
+    rowValues: r.gemischt
+      ? Object.fromEntries(COLORS.map((c) => [c, mischen(ROW_VALUES[c], rnd)]))
+      : null,
     lockedRows: { red: false, yellow: false, green: false, blue: false },
     active: 0,          // Index des aktiven Spielers (der würfelt)
     turn: 1,
@@ -88,7 +148,7 @@ export function legalMoves(state) {
   if (!step || !state.dice) return [];
   const moves = [];
   const push = (color, value, from) => {
-    const index = ROW_VALUES[color].indexOf(value);
+    const index = zeilenWerte(state)[color].indexOf(value);
     if (index === -1) return;
     if (!canCross(state, step.p, color, index)) return;
     if (moves.some((m) => m.color === color && m.index === index)) return;
@@ -181,7 +241,7 @@ export function endTurn(state) {
 
   const locked = COLORS.filter((c) => state.lockedRows[c]).length;
   const worstPenalties = Math.max(...state.players.map((p) => p.penalties));
-  if (locked >= LOCKS_TO_END || worstPenalties >= MAX_PENALTIES) {
+  if (locked >= LOCKS_TO_END || worstPenalties >= maxFehler(state)) {
     state.phase = 'over';
     return state;
   }
@@ -217,6 +277,6 @@ export function endReason(state) {
   if (locked.length >= LOCKS_TO_END) {
     return `Zwei Reihen gesperrt (${locked.map((c) => COLOR_LABEL[c]).join(' & ')})`;
   }
-  const who = state.players.find((p) => p.penalties >= MAX_PENALTIES);
-  return `${who.name} hat ${MAX_PENALTIES} Fehlwürfe`;
+  const who = state.players.find((p) => p.penalties >= maxFehler(state));
+  return `${who.name} hat ${maxFehler(state)} Fehlwürfe`;
 }

@@ -448,6 +448,19 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   word-break: break-word;
 }
 
+/* ---------- Fassungswahl auf dem Startbildschirm ---------- */
+
+.wahlliste { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.wahl {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: var(--feld); border: 1px solid var(--naht); border-radius: var(--r-md); padding: 13px 15px;
+}
+.wahl--an { border-color: var(--messing); background: var(--feld-2); }
+.wahl .haupt { flex: 1; min-width: 0; }
+.wahl .oben { color: var(--karton); font-weight: 650; }
+.wahl .unten { font-size: 13px; color: var(--nebel-dim); }
+.wahl .haken { color: var(--messing); font-size: 18px; }
+
 </style>
 </head>
 <body>
@@ -1222,7 +1235,57 @@ const CABO_STRAFE = 5;
 const SPIELENDE_AB = 100;
 const HALBIERUNG_BEI = 100;   // genau 100 wird zu 50
 
-function kraftVon(wert) {
+const VORGABE = {
+  handgroesse: HANDGROESSE,
+  kraefte: true,        // Peek, Spy und Swap
+  spielendeAb: SPIELENDE_AB,
+  runden: null,         // wenn gesetzt: nach so vielen Runden ist Schluss
+};
+
+const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: 'Vier Karten, alle Kräfte, bis 100 Punkte',
+    regeln: {},
+  },
+  {
+    id: 'sechs',
+    titel: 'Sechs Karten',
+    zeile: 'Zwei Karten mehr zu merken — deutlich schwerer',
+    regeln: { handgroesse: 6 },
+  },
+  {
+    id: 'ohneKraefte',
+    titel: 'Ohne Kräfte',
+    zeile: 'Kein Peek, kein Spy, kein Swap — reines Gedächtnis',
+    regeln: { kraefte: false },
+  },
+  {
+    id: 'blitz',
+    titel: 'Blitz',
+    zeile: 'Eine einzige Runde entscheidet',
+    regeln: { runden: 1 },
+  },
+];
+
+/**
+ * Regel lesen, mit Rückfall auf die Vorgabe. Ein Spielstand von vor den
+ * Fassungen kennt die Schlüssel nicht — er soll sich wie der Klassiker
+ * verhalten und nicht plötzlich anders.
+ */
+const regel = (s, name) => {
+  const wert = s && s.regeln ? s.regeln[name] : undefined;
+  return wert === undefined ? VORGABE[name] : wert;
+};
+
+const handKarten = (s) => regel(s, 'handgroesse');
+const kraefteAn = (s) => regel(s, 'kraefte') !== false;
+const punkteGrenze = (s) => regel(s, 'spielendeAb');
+const rundenGrenze = (s) => regel(s, 'runden');
+
+function kraftVon(wert, s = null) {
+  if (s && !kraefteAn(s)) return null;
   for (const [art, k] of Object.entries(KRAEFTE)) if (k.werte.includes(wert)) return art;
   return null;
 }
@@ -1247,9 +1310,10 @@ function mischen(liste, rnd = Math.random) {
 
 const naechster = (i, n) => (i + 1) % n;
 
-function neuesSpiel(namen = ['Monty', 'Christina']) {
+function neuesSpiel(namen = ['Monty', 'Christina'], regeln = {}) {
   return {
     v: 1,
+    regeln: { ...VORGABE, ...regeln },
     spieler: namen.map((name) => ({ name, hand: [] })),
     punkte: namen.map(() => 0),
     runde: 1,
@@ -1276,7 +1340,7 @@ function neuesSpiel(namen = ['Monty', 'Christina']) {
 function neueRunde(s, rnd = Math.random) {
   const n = s.spieler.length;
   const deck = mischen(neuesDeck(), rnd);
-  for (const p of s.spieler) p.hand = deck.splice(0, HANDGROESSE);
+  for (const p of s.spieler) p.hand = deck.splice(0, handKarten(s));
   s.ablage = [deck.pop()];
   s.stapel = deck;
 
@@ -1297,7 +1361,7 @@ function neueRunde(s, rnd = Math.random) {
 /** Die Karten, die man sich zu Beginn ansehen darf: die beiden unteren. */
 function startKarten(s, wer) {
   const hand = s.spieler[wer].hand;
-  return Array.from({ length: START_ANSEHEN }, (_, i) => HANDGROESSE - START_ANSEHEN + i)
+  return Array.from({ length: START_ANSEHEN }, (_, i) => handKarten(s) - START_ANSEHEN + i)
     .map((index) => ({ index, karte: hand[index] }));
 }
 
@@ -1360,7 +1424,7 @@ function abwerfen(s) {
   s.gezogene = null;
   s.quelle = null;
 
-  const art = kraftVon(karte.w);
+  const art = kraftVon(karte.w, s);
   if (art) {
     s.kraft = { art, eigene: null };
     s.phase = 'kraft';
@@ -1553,7 +1617,10 @@ function auswerten(s) {
   });
   if (s.verlauf.length > 100) s.verlauf.length = 100;
 
-  s.phase = Math.max(...s.punkte) >= SPIELENDE_AB ? 'ende' : 'auswertung';
+  const grenze = rundenGrenze(s);
+  const schluss = Math.max(...s.punkte) >= punkteGrenze(s)
+    || (grenze !== null && s.runde >= grenze);
+  s.phase = schluss ? 'ende' : 'auswertung';
   return s;
 }
 
@@ -1585,6 +1652,7 @@ const app = document.getElementById('app');
 
 let spiel = null;
 let ui = {
+  modusWahl: 'klassisch',
   overlay: null,
   halter: 0,           // nur im Modus 'lokal': wer das Handy in der Hand hat
   animRunde: 0,
@@ -1801,7 +1869,7 @@ function ichBinDran() {
 
 function karteHtml(karte, { offen = false, klasse = '', attrs = '', waehlbar = false } = {}) {
   const w = karte ? karte.w : null;
-  const art = w != null ? kraftVon(w) : null;
+  const art = w != null ? kraftVon(w, spiel) : null;
   const tag = waehlbar ? 'button' : 'div';
   const kl = ['karte', offen ? 'karte--offen' : '', waehlbar ? 'karte--waehlbar' : '', klasse]
     .filter(Boolean).join(' ');
@@ -1817,7 +1885,7 @@ function karteHtml(karte, { offen = false, klasse = '', attrs = '', waehlbar = f
 
 function renderStart() {
   app.innerHTML = `
-    <div class="screen start">
+    <div class="screen"><div class="scroll">
       <div class="wrap">
         <h1 class="wortmarke">CABO</h1>
         <p class="unterzeile">Vier Karten, keiner weiß welche. Wer am wenigsten hat, gewinnt —
@@ -1827,16 +1895,31 @@ function renderStart() {
         <div class="feldreihe"><input class="feld" id="n0" maxlength="16" value="Monty" aria-label="Name 1"></div>
         <div class="feldreihe"><input class="feld" id="n1" maxlength="16" value="Christina" aria-label="Name 2"></div>
 
+        <div class="feldlabel" style="margin-top:18px">Welche Fassung?</div>
+        <div class="wahlliste">
+          ${MODI.map((m) => `
+            <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+              <div class="haupt">
+                <div class="oben">${m.titel}</div>
+                <div class="unten">${m.zeile}</div>
+              </div>
+              <div class="haken">${m.id === ui.modusWahl ? '✓' : ''}</div>
+            </button>`).join('')}
+        </div>
+
         <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
           <button class="btn btn--messing" id="los">An einem Handy</button>
           <button class="btn btn--geist" id="zweiGeraete">Auf zwei Handys</button>
           <button class="btn btn--leise" id="regeln">Wie es funktioniert</button>
         </div>
       </div>
-    </div>`;
+    </div></div>`;
 
   const namenLesen = () => [0, 1].map((i) => app.querySelector(`#n${i}`).value.trim() || `Spieler ${i + 1}`);
 
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     ui.modus = 'lokal';
     spielAnlegen(namenLesen());
@@ -1850,7 +1933,9 @@ function renderStart() {
 }
 
 function spielAnlegen(namen) {
-  spiel = neuesSpiel(namen);
+  const m = MODI.find((x) => x.id === (ui.modusWahl || 'klassisch')) || MODI[0];
+  spiel = neuesSpiel(namen, m.regeln);
+  spiel.modusId = m.id;
   spiel.geber = namen.length - 1;      // damit die erste Person anfängt
   neueRunde(spiel);
   ui.halter = 0;
@@ -2329,7 +2414,8 @@ function renderTisch() {
     <div class="screen">
       <header class="kopf">
         <div class="titel">
-          <div class="ober">Runde ${spiel.runde} · bis ${SPIELENDE_AB}${
+          <div class="ober">Runde ${spiel.runde} · ${rundenGrenze(spiel)
+    ? `von ${rundenGrenze(spiel)}` : `bis ${punkteGrenze(spiel)}`}${
             ui.modus === 'online' ? ' · zwei Geräte' : ''}</div>
           <h1>${name(spiel.dran)} ist dran</h1>
         </div>
@@ -2426,7 +2512,7 @@ function ansage() {
     return 'Zieh vom <b>Stapel</b> oder nimm die <b>Ablage</b>.';
   }
   if (spiel.phase === 'gezogen') {
-    const art = kraftVon(spiel.gezogene.w);
+    const art = kraftVon(spiel.gezogene.w, spiel);
     if (spiel.quelle === 'ablage') return 'Tippe die eigene Karte an, die du dafür hergibst.';
     return art
       ? `Tauschen: eigene Karte antippen. Oder abwerfen und <span class="kraftname">${KRAEFTE[art].titel}</span> nutzen.`
@@ -2459,7 +2545,7 @@ function knoepfe() {
     const paarKnopf = spiel.spieler[spiel.dran].hand.length >= PAAR_MINDESTENS
       ? `<button class="btn btn--geist" id="btnPaar">Gleiche Karten abwerfen</button>` : '';
     if (spiel.quelle !== 'stapel') return paarKnopf;
-    const art = kraftVon(spiel.gezogene.w);
+    const art = kraftVon(spiel.gezogene.w, spiel);
     return `<button class="btn ${art ? 'btn--messing' : 'btn--geist'}" id="btnAbwerfen">
       ${art ? `Abwerfen und ${KRAEFTE[art].titel} nutzen` : 'Abwerfen'}</button>${paarKnopf}`;
   }
@@ -2527,7 +2613,7 @@ function renderAufdecken() {
   layer.innerHTML = `
     <div class="lbl">${esc(a.text)}</div>
     <div class="karten">${karteHtml(a.karte, { offen: true, klasse: 'karte--gross' })}</div>
-    <p class="hinweis">Position ${a.index + 1} von ${HANDGROESSE}. Nur du siehst das.</p>
+    <p class="hinweis">Position ${a.index + 1} von ${handKarten(spiel)}. Nur du siehst das.</p>
     <button class="btn btn--messing" id="ok">Gemerkt</button>`;
   app.appendChild(layer);
   layer.querySelector('#ok').onclick = () => { tun('aufdeckenSchliessen'); };
@@ -2621,7 +2707,8 @@ function renderEnde() {
       </div>`).join('')}
 
       <p class="hinweiszeile" style="margin-top:16px">
-        Nach ${spiel.runde} Runden — jemand hat ${SPIELENDE_AB} Punkte erreicht.</p>
+        Nach ${spiel.runde} ${spiel.runde === 1 ? 'Runde' : 'Runden'}${rundenGrenze(spiel)
+    ? '.' : ` — jemand hat ${punkteGrenze(spiel)} Punkte erreicht.`}</p>
 
       <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
         <button class="btn btn--messing" id="nochmal">Nochmal spielen</button>
@@ -2713,9 +2800,13 @@ function renderRegeln() {
       </ul>
 
       <h3>Spielende</h3>
-      <p>Sobald jemand <strong>${SPIELENDE_AB} Punkte</strong> erreicht, ist Schluss — es gewinnt,
-         wer am <strong>wenigsten</strong> hat. Landet man genau auf ${SPIELENDE_AB}, geht es
-         zurück auf ${SPIELENDE_AB / 2}.</p>
+      <p>${rundenGrenze(spiel)
+    ? `Nach <strong>${rundenGrenze(spiel)} ${rundenGrenze(spiel) === 1 ? 'Runde' : 'Runden'}</strong> ist Schluss — es gewinnt, wer am <strong>wenigsten</strong> hat.`
+    : `Sobald jemand <strong>${punkteGrenze(spiel)} Punkte</strong> erreicht, ist Schluss — es gewinnt,
+         wer am <strong>wenigsten</strong> hat. Landet man genau auf ${punkteGrenze(spiel)}, geht es
+         zurück auf ${punkteGrenze(spiel) / 2}.`}</p>
+      <h3>Die Fassungen</h3>
+      <ul>${MODI.map((m) => `<li><b>${m.titel}</b> — ${m.zeile}</li>`).join('')}</ul>
 
       <h3>An einem Handy</h3>
       <p>Das Handy wandert reihum. Alles, was nur du sehen darfst — die Startkarten, Peek und

@@ -1,7 +1,8 @@
 // Cabo — Oberfläche. Ein Handy wandert, die Karten bleiben geheim.
 
 import {
-  KRAEFTE, HANDGROESSE, CABO_STRAFE, SPIELENDE_AB,
+  KRAEFTE, HANDGROESSE, CABO_STRAFE, SPIELENDE_AB, MODI,
+  handKarten, kraefteAn, punkteGrenze, rundenGrenze,
   kraftVon, neuesSpiel, neueRunde, startKarten, einpraegenFertig,
   ziehen, tauschen, abwerfen, kraftAuslassen, peek, spy, swapEigene, swapFremde,
   aufdeckenSchliessen, caboRufen, handSumme, naechsteRunde, endstand,
@@ -18,6 +19,7 @@ const app = document.getElementById('app');
 
 let spiel = null;
 let ui = {
+  modusWahl: 'klassisch',
   overlay: null,
   halter: 0,           // nur im Modus 'lokal': wer das Handy in der Hand hat
   animRunde: 0,
@@ -234,7 +236,7 @@ function ichBinDran() {
 
 function karteHtml(karte, { offen = false, klasse = '', attrs = '', waehlbar = false } = {}) {
   const w = karte ? karte.w : null;
-  const art = w != null ? kraftVon(w) : null;
+  const art = w != null ? kraftVon(w, spiel) : null;
   const tag = waehlbar ? 'button' : 'div';
   const kl = ['karte', offen ? 'karte--offen' : '', waehlbar ? 'karte--waehlbar' : '', klasse]
     .filter(Boolean).join(' ');
@@ -250,7 +252,7 @@ function karteHtml(karte, { offen = false, klasse = '', attrs = '', waehlbar = f
 
 function renderStart() {
   app.innerHTML = `
-    <div class="screen start">
+    <div class="screen"><div class="scroll">
       <div class="wrap">
         <h1 class="wortmarke">CABO</h1>
         <p class="unterzeile">Vier Karten, keiner weiß welche. Wer am wenigsten hat, gewinnt —
@@ -260,16 +262,31 @@ function renderStart() {
         <div class="feldreihe"><input class="feld" id="n0" maxlength="16" value="Monty" aria-label="Name 1"></div>
         <div class="feldreihe"><input class="feld" id="n1" maxlength="16" value="Christina" aria-label="Name 2"></div>
 
+        <div class="feldlabel" style="margin-top:18px">Welche Fassung?</div>
+        <div class="wahlliste">
+          ${MODI.map((m) => `
+            <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+              <div class="haupt">
+                <div class="oben">${m.titel}</div>
+                <div class="unten">${m.zeile}</div>
+              </div>
+              <div class="haken">${m.id === ui.modusWahl ? '✓' : ''}</div>
+            </button>`).join('')}
+        </div>
+
         <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
           <button class="btn btn--messing" id="los">An einem Handy</button>
           <button class="btn btn--geist" id="zweiGeraete">Auf zwei Handys</button>
           <button class="btn btn--leise" id="regeln">Wie es funktioniert</button>
         </div>
       </div>
-    </div>`;
+    </div></div>`;
 
   const namenLesen = () => [0, 1].map((i) => app.querySelector(`#n${i}`).value.trim() || `Spieler ${i + 1}`);
 
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     ui.modus = 'lokal';
     spielAnlegen(namenLesen());
@@ -283,7 +300,9 @@ function renderStart() {
 }
 
 function spielAnlegen(namen) {
-  spiel = neuesSpiel(namen);
+  const m = MODI.find((x) => x.id === (ui.modusWahl || 'klassisch')) || MODI[0];
+  spiel = neuesSpiel(namen, m.regeln);
+  spiel.modusId = m.id;
   spiel.geber = namen.length - 1;      // damit die erste Person anfängt
   neueRunde(spiel);
   ui.halter = 0;
@@ -762,7 +781,8 @@ function renderTisch() {
     <div class="screen">
       <header class="kopf">
         <div class="titel">
-          <div class="ober">Runde ${spiel.runde} · bis ${SPIELENDE_AB}${
+          <div class="ober">Runde ${spiel.runde} · ${rundenGrenze(spiel)
+    ? `von ${rundenGrenze(spiel)}` : `bis ${punkteGrenze(spiel)}`}${
             ui.modus === 'online' ? ' · zwei Geräte' : ''}</div>
           <h1>${name(spiel.dran)} ist dran</h1>
         </div>
@@ -859,7 +879,7 @@ function ansage() {
     return 'Zieh vom <b>Stapel</b> oder nimm die <b>Ablage</b>.';
   }
   if (spiel.phase === 'gezogen') {
-    const art = kraftVon(spiel.gezogene.w);
+    const art = kraftVon(spiel.gezogene.w, spiel);
     if (spiel.quelle === 'ablage') return 'Tippe die eigene Karte an, die du dafür hergibst.';
     return art
       ? `Tauschen: eigene Karte antippen. Oder abwerfen und <span class="kraftname">${KRAEFTE[art].titel}</span> nutzen.`
@@ -892,7 +912,7 @@ function knoepfe() {
     const paarKnopf = spiel.spieler[spiel.dran].hand.length >= PAAR_MINDESTENS
       ? `<button class="btn btn--geist" id="btnPaar">Gleiche Karten abwerfen</button>` : '';
     if (spiel.quelle !== 'stapel') return paarKnopf;
-    const art = kraftVon(spiel.gezogene.w);
+    const art = kraftVon(spiel.gezogene.w, spiel);
     return `<button class="btn ${art ? 'btn--messing' : 'btn--geist'}" id="btnAbwerfen">
       ${art ? `Abwerfen und ${KRAEFTE[art].titel} nutzen` : 'Abwerfen'}</button>${paarKnopf}`;
   }
@@ -960,7 +980,7 @@ function renderAufdecken() {
   layer.innerHTML = `
     <div class="lbl">${esc(a.text)}</div>
     <div class="karten">${karteHtml(a.karte, { offen: true, klasse: 'karte--gross' })}</div>
-    <p class="hinweis">Position ${a.index + 1} von ${HANDGROESSE}. Nur du siehst das.</p>
+    <p class="hinweis">Position ${a.index + 1} von ${handKarten(spiel)}. Nur du siehst das.</p>
     <button class="btn btn--messing" id="ok">Gemerkt</button>`;
   app.appendChild(layer);
   layer.querySelector('#ok').onclick = () => { tun('aufdeckenSchliessen'); };
@@ -1054,7 +1074,8 @@ function renderEnde() {
       </div>`).join('')}
 
       <p class="hinweiszeile" style="margin-top:16px">
-        Nach ${spiel.runde} Runden — jemand hat ${SPIELENDE_AB} Punkte erreicht.</p>
+        Nach ${spiel.runde} ${spiel.runde === 1 ? 'Runde' : 'Runden'}${rundenGrenze(spiel)
+    ? '.' : ` — jemand hat ${punkteGrenze(spiel)} Punkte erreicht.`}</p>
 
       <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
         <button class="btn btn--messing" id="nochmal">Nochmal spielen</button>
@@ -1146,9 +1167,13 @@ function renderRegeln() {
       </ul>
 
       <h3>Spielende</h3>
-      <p>Sobald jemand <strong>${SPIELENDE_AB} Punkte</strong> erreicht, ist Schluss — es gewinnt,
-         wer am <strong>wenigsten</strong> hat. Landet man genau auf ${SPIELENDE_AB}, geht es
-         zurück auf ${SPIELENDE_AB / 2}.</p>
+      <p>${rundenGrenze(spiel)
+    ? `Nach <strong>${rundenGrenze(spiel)} ${rundenGrenze(spiel) === 1 ? 'Runde' : 'Runden'}</strong> ist Schluss — es gewinnt, wer am <strong>wenigsten</strong> hat.`
+    : `Sobald jemand <strong>${punkteGrenze(spiel)} Punkte</strong> erreicht, ist Schluss — es gewinnt,
+         wer am <strong>wenigsten</strong> hat. Landet man genau auf ${punkteGrenze(spiel)}, geht es
+         zurück auf ${punkteGrenze(spiel) / 2}.`}</p>
+      <h3>Die Fassungen</h3>
+      <ul>${MODI.map((m) => `<li><b>${m.titel}</b> — ${m.zeile}</li>`).join('')}</ul>
 
       <h3>An einem Handy</h3>
       <p>Das Handy wandert reihum. Alles, was nur du sehen darfst — die Startkarten, Peek und

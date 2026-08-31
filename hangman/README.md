@@ -65,6 +65,27 @@ Sie legt fest, wie viel vom Galgen schon steht, bevor es losgeht:
 | Normal | Boden und Pfosten | 9 |
 | Schwer | der ganze Galgen | 7 |
 
+## Die vier Fassungen
+
+| Fassung | Was anders ist |
+|---|---|
+| **Klassisch** | ein Wort, Schwierigkeit im Menü einstellbar |
+| **Hart** | nur sieben Fehler — **und keine Tipps** |
+| **Vokale kosten** | A, E, I, O, U kosten einen Fehler, auch wenn sie im Wort stehen |
+| **Doppelwort** | zwei Wörter auf einmal, ein einziger Strichvorrat |
+
+**Vokale kosten** dreht das Spiel um: sonst rät man erst die Vokale, weil sie fast immer
+drin sind. Hier muss man mit Konsonanten anfangen und die Vokale erschließen. Macht ein
+Vokal das Wort voll, zählt der Sieg — auch wenn derselbe Zug den letzten Fehler kostet.
+
+**Doppelwort** zieht zwei verschiedene Wörter und setzt sie mit einem Leerzeichen
+zusammen. Leerzeichen sind ohnehin Trenner und stehen von Anfang an da; beide Wörter
+teilen sich damit denselben Strichvorrat, ohne dass es dafür eine zweite Runde nebenher
+bräuchte.
+
+Die gewählte Fassung steht im Spielstand, nicht im Gerät: sie reist beim Koppeln von
+selbst mit. Ein Spielstand von vor den Fassungen wird weiter wie der Klassiker behandelt.
+
 ## Auf zwei Handys
 
 Über **Menü → Auf zwei Handys spielen**. Zwei Wege:

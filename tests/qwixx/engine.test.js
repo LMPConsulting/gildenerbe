@@ -1,5 +1,6 @@
 import {
   COLORS, ROW_VALUES, LAST_INDEX, SCORE_TABLE, MAX_PENALTIES,
+  MODI, zeilenWerte, maxFehler, istVorbei,
   createGame, rollDice, submit, legalMoves, canCross, currentStep,
   crossCount, rightmostCross, playerScore, standings, endReason,
 } from '../../qwixx/src/engine.js';
@@ -285,5 +286,96 @@ describe('Punkte', () => {
     expect(table[0].name).toBe('B');
     expect(table[0].total).toBe(10);
     expect(table[1].total).toBe(3);
+  });
+});
+
+/* ==================================================================== Modi */
+
+describe('Modi', () => {
+  const modus = (id) => MODI.find((m) => m.id === id);
+  /** Ein Zufallsgeber, der wirklich streut — für das Mischen der Reihen. */
+  const streu = (saat) => {
+    let a = saat >>> 0;
+    return () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let x = Math.imul(a ^ (a >>> 15), 1 | a);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+
+  it('kennt drei Fassungen mit eigener Kennung und Erklärung', () => {
+    expect(MODI).toHaveLength(3);
+    expect(new Set(MODI.map((m) => m.id)).size).toBe(3);
+    expect(MODI[0].id).toBe('klassisch');
+    for (const m of MODI) {
+      expect(typeof m.titel).toBe('string');
+      expect(typeof m.zeile).toBe('string');
+      expect(m.regeln).toBeTruthy();
+    }
+  });
+
+  it('behält die Regeln im Spielstand — damit sie beim Koppeln mitreisen', () => {
+    const s = createGame(['A', 'B'], modus('kurz').regeln);
+    expect(JSON.parse(JSON.stringify(s)).regeln.maxFehler).toBe(2);
+  });
+
+  it('Klassisch behält die gewohnte Reihenfolge', () => {
+    const s = createGame(['A', 'B'], modus('klassisch').regeln);
+    expect(zeilenWerte(s).red).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(zeilenWerte(s).green).toEqual([12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  });
+
+  it('Gemischt würfelt die Zahlen jeder Reihe durcheinander, aber verliert keine', () => {
+    const s = createGame(['A', 'B'], modus('gemischt').regeln, streu(11));
+    for (const farbe of COLORS) {
+      const werte = zeilenWerte(s)[farbe];
+      expect(werte).toHaveLength(11);
+      expect([...werte].sort((a, b) => a - b)).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    }
+    // Mindestens eine Reihe steht anders als im Klassiker — sonst wäre nichts gemischt.
+    const anders = COLORS.some((f) => zeilenWerte(s)[f].join() !== ROW_VALUES[f].join());
+    expect(anders).toBe(true);
+  });
+
+  it('Gemischt mischt jede Partie neu', () => {
+    const a = createGame(['A', 'B'], modus('gemischt').regeln, streu(1));
+    const b = createGame(['A', 'B'], modus('gemischt').regeln, streu(2));
+    expect(zeilenWerte(a).red.join()).not.toBe(zeilenWerte(b).red.join());
+  });
+
+  it('Gemischt: gekreuzt wird weiterhin nur von links nach rechts', () => {
+    const s = createGame(['A', 'B'], modus('gemischt').regeln, streu(7));
+    s.players[0].rows.red[5] = true;
+    expect(canCross(s, 0, 'red', 4)).toBe(false);
+    expect(canCross(s, 0, 'red', 6)).toBe(true);
+  });
+
+  it('Gemischt: die Züge kommen aus der gemischten Reihe, nicht aus der klassischen', () => {
+    const s = createGame(['A', 'B'], modus('gemischt').regeln, streu(3));
+    s.dice = { w1: 3, w2: 4, red: 1, yellow: 1, green: 1, blue: 1 };
+    s.phase = 'decide';
+    s.pending = [{ p: 0, kind: 'white' }, { p: 1, kind: 'white' }];
+    for (const z of legalMoves(s)) {
+      expect(zeilenWerte(s)[z.color][z.index]).toBe(z.value);
+    }
+  });
+
+  it('Kurz: schon zwei Fehlwürfe beenden das Spiel', () => {
+    const s = createGame(['A', 'B'], modus('kurz').regeln);
+    expect(maxFehler(s)).toBe(2);
+    s.players[0].penalties = 2;
+    expect(istVorbei(s)).toBe(true);
+    const lang = createGame(['A', 'B']);
+    lang.players[0].penalties = 2;
+    expect(istVorbei(lang)).toBe(false);
+  });
+
+  it('alte Spielstände ohne Regeln verhalten sich wie der Klassiker', () => {
+    const s = createGame(['A', 'B']);
+    delete s.regeln;
+    delete s.rowValues;
+    expect(maxFehler(s)).toBe(4);
+    expect(zeilenWerte(s).red).toEqual(ROW_VALUES.red);
   });
 });

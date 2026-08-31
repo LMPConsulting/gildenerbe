@@ -5,6 +5,7 @@ import {
   neuerStand, rundeStarten, raten, wortRaten, aufgeben,
   rundeAbschliessen, rundeAbbrechen, wortZiehen, wortPruefen, normalisieren,
   gezeichnet, offen, fuehrung, erlaubteFehler, alsCode, ausCode,
+  MODI, regel,
 } from './engine.js';
 import { galgenSvg } from './galgen.js';
 import { netzAufbauen, netzMoeglich } from './netz.js';
@@ -16,6 +17,7 @@ const app = document.getElementById('app');
 
 let stand = null;
 let ui = {
+  modusWahl: 'klassisch',
   screen: 'start',    // 'start' | 'hub' | 'stellen' | 'spiel'
   overlay: null,
   halter: 0,          // wer das Handy gerade in der Hand hat (nur lokal)
@@ -286,25 +288,40 @@ const SICHER_TEXT = {
 
 function renderStart() {
   app.innerHTML = `
-    <div class="screen start">
-      <div class="wrap">
-        <h1 class="wortmarke">Galgen<em>männchen</em></h1>
-        <p class="unterzeile">Einer denkt sich ein Wort aus, der andere rät.
-          Elf Fehlgriffe — dann hängt es.</p>
-        <div class="feldlabel">Wer spielt?</div>
-        <input class="feld" id="n1" maxlength="14" placeholder="Erster Name" value="Monty">
-        <div style="height:10px"></div>
-        <input class="feld" id="n2" maxlength="14" placeholder="Zweiter Name" value="Christina">
-        <div class="knopfsaeule">
-          <button class="btn btn--kreide" id="los">Los geht's</button>
-          <button class="btn btn--leise" id="regeln">Wie geht das?</button>
-        </div>
+    <div class="screen"><div class="scroll"><div class="wrap" style="text-align:center">
+      <h1 class="wortmarke">Galgen<em>männchen</em></h1>
+      <p class="unterzeile">Einer denkt sich ein Wort aus, der andere rät.
+        Elf Fehlgriffe — dann hängt es.</p>
+      <div class="feldlabel">Wer spielt?</div>
+      <input class="feld" id="n1" maxlength="14" placeholder="Erster Name" value="Monty">
+      <div style="height:10px"></div>
+      <input class="feld" id="n2" maxlength="14" placeholder="Zweiter Name" value="Christina">
+      <div class="feldlabel">Welche Fassung?</div>
+      <div class="wahlliste">
+        ${MODI.map((m) => `
+          <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+            <div class="haupt">
+              <div class="oben">${esc(m.titel)}</div>
+              <div class="unten">${esc(m.zeile)}</div>
+            </div>
+            <div class="haken">${m.id === ui.modusWahl ? '✓' : ''}</div>
+          </button>`).join('')}
       </div>
-    </div>`;
+      <div class="knopfsaeule">
+        <button class="btn btn--kreide" id="los">Los geht's</button>
+        <button class="btn btn--leise" id="regeln">Wie geht das?</button>
+      </div>
+    </div></div></div>`;
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     const a = app.querySelector('#n1').value.trim() || 'Eins';
     const b = app.querySelector('#n2').value.trim() || 'Zwei';
-    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)]);
+    const m = MODI.find((x) => x.id === ui.modusWahl) || MODI[0];
+    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)], m.regeln);
+    stand.modusId = m.id;
+    if (m.stufe) stand.stufe = m.stufe;
     ui.screen = 'hub';
     nachAenderung();
   };
@@ -539,7 +556,8 @@ function renderSpiel() {
       <div class="buehne">
         <div class="galgenfeld">${galgenSvg(gezeichnet(r), { vorab: r.vorab, zustand })}</div>
         ${wortfeld(r, fertig)}
-        <div class="tippzeile">${r.tipp ? `Tipp: <b>${esc(r.tipp)}</b>` : ''}</div>
+        <div class="tippzeile">${r.tipp && regel(stand, 'tippZeigen')
+    ? `Tipp: <b>${esc(r.tipp)}</b>` : ''}</div>
         ${fertig ? abschluss(r) : `
           ${fehlerLeiste(r)}
           <div class="tastatur">${tastatur}</div>
@@ -613,7 +631,8 @@ function renderUebergabe(wer) {
     <div class="lbl">Handy weitergeben an</div>
     <div class="name">${name(wer)}</div>
     <p class="auftrag">${auftrag}</p>
-    ${r && ui.screen === 'spiel' && r.tipp ? `<p class="auftrag">Tipp: ${esc(r.tipp)}</p>` : ''}
+    ${r && ui.screen === 'spiel' && r.tipp && regel(stand, 'tippZeigen')
+    ? `<p class="auftrag">Tipp: ${esc(r.tipp)}</p>` : ''}
     <button class="btn btn--kreide" id="btnBereit">Ich hab's</button>`;
   app.appendChild(layer);
   layer.querySelector('#btnBereit').onclick = () => { ui.halter = wer; render(); };

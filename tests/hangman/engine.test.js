@@ -4,6 +4,7 @@ import {
   neuerStand, normalisieren, wortPruefen, musterBauen, erlaubteFehler,
   rundeStarten, raten, wortRaten, aufgeben, punkteFuer, rundeAbschliessen,
   rundeAbbrechen, wortZiehen, gezeichnet, offen, fuehrung, alsCode, ausCode,
+  MODI, VOKALE, regel,
 } from '../../hangman/src/engine.js';
 import { WOERTER, KATEGORIEN, ALLE } from '../../hangman/src/woerter.js';
 import { galgenSvg, TEIL_PFADE, beschriftung } from '../../hangman/src/galgen.js';
@@ -523,5 +524,110 @@ describe('Zeichnung', () => {
   it('hat für jedes Teil genau einen Pfad', () => {
     expect(TEIL_PFADE).toHaveLength(TEILE.length);
     expect(TEIL_PFADE.map((t) => t.id)).toEqual(TEILE);
+  });
+});
+
+/* ==================================================================== Modi */
+
+describe('Modi', () => {
+  const modus = (id) => MODI.find((m) => m.id === id);
+  const streu = (saat) => {
+    let a = saat >>> 0;
+    return () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let x = Math.imul(a ^ (a >>> 15), 1 | a);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+
+  it('kennt vier Fassungen mit eigener Kennung und Erklärung', () => {
+    expect(MODI).toHaveLength(4);
+    expect(new Set(MODI.map((m) => m.id)).size).toBe(4);
+    expect(MODI[0].id).toBe('klassisch');
+    for (const m of MODI) {
+      expect(typeof m.titel).toBe('string');
+      expect(typeof m.zeile).toBe('string');
+      expect(m.regeln).toBeTruthy();
+    }
+  });
+
+  it('behält die Regeln im Spielstand — damit sie beim Koppeln mitreisen', () => {
+    const s = neuerStand(['A', 'B'], modus('vokale').regeln);
+    expect(JSON.parse(JSON.stringify(s)).regeln.vokaleKosten).toBe(true);
+  });
+
+  it('Vokale kosten: ein getroffener Vokal zieht trotzdem einen Fehler nach', () => {
+    const s = neuerStand(['A', 'B'], modus('vokale').regeln);
+    rundeStarten(s, { wort: 'BANANE', setzer: 0, rater: 1 });
+    const vorher = s.aktuell.fehler;
+    const erg = raten(s, 'A');
+    expect(erg.treffer).toBe(true);
+    expect(erg.kostet).toBe(true);
+    expect(s.aktuell.fehler).toBe(vorher + 1);
+    expect(s.aktuell.muster.filter((z) => z === 'A')).toHaveLength(2);
+  });
+
+  it('Vokale kosten: Konsonanten kosten wie immer nichts, wenn sie treffen', () => {
+    const s = neuerStand(['A', 'B'], modus('vokale').regeln);
+    rundeStarten(s, { wort: 'BANANE', setzer: 0, rater: 1 });
+    const erg = raten(s, 'N');
+    expect(erg.treffer).toBe(true);
+    expect(erg.kostet).toBe(false);
+    expect(s.aktuell.fehler).toBe(0);
+  });
+
+  it('Vokale kosten: der letzte Vokal beendet die Runde als Sieg, nicht als Niederlage', () => {
+    // Wird das Wort mit dem letzten Vokal voll, zählt der Sieg — auch wenn
+    // derselbe Zug den Fehlervorrat aufbraucht.
+    const s = neuerStand(['A', 'B'], modus('vokale').regeln);
+    rundeStarten(s, { wort: 'IST', setzer: 0, rater: 1 });
+    raten(s, 'S');
+    raten(s, 'T');
+    s.aktuell.fehler = s.aktuell.erlaubt - 1;
+    raten(s, 'I');                            // trifft, kostet — und macht voll
+    expect(s.aktuell.fehler).toBe(s.aktuell.erlaubt);
+    expect(s.aktuell.fertig).toBe('gewonnen');
+  });
+
+  it('Klassisch: Vokale kosten nichts', () => {
+    const s = neuerStand(['A', 'B']);
+    rundeStarten(s, { wort: 'BANANE', setzer: 0, rater: 1 });
+    expect(raten(s, 'A').kostet).toBe(false);
+    expect(s.aktuell.fehler).toBe(0);
+  });
+
+  it('Doppelwort: das Handy zieht zwei verschiedene Wörter mit Leerzeichen', () => {
+    const s = neuerStand(['A', 'B'], modus('doppelwort').regeln);
+    const gezogen = wortZiehen(s, 'allerlei', streu(4));
+    expect(gezogen.wort).toMatch(/ /);
+    expect(gezogen.doppelt).toHaveLength(2);
+    expect(gezogen.doppelt[0]).not.toBe(gezogen.doppelt[1]);
+    expect(gezogen.wort).toBe(`${gezogen.doppelt[0]} ${gezogen.doppelt[1]}`);
+  });
+
+  it('Doppelwort: das Leerzeichen steht von Anfang an da und beide Teile zählen', () => {
+    const s = neuerStand(['A', 'B'], modus('doppelwort').regeln);
+    rundeStarten(s, { wort: 'AB CD', setzer: -1, rater: 0 });
+    expect(s.aktuell.muster[2]).toBe(' ');
+    raten(s, 'A'); raten(s, 'B'); raten(s, 'C');
+    expect(s.aktuell.fertig).toBeNull();      // ein Teil allein reicht nicht
+    raten(s, 'D');
+    expect(s.aktuell.fertig).toBe('gewonnen');
+  });
+
+  it('Klassisch: das Handy zieht weiterhin nur ein Wort', () => {
+    const s = neuerStand(['A', 'B']);
+    const gezogen = wortZiehen(s, 'allerlei', streu(4));
+    expect(gezogen.wort).not.toMatch(/ /);
+    expect(gezogen.doppelt).toBeUndefined();
+  });
+
+  it('alte Spielstände ohne Regeln verhalten sich wie der Klassiker', () => {
+    const s = neuerStand(['A', 'B']);
+    delete s.regeln;
+    rundeStarten(s, { wort: 'BANANE', setzer: 0, rater: 1 });
+    expect(raten(s, 'A').kostet).toBe(false);
+    expect(wortZiehen(s, 'allerlei', streu(2)).wort).not.toMatch(/ /);
   });
 });
