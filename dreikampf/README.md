@@ -55,6 +55,18 @@ Weil `localStorage` an die Adresse gebunden ist, gibt es **Menü → Punktestand
 der komplette Stand als Code zum Kopieren oder als Datei. Auf einem anderen Gerät oder unter
 einer anderen Adresse dort wieder einspielen.
 
+## Die vier Fassungen
+
+| Fassung | Was anders ist |
+|---|---|
+| **Alle drei** | Wissen, Wahrheit und Wagnis |
+| **Nur Wissen** | reines Quizduell |
+| **Ohne Mutproben** | Wissen und Wahrheit — für Orte, an denen Wagnis unpassend ist (Flugzeug!) |
+| **Nur persönlich** | Wahrheit und Wagnis, kein Quiz |
+
+Die Fassung bestimmt nur, welche Karten überhaupt angeboten werden — auch der
+Zufallsknopf zieht dann nur aus diesen.
+
 ## Aufbau
 
 ```

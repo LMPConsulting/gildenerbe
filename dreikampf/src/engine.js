@@ -8,6 +8,49 @@ export const STAPEL = { wissen: WISSEN, wahrheit: WAHRHEIT, wagnis: WAGNIS };
 
 export const TYPEN = ['wissen', 'wahrheit', 'wagnis'];
 
+export const VORGABE = {
+  typen: TYPEN,      // welche Kartenarten überhaupt vorkommen
+};
+
+export const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Alle drei',
+    zeile: 'Wissen, Wahrheit und Wagnis',
+    regeln: {},
+  },
+  {
+    id: 'nurWissen',
+    titel: 'Nur Wissen',
+    zeile: 'Reines Quizduell — keine persönlichen Fragen, keine Mutproben',
+    regeln: { typen: ['wissen'] },
+  },
+  {
+    id: 'keinWagnis',
+    titel: 'Ohne Mutproben',
+    zeile: 'Wissen und Wahrheit — für Orte, an denen Wagnis unpassend ist',
+    regeln: { typen: ['wissen', 'wahrheit'] },
+  },
+  {
+    id: 'nurPersoenlich',
+    titel: 'Nur persönlich',
+    zeile: 'Wahrheit und Wagnis — kein Quiz',
+    regeln: { typen: ['wahrheit', 'wagnis'] },
+  },
+];
+
+/** Regel lesen, mit Rückfall auf die Vorgabe — alte Spielstände bleiben gültig. */
+export const regel = (stand, name) => {
+  const wert = stand && stand.regeln ? stand.regeln[name] : undefined;
+  return wert === undefined ? VORGABE[name] : wert;
+};
+
+/** Welche Kartenarten diese Fassung anbietet. */
+export const offeneTypen = (stand) => {
+  const liste = regel(stand, 'typen');
+  return Array.isArray(liste) && liste.length ? liste.filter((t) => TYPEN.includes(t)) : TYPEN;
+};
+
 export const TYP_INFO = {
   wissen:   { titel: 'Wissen',   unter: 'Beide antworten — Richtige punkten' },
   wahrheit: { titel: 'Wahrheit', unter: 'Beide antworten, der andere bewertet' },
@@ -31,10 +74,11 @@ export const ORTE = {
 
 export const SAVE_VERSION = 1;
 
-export function neuerStand(namen = ['Monty', 'Christina'], reise = 'Wien') {
+export function neuerStand(namen = ['Monty', 'Christina'], reise = 'Wien', regeln = {}) {
   return {
     v: SAVE_VERSION,
     reise,
+    regeln: { ...VORGABE, ...regeln },
     spieler: namen.map((name) => ({ name })),
     punkte: namen.map(() => 0),
     dran: 0,

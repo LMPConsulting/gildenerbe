@@ -8,6 +8,7 @@ import {
   gruppeKomplett, bauen, abreissen, beleihen, ausloesen, karteZiehen, karteAusfuehren,
   kautionZahlen, freikarteNutzen, wuerfelnImKnast, zugBeenden, vermoegen, pleite,
   vorbei, handelAnbieten, handelAnnehmen, handelAblehnen, alsCode, ausCode, phase,
+  MODI, schnellstartVerteilen, angebotAnnehmen, angebotAblehnen,
 } from '../../wienerrunde/src/engine.js';
 
 /** Ein Stand mit gesetztem Zufall — auch der Kartenstapel liegt fest. */
@@ -676,5 +677,96 @@ describe('Brettgeometrie', () => {
     expect(KANTE[15]).toBe('links');
     expect(KANTE[25]).toBe('oben');
     expect(KANTE[35]).toBe('rechts');
+  });
+});
+
+/* ==================================================================== Modi */
+
+describe('Modi', () => {
+  const modus = (id) => MODI.find((m) => m.id === id);
+
+  it('kennt vier Fassungen mit eigener Kennung und Erklärung', () => {
+    expect(MODI).toHaveLength(4);
+    expect(new Set(MODI.map((m) => m.id)).size).toBe(4);
+    expect(MODI[0].id).toBe('klassisch');
+    for (const m of MODI) {
+      expect(typeof m.titel).toBe('string');
+      expect(typeof m.zeile).toBe('string');
+      expect(m.regeln).toBeTruthy();
+    }
+  });
+
+  it('Schnellstart verteilt gleich viele Orte an beide', () => {
+    const s = neuerStand(['A', 'B'], modus('schnellstart').regeln, () => 0.5);
+    let a = 5;
+    const rnd = () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let x = Math.imul(a ^ (a >>> 15), 1 | a);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+    schnellstartVerteilen(s, rnd);
+    const werte = Object.values(s.besitz);
+    expect(werte).toHaveLength(6);
+    expect(werte.filter((x) => x === 0)).toHaveLength(3);
+    expect(werte.filter((x) => x === 1)).toHaveLength(3);
+    for (const feld of Object.keys(s.besitz)) expect(KAUFBAR).toContain(Number(feld));
+  });
+
+  it('Klassisch verteilt nichts vorab', () => {
+    const s = neuerStand(['A', 'B']);
+    schnellstartVerteilen(s, () => 0.5);
+    expect(Object.keys(s.besitz)).toHaveLength(0);
+  });
+
+  it('Versteigerung: wer nicht kauft, bietet der Gegenseite den Ort an', () => {
+    const s = neuerStand(['A', 'B'], modus('versteigerung').regeln, () => 0.5);
+    s.ort = [1, 0];
+    s.phase = 'kaufen';
+    kaufVerzichten(s);
+    expect(s.phase).toBe('angebot');
+    expect(s.angebot).toEqual({ feld: 1, an: 1, zurueck: 0 });
+    expect(s.dran, 'entscheiden muss die Gegenseite').toBe(1);
+    const vorher = s.geld[1];
+    angebotAnnehmen(s);
+    expect(s.besitz[1]).toBe(1);
+    expect(s.geld[1]).toBe(vorher - FELDER[1].preis);
+    expect(s.phase).toBe('ende');
+    expect(s.dran, 'danach ist wieder der Läufer dran').toBe(0);
+  });
+
+  it('Versteigerung: die Gegenseite darf auch ablehnen', () => {
+    const s = neuerStand(['A', 'B'], modus('versteigerung').regeln, () => 0.5);
+    s.ort = [1, 0];
+    s.phase = 'kaufen';
+    kaufVerzichten(s);
+    angebotAblehnen(s);
+    expect(s.besitz[1]).toBeUndefined();
+    expect(s.phase).toBe('ende');
+    expect(s.angebot).toBeNull();
+    expect(s.dran).toBe(0);
+  });
+
+  it('Versteigerung: kein Angebot, wenn die Gegenseite es nicht bezahlen kann', () => {
+    const s = neuerStand(['A', 'B'], modus('versteigerung').regeln, () => 0.5);
+    s.ort = [1, 0];
+    s.geld[1] = 10;
+    s.phase = 'kaufen';
+    kaufVerzichten(s);
+    expect(s.phase).toBe('ende');
+  });
+
+  it('Klassisch: Verzicht beendet den Zug ohne Angebot', () => {
+    const s = neuerStand(['A', 'B']);
+    s.ort = [1, 0];
+    s.phase = 'kaufen';
+    kaufVerzichten(s);
+    expect(s.phase).toBe('ende');
+    expect(s.angebot).toBeNull();
+  });
+
+  it('behält die Regeln im Spielstand — damit sie beim Koppeln mitreisen', () => {
+    const s = neuerStand(['A', 'B'], modus('pleite').regeln, () => 0.5);
+    expect(JSON.parse(JSON.stringify(s)).regeln.runden).toBe(0);
   });
 });

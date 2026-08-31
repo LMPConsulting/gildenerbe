@@ -436,3 +436,16 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   opacity: 0.62;
   word-break: break-word;
 }
+
+/* ---------- Fassungswahl auf dem Startbildschirm ---------- */
+
+.wahlliste { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.wahl {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: 13px; padding: 13px 15px;
+}
+.wahl--an { border-color: var(--gold); background: var(--panel-2); }
+.wahl .haupt { flex: 1; min-width: 0; }
+.wahl .oben { color: var(--tinte-hell, #f2ecf6); font-weight: 650; }
+.wahl .unten { font-size: 13px; color: var(--fog-dim); }
+.wahl .haken { color: var(--gold); font-size: 18px; }

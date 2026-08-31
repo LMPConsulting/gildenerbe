@@ -7,6 +7,7 @@ import {
   RING, HUETE, HOF, WEGLAENGE,
   neuerStand, wuerfeln, zuege, ziehen, ziehbar, feldVon,
   stapelAuf, imZiel, gefangene, zugBeenden, partieNeu, vorbei, alsCode, ausCode,
+  MODI,
 } from './engine.js';
 import { RINGFELDER, HOFFELDER, ZIELFELDER, mitte, BRETTGROESSE } from './brett.js';
 import { netzAufbauen, netzMoeglich } from './netz.js';
@@ -18,6 +19,7 @@ const app = document.getElementById('app');
 
 let stand = null;
 let ui = {
+  modusWahl: 'klassisch',
   screen: 'start',
   overlay: null,
   codeStatus: '',
@@ -240,16 +242,32 @@ function renderStart() {
         <input class="feld" id="n1" maxlength="14" placeholder="Gold" value="Monty">
         <div style="height:10px"></div>
         <input class="feld" id="n2" maxlength="14" placeholder="Violett" value="Christina">
-        <div class="knopfsaeule">
+                <div class="feldlabel">Welche Fassung?</div>
+        <div class="wahlliste">
+          ${MODI.map((m) => `
+            <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+              <div class="haupt">
+                <div class="oben">${esc(m.titel)}</div>
+                <div class="unten">${esc(m.zeile)}</div>
+              </div>
+              <div class="haken">${m.id === ui.modusWahl ? '\u2713' : ''}</div>
+            </button>`).join('')}
+        </div>
+<div class="knopfsaeule">
           <button class="btn btn--filz" id="los">Los geht's</button>
           <button class="btn btn--leise" id="regeln">Wie geht das?</button>
         </div>
       </div>
     </div>`;
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     const a = app.querySelector('#n1').value.trim() || 'Gold';
     const b = app.querySelector('#n2').value.trim() || 'Violett';
-    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)]);
+    const m = MODI.find((x) => x.id === ui.modusWahl) || MODI[0];
+    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)], m.regeln);
+    stand.modusId = m.id;
     ui.screen = 'spiel';
     nachAenderung();
   };

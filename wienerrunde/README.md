@@ -67,6 +67,24 @@ von 2,6 auf 0,75 und die Häuser von 3,3 auf 0,9. Handeln ist keine Zugabe, sond
 Voraussetzung dafür, dass der Bauteil des Spiels überhaupt vorkommt. Deshalb zeigt die
 Besitzübersicht von sich aus an, welcher eine Ort noch zu einer Farbgruppe fehlt.
 
+## Die vier Fassungen
+
+| Fassung | Was anders ist |
+|---|---|
+| **Klassisch** | 40 Runden, alles wird erlaufen |
+| **Schnellstart** | jede Seite beginnt mit **drei zufälligen Orten** |
+| **Versteigerung** | wer nicht kauft, dem greift die Gegenseite den Ort weg |
+| **Bis zur Pleite** | kein Rundenlimit |
+
+**Schnellstart** ist die direkte Antwort auf die Messung weiter unten: ohne Handel bleiben
+die Farbgruppen fast immer unvollständig, und der Bauteil des Spiels kommt gar nicht vor.
+Mit drei Orten je Seite gibt es von der ersten Runde an etwas zu tauschen.
+
+**Versteigerung** ist zu zweit bewusst keine echte Auktion — es gäbe ja nur ein Gebot.
+Stattdessen bekommt die Gegenseite den Ort zum Listenpreis angeboten. Entscheiden muss
+sie selbst: dafür wandert `dran` für diesen einen Schritt hinüber, sonst hinge auf dem
+zweiten Handy der Knopf beim Falschen.
+
 ## Auf zwei Handys
 
 Über **Menü → Auf zwei Handys spielen**. Nichts ist geheim — beide sehen dasselbe Brett

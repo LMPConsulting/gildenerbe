@@ -3,7 +3,7 @@ import {
   FIGUREN, SPERREN, SAVE_VERSION,
   neuerStand, wuerfeln, zuege, zieleFuer, ziehbar, ziehen,
   figurAuf, sperreAuf, setztGerade, setzbar, sperreSetzen,
-  zugBeenden, partieNeu, vorbei, gewinner, alsCode, ausCode,
+  zugBeenden, partieNeu, vorbei, gewinner, alsCode, ausCode, MODI,
 } from '../../sperre/src/engine.js';
 import {
   REIHEN, SPALTEN, FELDER, NACHBARN, ZIEL, HEIM, START_SPERREN,
@@ -627,5 +627,89 @@ describe('Partien gegen sich selbst', () => {
         .toBe(ohneZiel.length);
       for (const id of s.sperren) expect(FELDER[id].reihe).not.toBe(UNTERSTE_STRASSE);
     }
+  });
+});
+
+/* ==================================================================== Modi */
+
+describe('Modi', () => {
+  const modus = (id) => MODI.find((m) => m.id === id);
+
+  it('kennt drei Fassungen mit eigener Kennung und Erklärung', () => {
+    expect(MODI).toHaveLength(3);
+    expect(new Set(MODI.map((m) => m.id)).size).toBe(3);
+    expect(MODI[0].id).toBe('klassisch');
+    for (const m of MODI) {
+      expect(typeof m.titel).toBe('string');
+      expect(typeof m.zeile).toBe('string');
+      expect(m.regeln).toBeTruthy();
+    }
+  });
+
+  it('Mauerschlacht: fünfzehn Steine, jede Leiterreihe zu', () => {
+    const s = neuerStand(['A', 'B'], modus('mauerschlacht').regeln);
+    expect(s.sperren).toHaveLength(15);
+    // Reihen 1, 3, 5, 7 und 9 tragen jetzt alle Steine.
+    for (const reihe of [3, 5, 7, 9]) {
+      const leitern = FELDER.filter((f) => f.reihe === reihe);
+      expect(leitern.every((f) => s.sperren.includes(f.id)), `Reihe ${reihe}`).toBe(true);
+    }
+  });
+
+  it('Mauerschlacht: die Wegregel gilt weiterhin — beide kommen durch', () => {
+    const s = neuerStand(['A', 'B'], modus('mauerschlacht').regeln);
+    // Es gibt trotz aller Mauern erlaubte Züge: die Leitern lassen sich treffen.
+    s.wurf = 1;
+    expect(zuege(s).length).toBeGreaterThan(0);
+  });
+
+  it('Alle fünf: die erste Figur im Ziel beendet die Partie noch nicht', () => {
+    const s = neuerStand(['A', 'B'], modus('alleFuenf').regeln);
+    s.figuren[0][0] = { feld: f(1, 5) };
+    s.wurf = 1;
+    ziehen(s, 0, ZIEL);
+    expect(s.figuren[0][0].feld).toBe(ZIEL);
+    expect(vorbei(s)).toBe(false);
+    expect(s.dran).toBe(1);
+  });
+
+  it('Alle fünf: erst die fünfte Figur gewinnt', () => {
+    const s = neuerStand(['A', 'B'], modus('alleFuenf').regeln);
+    for (let i = 0; i < 4; i++) s.figuren[0][i] = { feld: ZIEL };
+    s.figuren[0][4] = { feld: f(1, 5) };
+    s.wurf = 1;
+    ziehen(s, 4, ZIEL);
+    expect(vorbei(s)).toBe(true);
+    expect(gewinner(s)).toBe(0);
+  });
+
+  it('Alle fünf: mehrere eigene Figuren dürfen im Ziel stehen', () => {
+    const s = neuerStand(['A', 'B'], modus('alleFuenf').regeln);
+    s.figuren[0][0] = { feld: ZIEL };
+    s.figuren[0][1] = { feld: f(1, 5) };
+    s.wurf = 1;
+    expect(zieleFuer(s, 1).some((z) => z.ziel === ZIEL)).toBe(true);
+  });
+
+  it('Im Ziel wird niemand geschlagen', () => {
+    const s = neuerStand(['A', 'B'], modus('alleFuenf').regeln);
+    s.figuren[1][0] = { feld: ZIEL };
+    s.figuren[0][0] = { feld: f(1, 5) };
+    s.wurf = 1;
+    const zug = zieleFuer(s, 0).find((z) => z.ziel === ZIEL);
+    expect(zug.schlaegt).toBeNull();
+  });
+
+  it('Klassisch: die erste Figur gewinnt weiterhin sofort', () => {
+    const s = neuerStand(['A', 'B']);
+    s.figuren[0][0] = { feld: f(1, 5) };
+    s.wurf = 1;
+    ziehen(s, 0, ZIEL);
+    expect(vorbei(s)).toBe(true);
+  });
+
+  it('behält die Regeln im Spielstand — damit sie beim Koppeln mitreisen', () => {
+    const s = neuerStand(['A', 'B'], modus('mauerschlacht').regeln);
+    expect(JSON.parse(JSON.stringify(s)).regeln.viele).toBe(true);
   });
 });

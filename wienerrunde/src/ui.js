@@ -14,6 +14,7 @@ import {
   kautionZahlen, freikarteNutzen, wuerfelnImKnast, zugBeenden, vermoegen,
   vorbei, phase, handelAnbieten, handelAnnehmen, handelAblehnen,
   partieNeu, alsCode, ausCode,
+  MODI, schnellstartVerteilen, angebotAnnehmen, angebotAblehnen,
 } from './engine.js';
 import { FELDPUNKTE, KANTE, RASTER, mitte } from './geometrie.js';
 import { netzAufbauen, netzMoeglich } from './netz.js';
@@ -25,6 +26,7 @@ const app = document.getElementById('app');
 
 let stand = null;
 let ui = {
+  modusWahl: 'klassisch',
   overlay: null,
   gezeigtesFeld: null,     // welches Feld gerade als Karte offen ist
   handelFeld: null,        // Feld, für das gerade ein Angebot getippt wird
@@ -108,6 +110,8 @@ function nachrichtVerarbeiten(m) {
       if (m.name === 'wuerfeln') { wuerfeln(stand); ziehen(stand); }
       else if (m.name === 'kaufen') kaufen(stand);
       else if (m.name === 'verzichten') kaufVerzichten(stand);
+      else if (m.name === 'zugreifen') angebotAnnehmen(stand);
+      else if (m.name === 'ablehnen') angebotAblehnen(stand);
       else if (m.name === 'bauen') bauen(stand, w);
       else if (m.name === 'abreissen') abreissen(stand, w);
       else if (m.name === 'beleihen') beleihen(stand, w);
@@ -248,8 +252,8 @@ const SICHER_TEXT = {
 
 function renderStart() {
   app.innerHTML = `
-    <div class="screen start">
-      <div class="wrap">
+    <div class="screen"><div class="scroll">
+      <div class="wrap" style="text-align:center">
         <h1 class="wortmarke">Wiener <em>Runde</em></h1>
         <p class="unterzeile">Kaufen, bauen, Miete kassieren — einmal quer durch Wien.
           Nach 40 Runden gewinnt, wer mehr besitzt.</p>
@@ -257,16 +261,33 @@ function renderStart() {
         <input class="feld" id="n1" maxlength="14" placeholder="Erster Name" value="Monty">
         <div style="height:10px"></div>
         <input class="feld" id="n2" maxlength="14" placeholder="Zweiter Name" value="Christina">
+        <div class="feldlabel">Welche Fassung?</div>
+        <div class="wahlliste">
+          ${MODI.map((m) => `
+            <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+              <div class="haupt">
+                <div class="oben">${esc(m.titel)}</div>
+                <div class="unten">${esc(m.zeile)}</div>
+              </div>
+              <div class="haken">${m.id === ui.modusWahl ? '\u2713' : ''}</div>
+            </button>`).join('')}
+        </div>
         <div class="knopfsaeule">
           <button class="btn btn--rot" id="los">Los geht's</button>
           <button class="btn btn--leise" id="regeln">Wie geht das?</button>
         </div>
       </div>
-    </div>`;
+    </div></div>`;
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     const a = app.querySelector('#n1').value.trim() || 'Eins';
     const b = app.querySelector('#n2').value.trim() || 'Zwei';
-    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)]);
+    const m = MODI.find((x) => x.id === ui.modusWahl) || MODI[0];
+    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)], m.regeln);
+    stand.modusId = m.id;
+    schnellstartVerteilen(stand);
     nachAenderung();
   };
   app.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
@@ -710,6 +731,10 @@ function ansage() {
     const f = FELDER[stand.ort[wer]];
     return `${esc(f.name)} ist frei — ${geld(f.preis)}.`;
   }
+  if (phase(stand) === 'angebot' && stand.angebot) {
+    const f = FELDER[stand.angebot.feld];
+    return `${name(stand.angebot.an)} darf ${esc(f.name)} für ${geld(f.preis)} nehmen.`;
+  }
   return `${name(wer)} kann bauen, handeln oder weitergeben.`;
 }
 
@@ -744,6 +769,11 @@ function renderSpiel() {
       knoepfe.push(`<button class="btn btn--rot" id="kaufen">Kaufen für ${
         geld(FELDER[stand.ort[wer]].preis)}</button>`);
       knoepfe.push('<button class="btn btn--geist" id="verzichten">Lieber nicht</button>');
+    } else if (p === 'angebot') {
+      // Versteigerung: der Läufer hat verzichtet, jetzt greift die Gegenseite zu.
+      knoepfe.push(`<button class="btn btn--rot" id="zugreifen">Zugreifen für ${
+        geld(FELDER[stand.angebot.feld].preis)}</button>`);
+      knoepfe.push('<button class="btn btn--geist" id="ablehnen">Auch nicht</button>');
     } else if (p === 'wuerfeln') {
       knoepfe.push('<button class="btn btn--rot" id="wuerfeln">Würfeln</button>');
     } else {
@@ -789,6 +819,8 @@ function renderSpiel() {
   app.querySelector('#wuerfeln')?.addEventListener('click', wuerfelnTippen);
   app.querySelector('#kaufen')?.addEventListener('click', () => aktion('kaufen', null, kaufen));
   app.querySelector('#verzichten')?.addEventListener('click', () => aktion('verzichten', null, kaufVerzichten));
+  app.querySelector('#zugreifen')?.addEventListener('click', () => aktion('zugreifen', null, angebotAnnehmen));
+  app.querySelector('#ablehnen')?.addEventListener('click', () => aktion('ablehnen', null, angebotAblehnen));
   app.querySelector('#weiter')?.addEventListener('click', () => {
     ui.meldung = '';
     aktion('weiter', null, zugBeenden);

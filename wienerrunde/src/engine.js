@@ -10,7 +10,7 @@
 
 import {
   FELDER, FELDER_GESAMT, GRUPPENFELDER, LOS_GELD, STARTGELD,
-  GEFAENGNIS_FELD, KAUTION, LINIENMIETE, WERKFAKTOR, EREIGNIS, KAFFEEHAUS,
+  GEFAENGNIS_FELD, KAUTION, LINIENMIETE, WERKFAKTOR, EREIGNIS, KAFFEEHAUS, KAUFBAR,
 } from './brett.js';
 
 export const SAVE_VERSION = 1;
@@ -29,6 +29,41 @@ export const VORGABE = {
   // die Gruppen fast immer unvollständig — Handeln ist keine Zugabe, sondern
   // die Voraussetzung dafür, dass gebaut wird.)
   runden: 40,       // 0 = bis zur Pleite, sonst so viele Runden
+  schnellstart: 0,  // so viele zufällige Orte bekommt jede Seite vorab
+  versteigerung: false,  // wer nicht kauft, dem bietet die Gegenseite mit
+};
+
+export const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: '40 Runden, alles wird erlaufen',
+    regeln: {},
+  },
+  {
+    id: 'schnellstart',
+    titel: 'Schnellstart',
+    zeile: 'Jede Seite beginnt mit drei Orten — Handel und Bau kommen sofort in Gang',
+    regeln: { schnellstart: 3 },
+  },
+  {
+    id: 'versteigerung',
+    titel: 'Versteigerung',
+    zeile: 'Wer nicht kauft, dem greift die Gegenseite den Ort weg',
+    regeln: { versteigerung: true },
+  },
+  {
+    id: 'pleite',
+    titel: 'Bis zur Pleite',
+    zeile: 'Kein Rundenlimit — es endet, wenn einer nicht mehr zahlen kann',
+    regeln: { runden: 0 },
+  },
+];
+
+/** Regel lesen, mit Rückfall auf die Vorgabe — alte Spielstände bleiben gültig. */
+export const regel = (stand, name) => {
+  const wert = stand && stand.regeln ? stand.regeln[name] : undefined;
+  return wert === undefined ? VORGABE[name] : wert;
 };
 
 const anderer = (i) => (i === 0 ? 1 : 0);
@@ -69,6 +104,7 @@ export function neuerStand(namen = ['Monty', 'Christina'], regeln = {}, rnd = Ma
     siege: [0, 0],
     partie: 1,
     regeln: { ...VORGABE, ...regeln },
+    angebot: null,             // { feld, an } — Versteigerung an die Gegenseite
     verlauf: [],
     fertig: null,
   };
@@ -241,8 +277,60 @@ export function kaufen(stand) {
 
 export function kaufVerzichten(stand) {
   if (stand.phase !== 'kaufen') return false;
-  stand.phase = 'ende';          // keine Versteigerung — so spielt es sich zu zweit besser
+  const f = FELDER[stand.ort[stand.dran]];
+  const gegner = anderer(stand.dran);
+  // Zu zweit ist eine echte Auktion sinnlos — es gäbe nur ein Gebot. Die
+  // Fassung „Versteigerung" bietet der Gegenseite den Ort deshalb schlicht zum
+  // Listenpreis an: nimmt sie ihn, ist er weg.
+  if (regel(stand, 'versteigerung') && besitzer(stand, f.feld) === null
+    && stand.geld[gegner] >= f.preis) {
+    // Entscheiden muss die Gegenseite — also wandert `dran` für diesen einen
+    // Schritt hinüber. Sonst hinge auf dem zweiten Handy der Knopf beim
+    // Falschen, und in der Kopfzeile stünde der falsche Name.
+    stand.angebot = { feld: f.feld, an: gegner, zurueck: stand.dran };
+    stand.dran = gegner;
+    stand.phase = 'angebot';
+    return true;
+  }
+  stand.phase = 'ende';
   return true;
+}
+
+/** Die Gegenseite greift zu, nachdem der Läufer verzichtet hat. */
+export function angebotAnnehmen(stand) {
+  if (stand.phase !== 'angebot' || !stand.angebot) return false;
+  const { feld, an } = stand.angebot;
+  const f = FELDER[feld];
+  if (besitzer(stand, feld) !== null || stand.geld[an] < f.preis) return false;
+  stand.geld[an] -= f.preis;
+  stand.besitz[feld] = an;
+  stand.dran = stand.angebot.zurueck;
+  stand.angebot = null;
+  stand.phase = 'ende';
+  return true;
+}
+
+export function angebotAblehnen(stand) {
+  if (stand.phase !== 'angebot') return false;
+  stand.dran = stand.angebot.zurueck;
+  stand.angebot = null;
+  stand.phase = 'ende';
+  return true;
+}
+
+/**
+ * Verteilt zu Beginn ein paar Orte. Grund: gemessen bleiben die Farbgruppen
+ * sonst fast immer unvollständig, und der Bauteil des Spiels kommt gar nicht
+ * vor. Wer schon drei Orte hat, hat auch etwas zu handeln.
+ */
+export function schnellstartVerteilen(stand, rnd = Math.random) {
+  const anzahl = regel(stand, 'schnellstart');
+  if (!anzahl) return stand;
+  const frei = mischen(KAUFBAR.filter((f) => besitzer(stand, f) === null), rnd);
+  for (let i = 0; i < anzahl * 2 && i < frei.length; i++) {
+    stand.besitz[frei[i]] = i % 2;      // abwechselnd, damit beide gleich viele bekommen
+  }
+  return stand;
 }
 
 /* ---------------------------------------------------------------- Bauen */

@@ -229,3 +229,45 @@ Sortiert danach, was ich für diese Sammlung am meisten empfehle.
 Nicht empfohlen, obwohl naheliegend: **Schach** (zu zweit auf einem Handy zwar leicht zu
 bauen, aber wer Schach spielen will, hat längst eine bessere App) und **Rommé/Canasta**
 (zu lange Partien fürs Handy, und zu zweit nur halb so gut).
+
+
+---
+
+## Umgesetzt — und was dabei anders kam als geplant
+
+Stand nach der Umsetzung: **39 Fassungen über zehn Spiele**, alle im Browser gestartet und
+ohne Konsolenfehler.
+
+| Spiel | Fassungen |
+|---|---|
+| Qwixx | Klassisch · Gemischt · Kurz |
+| Dreikampf | Alle drei · Nur Wissen · Ohne Mutproben · Nur persönlich |
+| Cabo | Klassisch · Sechs Karten · Ohne Kräfte · Blitz |
+| Sky Team | **hatte schon elf wählbare Flughäfen** — mehr als geplant |
+| Galgenmännchen | Klassisch · Hart · Vokale kosten · Doppelwort |
+| Ärger | Klassisch · Blitz · Bösartig · Zwei Würfel |
+| Seeschlacht | Klassisch · Kurz · Salve · Sonderwaffen |
+| Hütchenjagd | Klassisch · Kurz · Beutejagd |
+| Wiener Runde | Klassisch · Schnellstart · Versteigerung · Bis zur Pleite |
+| Sperrsteine | Klassisch · Mauerschlacht · Alle fünf |
+| Mauern | Klassisch · Kurz · Wettlauf · Sparsam · Festung |
+
+**Abweichungen vom Plan, jeweils mit Grund:**
+
+- **Sky Team** bekam keine neuen Modi. Die elf Flughäfen (Montréal bis Tokio, mit
+  Seitenwind, Verkehr und höherem Anflug) sind bereits genau das, was der Plan wollte —
+  nur feiner abgestuft. Etwas danebenzustellen hätte nur verwirrt.
+- **Galgenmännchen „Doppelwort"** ist nicht als zweite Runde nebenher gebaut, sondern als
+  zwei Wörter mit einem Leerzeichen dazwischen. Leerzeichen sind ohnehin Trenner und
+  stehen von Anfang an da; damit teilen sich beide Wörter denselben Strichvorrat, ohne
+  dass das Regelwerk eine zweite Runde kennen müsste.
+- **Wiener Runde „Versteigerung"** ist keine Auktion. Zu zweit gäbe es nur ein Gebot —
+  also bekommt die Gegenseite den Ort schlicht zum Listenpreis angeboten.
+- **Ein geplanter Modus wurde gemessen und verworfen:** Mauern *ohne Sprung*. Dort gewinnt
+  die anziehende Seite 71 %, weil die Zugparität allein entscheidet, wer ausweichen muss.
+
+**Ein Muster für alle:** die gewählte Fassung steht als `regeln` im Spielstand, nicht im
+Gerät. Sie reist beim Koppeln damit von selbst mit, ohne eine einzige neue Nachricht.
+Gelesen werden Regeln überall mit Rückfall auf die Vorgabe — ein Spielstand, der vor den
+Fassungen gespeichert wurde, verhält sich sonst nach dem Update plötzlich anders. Genau
+das hat ein bestehender Ärger-Test aufgedeckt, als er rot wurde.

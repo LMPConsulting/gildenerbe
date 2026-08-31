@@ -47,6 +47,17 @@ Mit dem Rundlauf teilen sich beide jedes Feld. Gemessen: **4,1 Fänge je Partie*
 2000 Partien ohne Fang, 76 Züge im Schnitt. Seitdem gehört „wird überhaupt gefangen?" als
 eigener Test dazu.
 
+## Die drei Fassungen
+
+| Fassung | Was anders ist |
+|---|---|
+| **Klassisch** | vier Hüte, alle müssen heim |
+| **Kurz** | nur drei Hüte |
+| **Beutejagd** | Heimkommen zählt nicht — wer zuerst **drei fremde Hüte fängt**, gewinnt |
+
+**Beutejagd** dreht das Spiel um: sonst ist Fangen ein Mittel zum Zweck, hier ist es der
+Zweck. Man läuft nicht mehr heim, sondern hinter der Gegenseite her.
+
 ## Auf zwei Handys
 
 Über **Menü → Auf zwei Handys spielen**, per Raumcode oder QR im selben WLAN. Hier gibt es
