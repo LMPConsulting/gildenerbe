@@ -32,6 +32,7 @@ const SPIELE = [
     text: 'Zwei weiße und vier farbige Würfel, vier Reihen, immer nur von links nach rechts. '
       + 'Kurz, schnell, jedes Mal anders.',
     dauer: '15 Minuten',
+    fassungen: 'Klassisch · Gemischt · Kurz',
     zwei: 'Zwei Handys',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#2a6ed4',
@@ -45,6 +46,7 @@ const SPIELE = [
     text: 'Allgemeinwissen gegeneinander, ehrliche Fragen übereinander, Mutproben für unterwegs. '
       + 'Die Punkte laufen über den ganzen Urlaub weiter.',
     dauer: 'so lange ihr wollt',
+    fassungen: 'Alle drei · Nur Wissen · Ohne Mutproben · Nur persönlich',
     zwei: 'Zwei Handys, Antworten verdeckt',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#c9a227',
@@ -57,6 +59,7 @@ const SPIELE = [
     text: 'Wer am wenigsten hat, gewinnt — wenn er sich traut, Cabo zu rufen. '
       + 'Peek, Spy, Swap und Pärchen abwerfen.',
     dauer: '20 Minuten',
+    fassungen: 'Klassisch · Sechs Karten · Ohne Kräfte · Blitz',
     zwei: 'Zwei Handys, fremde Karten geheim',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#8a2c3d',
@@ -70,6 +73,7 @@ const SPIELE = [
     text: 'Pilot und Kopilot bringen ein Flugzeug herunter. Acht Würfel pro Runde, '
       + 'zwei Pflichthebel, und ab dem Wurf wird nicht mehr geredet.',
     dauer: '20 Minuten',
+    fassungen: 'Elf Flughäfen, von Montréal bis Tokio',
     zwei: 'Zwei Handys, eigene Würfel geheim',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#f0a92b',
@@ -82,6 +86,7 @@ const SPIELE = [
     text: 'Einer denkt sich ein Wort aus, der andere rät Buchstaben. Jeder Fehlgriff '
       + 'zeichnet einen Strich. Wer nicht mag, lässt das Handy eins aus 270 Wörtern ziehen.',
     dauer: '5 Minuten je Runde',
+    fassungen: 'Klassisch · Hart · Vokale kosten · Doppelwort',
     zwei: 'Zwei Handys, das Wort bleibt geheim',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#7fd1b9',
@@ -96,6 +101,7 @@ const SPIELE = [
     text: 'Der Klassiker: nur mit einer Sechs heraus, wer auf dich trifft schickt dich '
       + 'zurück. Kurze Partie mit zwei Figuren einstellbar.',
     dauer: '15 Minuten',
+    fassungen: 'Klassisch · Blitz · Bösartig · Zwei Würfel',
     zwei: 'Zwei Handys, dasselbe Brett',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#c2453c',
@@ -109,6 +115,7 @@ const SPIELE = [
     text: 'Flotte verstecken, Feld für Feld suchen. Treffer bringt einen weiteren Schuss. '
       + 'Von allen Spielen das, was am besten auf zwei Handys passt.',
     dauer: '15 Minuten',
+    fassungen: 'Klassisch · Kurz · Salve · Sonderwaffen',
     zwei: 'Zwei Handys, Flotten bleiben geheim',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#e2603c',
@@ -124,6 +131,7 @@ const SPIELE = [
     text: 'Wer auf deinen Hut tritt, nimmt ihn mit und schleppt ihn herum. Erst wenn der '
       + 'Räuber heimkommt, kommst du frei — in deinem Hof, also ganz von vorn.',
     dauer: '15 Minuten',
+    fassungen: 'Klassisch · Kurz · Beutejagd',
     zwei: 'Zwei Handys, dasselbe Brett',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#d29a1e',
@@ -137,6 +145,7 @@ const SPIELE = [
     text: 'Das Straßenkaufspiel, aber mit Wiener Orten und in 40 Runden zu Ende. '
       + 'Handeln lohnt sich — allein bekommt man kaum eine Farbgruppe zusammen.',
     dauer: '30 Minuten',
+    fassungen: 'Klassisch · Schnellstart · Versteigerung · Bis zur Pleite',
     zwei: 'Zwei Handys, dasselbe Brett',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#b5323f',
@@ -153,6 +162,7 @@ const SPIELE = [
       + 'Mauer setzen. Wer zuerst auf der anderen Seite ist, gewinnt — zumauern ist verboten. '
       + 'Fünf Fassungen, von Wettrennen bis Labyrinth.',
     dauer: '10 Minuten',
+    fassungen: 'Klassisch · Kurz · Wettlauf · Sparsam · Festung',
     zwei: 'Zwei Handys, dasselbe Brett',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#35b3a0',
@@ -169,6 +179,7 @@ const SPIELE = [
       + 'hinweg — nur wer ihn genau trifft, nimmt ihn und stellt ihn der Gegenseite vor die '
       + 'Nase. Die erste Figur oben gewinnt.',
     dauer: '15 Minuten',
+    fassungen: 'Klassisch · Mauerschlacht · Alle fünf',
     zwei: 'Zwei Handys, dasselbe Brett',
     zweiOhne: 'Zwei Handys per QR im selben WLAN',
     farbe: '#8f6fd0',
@@ -222,6 +233,7 @@ const kachel = (s) => `
           <p class="zeile">${s.zeile}</p>
           <p class="beschreibung">${s.text}</p>
           <p class="fakten"><span>${s.dauer}</span><span>${ohneServer ? s.zweiOhne : s.zwei}</span></p>
+          ${s.fassungen ? `<p class="fassungen">${s.fassungen}</p>` : ''}
         </div>
         <span class="pfeil" aria-hidden="true">→</span>
       </a>`;
@@ -327,6 +339,10 @@ body {
 }
 .kopf h1 { margin: 4px 0 10px; font-size: clamp(34px, 11vw, 48px); letter-spacing: -0.02em; }
 .kopf .unter { margin: 0 0 26px; color: var(--leise); font-size: 15px; text-wrap: pretty; }
+.spiel .fassungen {
+  margin: 6px 0 0; font-size: 12px; color: var(--leise); opacity: 0.85;
+  border-top: 1px solid var(--naht); padding-top: 6px;
+}
 .kopf strong { color: var(--text); font-weight: 650; }
 
 .liste { display: flex; flex-direction: column; gap: 12px; }
