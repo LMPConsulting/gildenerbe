@@ -149,3 +149,13 @@ export const START_SPERREN = [
   ...[2, 5, 8].map((c) => feldId(3, c)),
   feldId(1, 5),
 ];
+
+/**
+ * Die Mauerschlacht: dieselben elf, dazu die vierte Leiterreihe ganz unten.
+ * Damit ist **jede** Leiterreihe zwischen Heimat und Ziel eine geschlossene
+ * Mauer — man kommt keine einzige Reihe hoch, ohne einen Stein zu treffen.
+ */
+export const VIELE_SPERREN = [
+  ...START_SPERREN,
+  ...[0, 3, 7, 10].map((c) => feldId(9, c)),
+];

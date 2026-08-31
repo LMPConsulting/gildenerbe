@@ -15,7 +15,57 @@ export const CABO_STRAFE = 5;
 export const SPIELENDE_AB = 100;
 export const HALBIERUNG_BEI = 100;   // genau 100 wird zu 50
 
-export function kraftVon(wert) {
+export const VORGABE = {
+  handgroesse: HANDGROESSE,
+  kraefte: true,        // Peek, Spy und Swap
+  spielendeAb: SPIELENDE_AB,
+  runden: null,         // wenn gesetzt: nach so vielen Runden ist Schluss
+};
+
+export const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: 'Vier Karten, alle Kräfte, bis 100 Punkte',
+    regeln: {},
+  },
+  {
+    id: 'sechs',
+    titel: 'Sechs Karten',
+    zeile: 'Zwei Karten mehr zu merken — deutlich schwerer',
+    regeln: { handgroesse: 6 },
+  },
+  {
+    id: 'ohneKraefte',
+    titel: 'Ohne Kräfte',
+    zeile: 'Kein Peek, kein Spy, kein Swap — reines Gedächtnis',
+    regeln: { kraefte: false },
+  },
+  {
+    id: 'blitz',
+    titel: 'Blitz',
+    zeile: 'Eine einzige Runde entscheidet',
+    regeln: { runden: 1 },
+  },
+];
+
+/**
+ * Regel lesen, mit Rückfall auf die Vorgabe. Ein Spielstand von vor den
+ * Fassungen kennt die Schlüssel nicht — er soll sich wie der Klassiker
+ * verhalten und nicht plötzlich anders.
+ */
+const regel = (s, name) => {
+  const wert = s && s.regeln ? s.regeln[name] : undefined;
+  return wert === undefined ? VORGABE[name] : wert;
+};
+
+export const handKarten = (s) => regel(s, 'handgroesse');
+export const kraefteAn = (s) => regel(s, 'kraefte') !== false;
+export const punkteGrenze = (s) => regel(s, 'spielendeAb');
+export const rundenGrenze = (s) => regel(s, 'runden');
+
+export function kraftVon(wert, s = null) {
+  if (s && !kraefteAn(s)) return null;
   for (const [art, k] of Object.entries(KRAEFTE)) if (k.werte.includes(wert)) return art;
   return null;
 }
@@ -40,9 +90,10 @@ export function mischen(liste, rnd = Math.random) {
 
 const naechster = (i, n) => (i + 1) % n;
 
-export function neuesSpiel(namen = ['Monty', 'Christina']) {
+export function neuesSpiel(namen = ['Monty', 'Christina'], regeln = {}) {
   return {
     v: 1,
+    regeln: { ...VORGABE, ...regeln },
     spieler: namen.map((name) => ({ name, hand: [] })),
     punkte: namen.map(() => 0),
     runde: 1,
@@ -69,7 +120,7 @@ export function neuesSpiel(namen = ['Monty', 'Christina']) {
 export function neueRunde(s, rnd = Math.random) {
   const n = s.spieler.length;
   const deck = mischen(neuesDeck(), rnd);
-  for (const p of s.spieler) p.hand = deck.splice(0, HANDGROESSE);
+  for (const p of s.spieler) p.hand = deck.splice(0, handKarten(s));
   s.ablage = [deck.pop()];
   s.stapel = deck;
 
@@ -90,7 +141,7 @@ export function neueRunde(s, rnd = Math.random) {
 /** Die Karten, die man sich zu Beginn ansehen darf: die beiden unteren. */
 export function startKarten(s, wer) {
   const hand = s.spieler[wer].hand;
-  return Array.from({ length: START_ANSEHEN }, (_, i) => HANDGROESSE - START_ANSEHEN + i)
+  return Array.from({ length: START_ANSEHEN }, (_, i) => handKarten(s) - START_ANSEHEN + i)
     .map((index) => ({ index, karte: hand[index] }));
 }
 
@@ -153,7 +204,7 @@ export function abwerfen(s) {
   s.gezogene = null;
   s.quelle = null;
 
-  const art = kraftVon(karte.w);
+  const art = kraftVon(karte.w, s);
   if (art) {
     s.kraft = { art, eigene: null };
     s.phase = 'kraft';
@@ -346,7 +397,10 @@ export function auswerten(s) {
   });
   if (s.verlauf.length > 100) s.verlauf.length = 100;
 
-  s.phase = Math.max(...s.punkte) >= SPIELENDE_AB ? 'ende' : 'auswertung';
+  const grenze = rundenGrenze(s);
+  const schluss = Math.max(...s.punkte) >= punkteGrenze(s)
+    || (grenze !== null && s.runde >= grenze);
+  s.phase = schluss ? 'ende' : 'auswertung';
   return s;
 }
 

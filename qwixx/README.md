@@ -48,6 +48,21 @@ die nichts bringen.
 - Ende bei **zwei gesperrten Reihen** oder **vier Fehlwürfen**.
 - Punkte je Reihe: 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78.
 
+## Die drei Fassungen
+
+| Fassung | Was anders ist |
+|---|---|
+| **Klassisch** | Rot und Gelb aufsteigend, Grün und Blau absteigend |
+| **Gemischt** | die Zahlen jeder Reihe stehen kreuz und quer — jede Partie neu ausgewürfelt |
+| **Kurz** | schon zwei Fehlwürfe beenden das Spiel statt vier |
+
+Bei **Gemischt** bleibt jede Reihe eine Reihe: gekreuzt wird weiter nur von links nach
+rechts, und die letzte Spalte braucht wie immer fünf Kreuze davor. Nur *welche* Zahl wo
+steht, ist gewürfelt — man kann also nicht mehr blind nach der Zahl greifen.
+
+Die gewählte Fassung steht im Spielstand, nicht im Gerät: sie reist beim Koppeln von
+selbst mit. Ein Spielstand von vor den Fassungen wird weiter wie der Klassiker behandelt.
+
 ## Aufbau
 
 ```

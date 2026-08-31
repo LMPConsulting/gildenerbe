@@ -619,6 +619,19 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   word-break: break-word;
 }
 
+/* ---------- Fassungswahl auf dem Startbildschirm ---------- */
+
+.modusliste { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.moduswahl {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  width: 100%; text-align: left; padding: 12px 14px; border-radius: 12px;
+  background: var(--panel, #1a2230); border: 1px solid var(--line, #2b3543);
+  color: inherit; font: inherit; cursor: pointer;
+}
+.moduswahl--an { border-color: var(--accent, #2a6ed4); background: var(--panel-2, #223047); }
+.mw-titel { font-weight: 700; }
+.mw-zeile { font-size: 13px; opacity: 0.7; }
+
 </style>
 </head>
 <body>
@@ -1399,6 +1412,61 @@ const LOCKS_TO_END = 2;
 // Kreuze (inkl. Schloss) -> Punkte. Dreieckszahlen, 12 Kreuze = 78.
 const SCORE_TABLE = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78];
 
+const VORGABE = {
+  gemischt: false,    // Zahlen jeder Reihe in zufälliger Reihenfolge
+  maxFehler: MAX_PENALTIES,
+};
+
+const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: 'Rot und Gelb aufsteigend, Grün und Blau absteigend',
+    regeln: {},
+  },
+  {
+    id: 'gemischt',
+    titel: 'Gemischt',
+    zeile: 'Die Zahlen jeder Reihe stehen kreuz und quer — jedes Mal neu',
+    regeln: { gemischt: true },
+  },
+  {
+    id: 'kurz',
+    titel: 'Kurz',
+    zeile: 'Schon zwei Fehlwürfe beenden das Spiel',
+    regeln: { maxFehler: 2 },
+  },
+];
+
+/**
+ * Die Zahlenreihen dieser Partie. Im Klassiker die gewohnten; gemischt stehen
+ * sie im Spielstand. Ältere Stände kennen das Feld nicht — die bekommen den
+ * Klassiker, damit sich ein laufendes Spiel nach dem Update nicht ändert.
+ */
+const zeilenWerte = (state) => (state && state.rowValues) || ROW_VALUES;
+
+/** Wie viele Fehlwürfe beenden das Spiel? */
+const maxFehler = (state) =>
+  (state && state.regeln && state.regeln.maxFehler) || MAX_PENALTIES;
+
+/** Ist die Partie zu Ende — zwei Reihen gesperrt oder jemand am Fehlwurf-Limit? */
+function istVorbei(state) {
+  if (state.phase === 'over') return true;
+  const gesperrt = COLORS.filter((c) => state.lockedRows[c]).length;
+  const schlimmste = Math.max(...state.players.map((p) => p.penalties));
+  return gesperrt >= LOCKS_TO_END || schlimmste >= maxFehler(state);
+}
+
+/** Mischt eine Kopie der Liste. Fisher-Yates, mit gesetztem Zufall testbar. */
+function mischen(liste, rnd) {
+  const a = [...liste];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const emptyRow = () => new Array(11).fill(false);
 
 function makePlayer(name) {
@@ -1410,10 +1478,15 @@ function makePlayer(name) {
   };
 }
 
-function createGame(names) {
+function createGame(names, regeln = {}, rnd = Math.random) {
+  const r = { ...VORGABE, ...regeln };
   return {
     v: 1,
     players: names.map(makePlayer),
+    regeln: r,
+    rowValues: r.gemischt
+      ? Object.fromEntries(COLORS.map((c) => [c, mischen(ROW_VALUES[c], rnd)]))
+      : null,
     lockedRows: { red: false, yellow: false, green: false, blue: false },
     active: 0,          // Index des aktiven Spielers (der würfelt)
     turn: 1,
@@ -1466,7 +1539,7 @@ function legalMoves(state) {
   if (!step || !state.dice) return [];
   const moves = [];
   const push = (color, value, from) => {
-    const index = ROW_VALUES[color].indexOf(value);
+    const index = zeilenWerte(state)[color].indexOf(value);
     if (index === -1) return;
     if (!canCross(state, step.p, color, index)) return;
     if (moves.some((m) => m.color === color && m.index === index)) return;
@@ -1559,7 +1632,7 @@ function endTurn(state) {
 
   const locked = COLORS.filter((c) => state.lockedRows[c]).length;
   const worstPenalties = Math.max(...state.players.map((p) => p.penalties));
-  if (locked >= LOCKS_TO_END || worstPenalties >= MAX_PENALTIES) {
+  if (locked >= LOCKS_TO_END || worstPenalties >= maxFehler(state)) {
     state.phase = 'over';
     return state;
   }
@@ -1595,8 +1668,8 @@ function endReason(state) {
   if (locked.length >= LOCKS_TO_END) {
     return `Zwei Reihen gesperrt (${locked.map((c) => COLOR_LABEL[c]).join(' & ')})`;
   }
-  const who = state.players.find((p) => p.penalties >= MAX_PENALTIES);
-  return `${who.name} hat ${MAX_PENALTIES} Fehlwürfe`;
+  const who = state.players.find((p) => p.penalties >= maxFehler(state));
+  return `${who.name} hat ${maxFehler(state)} Fehlwürfe`;
 }
 
 // Qwixx — Oberfläche für ein Handy, das zwischen zwei bis vier Leuten wandert.
@@ -1610,6 +1683,7 @@ const app = document.getElementById('app');
 let game = null;
 let ui = {
   screen: 'start',    // 'start' | 'game' | 'over'
+  modusWahl: 'klassisch',
   holder: null,       // wer das Handy gerade in der Hand hat
   viewPlayer: 0,      // wessen Blatt angezeigt wird
   pick: null,         // vorgemerktes Feld { color, index }
@@ -1945,7 +2019,9 @@ async function netzStarten(gastgeber, code) {
 function verbindungSteht() {
   ui.kopplung = null;
   if (ui.gastgeber) {
-    game = createGame(prefs.names.slice(0, 2));
+    const m = MODI.find((x) => x.id === (ui.modusWahl || 'klassisch')) || MODI[0];
+    game = createGame(prefs.names.slice(0, 2), m.regeln);
+    game.modusId = m.id;
     ui.screen = 'game';
     ui.pick = null;
     ui.fresh = null;
@@ -2002,8 +2078,10 @@ function afterMutation() {
   render();
 }
 
-function startGame(names) {
-  game = createGame(names);
+function startGame(names, modusId = ui.modusWahl) {
+  const m = MODI.find((x) => x.id === modusId) || MODI[0];
+  game = createGame(names, m.regeln);
+  game.modusId = m.id;
   ui.holder = null;
   ui.viewPlayer = 0;
   ui.pick = null;
@@ -2087,6 +2165,16 @@ function renderStart() {
         <button class="btn btn--ghost" id="addPlayer" ${names.length >= 4 ? 'disabled' : ''}>+ Spieler</button>
       </div>
 
+      <div class="label" style="margin-top:16px">Welche Fassung?</div>
+      <div class="modusliste">
+        ${MODI.map((m) => `
+          <button class="moduswahl${m.id === ui.modusWahl ? ' moduswahl--an' : ''}"
+            data-modus="${m.id}">
+            <span class="mw-titel">${m.titel}</span>
+            <span class="mw-zeile">${m.zeile}</span>
+          </button>`).join('')}
+      </div>
+
       ${resume ? `<button class="btn btn--primary" id="resume">Angefangenes Spiel fortsetzen</button>
                   <button class="btn btn--ghost" id="start" style="margin-top:10px">Neues Spiel</button>`
                : `<button class="btn btn--primary" id="start">Spiel starten</button>`}
@@ -2099,6 +2187,9 @@ function renderStart() {
   const readNames = () => Array.from(app.querySelectorAll('.field'))
     .map((f, i) => (f.value.trim() || `Spieler ${i + 1}`));
 
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#addPlayer').onclick = () => { prefs.names = [...readNames(), `Spieler ${readNames().length + 1}`]; save(); render(); };
   app.querySelector('#rmPlayer').onclick = () => { prefs.names = readNames().slice(0, -1); save(); render(); };
   app.querySelector('#rules').onclick = () => { ui.overlay = 'rules'; render(); };
@@ -2139,7 +2230,7 @@ function sheetHtml(pi, interactive) {
     const edge = rightmostCross(row);
     const rowLocked = game.lockedRows[color];
 
-    const cells = ROW_VALUES[color].map((value, index) => {
+    const cells = zeilenWerte(game)[color].map((value, index) => {
       const key = cellKey(pi, color, index);
       const crossed = row[index];
       const isLegal = legal.some((m) => m.color === color && m.index === index);
@@ -2172,7 +2263,7 @@ function sheetHtml(pi, interactive) {
       ${cells}<div class="${lockCls.join(' ')}">${LOCK_SVG}${lockMark}</div></div>`;
   }).join('');
 
-  const boxes = Array.from({ length: MAX_PENALTIES }, (_, i) => {
+  const boxes = Array.from({ length: maxFehler(game) }, (_, i) => {
     const on = i < player.penalties;
     return `<span class="box${on ? ' on' : ''}">${on ? crossSvg(`p${pi}${i}`) : ''}</span>`;
   }).join('');
@@ -2284,7 +2375,7 @@ function hintText(step, owner, viewingOther, legal) {
   if (!step) return '';
 
   if (ui.pick) {
-    const v = ROW_VALUES[ui.pick.color][ui.pick.index];
+    const v = zeilenWerte(game)[ui.pick.color][ui.pick.index];
     const lockNote = ui.pick.index === LAST_INDEX ? ' — das <b>sperrt die Reihe</b> für alle!' : '';
     return `<b>${COLOR_LABEL[ui.pick.color]} ${v}</b> ankreuzen${lockNote}`;
   }
@@ -2794,7 +2885,9 @@ function renderRules() {
 
         <h3>Spielende</h3>
         <p>Sobald <strong>zwei Reihen gesperrt</strong> sind oder jemand
-           <strong>${MAX_PENALTIES} Fehlwürfe</strong> hat, endet das Spiel nach dem laufenden Zug.</p>
+           <strong>${maxFehler(game)} Fehlwürfe</strong> hat, endet das Spiel nach dem laufenden Zug.</p>
+        <h3>Die Fassungen</h3>
+        <ul>${MODI.map((m) => `<li><b>${m.titel}</b> — ${m.zeile}</li>`).join('')}</ul>
 
         <h3>Punkte je Reihe</h3>
         <div style="overflow-x:auto">

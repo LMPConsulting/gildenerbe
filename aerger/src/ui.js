@@ -5,7 +5,8 @@
 
 import {
   RING, HAUSLAENGE, START, VORGABE,
-  neuerStand, wuerfeln, zuege, ziehen, ziehbar, feldVon,
+  MODI, neuerStand, wuerfeln, zuege, ziehen, ziehbar, feldVon,
+  offeneWuerfe, wurfWaehlen,
   figurenAuf, wuerfeErlaubt, zugBeenden, partieNeu, vorbei, alsCode, ausCode,
 } from './engine.js';
 import { RINGFELDER, HAUSFELDER, BASISFELDER, mitte, BRETTGROESSE } from './brett.js';
@@ -22,6 +23,8 @@ let ui = {
   overlay: null,
   codeStatus: '',
   rollt: false,          // Würfelanimation läuft
+  gewaehlt: null,        // angetippte Figur — ihr Ziel wird gezeigt
+  modusWahl: 'klassisch',
   modus: 'lokal',
   meinIndex: 0,
   gastgeber: true,
@@ -53,6 +56,7 @@ function laden() {
 }
 
 function nachAenderung() {
+  ui.gewaehlt = null;
   if (ui.modus === 'online') {
     if (ui.gastgeber) standSenden();
     render();
@@ -92,6 +96,7 @@ function nachrichtVerarbeiten(m) {
   }
   if (m.typ === 'stand' && !ui.gastgeber) {
     stand = m.stand;
+    ui.gewaehlt = null;
     ui.screen = 'spiel';
     render();
     return;
@@ -101,6 +106,7 @@ function nachrichtVerarbeiten(m) {
   if (m.typ === 'aktion') {
     try {
       if (m.name === 'wuerfeln') wuerfeln(stand);
+      else if (m.name === 'wahl') wurfWaehlen(stand, m.wert);
       else if (m.name === 'ziehen') ziehen(stand, m.wert);
       else if (m.name === 'weiter') zugBeenden(stand);
       else if (m.name === 'partieNeu') partieNeu(stand);
@@ -232,35 +238,53 @@ const SICHER_TEXT = {
 
 function renderStart() {
   app.innerHTML = `
-    <div class="screen start">
-      <div class="wrap">
-        <h1 class="wortmarke">Ärger</h1>
-        <p class="unterzeile">Vier Figuren, ein Würfel, kein Erbarmen.
-          Wer als Erster alle vier zu Hause hat, gewinnt.</p>
-        <div class="feldlabel">Wer spielt?</div>
-        <input class="feld" id="n1" maxlength="14" placeholder="Rot" value="Monty">
-        <div style="height:10px"></div>
-        <input class="feld" id="n2" maxlength="14" placeholder="Blau" value="Christina">
-        <div class="knopfsaeule">
-          <button class="btn btn--holz" id="los">Los geht's</button>
-          <button class="btn btn--leise" id="regeln">Wie geht das?</button>
-        </div>
+    <div class="screen"><div class="scroll"><div class="wrap" style="text-align:center">
+      <h1 class="wortmarke">Ärger</h1>
+      <p class="unterzeile">Vier Figuren, ein Würfel, kein Erbarmen.
+        Wer als Erster alle vier zu Hause hat, gewinnt.</p>
+      <div class="feldlabel">Wer spielt?</div>
+      <input class="feld" id="n1" maxlength="14" placeholder="Rot" value="Monty">
+      <div style="height:10px"></div>
+      <input class="feld" id="n2" maxlength="14" placeholder="Blau" value="Christina">
+      <div class="feldlabel">Welche Fassung?</div>
+      <div class="wahlliste">
+        ${MODI.map((m) => `
+          <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+            <div class="haupt">
+              <div class="oben">${esc(m.titel)}</div>
+              <div class="unten">${esc(m.zeile)}</div>
+            </div>
+            <span class="haken">✓</span>
+          </button>`).join('')}
       </div>
-    </div>`;
+      <div class="knopfsaeule">
+        <button class="btn btn--holz" id="los">Los geht's</button>
+        <button class="btn btn--leise" id="regeln">Wie geht das?</button>
+      </div>
+    </div></div></div>`;
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     const a = app.querySelector('#n1').value.trim() || 'Rot';
     const b = app.querySelector('#n2').value.trim() || 'Blau';
-    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)]);
+    const m = MODI.find((x) => x.id === ui.modusWahl) || MODI[0];
+    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)], m.regeln);
+    stand.modusId = m.id;
     ui.screen = 'spiel';
+    ui.gewaehlt = null;
     nachAenderung();
   };
   app.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
 }
 
+const modusInfo = () => MODI.find((m) => m.id === stand?.modusId) || MODI[0];
+
 /* --------------------------------------------------------------- Das Brett */
 
 const ZELLE = 10;
-const MASS = BRETTGROESSE * ZELLE;
+const RAND = 3;
+const MASS = BRETTGROESSE * ZELLE + 2 * RAND;
 
 /** Wo steht diese Figur auf dem Brett? */
 function figurPunkt(spieler, figur, f) {
@@ -275,68 +299,143 @@ function zielPunkt(spieler, zug) {
   return mitte(RINGFELDER[feldVon(spieler, zug.nach.schritt)], ZELLE);
 }
 
-function brettSvg() {
-  const moeglich = ichBinDran() ? zuege(stand) : [];
-  const beweglich = new Set(moeglich.map((z) => z.figur));
-  const teile = [];
+/**
+ * Eine Figur als Kegel: runder Kopf, geschwungener Fuß, kleiner Schatten.
+ *
+ * Vorher waren es flache Kreise, und Figur, Feld und Zielpunkt sahen dadurch
+ * fast gleich aus. Eine Form, die man auch klein noch als *Figur* erkennt,
+ * macht mehr aus als jede Farbe.
+ */
+function figurForm(cx, cy, spieler, klassen, attribute = '') {
+  const r = 2.3;
+  const fuss = cy + 4.0;
+  const d = `M ${cx - r} ${cy + 0.4}`
+    + ` C ${cx - r} ${cy + 2.2} ${cx - 3.4} ${fuss - 1.1} ${cx - 3.6} ${fuss}`
+    + ` L ${cx + 3.6} ${fuss}`
+    + ` C ${cx + 3.4} ${fuss - 1.1} ${cx + r} ${cy + 2.2} ${cx + r} ${cy + 0.4} Z`;
+  return `<ellipse class="figurschatten" cx="${cx}" cy="${fuss - 0.1}" rx="3.8" ry="0.9"/>`
+    + `<path class="figur figur--${spieler}${klassen}" d="${d}"${attribute}/>`
+    + `<circle class="figur figur--${spieler}${klassen}" cx="${cx}" cy="${cy - 1.2}"`
+    + ` r="${r + 0.5}"${attribute}/>`;
+}
 
-  // Farbige Flächen zuerst: die Ecke, in der gewartet wird, und die Zielbahn.
-  // Ohne sie ist das Brett nur ein Feld voller Kreise.
+/** Welche Figur ist gerade ausgewählt, und was kann sie? */
+function auswahl() {
+  if (!ichBinDran() || vorbei(stand) || stand.wurf === null || offeneWuerfe(stand).length) {
+    return { figur: null, zug: null, beweglich: new Set() };
+  }
+  const moeglich = zuege(stand);
+  const beweglich = new Set(moeglich.map((z) => z.figur));
+  let figur = ui.gewaehlt;
+  if (figur === null || !beweglich.has(figur)) figur = null;
+  // Kann nur eine Figur ziehen, muss man sie nicht erst antippen.
+  if (figur === null && beweglich.size === 1) [figur] = [...beweglich];
+  return { figur, zug: moeglich.find((z) => z.figur === figur) || null, beweglich };
+}
+
+function brettSvg() {
+  const { figur: gewaehlt, zug, beweglich } = auswahl();
+  const figurenZahl = stand.figuren[0].length;
+  const teile = [`<rect class="karton" x="${-RAND + 0.8}" y="${-RAND + 0.8}"`
+    + ` width="${MASS - 1.6}" height="${MASS - 1.6}" rx="6"/>`];
+  // Alle Antippflächen kommen ganz zum Schluss obenauf. Sonst verdeckt eine
+  // später gezeichnete Figur die Fläche des Zielfelds — und ausgerechnet beim
+  // Schlagen, wo auf dem Ziel ja eine fremde Figur steht, ginge kein Klick durch.
+  const tippflaechen = [];
+
+  // 1. Die Bahn als durchgehender Weg. Vorher war sie eine lose Punktreihe —
+  // man sah nicht, dass die 40 Felder überhaupt zusammenhängen.
+  const ringPfad = RINGFELDER.map(([x, y], i) => {
+    const [cx, cy] = mitte([x, y], ZELLE);
+    return `${i ? 'L' : 'M'} ${cx} ${cy}`;
+  }).join(' ') + ' Z';
+  teile.push(`<path class="weg" d="${ringPfad}"/>`);
+
+  // 2. Die Zielbahnen als farbiger Weg von der Einfahrt bis in die Mitte.
+  HAUSFELDER.forEach((liste, spieler) => {
+    const [ax, ay] = mitte(RINGFELDER[feldVon(spieler, RING - 1)], ZELLE);
+    const punkte = [[ax, ay], ...liste.map((f) => mitte(f, ZELLE))];
+    teile.push(`<path class="heimweg heimweg--${spieler}" d="${punkte
+      .map(([x, y], i) => `${i ? 'L' : 'M'} ${x} ${y}`).join(' ')}"/>`);
+  });
+
+  // 3. Die Basen als beschriftete Platten. Nur so unterscheidet man auf einen
+  // Blick, wo gewartet wird und wo gelaufen.
   BASISFELDER.forEach((liste, spieler) => {
     const xs = liste.map(([x]) => x);
     const ys = liste.map(([, y]) => y);
-    const x0 = Math.min(...xs) * ZELLE + 0.6;
-    const y0 = Math.min(...ys) * ZELLE + 0.6;
+    const x0 = Math.min(...xs) * ZELLE + 0.4;
+    const y0 = Math.min(...ys) * ZELLE + 0.4;
     teile.push(`<rect class="hof hof--${spieler}" x="${x0}" y="${y0}"`
-      + ` width="${2 * ZELLE - 1.2}" height="${2 * ZELLE - 1.2}" rx="4"/>`);
-  });
-  HAUSFELDER.forEach((liste, spieler) => {
-    const xs = liste.map(([x]) => x);
-    const x0 = Math.min(...xs) * ZELLE + 0.8;
-    const y0 = liste[0][1] * ZELLE + 0.8;
-    teile.push(`<rect class="bahn bahn--${spieler}" x="${x0}" y="${y0}"`
-      + ` width="${4 * ZELLE - 1.6}" height="${ZELLE - 1.6}" rx="4"/>`);
+      + ` width="${2 * ZELLE - 0.8}" height="${2 * ZELLE - 0.8}" rx="4.5"/>`);
+    // Die Beschriftung steht **neben** der Platte, nicht darauf: auf der Platte
+    // verschwindet sie hinter den wartenden Figuren. Im Eck ist ohnehin Platz.
+    const oben = spieler === 0;
+    teile.push(`<text class="zonenname" x="${x0 + ZELLE - 0.4}"`
+      + ` y="${oben ? y0 + 2 * ZELLE + 3.2 : y0 - 3.2}">Basis</text>`);
   });
 
-  // Die Mitte: ein ruhiger Punkt, damit das Kreuz einen Mittelpunkt hat.
+  // 4. Die Mitte.
   const [mx, my] = mitte([5, 5], ZELLE);
-  teile.push(`<circle class="nabe" cx="${mx}" cy="${my}" r="4.6"/>`);
-  teile.push(`<circle class="nabe-innen" cx="${mx}" cy="${my}" r="2.2"/>`);
+  teile.push(`<circle class="nabe" cx="${mx}" cy="${my}" r="4.8"/>`);
+  teile.push(`<circle class="nabe-innen" cx="${mx}" cy="${my}" r="2.1"/>`);
 
-  // Löcher: Ring, Häuser, Basisplätze
+  // 5. Die Felder. Größer als vorher — sie sind Ziel für einen Daumen.
   RINGFELDER.forEach(([x, y], i) => {
     const [cx, cy] = mitte([x, y], ZELLE);
-    const start = i === START[0] ? ' loch--start0' : i === START[1] ? ' loch--start1' : '';
-    teile.push(`<circle class="loch${start}" cx="${cx}" cy="${cy}" r="3.7"/>`);
-    if (start) teile.push(`<circle class="startpunkt startpunkt--${i === START[0] ? 0 : 1}"`
-      + ` cx="${cx}" cy="${cy}" r="1.4"/>`);
+    const start = i === START[0] ? 0 : i === START[1] ? 1 : null;
+    teile.push(`<circle class="loch${start !== null ? ` loch--start${start}` : ''}"`
+      + ` cx="${cx}" cy="${cy}" r="4.2"/>`);
+    if (start !== null) {
+      // Ein Pfeil in Laufrichtung: das Startfeld sagt damit auch, wohin es geht.
+      const [nx, ny] = mitte(RINGFELDER[(i + 1) % RING], ZELLE);
+      const laenge = Math.hypot(nx - cx, ny - cy) || 1;
+      const [dx, dy] = [(nx - cx) / laenge, (ny - cy) / laenge];
+      const [px, py] = [-dy, dx];
+      teile.push(`<path class="startpfeil startpfeil--${start}" d="M ${cx + dx * 2.1} ${cy + dy * 2.1}`
+        + ` L ${cx - dx * 1.1 + px * 1.5} ${cy - dy * 1.1 + py * 1.5}`
+        + ` L ${cx - dx * 1.1 - px * 1.5} ${cy - dy * 1.1 - py * 1.5} Z"/>`);
+    }
   });
   HAUSFELDER.forEach((liste, spieler) => liste.forEach(([x, y]) => {
     const [cx, cy] = mitte([x, y], ZELLE);
-    teile.push(`<circle class="loch loch--haus${spieler}" cx="${cx}" cy="${cy}" r="3.7"/>`);
+    teile.push(`<circle class="loch loch--haus${spieler}" cx="${cx}" cy="${cy}" r="4.2"/>`);
   }));
-  BASISFELDER.forEach((liste, spieler) => liste.forEach(([x, y]) => {
+  BASISFELDER.forEach((liste, spieler) => liste.slice(0, figurenZahl).forEach(([x, y]) => {
     const [cx, cy] = mitte([x, y], ZELLE);
-    teile.push(`<circle class="loch loch--basis${spieler}" cx="${cx}" cy="${cy}" r="3.9"/>`);
+    teile.push(`<circle class="loch loch--basis${spieler}" cx="${cx}" cy="${cy}" r="4.3"/>`);
   }));
 
-  // Zielpunkte der möglichen Züge — kleine Marken, damit man sieht, wohin es geht
-  moeglich.forEach((z) => {
-    const [zx, zy] = zielPunkt(stand.dran, z);
-    teile.push(`<circle class="zielpunkt" cx="${zx}" cy="${zy}" r="1.5"/>`);
-  });
+  // 6. Der gewählte Zug: Linie von der Figur zum Ziel, und das Ziel markiert.
+  if (zug) {
+    const f = stand.figuren[stand.dran][gewaehlt];
+    const [vx, vy] = figurPunkt(stand.dran, gewaehlt, f);
+    const [zx, zy] = zielPunkt(stand.dran, zug);
+    teile.push(`<line class="zugfaden" x1="${vx}" y1="${vy}" x2="${zx}" y2="${zy}"/>`);
+    teile.push(`<circle class="zielring${zug.schlaegt ? ' zielring--schlag' : ''}"`
+      + ` cx="${zx}" cy="${zy}" r="4.6"/>`);
+    teile.push(`<circle class="zielpunkt${zug.schlaegt ? ' zielpunkt--schlag' : ''}"`
+      + ` cx="${zx}" cy="${zy}" r="1.8"/>`);
+    tippflaechen.push(`<circle class="tippfeld" cx="${zx}" cy="${zy}" r="5.4" data-ziehen="${gewaehlt}"/>`);
+  }
 
-  // Figuren
+  // 7. Figuren zuletzt — sie gehören obenauf.
   stand.figuren.forEach((seite, spieler) => seite.forEach((f, figur) => {
     const [cx, cy] = figurPunkt(spieler, figur, f);
     const waehlbar = spieler === stand.dran && beweglich.has(figur);
-    teile.push(`<circle class="figur figur--${spieler}${waehlbar ? ' figur--wahl' : ''}"`
-      + ` cx="${cx}" cy="${cy}" r="3.2"${waehlbar ? ` data-figur="${figur}"` : ''}/>`);
-    if (waehlbar) teile.push(`<circle class="ring" cx="${cx}" cy="${cy}" r="4.4" pointer-events="none"/>`);
+    const dieseGewaehlt = waehlbar && figur === gewaehlt;
+    teile.push(figurForm(cx, cy, spieler,
+      (waehlbar ? ' figur--wahl' : '') + (dieseGewaehlt ? ' figur--gewaehlt' : '')));
+    if (waehlbar && !dieseGewaehlt) {
+      teile.push(`<circle class="ring" cx="${cx}" cy="${cy}" r="4.9" pointer-events="none"/>`);
+    }
+    if (waehlbar) {
+      tippflaechen.push(`<circle class="tippfeld" cx="${cx}" cy="${cy}" r="5.4" data-figur="${figur}"/>`);
+    }
   }));
 
-  return `<svg class="brett" viewBox="0 0 ${MASS} ${MASS}" role="img"
-    aria-label="Spielbrett mit ${RING} Feldern">${teile.join('')}</svg>`;
+  return `<svg class="brett" viewBox="${-RAND} ${-RAND} ${MASS} ${MASS}" role="img"
+    aria-label="Spielbrett mit ${RING} Feldern">${teile.join('')}${tippflaechen.join('')}</svg>`;
 }
 
 const AUGEN = {
@@ -686,6 +785,15 @@ function ansage() {
   const wer = meins && ui.modus === 'online' ? 'Du bist' : `${name(dran)} ist`;
   if (vorbei(stand)) return { eins: `${name(stand.fertig)} hat gewonnen.`, zwei: '' };
 
+  if (offeneWuerfe(stand).length) {
+    return {
+      eins: `${offeneWuerfe(stand).join(' und ')} gewürfelt.`,
+      zwei: meins ? 'Nimm eine der beiden Zahlen — die andere verfällt.'
+        : `${name(dran)} wählt.`,
+      warnung: true,
+    };
+  }
+
   if (stand.wurf === null) {
     const uebrig = stand.wuerfeUebrig;
     return {
@@ -697,27 +805,39 @@ function ansage() {
   if (!moeglich.length) {
     return { eins: `${stand.wurf} gewürfelt — kein Zug möglich.`, zwei: 'Weiter.', warnung: true };
   }
-  if (stand.regeln.strengeSechs && stand.wurf === 6
-      && stand.figuren[dran].some((f) => f.ort === 'basis') && moeglich.length === 1) {
-    return { eins: 'Eine Sechs — erst heraus.', zwei: 'Der Zug ist vorgegeben.' };
+  const { figur, zug } = auswahl();
+  if (zug) {
+    return {
+      eins: `${stand.wurf} gewürfelt.`,
+      zwei: zug.schlaegt ? 'Dieser Zug schlägt — tipp den roten Ring an.'
+        : moeglich.length === 1 ? 'Ein Zug ist möglich — tipp den Ring an.'
+          : 'Ziel antippen, oder eine andere Figur wählen.',
+      warnung: !!zug.schlaegt,
+    };
   }
+  const schlaege = moeglich.filter((z) => z.schlaegt).length;
   return {
     eins: `${stand.wurf} gewürfelt.`,
-    zwei: moeglich.length === 1 ? 'Ein Zug ist möglich — tipp die Figur an.'
-      : `${moeglich.length} Figuren können ziehen.`,
+    zwei: schlaege ? `${schlaege === 1 ? 'Ein Zug schlägt' : `${schlaege} Züge schlagen`}!`
+      : `${moeglich.length} Figuren können ziehen — tipp eine an.`,
+    warnung: schlaege > 0,
   };
 }
 
 function renderSpiel() {
   const a = ansage();
-  const kannWuerfeln = ichBinDran() && !vorbei(stand) && stand.wurf === null && stand.wuerfeUebrig > 0;
-  const kannWeiter = ichBinDran() && !vorbei(stand) && stand.wurf !== null && zuege(stand).length === 0;
+  const offen = offeneWuerfe(stand);
+  const meins = ichBinDran() && !vorbei(stand);
+  const kannWuerfeln = meins && !offen.length && stand.wurf === null && stand.wuerfeUebrig > 0;
+  const kannWeiter = meins && !offen.length && stand.wurf !== null && zuege(stand).length === 0;
+  const m = modusInfo();
 
   app.innerHTML = `
     <div class="screen screen--spiel">
       <div class="kopf">
         <div class="titel">
-          <div class="ober">Partie ${stand.partie} · ${stand.siege[0]} : ${stand.siege[1]}</div>
+          <div class="ober">${esc(m.titel)} · Partie ${stand.partie}
+            · ${stand.siege[0]} : ${stand.siege[1]}</div>
           <h1>${vorbei(stand)
     ? `<span class="wer--${stand.fertig}">${name(stand.fertig)}</span> gewinnt`
     : `<span class="wer--${stand.dran}">${name(stand.dran)}</span> ist dran`}</h1>
@@ -729,9 +849,12 @@ function renderSpiel() {
       </div>
       <div class="tischplatte">${brettSvg()}</div>
       <div class="leiste">
-        <button class="wuerfel${stand.wurf ? '' : ' wuerfel--frage'}${ui.rollt ? ' wuerfel--rollt' : ''}"
+        ${offen.length
+    ? offen.map((z, i) => `<button class="wuerfel wuerfel--wahl" data-wahl="${i}"
+          ${meins ? '' : 'disabled'} aria-label="Nimm die ${z}">${wuerfelSvg(z)}</button>`).join('')
+    : `<button class="wuerfel${stand.wurf ? '' : ' wuerfel--frage'}${ui.rollt ? ' wuerfel--rollt' : ''}"
           id="wuerfel" ${kannWuerfeln ? '' : 'disabled'}
-          aria-label="${stand.wurf ? `Gewürfelt: ${stand.wurf}` : 'Würfeln'}">${wuerfelSvg(stand.wurf)}</button>
+          aria-label="${stand.wurf ? `Gewürfelt: ${stand.wurf}` : 'Würfeln'}">${wuerfelSvg(stand.wurf)}</button>`}
         <div class="sagt">
           <div class="zeile1${a.warnung ? ' warnung' : ''}">${esc(a.eins)}</div>
           <div class="zeile2">${esc(a.zwei || '')}</div>
@@ -744,13 +867,27 @@ function renderSpiel() {
   app.querySelector('#wMenue').onclick = () => { ui.overlay = 'menue'; render(); };
   if (kannWuerfeln) app.querySelector('#wuerfel').onclick = wuerfelTippen;
   if (kannWeiter) app.querySelector('#weiter').onclick = weiterTippen;
-  app.querySelectorAll('.figur--wahl').forEach((k) => {
-    k.onclick = () => figurTippen(Number(k.dataset.figur));
+  app.querySelectorAll('[data-wahl]').forEach((k) => {
+    k.onclick = () => wahlTippen(Number(k.dataset.wahl));
   });
+  app.querySelectorAll('[data-figur]').forEach((k) => {
+    k.onclick = () => { ui.gewaehlt = Number(k.dataset.figur); render(); };
+  });
+  app.querySelectorAll('[data-ziehen]').forEach((k) => {
+    k.onclick = () => figurTippen(Number(k.dataset.ziehen));
+  });
+}
+
+function wahlTippen(nummer) {
+  if (!tun('wahl', nummer)) { render(); return; }
+  try { wurfWaehlen(stand, nummer); } catch { render(); return; }
+  buzz(10);
+  nachAenderung();
 }
 
 function wuerfelTippen() {
   ui.rollt = true;
+  ui.gewaehlt = null;
   render();
   setTimeout(() => {
     ui.rollt = false;
@@ -763,6 +900,7 @@ function wuerfelTippen() {
 
 function figurTippen(figur) {
   if (!ziehbar(stand, figur)) return;
+  ui.gewaehlt = null;
   const schlaegt = zuege(stand).find((z) => z.figur === figur)?.schlaegt;
   if (!tun('ziehen', figur)) { render(); return; }
   try { ziehen(stand, figur); } catch { render(); return; }
@@ -771,6 +909,7 @@ function figurTippen(figur) {
 }
 
 function weiterTippen() {
+  ui.gewaehlt = null;
   if (!tun('weiter')) { render(); return; }
   zugBeenden(stand);
   nachAenderung();
@@ -839,9 +978,19 @@ function renderRegeln() {
       <em>Weiter</em> an die andere Seite.</p>
 
     <h3>Am Handy</h3>
-    <p>Antippen: erst den Würfel, dann eine der hervorgehobenen Figuren. Der kleine goldene
-      Punkt zeigt, wohin sie käme. Hier ist nichts geheim — ihr könnt an einem Handy
-      spielen und es einfach liegen lassen, oder jeder nimmt sein eigenes.</p>
+    <p>Erst den Würfel antippen. Dann eine der <b>umrandeten Figuren</b> — es erscheint eine
+      gestrichelte Linie zu dem Feld, auf das sie käme, und dort ein goldener Ring. Diesen
+      Ring antippen führt den Zug aus. Ist der Ring <b>rot</b>, wird dort geschlagen. Kann
+      nur eine Figur ziehen, ist sie schon ausgewählt.</p>
+    <p>So sieht man den Zug, <em>bevor</em> er passiert — das war vorher nicht so, und bei
+      vier Figuren auf einem kleinen Brett hat man sich leicht vertippt.</p>
+    <p>Hier ist nichts geheim — ihr könnt an einem Handy spielen und es einfach liegen
+      lassen, oder jeder nimmt sein eigenes.</p>
+
+    <h3>Die Fassungen</h3>
+    <ul>${MODI.map((m) => `<li><b>${esc(m.titel)}</b> — ${esc(m.zeile)}</li>`).join('')}</ul>
+    <p>Bei <b>Zwei Würfel</b> erscheinen unten beide Würfel: du nimmst einen davon, der
+      andere verfällt. Eine gewählte Sechs bringt wie immer einen weiteren Wurf.</p>
 
     <div class="knopfsaeule"><button class="btn btn--holz" id="zu">Verstanden</button></div>`);
   l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
@@ -859,7 +1008,9 @@ function renderMenue() {
         <div class="zahl num">${stand.siege[1]}</div></div>
     </div>
 
-    <div class="feldlabel">Regeln</div>
+    <p style="text-align:center"><b>${esc(modusInfo().titel)}</b> — ${esc(modusInfo().zeile)}</p>
+
+    <div class="feldlabel">Einzelne Regeln nachjustieren</div>
     <div class="wahlliste">
       <button class="wahl ${r.figuren === 2 ? 'wahl--an' : ''}" id="rFiguren">
         <div class="haupt"><div class="oben">Kurze Partie: zwei Figuren</div>
@@ -884,6 +1035,7 @@ function renderMenue() {
     ? '<button class="btn btn--geist" id="zweiGeraete">Auf zwei Handys spielen</button>'
     : '<button class="btn btn--geist" id="trennen">Verbindung trennen</button>'}
       <button class="btn btn--geist" id="neuePartie">Neue Partie</button>
+      <button class="btn btn--geist" id="andereFassung">Andere Fassung wählen</button>
       <button class="btn btn--geist" id="code">Punktestand sichern oder laden</button>
       <button class="btn btn--geist" id="sichern">Spiel als Datei sichern</button>
       <button class="btn btn--geist" id="nullen">Siege zurücksetzen</button>
@@ -916,6 +1068,14 @@ function renderMenue() {
     partieNeu(stand);
     ui.overlay = null;
     nachAenderung();
+  };
+  l.querySelector('#andereFassung').onclick = () => {
+    ui.modusWahl = stand.modusId || 'klassisch';
+    ui.overlay = null;
+    stand = null;
+    ui.screen = 'start';
+    try { localStorage.removeItem(KEY); } catch { /* privater Modus */ }
+    render();
   };
   l.querySelector('#code').onclick = () => { ui.overlay = 'code'; render(); };
   l.querySelector('#sichern').onclick = async (e) => {

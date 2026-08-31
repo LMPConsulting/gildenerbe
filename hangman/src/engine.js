@@ -24,6 +24,53 @@ export const STUFEN = {
 
 export const BUCHSTABEN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'.split('');
 
+/** Vokale — nur die Fassung „Vokale kosten" interessiert sich dafür. */
+export const VOKALE = ['A', 'E', 'I', 'O', 'U', 'Ä', 'Ö', 'Ü'];
+
+export const VORGABE = {
+  vokaleKosten: false,   // A, E, I, O, U kosten auch bei einem Treffer
+  doppelwort: false,     // das Handy zieht zwei Wörter statt einem
+  tippZeigen: true,      // den Tipp bzw. die Wortliste anzeigen
+};
+
+export const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: 'Ein Wort, Schwierigkeit im Menü einstellbar',
+    regeln: {},
+  },
+  {
+    id: 'hart',
+    titel: 'Hart',
+    zeile: 'Nur sieben Fehler — und keine Tipps',
+    regeln: { tippZeigen: false },
+    stufe: 'schwer',
+  },
+  {
+    id: 'vokale',
+    titel: 'Vokale kosten',
+    zeile: 'A, E, I, O, U kosten einen Fehler — auch wenn sie drin sind',
+    regeln: { vokaleKosten: true },
+  },
+  {
+    id: 'doppelwort',
+    titel: 'Doppelwort',
+    zeile: 'Zwei Wörter auf einmal, ein einziger Strichvorrat',
+    regeln: { doppelwort: true },
+  },
+];
+
+/**
+ * Regel lesen, mit Rückfall auf die Vorgabe. Ein Spielstand von vor den
+ * Fassungen kennt die Schlüssel nicht und soll sich wie der Klassiker
+ * verhalten.
+ */
+export const regel = (stand, name) => {
+  const wert = stand && stand.regeln ? stand.regeln[name] : undefined;
+  return wert === undefined ? VORGABE[name] : wert;
+};
+
 export const PUNKTE = {
   grundGewonnen: 10,     // fürs Erraten überhaupt
   jeUebrigerFehler: 3,   // pro nicht verbrauchtem Fehlversuch
@@ -92,14 +139,26 @@ export function wortZiehen(stand, kategorie = 'allerlei', rnd = Math.random) {
   const frisch = quelle.filter((e) => !stand.benutzt.includes(e.wort));
   const topf = frisch.length ? frisch : quelle;
   if (!frisch.length) stand.benutzt = [];
-  return mischen(topf, rnd)[0];
+  const gemischt = mischen(topf, rnd);
+  if (!regel(stand, 'doppelwort')) return gemischt[0];
+
+  // Doppelwort: zwei Wörter, durch ein Leerzeichen getrennt. Leerzeichen sind
+  // ohnehin Trenner und stehen von Anfang an da — es braucht also keine zweite
+  // Runde nebenher, und beide Wörter teilen sich denselben Strichvorrat.
+  const zweites = gemischt.find((e) => e.wort !== gemischt[0].wort) || gemischt[0];
+  return {
+    wort: `${gemischt[0].wort} ${zweites.wort}`,
+    kategorie: gemischt[0].kategorie,
+    doppelt: [gemischt[0].wort, zweites.wort],
+  };
 }
 
 /* ------------------------------------------------------------------- Stand */
 
-export function neuerStand(namen = ['Monty', 'Christina']) {
+export function neuerStand(namen = ['Monty', 'Christina'], regeln = {}) {
   return {
     v: SAVE_VERSION,
+    regeln: { ...VORGABE, ...regeln },
     spieler: namen.map((name) => ({ name })),
     punkte: namen.map(() => 0),
     runde: 1,
@@ -176,16 +235,21 @@ export function raten(stand, buchstabe) {
   if (!r || r.fertig || !IST_BUCHSTABE(b) || !offen(r, b)) return null;
 
   const treffer = r.wort.includes(b);
+  // „Vokale kosten": ein Vokal zieht auch dann einen Fehler nach sich, wenn er
+  // im Wort steht. Man muss also mit Konsonanten anfangen.
+  const kostet = regel(stand, 'vokaleKosten') && VOKALE.includes(b);
   if (treffer) {
     r.geraten.push(b);
     r.muster = musterBauen(r.wort, r.geraten);
+    if (kostet) r.fehler += 1;
     if (r.muster.every((z) => z !== null)) beenden(stand, 'gewonnen');
+    else if (kostet && r.fehler >= r.erlaubt) beenden(stand, 'verloren');
   } else {
     r.daneben.push(b);
     r.fehler += 1;
     if (r.fehler >= r.erlaubt) beenden(stand, 'verloren');
   }
-  return { treffer, fertig: r.fertig };
+  return { treffer, kostet, fertig: r.fertig };
 }
 
 /**

@@ -120,38 +120,70 @@ em { color: var(--gold); font-style: italic; }
 
 /* ---------- Das Brett ---------- */
 
-.tischplatte { flex: 1; display: grid; place-items: center; padding: 10px 12px 0; min-height: 0; }
+.tischplatte { flex: 1; display: grid; padding: 10px 12px 0; min-height: 0; }
 .brett {
-  width: 100%; max-width: min(94vw, 62dvh); aspect-ratio: 1;
-  background: var(--brett);
-  border: 3px solid var(--brett-rand);
-  border-radius: 18px;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
-  display: block;
+  /* Der helle Karton wird im SVG gezeichnet, nicht als CSS-Hintergrund: sonst
+     liegt er auf dem Element, die Zeichnung passt sich aber mit `meet` ein —
+     bei abweichendem Seitenverhältnis stünden leere Kartonstreifen daneben. */
+  width: 100%; height: 100%; min-height: 0;
+  max-height: 74dvh;
+  background: none; border: 0; display: block;
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
 }
-.brett .hof { stroke-width: 0.6; }
-.brett .hof--0 { fill: #f7dcd8; stroke: var(--rot); }
-.brett .hof--1 { fill: #d9e8f7; stroke: var(--blau); }
-.brett .bahn { stroke-width: 0.6; }
-.brett .bahn--0 { fill: #f7dcd8; stroke: var(--rot); }
-.brett .bahn--1 { fill: #d9e8f7; stroke: var(--blau); }
-.brett .nabe { fill: none; stroke: var(--linie); stroke-width: 0.7; }
+.brett .karton { fill: var(--brett); stroke: var(--brett-rand); stroke-width: 1.4; }
+
+/* Die Bahn als durchgehender Weg statt loser Punkte. */
+.brett .weg {
+  fill: none; stroke: var(--brett-rand); stroke-width: 8.6;
+  stroke-linejoin: round; stroke-linecap: round; opacity: 0.42;
+}
+.brett .heimweg {
+  fill: none; stroke-width: 8.2; stroke-linejoin: round; stroke-linecap: round; opacity: 0.42;
+}
+.brett .heimweg--0 { stroke: var(--rot); }
+.brett .heimweg--1 { stroke: var(--blau); }
+
+.brett .hof { stroke-width: 0.7; }
+.brett .hof--0 { fill: #f6dcd7; stroke: var(--rot); }
+.brett .hof--1 { fill: #d7e3f6; stroke: var(--blau); }
+.brett .zonenname {
+  font-family: var(--font-ui); font-size: 3.2px; font-weight: 800;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  fill: var(--linie); text-anchor: middle; dominant-baseline: central;
+}
+
+.brett .nabe { fill: none; stroke: var(--linie); stroke-width: 0.8; }
 .brett .nabe-innen { fill: var(--brett-rand); }
-.brett .startpunkt--0 { fill: var(--rot); }
-.brett .startpunkt--1 { fill: var(--blau); }
 
 .brett .loch { fill: var(--feld); stroke: var(--linie); stroke-width: 0.5; }
-.brett .loch--start0 { fill: #f6d9d5; stroke: var(--rot); }
-.brett .loch--start1 { fill: #d6e5f5; stroke: var(--blau); }
-.brett .loch--haus0 { fill: #f2c8c3; stroke: var(--rot); }
-.brett .loch--haus1 { fill: #c8dcf2; stroke: var(--blau); }
-.brett .loch--basis0 { fill: #f2c8c3; stroke: var(--rot); }
-.brett .loch--basis1 { fill: #c8dcf2; stroke: var(--blau); }
+.brett .loch--start0 { fill: #f8e2dd; stroke: var(--rot); stroke-width: 0.9; }
+.brett .loch--start1 { fill: #dde8f8; stroke: var(--blau); stroke-width: 0.9; }
+.brett .loch--haus0 { fill: #f6d5ce; stroke: var(--rot); }
+.brett .loch--haus1 { fill: #d3e1f6; stroke: var(--blau); }
+.brett .loch--basis0 { fill: #f8e2dd; stroke: var(--rot); }
+.brett .loch--basis1 { fill: #dde8f8; stroke: var(--blau); }
+.brett .startpfeil--0 { fill: var(--rot); opacity: 0.75; }
+.brett .startpfeil--1 { fill: var(--blau); opacity: 0.75; }
 
-.brett .figur { stroke: rgba(0, 0, 0, 0.35); stroke-width: 0.45; transition: transform 0.18s ease; }
+/* Der gewählte Zug wird gezeigt, bevor er passiert. */
+.brett .zugfaden {
+  stroke: var(--gold); stroke-width: 0.9; stroke-dasharray: 2 1.6; opacity: 0.85;
+}
+.brett .zielring {
+  fill: none; stroke: var(--gold); stroke-width: 1;
+  animation: pochen 1.1s ease-in-out infinite;
+}
+.brett .zielring--schlag { stroke: #c8402f; }
+.brett .zielpunkt { fill: var(--gold); }
+.brett .zielpunkt--schlag { fill: #c8402f; }
+.brett .tippfeld { fill: transparent; cursor: pointer; }
+.brett .figurschatten { fill: rgba(0, 0, 0, 0.16); }
+
+.brett .figur { stroke: rgba(0, 0, 0, 0.4); stroke-width: 0.45; transition: transform 0.18s ease; }
 .brett .figur--0 { fill: var(--rot); }
 .brett .figur--1 { fill: var(--blau); }
 .brett .figur--wahl { cursor: pointer; }
+.brett .figur--gewaehlt { stroke: var(--gold); stroke-width: 0.9; }
 .brett .ring {
   fill: none; stroke: var(--gold); stroke-width: 0.9;
   animation: pochen 1.1s ease-in-out infinite;
@@ -185,6 +217,8 @@ em { color: var(--gold); font-style: italic; }
   25% { transform: rotate(-9deg) scale(1.05); }
   75% { transform: rotate(9deg) scale(1.05); }
 }
+.wuerfel--wahl { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.25), 0 6px 18px rgba(0, 0, 0, 0.4); }
+.wuerfel--wahl:disabled { box-shadow: none; }
 .wuerfel--frage { display: grid; place-items: center; font-size: 26px; color: #2a201a; font-weight: 700; }
 
 .sagt { flex: 1; min-width: 0; }
@@ -294,7 +328,7 @@ em { color: var(--gold); font-style: italic; }
   .screen--spiel { flex-direction: row; align-items: stretch; }
   .screen--spiel .kopf { display: none; }
   .tischplatte { padding: 8px; }
-  .brett { max-width: min(46vw, 92dvh); }
+  .brett { max-width: 50vw; max-height: 94dvh; justify-self: center; }
   .leiste { flex-direction: column; align-items: stretch; justify-content: center; max-width: 320px; padding: 10px 14px; }
   .leiste .wuerfel { align-self: center; }
 }

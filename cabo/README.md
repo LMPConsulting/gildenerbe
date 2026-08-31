@@ -59,6 +59,18 @@ Genau 100 Punkte werden auf 50 zurückgesetzt.
 Ist der Nachziehstapel leer, wandert die Ablage bis auf die oberste Karte zurück und wird
 gemischt — die Runde läuft weiter.
 
+## Die vier Fassungen
+
+| Fassung | Was anders ist |
+|---|---|
+| **Klassisch** | vier Karten, alle Kräfte, bis 100 Punkte |
+| **Sechs Karten** | zwei mehr zu merken — deutlich schwerer |
+| **Ohne Kräfte** | kein Peek, kein Spy, kein Swap: reines Gedächtnis |
+| **Blitz** | eine einzige Runde entscheidet |
+
+Die gewählte Fassung steht im Spielstand, nicht im Gerät: sie reist beim Koppeln von
+selbst mit. Ein Spielstand von vor den Fassungen wird weiter wie der Klassiker behandelt.
+
 ## Auf zwei Handys
 
 Beide Geräte müssen im **selben WLAN oder Hotspot** hängen. Auf dem Startbildschirm

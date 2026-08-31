@@ -1142,6 +1142,39 @@ const BRETTGROESSE = RASTER;
 
 const RING = 20;                   // 20 Felder = Rand eines 6×6-Rasters
 const HUETE = 4;
+
+const VORGABE = {
+  huete: HUETE,
+  beutejagd: false,   // nicht heimbringen zählt, sondern fangen
+  faengeZumSieg: 3,
+};
+
+const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: 'Vier Hüte, alle müssen heim',
+    regeln: {},
+  },
+  {
+    id: 'kurz',
+    titel: 'Kurz',
+    zeile: 'Nur drei Hüte — für zwischendurch',
+    regeln: { huete: 3 },
+  },
+  {
+    id: 'beutejagd',
+    titel: 'Beutejagd',
+    zeile: 'Heimkommen zählt nicht — wer zuerst drei fremde Hüte fängt, gewinnt',
+    regeln: { beutejagd: true },
+  },
+];
+
+/** Regel lesen, mit Rückfall auf die Vorgabe — alte Spielstände bleiben gültig. */
+const regel = (stand, name) => {
+  const wert = stand && stand.regeln ? stand.regeln[name] : undefined;
+  return wert === undefined ? VORGABE[name] : wert;
+};
 const HOF = [0, RING / 2];         // die beiden Höfe liegen sich gegenüber
 const WEGLAENGE = RING;            // einmal herum und wieder heim
 const SAVE_VERSION = 1;
@@ -1150,12 +1183,15 @@ const feldVon = (spieler, schritt) => (HOF[spieler] + schritt) % RING;
 
 const anderer = (i) => (i === 0 ? 1 : 0);
 
-function neuerStand(namen = ['Monty', 'Christina']) {
+function neuerStand(namen = ['Monty', 'Christina'], regeln = {}) {
+  const r = { ...VORGABE, ...regeln };
   return {
     v: SAVE_VERSION,
+    regeln: r,
     spieler: namen.map((name) => ({ name })),
-    huete: [0, 1].map(() => Array.from({ length: HUETE },
+    huete: [0, 1].map(() => Array.from({ length: r.huete },
       () => ({ ort: 'hof', schritt: 0, traegt: [] }))),
+    faenge: [0, 0],
     dran: 0,
     wurf: null,
     wuerfeUebrig: 1,
@@ -1272,12 +1308,21 @@ function ziehen(stand, figur) {
     hut.traegt = [];
   }
 
+  if (zug.faengt) stand.faenge[spieler] = (stand.faenge[spieler] || 0) + 1;
+
   stand.letzteAktion = zug.faengt
     ? { art: 'gefangen', spieler, figur, opfer: zug.faengt }
     : { art: 'gezogen', spieler, figur, nach: { ...zug.nach } };
   stand.wurf = null;
 
-  if (imZiel(stand, spieler) === HUETE) {
+  // In der Beutejagd zählt nicht das Heimkommen, sondern das Fangen.
+  if (regel(stand, 'beutejagd') && stand.faenge[spieler] >= regel(stand, 'faengeZumSieg')) {
+    stand.fertig = spieler;
+    stand.siege[spieler] += 1;
+    return stand;
+  }
+
+  if (!regel(stand, 'beutejagd') && imZiel(stand, spieler) === stand.huete[spieler].length) {
     stand.fertig = spieler;
     stand.siege[spieler] += 1;
     return stand;
@@ -1297,8 +1342,9 @@ function zugBeenden(stand) {
 
 function partieNeu(stand) {
   const beginnt = stand.fertig === null ? stand.dran : anderer(stand.fertig);
-  stand.huete = [0, 1].map(() => Array.from({ length: HUETE },
+  stand.huete = [0, 1].map(() => Array.from({ length: regel(stand, 'huete') },
     () => ({ ort: 'hof', schritt: 0, traegt: [] })));
+  stand.faenge = [0, 0];
   stand.dran = beginnt;
   stand.wurf = null;
   stand.wuerfeUebrig = 1;
@@ -1311,7 +1357,10 @@ function partieNeu(stand) {
 /* --------------------------------------------------- Punktestand mitnehmen */
 
 function alsCode(stand) {
-  const kern = { v: SAVE_VERSION, n: stand.spieler.map((s) => s.name), s: stand.siege, p: stand.partie };
+  const kern = {
+    v: SAVE_VERSION, n: stand.spieler.map((s) => s.name),
+    s: stand.siege, p: stand.partie, r: stand.regeln,
+  };
   return `HUT1-${btoa(unescape(encodeURIComponent(JSON.stringify(kern))))}`;
 }
 
@@ -1327,7 +1376,10 @@ function ausCode(code) {
   if (!kern || !Array.isArray(kern.s) || kern.s.length !== 2) {
     throw new Error('Der Code passt nicht zu diesem Spiel.');
   }
-  const stand = neuerStand(Array.isArray(kern.n) && kern.n.length === 2 ? kern.n : undefined);
+  const stand = neuerStand(
+    Array.isArray(kern.n) && kern.n.length === 2 ? kern.n : undefined,
+    kern.r && typeof kern.r === 'object' ? kern.r : {},
+  );
   stand.siege = kern.s.map((n) => (Number.isFinite(n) ? n : 0));
   stand.partie = Number.isFinite(kern.p) ? kern.p : 1;
   return stand;
@@ -1344,6 +1396,7 @@ const app = document.getElementById('app');
 
 let stand = null;
 let ui = {
+  modusWahl: 'klassisch',
   screen: 'start',
   overlay: null,
   codeStatus: '',
@@ -1566,16 +1619,32 @@ function renderStart() {
         <input class="feld" id="n1" maxlength="14" placeholder="Gold" value="Monty">
         <div style="height:10px"></div>
         <input class="feld" id="n2" maxlength="14" placeholder="Violett" value="Christina">
-        <div class="knopfsaeule">
+                <div class="feldlabel">Welche Fassung?</div>
+        <div class="wahlliste">
+          ${MODI.map((m) => `
+            <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+              <div class="haupt">
+                <div class="oben">${esc(m.titel)}</div>
+                <div class="unten">${esc(m.zeile)}</div>
+              </div>
+              <div class="haken">${m.id === ui.modusWahl ? '\u2713' : ''}</div>
+            </button>`).join('')}
+        </div>
+<div class="knopfsaeule">
           <button class="btn btn--filz" id="los">Los geht's</button>
           <button class="btn btn--leise" id="regeln">Wie geht das?</button>
         </div>
       </div>
     </div>`;
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     const a = app.querySelector('#n1').value.trim() || 'Gold';
     const b = app.querySelector('#n2').value.trim() || 'Violett';
-    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)]);
+    const m = MODI.find((x) => x.id === ui.modusWahl) || MODI[0];
+    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)], m.regeln);
+    stand.modusId = m.id;
     ui.screen = 'spiel';
     nachAenderung();
   };

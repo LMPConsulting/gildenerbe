@@ -1,7 +1,7 @@
 // Dreikampf — Oberfläche. Ein Handy, zwei Leute, ein Punktekonto für den ganzen Urlaub.
 
 import {
-  TYPEN, TYP_INFO, PUNKTE, ORTE, STAPEL,
+  TYPEN, TYP_INFO, PUNKTE, ORTE, STAPEL, MODI, offeneTypen,
   neuerStand, neueRunde, schritt, antworten, bewerten, weiter,
   ergebnis, rundeAbschliessen, rundeAbbrechen,
   fuehrung, stapelRest, alsCode, ausCode,
@@ -15,6 +15,7 @@ const app = document.getElementById('app');
 
 let stand = null;
 let ui = {
+  modusWahl: 'klassisch',
   screen: 'start', overlay: null, wahl: null, halter: 0, codeStatus: '',
   modus: 'lokal',     // 'lokal' | 'online'
   meinIndex: 0,       // online: welcher Spieler dieses Gerät ist
@@ -338,6 +339,18 @@ function renderStart() {
         <div class="feldlabel">Wofür zählen die Punkte?</div>
         <div class="feldreihe"><input class="feld" id="reise" maxlength="24" value="Wien" aria-label="Reise"></div>
 
+        <div class="feldlabel">Welche Fassung?</div>
+        <div class="wahlliste">
+          ${MODI.map((m) => `
+            <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+              <div class="haupt">
+                <div class="oben">${m.titel}</div>
+                <div class="unten">${m.zeile}</div>
+              </div>
+              <div class="haken">${m.id === ui.modusWahl ? '\u2713' : ''}</div>
+            </button>`).join('')}
+        </div>
+
         <div style="margin-top:26px;display:flex;flex-direction:column;gap:10px">
           <button class="btn btn--gold" id="los">An einem Handy</button>
           <button class="btn btn--geist" id="zweiGeraete">Auf zwei Handys</button>
@@ -346,11 +359,16 @@ function renderStart() {
       </div>
     </div>`;
 
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     const n0 = app.querySelector('#n0').value.trim() || 'Spieler 1';
     const n1 = app.querySelector('#n1').value.trim() || 'Spieler 2';
     const reise = app.querySelector('#reise').value.trim() || 'Urlaub';
-    stand = neuerStand([n0, n1], reise);
+    const m = MODI.find((x) => x.id === ui.modusWahl) || MODI[0];
+    stand = neuerStand([n0, n1], reise, m.regeln);
+    stand.modusId = m.id;
     ui.screen = 'hub';
     ui.halter = 0;
     nachAenderung();
@@ -364,7 +382,11 @@ function renderStart() {
   };
   app.querySelector('#zweiGeraete').onclick = () => {
     const [namen, reise] = namenLesen();
-    if (!stand) stand = neuerStand(namen, reise);
+    if (!stand) {
+      const m = MODI.find((x) => x.id === (ui.modusWahl || 'klassisch')) || MODI[0];
+      stand = neuerStand(namen, reise, m.regeln);
+      stand.modusId = m.id;
+    }
     ui.kopplung = { schritt: 'rolle' };
     render();
   };
@@ -450,7 +472,7 @@ function renderWahl() {
     wagnis: `${PUNKTE.wagnisGemacht}`,
   };
 
-  const karten = TYPEN.map((t) => {
+  const karten = offeneTypen(stand).map((t) => {
     const rest = stapelRest(stand, t);
     return `<button class="dis dis--${t}" data-typ="${t}">
       <span class="zahl">${punkteText[t]}</span>
@@ -485,7 +507,10 @@ function renderWahl() {
   app.querySelectorAll('[data-typ]').forEach((b) => {
     b.onclick = () => starteRunde(b.dataset.typ);
   });
-  app.querySelector('#btnZufall').onclick = () => starteRunde(TYPEN[Math.floor(Math.random() * TYPEN.length)]);
+  app.querySelector('#btnZufall').onclick = () => {
+    const wahl = offeneTypen(stand);
+    starteRunde(wahl[Math.floor(Math.random() * wahl.length)]);
+  };
   app.querySelector('#btnZurueck').onclick = () => { ui.screen = 'hub'; render(); };
 }
 

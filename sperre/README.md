@@ -97,6 +97,18 @@ Feldnummer auflöste, maß er seine eigene Reihenfolge mit. Erst mit ausgewürfe
 Gleichständen wurde der Unterschied zwischen 34 : 66 (Fehler) und 50 : 50 (behoben)
 überhaupt sichtbar.
 
+## Die drei Fassungen
+
+| Fassung | Was anders ist |
+|---|---|
+| **Klassisch** | elf Steine, die erste Figur oben gewinnt |
+| **Mauerschlacht** | **fünfzehn** Steine: jede Leiterreihe ist zu — keine Reihe geht hoch, ohne einen Stein zu treffen |
+| **Alle fünf** | erst wenn **alle fünf** Figuren oben sind, ist Schluss |
+
+Für **Alle fünf** musste eine Regel nachgeben: im Ziel dürfen jetzt mehrere eigene Figuren
+stehen. Es ist der Zielhafen, kein Feld, das besetzt wird — sonst käme dort nur die erste
+Figur an. Geschlagen wird im Ziel ebenfalls nicht.
+
 ## Auf zwei Handys
 
 Über **Menü → Auf zwei Handys spielen**. Nichts ist geheim — beide sehen dasselbe Brett

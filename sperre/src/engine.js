@@ -18,21 +18,58 @@
 // demselben Wurf mehrere verschiedene Felder erreichen.
 
 import {
-  FELDER, NACHBARN, ZIEL, HEIM, START_SPERREN, UNTERSTE_STRASSE, zumZiel,
+  FELDER, NACHBARN, ZIEL, HEIM, START_SPERREN, VIELE_SPERREN, UNTERSTE_STRASSE, zumZiel,
 } from './brett.js';
 
 export const FIGUREN = 5;
 export const SPERREN = START_SPERREN.length;
 export const SAVE_VERSION = 1;
 
+export const VORGABE = {
+  viele: false,      // Mauerschlacht: jede Leiterreihe eine geschlossene Mauer
+  alleFuenf: false,  // nicht die erste Figur gewinnt, sondern erst alle fünf
+};
+
+export const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: 'Elf Steine, die erste Figur oben gewinnt',
+    regeln: {},
+  },
+  {
+    id: 'mauerschlacht',
+    titel: 'Mauerschlacht',
+    zeile: 'Fünfzehn Steine — jede Leiterreihe ist zu',
+    regeln: { viele: true },
+  },
+  {
+    id: 'alleFuenf',
+    titel: 'Alle fünf',
+    zeile: 'Erst wenn alle fünf Figuren oben sind, ist Schluss',
+    regeln: { alleFuenf: true },
+  },
+];
+
+/** Regel lesen, mit Rückfall auf die Vorgabe — alte Spielstände bleiben gültig. */
+export const regel = (stand, name) => {
+  const wert = stand && stand.regeln ? stand.regeln[name] : undefined;
+  return wert === undefined ? VORGABE[name] : wert;
+};
+
+/** Die Steine, mit denen diese Fassung beginnt. */
+const startSteine = (r) => (r.viele ? VIELE_SPERREN : START_SPERREN);
+
 const anderer = (i) => (i === 0 ? 1 : 0);
 
-export function neuerStand(namen = ['Monty', 'Christina']) {
+export function neuerStand(namen = ['Monty', 'Christina'], regeln = {}) {
+  const r = { ...VORGABE, ...regeln };
   return {
     v: SAVE_VERSION,
+    regeln: r,
     spieler: namen.map((name) => ({ name })),
     figuren: [0, 1].map((s) => HEIM[s].map((feld) => ({ feld }))),
-    sperren: [...START_SPERREN],
+    sperren: [...startSteine(r)],
     dran: 0,
     wurf: null,
     setzen: null,             // { spieler } solange ein Stein neu zu setzen ist
@@ -116,11 +153,13 @@ export function zieleFuer(stand, figur) {
   const treffer = [];
   for (const ziel of wegeSuchen(stand, eigene.feld, stand.wurf)) {
     const drauf = figurAuf(stand, ziel);
-    if (drauf && drauf.spieler === spieler) continue;   // nie auf die eigene Figur
+    // Im Ziel dürfen mehrere stehen — es ist der Zielhafen, kein Feld, das
+    // besetzt wird. Sonst könnte in „Alle fünf" nur die erste Figur ankommen.
+    if (drauf && drauf.spieler === spieler && ziel !== ZIEL) continue;
     treffer.push({
       figur,
       ziel,
-      schlaegt: drauf || null,
+      schlaegt: ziel === ZIEL ? null : (drauf || null),
       sperre: sperreAuf(stand, ziel),
       gewinnt: ziel === ZIEL,
     });
@@ -165,8 +204,14 @@ export function ziehen(stand, figur, ziel) {
   };
 
   if (zug.gewinnt) {
-    stand.fertig = spieler;
-    stand.siege[spieler] += 1;
+    const alleDa = stand.figuren[spieler].every((f) => f.feld === ZIEL);
+    if (!regel(stand, 'alleFuenf') || alleDa) {
+      stand.fertig = spieler;
+      stand.siege[spieler] += 1;
+      return stand;
+    }
+    // „Alle fünf": diese Figur ist im Hafen, die Partie läuft weiter.
+    stand.dran = anderer(spieler);
     return stand;
   }
 
@@ -222,7 +267,7 @@ export function zugBeenden(stand) {
 export function partieNeu(stand) {
   const beginnt = stand.fertig === null ? stand.dran : anderer(stand.fertig);
   stand.figuren = [0, 1].map((s) => HEIM[s].map((feld) => ({ feld })));
-  stand.sperren = [...START_SPERREN];
+  stand.sperren = [...startSteine(stand.regeln || VORGABE)];
   stand.dran = beginnt;
   stand.wurf = null;
   stand.setzen = null;
@@ -235,7 +280,10 @@ export function partieNeu(stand) {
 /* --------------------------------------------------- Punktestand mitnehmen */
 
 export function alsCode(stand) {
-  const kern = { v: SAVE_VERSION, n: stand.spieler.map((s) => s.name), s: stand.siege, p: stand.partie };
+  const kern = {
+    v: SAVE_VERSION, n: stand.spieler.map((s) => s.name),
+    s: stand.siege, p: stand.partie, r: stand.regeln,
+  };
   return `SPR1-${btoa(unescape(encodeURIComponent(JSON.stringify(kern))))}`;
 }
 
@@ -251,7 +299,10 @@ export function ausCode(code) {
   if (!kern || !Array.isArray(kern.s) || kern.s.length !== 2) {
     throw new Error('Der Code passt nicht zu diesem Spiel.');
   }
-  const stand = neuerStand(Array.isArray(kern.n) && kern.n.length === 2 ? kern.n : undefined);
+  const stand = neuerStand(
+    Array.isArray(kern.n) && kern.n.length === 2 ? kern.n : undefined,
+    kern.r && typeof kern.r === 'object' ? kern.r : {},
+  );
   stand.siege = kern.s.map((n) => (Number.isFinite(n) ? n : 0));
   stand.partie = Number.isFinite(kern.p) ? kern.p : 1;
   return stand;

@@ -17,6 +17,39 @@
 
 export const RING = 20;                   // 20 Felder = Rand eines 6×6-Rasters
 export const HUETE = 4;
+
+export const VORGABE = {
+  huete: HUETE,
+  beutejagd: false,   // nicht heimbringen zählt, sondern fangen
+  faengeZumSieg: 3,
+};
+
+export const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: 'Vier Hüte, alle müssen heim',
+    regeln: {},
+  },
+  {
+    id: 'kurz',
+    titel: 'Kurz',
+    zeile: 'Nur drei Hüte — für zwischendurch',
+    regeln: { huete: 3 },
+  },
+  {
+    id: 'beutejagd',
+    titel: 'Beutejagd',
+    zeile: 'Heimkommen zählt nicht — wer zuerst drei fremde Hüte fängt, gewinnt',
+    regeln: { beutejagd: true },
+  },
+];
+
+/** Regel lesen, mit Rückfall auf die Vorgabe — alte Spielstände bleiben gültig. */
+export const regel = (stand, name) => {
+  const wert = stand && stand.regeln ? stand.regeln[name] : undefined;
+  return wert === undefined ? VORGABE[name] : wert;
+};
 export const HOF = [0, RING / 2];         // die beiden Höfe liegen sich gegenüber
 export const WEGLAENGE = RING;            // einmal herum und wieder heim
 export const SAVE_VERSION = 1;
@@ -25,12 +58,15 @@ export const feldVon = (spieler, schritt) => (HOF[spieler] + schritt) % RING;
 
 const anderer = (i) => (i === 0 ? 1 : 0);
 
-export function neuerStand(namen = ['Monty', 'Christina']) {
+export function neuerStand(namen = ['Monty', 'Christina'], regeln = {}) {
+  const r = { ...VORGABE, ...regeln };
   return {
     v: SAVE_VERSION,
+    regeln: r,
     spieler: namen.map((name) => ({ name })),
-    huete: [0, 1].map(() => Array.from({ length: HUETE },
+    huete: [0, 1].map(() => Array.from({ length: r.huete },
       () => ({ ort: 'hof', schritt: 0, traegt: [] }))),
+    faenge: [0, 0],
     dran: 0,
     wurf: null,
     wuerfeUebrig: 1,
@@ -147,12 +183,21 @@ export function ziehen(stand, figur) {
     hut.traegt = [];
   }
 
+  if (zug.faengt) stand.faenge[spieler] = (stand.faenge[spieler] || 0) + 1;
+
   stand.letzteAktion = zug.faengt
     ? { art: 'gefangen', spieler, figur, opfer: zug.faengt }
     : { art: 'gezogen', spieler, figur, nach: { ...zug.nach } };
   stand.wurf = null;
 
-  if (imZiel(stand, spieler) === HUETE) {
+  // In der Beutejagd zählt nicht das Heimkommen, sondern das Fangen.
+  if (regel(stand, 'beutejagd') && stand.faenge[spieler] >= regel(stand, 'faengeZumSieg')) {
+    stand.fertig = spieler;
+    stand.siege[spieler] += 1;
+    return stand;
+  }
+
+  if (!regel(stand, 'beutejagd') && imZiel(stand, spieler) === stand.huete[spieler].length) {
     stand.fertig = spieler;
     stand.siege[spieler] += 1;
     return stand;
@@ -172,8 +217,9 @@ export function zugBeenden(stand) {
 
 export function partieNeu(stand) {
   const beginnt = stand.fertig === null ? stand.dran : anderer(stand.fertig);
-  stand.huete = [0, 1].map(() => Array.from({ length: HUETE },
+  stand.huete = [0, 1].map(() => Array.from({ length: regel(stand, 'huete') },
     () => ({ ort: 'hof', schritt: 0, traegt: [] })));
+  stand.faenge = [0, 0];
   stand.dran = beginnt;
   stand.wurf = null;
   stand.wuerfeUebrig = 1;
@@ -186,7 +232,10 @@ export function partieNeu(stand) {
 /* --------------------------------------------------- Punktestand mitnehmen */
 
 export function alsCode(stand) {
-  const kern = { v: SAVE_VERSION, n: stand.spieler.map((s) => s.name), s: stand.siege, p: stand.partie };
+  const kern = {
+    v: SAVE_VERSION, n: stand.spieler.map((s) => s.name),
+    s: stand.siege, p: stand.partie, r: stand.regeln,
+  };
   return `HUT1-${btoa(unescape(encodeURIComponent(JSON.stringify(kern))))}`;
 }
 
@@ -202,7 +251,10 @@ export function ausCode(code) {
   if (!kern || !Array.isArray(kern.s) || kern.s.length !== 2) {
     throw new Error('Der Code passt nicht zu diesem Spiel.');
   }
-  const stand = neuerStand(Array.isArray(kern.n) && kern.n.length === 2 ? kern.n : undefined);
+  const stand = neuerStand(
+    Array.isArray(kern.n) && kern.n.length === 2 ? kern.n : undefined,
+    kern.r && typeof kern.r === 'object' ? kern.r : {},
+  );
   stand.siege = kern.s.map((n) => (Number.isFinite(n) ? n : 0));
   stand.partie = Number.isFinite(kern.p) ? kern.p : 1;
   return stand;

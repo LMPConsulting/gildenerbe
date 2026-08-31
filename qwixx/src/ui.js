@@ -2,7 +2,7 @@
 
 import {
   COLORS, COLOR_LABEL, ROW_VALUES, LAST_INDEX, LOCK_MIN_CROSSES,
-  MAX_PENALTIES, SCORE_TABLE,
+  MAX_PENALTIES, SCORE_TABLE, MODI, zeilenWerte, maxFehler,
   createGame, rollDice, submit, legalMoves, colorCombos, currentStep,
   whiteSum, rightmostCross, crossCount, playerScore, standings, endReason,
 } from './engine.js';
@@ -18,6 +18,7 @@ const app = document.getElementById('app');
 let game = null;
 let ui = {
   screen: 'start',    // 'start' | 'game' | 'over'
+  modusWahl: 'klassisch',
   holder: null,       // wer das Handy gerade in der Hand hat
   viewPlayer: 0,      // wessen Blatt angezeigt wird
   pick: null,         // vorgemerktes Feld { color, index }
@@ -353,7 +354,9 @@ async function netzStarten(gastgeber, code) {
 function verbindungSteht() {
   ui.kopplung = null;
   if (ui.gastgeber) {
-    game = createGame(prefs.names.slice(0, 2));
+    const m = MODI.find((x) => x.id === (ui.modusWahl || 'klassisch')) || MODI[0];
+    game = createGame(prefs.names.slice(0, 2), m.regeln);
+    game.modusId = m.id;
     ui.screen = 'game';
     ui.pick = null;
     ui.fresh = null;
@@ -410,8 +413,10 @@ function afterMutation() {
   render();
 }
 
-function startGame(names) {
-  game = createGame(names);
+function startGame(names, modusId = ui.modusWahl) {
+  const m = MODI.find((x) => x.id === modusId) || MODI[0];
+  game = createGame(names, m.regeln);
+  game.modusId = m.id;
   ui.holder = null;
   ui.viewPlayer = 0;
   ui.pick = null;
@@ -495,6 +500,16 @@ function renderStart() {
         <button class="btn btn--ghost" id="addPlayer" ${names.length >= 4 ? 'disabled' : ''}>+ Spieler</button>
       </div>
 
+      <div class="label" style="margin-top:16px">Welche Fassung?</div>
+      <div class="modusliste">
+        ${MODI.map((m) => `
+          <button class="moduswahl${m.id === ui.modusWahl ? ' moduswahl--an' : ''}"
+            data-modus="${m.id}">
+            <span class="mw-titel">${m.titel}</span>
+            <span class="mw-zeile">${m.zeile}</span>
+          </button>`).join('')}
+      </div>
+
       ${resume ? `<button class="btn btn--primary" id="resume">Angefangenes Spiel fortsetzen</button>
                   <button class="btn btn--ghost" id="start" style="margin-top:10px">Neues Spiel</button>`
                : `<button class="btn btn--primary" id="start">Spiel starten</button>`}
@@ -507,6 +522,9 @@ function renderStart() {
   const readNames = () => Array.from(app.querySelectorAll('.field'))
     .map((f, i) => (f.value.trim() || `Spieler ${i + 1}`));
 
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#addPlayer').onclick = () => { prefs.names = [...readNames(), `Spieler ${readNames().length + 1}`]; save(); render(); };
   app.querySelector('#rmPlayer').onclick = () => { prefs.names = readNames().slice(0, -1); save(); render(); };
   app.querySelector('#rules').onclick = () => { ui.overlay = 'rules'; render(); };
@@ -547,7 +565,7 @@ function sheetHtml(pi, interactive) {
     const edge = rightmostCross(row);
     const rowLocked = game.lockedRows[color];
 
-    const cells = ROW_VALUES[color].map((value, index) => {
+    const cells = zeilenWerte(game)[color].map((value, index) => {
       const key = cellKey(pi, color, index);
       const crossed = row[index];
       const isLegal = legal.some((m) => m.color === color && m.index === index);
@@ -580,7 +598,7 @@ function sheetHtml(pi, interactive) {
       ${cells}<div class="${lockCls.join(' ')}">${LOCK_SVG}${lockMark}</div></div>`;
   }).join('');
 
-  const boxes = Array.from({ length: MAX_PENALTIES }, (_, i) => {
+  const boxes = Array.from({ length: maxFehler(game) }, (_, i) => {
     const on = i < player.penalties;
     return `<span class="box${on ? ' on' : ''}">${on ? crossSvg(`p${pi}${i}`) : ''}</span>`;
   }).join('');
@@ -692,7 +710,7 @@ function hintText(step, owner, viewingOther, legal) {
   if (!step) return '';
 
   if (ui.pick) {
-    const v = ROW_VALUES[ui.pick.color][ui.pick.index];
+    const v = zeilenWerte(game)[ui.pick.color][ui.pick.index];
     const lockNote = ui.pick.index === LAST_INDEX ? ' — das <b>sperrt die Reihe</b> für alle!' : '';
     return `<b>${COLOR_LABEL[ui.pick.color]} ${v}</b> ankreuzen${lockNote}`;
   }
@@ -1202,7 +1220,9 @@ function renderRules() {
 
         <h3>Spielende</h3>
         <p>Sobald <strong>zwei Reihen gesperrt</strong> sind oder jemand
-           <strong>${MAX_PENALTIES} Fehlwürfe</strong> hat, endet das Spiel nach dem laufenden Zug.</p>
+           <strong>${maxFehler(game)} Fehlwürfe</strong> hat, endet das Spiel nach dem laufenden Zug.</p>
+        <h3>Die Fassungen</h3>
+        <ul>${MODI.map((m) => `<li><b>${m.titel}</b> — ${m.zeile}</li>`).join('')}</ul>
 
         <h3>Punkte je Reihe</h3>
         <div style="overflow-x:auto">

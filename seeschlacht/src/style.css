@@ -123,7 +123,9 @@ em { color: var(--sand); font-style: italic; }
 }
 .meer {
   display: grid; gap: 2px;
-  grid-template-columns: 1.1em repeat(10, 1fr);
+  /* Die Spaltenzahl kommt aus dem Spielstand — die kurze Fassung ist 8 × 8. */
+  grid-template-columns: 1.1em repeat(calc(var(--spalten, 11) - 1), 1fr);
+  position: relative;
   width: 100%; max-width: min(92vw, 46dvh);
   font-size: clamp(9px, 2.6vw, 12px);
 }
@@ -285,3 +287,45 @@ em { color: var(--sand); font-style: italic; }
   .meer { max-width: min(42vw, 82dvh); }
   .meer--klein { max-width: min(30vw, 60dvh); }
 }
+
+/* ---------- Salve, Sonderwaffen, Radar und Minen ---------- */
+
+/* Vorgemerkte Ziele einer Salve: noch nichts passiert, aber sichtbar gesetzt. */
+.zelle--markiert {
+  background: var(--sand); border-color: var(--sand);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+.zelle--vorschau { background: rgba(226, 96, 60, 0.35); }
+
+/* Eine eigene Mine — und dieselbe, nachdem sie hochgegangen ist. */
+.zelle--mine { position: relative; }
+.zelle--mine::after,
+.zelle--mine-weg::after {
+  content: "✱"; position: absolute; inset: 0;
+  display: grid; place-items: center; font-size: 0.8em; line-height: 1;
+  color: #f0c419; pointer-events: none;
+}
+.zelle--mine-weg::after { color: #b03a2e; content: "✸"; }
+
+/* Radarbefund: die Zahl liegt auf der Mitte des abgesuchten Quadrats. */
+.radarmarke {
+  position: absolute; z-index: 2; pointer-events: none;
+  grid-column: calc(var(--rx) + 1); grid-row: calc(var(--ry) + 1);
+  display: grid; place-items: center;
+  font-family: var(--font-num); font-size: 0.62em; font-weight: 800;
+  color: #0b1a24; background: rgba(240, 196, 25, 0.92);
+  border-radius: 50%; width: 1.5em; height: 1.5em; align-self: center; justify-self: center;
+}
+
+.waffenleiste {
+  display: flex; gap: 8px; padding: 0 16px 8px;
+  max-width: 560px; margin-inline: auto; width: 100%;
+}
+.waffe {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 6px; border-radius: 12px; font-size: 13px; font-weight: 650;
+  background: var(--panel); border: 1px solid var(--naht); color: var(--schrift-dim);
+}
+.waffe--an { background: var(--sand); border-color: var(--sand); color: #2b2007; }
+.waffe:disabled { opacity: 0.32; }
+.waffe .zahl { font-family: var(--font-num); font-size: 12px; opacity: 0.8; }
