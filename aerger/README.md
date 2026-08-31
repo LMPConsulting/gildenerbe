@@ -66,7 +66,7 @@ Zusätzlich lassen sich im Menü einzelne Regeln nachjustieren: **zwei Figuren**
 - **Zielbahnen** sind farbige Wege von der Einfahrt bis in die Mitte.
 - Die **Basen** sind beschriftete Platten mit eigener Farbe, nicht bloß vier Kreise.
 - Die **Startfelder** tragen einen Pfeil in Laufrichtung — das Brett sagt damit selbst,
-  herum es geht.
+  wo herum es geht.
 - Die **Felder sind größer** und die Figuren sind Kegel mit Schatten statt flacher Kreise.
 
 ## Steuerung
