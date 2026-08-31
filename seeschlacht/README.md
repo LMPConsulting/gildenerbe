@@ -1,4 +1,4 @@
-# Seeschlacht — zehn Schiffe verstecken, zehn Schiffe finden
+# Seeschlacht — Flotte verstecken, Flotte finden
 
 Jeder legt seine Flotte auf zehn mal zehn Felder, dann wird abwechselnd geschossen. Wer
 zuerst alles versenkt hat, gewinnt. Von allen Spielen der Sammlung das, was am besten auf
@@ -53,6 +53,46 @@ darunter klein das eigene. Die Schiffe der Gegenseite werden nie mitgeschickt: `
 nimmt sie heraus und lässt nur Treffer, Wasser, schon versenkte Schiffe und die **Zahl** der
 gelegten Schiffe stehen. Die Zahl muss bleiben — sonst könnte das Gerät nie erkennen, dass
 die Gegenseite mit dem Legen fertig ist.
+
+## Die vier Fassungen
+
+| Fassung | Was anders ist |
+|---|---|
+| **Klassisch** | 10 × 10, zehn Schiffe, Treffer bringt einen Nachschuss |
+| **Kurz** | 8 × 8 und nur sechs Schiffe (4, 3, 3, 2, 2, 2) — halb so lang |
+| **Salve** | so viele Schüsse auf einmal, wie du selbst noch Schiffe hast |
+| **Sonderwaffen** | Luftschlag, Radar und Mine — jede einmal je Partie |
+
+Die gewählte Fassung steht im Spielstand, nicht im Gerät: sie reist beim Koppeln von
+selbst mit, ohne eine einzige zusätzliche Nachricht.
+
+### Salve
+
+Statt einem Schuss gibst du **so viele auf einmal ab, wie du selbst noch Schiffe hast**.
+Die Felder werden erst nur markiert; erst *Salve abfeuern* deckt alle auf einmal auf. Wer
+Schiffe verliert, schießt weniger — das Spiel dreht sich dadurch spürbar schneller, und
+Treffer bringen hier keinen Nachschuss.
+
+### Sonderwaffen
+
+Jede Seite hat jede Waffe **genau einmal**. Der Einsatz kostet den ganzen Zug, auch bei
+einem Volltreffer — sonst wären sie zu stark.
+
+| Waffe | Wirkung |
+|---|---|
+| **Luftschlag** | drei Felder in einer Reihe, quer oder längs |
+| **Radar** | meldet, **wie viele** Schiffsfelder in einem 3 × 3-Quadrat liegen — nicht wo |
+| **Mine** | auf das **eigene** Meer gelegt; wer daraufschießt, setzt einen Zug aus |
+
+Der Radarbefund bleibt als Zahl auf dem Brett stehen, und **beide** sehen ihn: in der
+Papierfassung müsste die Gegenseite die Frage ja beantworten.
+
+Die Mine ist bis zur Auslösung so geheim wie ein Schiff. Das war beim Bauen der einzige
+Punkt, an dem tatsächlich etwas durchgerutscht ist: `gegnerSicht` filtert sie beim
+Verschicken heraus, aber **am einen Handy gibt es gar keine Redaktion** — dort zeigte der
+Schießbildschirm die gelegte Mine der Gegenseite einfach an, und man hätte das Feld nur
+meiden müssen. Die Anzeige unterscheidet jetzt: auf dem eigenen Meer alle Minen, auf dem
+fremden nur die schon ausgelösten.
 
 ## Aufbau
 

@@ -6,7 +6,9 @@
 // hinter einem Übergabe-Bildschirm.
 
 import {
-  BREITE, HOEHE, SPALTEN, FLOTTE, LAENGEN,
+  SPALTEN, FLOTTE, MODI,
+  masse, flottenLaengen, salveGroesse, markieren, salveFeuern,
+  waffenVorrat, luftschlag, radar, mineLegen,
   neuerStand, leeresMeer, passt, setzen, entfernen, zufallsflotte, flotteAuffuellen,
   flotteFertig, schiessen, schiffAn, versenkt, alleVersenkt, feldName,
   bereit, phase, gegnerSicht, nochUebrig, partieNeu, vorbei, alsCode, ausCode,
@@ -20,6 +22,9 @@ const app = document.getElementById('app');
 
 let stand = null;
 let ui = {
+  modusWahl: 'klassisch',
+  waffe: null,           // 'luftschlag' | 'radar' | 'mine', wenn eine gezielt wird
+  waffeQuer: true,       // Ausrichtung des Luftschlags
   screen: 'start',
   overlay: null,
   halter: 0,          // wer das Handy in der Hand hat (nur an einem Gerät)
@@ -121,6 +126,13 @@ function nachrichtVerarbeiten(m) {
   if (m.typ === 'aktion') {
     try {
       if (m.name === 'schiessen') schiessen(stand, m.wert.x, m.wert.y);
+      else if (m.name === 'markieren') markieren(stand, m.wert.x, m.wert.y);
+      else if (m.name === 'feuern') salveFeuern(stand);
+      else if (m.name === 'waffe') {
+        if (m.wert.art === 'luftschlag') luftschlag(stand, m.wert.x, m.wert.y, m.wert.quer);
+        else if (m.wert.art === 'radar') radar(stand, m.wert.x, m.wert.y);
+        else if (m.wert.art === 'mine') mineLegen(stand, m.wert.x, m.wert.y);
+      }
       else if (m.name === 'partieNeu') partieNeu(stand);
       else if (m.name === 'regel') stand.regeln = { ...stand.regeln, ...m.wert };
       else return;
@@ -258,32 +270,49 @@ const SICHER_TEXT = {
 
 function renderStart() {
   app.innerHTML = `
-    <div class="screen start">
-      <div class="wrap">
-        <h1 class="wortmarke">See<em>schlacht</em></h1>
-        <p class="unterzeile">Zehn Schiffe, zehn mal zehn Felder, ein Schuss nach dem
-          anderen. Wer zuerst die ganze Flotte versenkt, gewinnt.</p>
-        <div class="feldlabel">Wer spielt?</div>
-        <input class="feld" id="n1" maxlength="14" placeholder="Erster Name" value="Monty">
-        <div style="height:10px"></div>
-        <input class="feld" id="n2" maxlength="14" placeholder="Zweiter Name" value="Christina">
-        <div class="knopfsaeule">
-          <button class="btn btn--signal" id="los">Los geht's</button>
-          <button class="btn btn--leise" id="regeln">Wie geht das?</button>
-        </div>
+    <div class="screen"><div class="scroll"><div class="wrap" style="text-align:center">
+      <h1 class="wortmarke">See<em>schlacht</em></h1>
+      <p class="unterzeile">Flotte verstecken, Feld für Feld suchen. Wer zuerst
+        die ganze gegnerische Flotte versenkt, gewinnt.</p>
+      <div class="feldlabel">Wer spielt?</div>
+      <input class="feld" id="n1" maxlength="14" placeholder="Erster Name" value="Monty">
+      <div style="height:10px"></div>
+      <input class="feld" id="n2" maxlength="14" placeholder="Zweiter Name" value="Christina">
+      <div class="feldlabel">Welche Fassung?</div>
+      <div class="wahlliste">
+        ${MODI.map((m) => `
+          <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+            <div class="haupt">
+              <div class="oben">${esc(m.titel)}</div>
+              <div class="unten">${esc(m.zeile)}</div>
+            </div>
+            <span class="haken">✓</span>
+          </button>`).join('')}
       </div>
-    </div>`;
+      <div class="knopfsaeule">
+        <button class="btn btn--signal" id="los">Los geht's</button>
+        <button class="btn btn--leise" id="regeln">Wie geht das?</button>
+      </div>
+    </div></div></div>`;
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     const a = app.querySelector('#n1').value.trim() || 'Eins';
     const b = app.querySelector('#n2').value.trim() || 'Zwei';
-    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)]);
+    const m = MODI.find((x) => x.id === ui.modusWahl) || MODI[0];
+    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)], m.regeln);
+    stand.modusId = m.id;
     ui.screen = 'spiel';
     ui.legtGerade = 0;
     ui.halter = 0;
+    ui.waffe = null;
     nachAenderung();
   };
   app.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
 }
+
+const modusInfo = () => MODI.find((m) => m.id === stand?.modusId) || MODI[0];
 
 /* ------------------------------------------------------------- Das Raster */
 
@@ -291,28 +320,50 @@ function renderStart() {
  * Zeichnet ein Meer. `zeigeSchiffe` entscheidet über die eigenen Rümpfe,
  * `klickbar` schaltet die Zellen scharf.
  */
-function meerGitter(meer, { zeigeSchiffe, klickbar, klasse = '', letzter = null }) {
-  const zellen = ['<div class="kopfzelle"></div>'];
-  for (const s of SPALTEN) zellen.push(`<div class="kopfzelle">${s}</div>`);
-  for (let y = 0; y < HOEHE; y++) {
+function meerGitter(meer, {
+  zeigeSchiffe, klickbar, klasse = '', letzter = null,
+  markiert = [], vorschau = [], zeigeMinen = false,
+}) {
+  // `zeigeMinen` ist absichtlich dreiwertig: auf dem **eigenen** Meer sieht man
+  // alle eigenen Minen ('alle'), auf dem **fremden** nur die, die schon
+  // hochgegangen sind ('ausgeloest'). Am einen Handy gibt es keine Redaktion
+  // durch `gegnerSicht` — stünde hier `true`, verriete der Schießbildschirm die
+  // gelegte Mine der Gegenseite, und man müsste das Feld nur meiden.
+  const { breite, hoehe } = masse(meer);
+  const istMarkiert = (x, y) => markiert.some((f) => f.x === x && f.y === y);
+  const istVorschau = (x, y) => vorschau.some((f) => f.x === x && f.y === y);
+  const zellen = [`<div class="kopfzelle"></div>`];
+  for (const sp of SPALTEN.slice(0, breite)) zellen.push(`<div class="kopfzelle">${sp}</div>`);
+  for (let y = 0; y < hoehe; y++) {
     zellen.push(`<div class="kopfzelle">${y + 1}</div>`);
-    for (let x = 0; x < BREITE; x++) {
+    for (let x = 0; x < breite; x++) {
       const schuss = meer.schuesse[`${x},${y}`];
       const schiff = zeigeSchiffe ? schiffAn(meer, x, y) : null;
       const wrack = schuss === 'treffer'
         && (meer.versenkte || []).some((v) => v.felder.some((f) => f.x === x && f.y === y));
+      const gefunden = zeigeMinen
+        ? (meer.minen || []).find((m) => m.x === x && m.y === y) : null;
+      const mine = gefunden && (zeigeMinen === 'alle' || gefunden.ausgeloest) ? gefunden : null;
       const teile = ['zelle'];
       if (schiff && !schuss) teile.push('zelle--schiff');
       if (schuss === 'wasser') teile.push('zelle--daneben');
       if (schuss === 'treffer') teile.push(wrack ? 'zelle--wrack' : 'zelle--treffer');
       if (letzter && letzter.x === x && letzter.y === y) teile.push('zelle--letzter');
-      const frei = klickbar && !schuss;
+      if (istMarkiert(x, y)) teile.push('zelle--markiert');
+      if (istVorschau(x, y)) teile.push('zelle--vorschau');
+      if (mine) teile.push(mine.ausgeloest ? 'zelle--mine-weg' : 'zelle--mine');
+      const frei = klickbar && (!schuss || istMarkiert(x, y));
       if (frei) teile.push('zelle--frei');
-      zellen.push(`<button class="${teile.join(' ')}" ${frei ? '' : 'disabled'}`
+      zellen.push(`<button class="${teile.join(' ')}" ${klickbar ? '' : 'disabled'}`
         + ` data-x="${x}" data-y="${y}" aria-label="${feldName(x, y)}"></button>`);
     }
   }
-  return `<div class="meer ${klasse}">${zellen.join('')}</div>`;
+  // Radarbefunde: eine kleine Zahl auf der Mitte des abgesuchten Quadrats.
+  const marken = (meer.radare || []).map((r) =>
+    `<span class="radarmarke" style="--rx:${r.x + 1};--ry:${r.y + 1}"
+      title="Radar: ${r.anzahl}">${r.anzahl}</span>`).join('');
+  return `<div class="meer ${klasse}" style="--spalten:${breite + 1}">`
+    + `${zellen.join('')}${marken}</div>`;
 }
 
 /** Die Flottenliste — welche Schiffe stehen noch, welche sind weg. */
@@ -325,7 +376,7 @@ function flottenLeiste(meer, { alsGegner = false } = {}) {
   const offenVersenkt = versenkteLaengen.slice();
   const offenGelegt = gelegt.slice();
 
-  for (const laenge of LAENGEN) {
+  for (const laenge of flottenLaengen(meer)) {
     const iw = offenVersenkt.indexOf(laenge);
     const weg = iw >= 0;
     if (weg) offenVersenkt.splice(iw, 1);
@@ -675,7 +726,7 @@ function renderKopplung() {
 
 /** Welche Länge kommt als Nächstes dran? */
 function naechsteLaenge(meer) {
-  const fehlt = LAENGEN.slice();
+  const fehlt = flottenLaengen(meer).slice();
   for (const s of meer.schiffe) {
     const i = fehlt.indexOf(s.laenge);
     if (i >= 0) fehlt.splice(i, 1);
@@ -704,7 +755,7 @@ function renderLegen() {
       </div>
       <div class="scroll"><div class="meerfeld">
         <div class="meertitel">Dein Meer</div>
-        ${meerGitter(meer, { zeigeSchiffe: true, klickbar: false })}
+        ${meerGitter(meer, { zeigeSchiffe: true, klickbar: false, zeigeMinen: 'alle' })}
         ${flottenLeiste(meer)}
         <div class="leiste">
           <div class="sagt">
@@ -797,15 +848,23 @@ function renderSchiessen() {
   const gegner = andere(wer);
   const amZug = einHandy() || stand.dran === ui.meinIndex;
   const l = stand.letzterSchuss;
+  const gegnerMeer = stand.meere[andere(stand.dran)];
 
   const meineUebrig = nochUebrig(stand.meere[wer]);
-  const fremdUebrig = LAENGEN.length - (stand.meere[gegner].versenkte || []).length;
+  const flotteN = flottenLaengen(stand.meere[gegner]).length;
+  const fremdUebrig = flotteN - (stand.meere[gegner].versenkte || []).length;
+  const salveN = salveGroesse(stand);
+  const vorrat = waffenVorrat(stand, stand.dran);
+  const hatWaffen = stand.regeln.waffen;
+  // Beim Minenlegen zielt man auf das **eigene** Meer, nicht auf das fremde.
+  const zieltAufEigenes = ui.waffe === 'mine';
 
   app.innerHTML = `
     <div class="screen">
       <div class="kopf">
         <div class="titel">
-          <div class="ober">Partie ${stand.partie} · ${stand.siege[0]} : ${stand.siege[1]}</div>
+          <div class="ober">${esc(modusInfo().titel)} · Partie ${stand.partie}
+            · ${stand.siege[0]} : ${stand.siege[1]}</div>
           <h1>${amZug ? `${name(stand.dran)} schießt` : `${name(stand.dran)} ist dran`}</h1>
         </div>
         <div class="werkzeuge">
@@ -815,26 +874,59 @@ function renderSchiessen() {
       </div>
       <div class="scroll"><div class="meerfeld">
         <div class="meerspalte">
-          <div class="meertitel">Meer von ${name(andere(stand.dran))} · noch ${
-  LAENGEN.length - (stand.meere[andere(stand.dran)].versenkte || []).length} Schiffe</div>
-          ${meerGitter(stand.meere[andere(stand.dran)], {
-    zeigeSchiffe: false, klickbar: amZug && !vorbei(stand), letzter: l,
-  })}
+          <div class="meertitel">${zieltAufEigenes
+    ? `Dein Meer — wohin mit der Mine?`
+    : `Meer von ${name(andere(stand.dran))} · noch ${
+      flotteN - (gegnerMeer.versenkte || []).length} Schiffe`}</div>
+          ${zieltAufEigenes
+    ? meerGitter(stand.meere[stand.dran], {
+      zeigeSchiffe: true, klickbar: amZug, zeigeMinen: 'alle',
+    })
+    : meerGitter(gegnerMeer, {
+      zeigeSchiffe: false, klickbar: amZug && !vorbei(stand), letzter: l,
+      markiert: stand.salve || [], zeigeMinen: 'ausgeloest',
+    })}
         </div>
-        ${einHandy() ? '' : `
+        ${einHandy() || zieltAufEigenes ? '' : `
         <div class="meerspalte">
           <div class="meertitel">Dein Meer · noch ${meineUebrig} Schiffe</div>
-          ${meerGitter(stand.meere[wer], { zeigeSchiffe: true, klickbar: false, klasse: 'meer--klein' })}
+          ${meerGitter(stand.meere[wer], {
+    zeigeSchiffe: true, klickbar: false, klasse: 'meer--klein', zeigeMinen: 'alle',
+  })}
         </div>`}
         <div class="leiste">
           <div class="sagt">
             <div class="zeile1">${meldung()}</div>
             <div class="zeile2">${einHandy()
-    ? `Deine Flotte: noch ${meineUebrig} von ${LAENGEN.length}.`
-    : `Gegenüber: noch ${fremdUebrig} von ${LAENGEN.length}.`}</div>
+    ? `Deine Flotte: noch ${meineUebrig} von ${flotteN}.`
+    : `Gegenüber: noch ${fremdUebrig} von ${flotteN}.`}</div>
           </div>
         </div>
-        ${einHandy() ? `<div class="wrap" style="padding-top:0">
+        ${amZug && !vorbei(stand) && salveN > 0 ? `
+        <div class="wrap" style="padding-top:0">
+          <button class="btn btn--signal" id="feuern"
+            ${(stand.salve || []).length >= Math.min(salveN, freieFelder(gegnerMeer)) ? '' : 'disabled'}>
+            Salve abfeuern (${(stand.salve || []).length} / ${salveN})</button>
+        </div>` : ''}
+        ${amZug && !vorbei(stand) && hatWaffen ? `
+        <div class="waffenleiste">
+          ${ui.waffe ? `<button class="waffe" id="waffeZurueck">Abbrechen</button>` : ''}
+          <button class="waffe${ui.waffe === 'luftschlag' ? ' waffe--an' : ''}"
+            id="wLuftschlag" ${vorrat.luftschlag ? '' : 'disabled'}>
+            Luftschlag <span class="zahl">${vorrat.luftschlag}</span></button>
+          <button class="waffe${ui.waffe === 'radar' ? ' waffe--an' : ''}"
+            id="wRadar" ${vorrat.radar ? '' : 'disabled'}>
+            Radar <span class="zahl">${vorrat.radar}</span></button>
+          <button class="waffe${ui.waffe === 'mine' ? ' waffe--an' : ''}"
+            id="wMine" ${vorrat.mine ? '' : 'disabled'}>
+            Mine <span class="zahl">${vorrat.mine}</span></button>
+        </div>
+        ${ui.waffe === 'luftschlag' ? `
+        <div class="waffenleiste">
+          <button class="waffe${ui.waffeQuer ? ' waffe--an' : ''}" id="wQuer">▬ quer</button>
+          <button class="waffe${ui.waffeQuer ? '' : ' waffe--an'}" id="wLaengs">▮ längs</button>
+        </div>` : ''}` : ''}
+        ${einHandy() && !zieltAufEigenes ? `<div class="wrap" style="padding-top:0">
           <button class="btn btn--geist" id="meineFlotte">Meine Flotte ansehen</button>
         </div>` : ''}
       </div></div>
@@ -847,28 +939,102 @@ function renderSchiessen() {
     ui.halter = andere(stand.dran);      // erzwingt die Übergabe
     render();
   });
+  app.querySelector('#feuern')?.addEventListener('click', feuernTippen);
+  const waffeWaehlen = (was) => { ui.waffe = ui.waffe === was ? null : was; render(); };
+  app.querySelector('#wLuftschlag')?.addEventListener('click', () => waffeWaehlen('luftschlag'));
+  app.querySelector('#wRadar')?.addEventListener('click', () => waffeWaehlen('radar'));
+  app.querySelector('#wMine')?.addEventListener('click', () => waffeWaehlen('mine'));
+  app.querySelector('#waffeZurueck')?.addEventListener('click', () => { ui.waffe = null; render(); });
+  app.querySelector('#wQuer')?.addEventListener('click', () => { ui.waffeQuer = true; render(); });
+  app.querySelector('#wLaengs')?.addEventListener('click', () => { ui.waffeQuer = false; render(); });
   if (amZug && !vorbei(stand)) {
-    app.querySelectorAll('.zelle--frei').forEach((z) => {
-      z.onclick = () => schussTippen(Number(z.dataset.x), Number(z.dataset.y));
+    app.querySelectorAll('.zelle[data-x]').forEach((z) => {
+      z.onclick = () => feldTippen(Number(z.dataset.x), Number(z.dataset.y));
     });
   }
+}
+
+/** Wie viele Felder sind auf diesem Meer noch unbeschossen? */
+function freieFelder(meer) {
+  const { breite, hoehe } = masse(meer);
+  let n = 0;
+  for (let x = 0; x < breite; x++) {
+    for (let y = 0; y < hoehe; y++) if (!meer.schuesse[`${x},${y}`]) n += 1;
+  }
+  return n;
 }
 
 function meldung() {
   const l = stand.letzterSchuss;
   if (vorbei(stand)) return `${name(stand.fertig)} hat die Flotte versenkt.`;
+  if (ui.waffenFehler) return `<span class="senk">${esc(ui.waffenFehler)}</span>`;
+  if (ui.waffe === 'luftschlag') return 'Luftschlag: linkes oberes der drei Felder antippen.';
+  if (ui.waffe === 'radar') return 'Radar: Mitte des Quadrats antippen, das abgesucht wird.';
+  if (ui.waffe === 'mine') return 'Mine: ein Feld im eigenen Meer antippen.';
+  const w = stand.letzteWaffe;
+  if (w && (!l || w.spieler !== undefined)) {
+    if (w.art === 'radar' && w.spieler === stand.dran) {
+      return `<span class="treff">Radar bei ${feldName(w.x, w.y)}: ${w.anzahl} Schiffsfelder.</span>`;
+    }
+  }
+  if (salveGroesse(stand) > 0 && !(stand.salve || []).length) {
+    return `Salve: ${salveGroesse(stand)} Felder antippen, dann feuern.`;
+  }
   if (!l) return 'Ein Feld antippen.';
+  if (l.mine) return `<span class="senk">${feldName(l.x, l.y)} — Mine! Ein Zug ausgesetzt.</span>`;
   const feld = feldName(l.x, l.y);
   if (l.versenkt) return `<span class="senk">${feld} — versenkt!</span>`;
   if (l.treffer) return `<span class="treff">${feld} — Treffer.</span> Noch einmal.`;
   return `${feld} — Wasser.`;
 }
 
+/**
+ * Ein Feld antippen. Was dabei passiert, hängt davon ab, was gerade ansteht:
+ * eine gezielte Waffe, eine Salve zum Vormerken, oder ein gewöhnlicher Schuss.
+ */
+function feldTippen(x, y) {
+  if (ui.waffe) { waffeTippen(x, y); return; }
+  if (salveGroesse(stand) > 0) {
+    if (!tun('markieren', { x, y })) { render(); return; }
+    markieren(stand, x, y);
+    buzz(6);
+    nachAenderung();
+    return;
+  }
+  schussTippen(x, y);
+}
+
 function schussTippen(x, y) {
   if (!tun('schiessen', { x, y })) { render(); return; }
   const was = schiessen(stand, x, y);
   if (!was) return;
-  buzz(was.versenkt ? [30, 60, 30] : was.treffer ? 24 : 8);
+  buzz(was.mine ? [40, 60, 40, 60] : was.versenkt ? [30, 60, 30] : was.treffer ? 24 : 8);
+  nachAenderung();
+}
+
+function feuernTippen() {
+  if (!tun('feuern')) { render(); return; }
+  try { salveFeuern(stand); } catch { render(); return; }
+  buzz([25, 40, 25]);
+  nachAenderung();
+}
+
+function waffeTippen(x, y) {
+  const art = ui.waffe;
+  const wert = { x, y, quer: ui.waffeQuer };
+  if (!tun('waffe', { art, ...wert })) { ui.waffe = null; render(); return; }
+  try {
+    if (art === 'luftschlag') luftschlag(stand, x, y, ui.waffeQuer);
+    else if (art === 'radar') radar(stand, x, y);
+    else if (art === 'mine') mineLegen(stand, x, y);
+  } catch (fehler) {
+    ui.waffenFehler = fehler.message;
+    render();
+    return;
+  }
+  ui.waffe = null;
+  ui.waffenFehler = '';
+  buzz(art === 'luftschlag' ? [30, 40, 30, 40, 30] : [15, 30]);
   nachAenderung();
 }
 
@@ -897,7 +1063,7 @@ function renderMeineFlotte() {
   const l = overlayHuelle(`
     <h2>Deine Flotte, ${name(wer)}</h2>
     <p>Was die Gegenseite bisher getroffen hat.</p>
-    ${meerGitter(meer, { zeigeSchiffe: true, klickbar: false })}
+    ${meerGitter(meer, { zeigeSchiffe: true, klickbar: false, zeigeMinen: 'alle' })}
     ${flottenLeiste(meer)}
     <div class="knopfsaeule"><button class="btn btn--signal" id="zu">Zurück zum Schießen</button></div>`);
   l.querySelector('#zu').onclick = () => {
@@ -980,6 +1146,28 @@ function renderRegeln() {
       klein das eigene. Die Schiffe der Gegenseite werden nie mitgeschickt — nur Treffer,
       Wasser und was schon versenkt ist.</p>
 
+    <h3>Die Fassungen</h3>
+    <ul>${MODI.map((m) => `<li><b>${esc(m.titel)}</b> — ${esc(m.zeile)}</li>`).join('')}</ul>
+
+    <h3>Salve</h3>
+    <p>Statt einem Schuss gibst du <b>so viele auf einmal ab, wie du selbst noch Schiffe
+      hast</b>. Du tippst die Felder an — sie werden markiert, mehr passiert noch nicht —
+      und drückst dann auf <em>Salve abfeuern</em>. Erst danach erfährst du, was getroffen
+      hat. Wer Schiffe verliert, schießt weniger: das Spiel dreht sich schneller.</p>
+
+    <h3>Sonderwaffen</h3>
+    <p>Jede Seite hat jede der drei Waffen <b>genau einmal</b>. Der Einsatz kostet den
+      ganzen Zug — auch ein Volltreffer bringt keinen Nachschuss.</p>
+    <ul>
+      <li><b>Luftschlag</b> — drei Felder in einer Reihe, quer oder längs. Du tippst das
+        erste an.</li>
+      <li><b>Radar</b> — sagt dir, <b>wie viele</b> Schiffsfelder in einem 3 × 3-Quadrat
+        liegen. Nicht wo. Die Zahl bleibt auf dem Brett stehen; die Gegenseite sieht sie
+        auch — in der Papierfassung müsste sie die Frage ja beantworten.</li>
+      <li><b>Mine</b> — legst du auf dein <b>eigenes</b> Meer. Sie bleibt geheim; wer
+        daraufschießt, <b>setzt einen Zug aus</b>. Danach ist sie für beide sichtbar.</li>
+    </ul>
+
     <div class="knopfsaeule"><button class="btn btn--signal" id="zu">Verstanden</button></div>`);
   l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
 }
@@ -1016,6 +1204,7 @@ function renderMenue() {
     ? '<button class="btn btn--geist" id="zweiGeraete">Auf zwei Handys spielen</button>'
     : '<button class="btn btn--geist" id="trennen">Verbindung trennen</button>'}
       <button class="btn btn--geist" id="neuePartie">Neue Partie</button>
+      <button class="btn btn--geist" id="andereFassung">Andere Fassung wählen</button>
       <button class="btn btn--geist" id="code">Punktestand sichern oder laden</button>
       <button class="btn btn--geist" id="sichern">Spiel als Datei sichern</button>
       <button class="btn btn--geist" id="nullen">Siege zurücksetzen</button>
@@ -1050,6 +1239,14 @@ function renderMenue() {
     ui.overlay = null;
     nachAenderung();
   };
+  l.querySelector('#andereFassung')?.addEventListener('click', () => {
+    ui.modusWahl = stand.modusId || 'klassisch';
+    ui.overlay = null;
+    stand = null;
+    ui.screen = 'start';
+    try { localStorage.removeItem(KEY); } catch { /* privater Modus */ }
+    render();
+  });
   l.querySelector('#code').onclick = () => { ui.overlay = 'code'; render(); };
   l.querySelector('#sichern').onclick = async (e) => {
     e.currentTarget.disabled = true;

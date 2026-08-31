@@ -139,7 +139,9 @@ em { color: var(--sand); font-style: italic; }
 }
 .meer {
   display: grid; gap: 2px;
-  grid-template-columns: 1.1em repeat(10, 1fr);
+  /* Die Spaltenzahl kommt aus dem Spielstand — die kurze Fassung ist 8 × 8. */
+  grid-template-columns: 1.1em repeat(calc(var(--spalten, 11) - 1), 1fr);
+  position: relative;
   width: 100%; max-width: min(92vw, 46dvh);
   font-size: clamp(9px, 2.6vw, 12px);
 }
@@ -301,6 +303,48 @@ em { color: var(--sand); font-style: italic; }
   .meer { max-width: min(42vw, 82dvh); }
   .meer--klein { max-width: min(30vw, 60dvh); }
 }
+
+/* ---------- Salve, Sonderwaffen, Radar und Minen ---------- */
+
+/* Vorgemerkte Ziele einer Salve: noch nichts passiert, aber sichtbar gesetzt. */
+.zelle--markiert {
+  background: var(--sand); border-color: var(--sand);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+.zelle--vorschau { background: rgba(226, 96, 60, 0.35); }
+
+/* Eine eigene Mine — und dieselbe, nachdem sie hochgegangen ist. */
+.zelle--mine { position: relative; }
+.zelle--mine::after,
+.zelle--mine-weg::after {
+  content: "✱"; position: absolute; inset: 0;
+  display: grid; place-items: center; font-size: 0.8em; line-height: 1;
+  color: #f0c419; pointer-events: none;
+}
+.zelle--mine-weg::after { color: #b03a2e; content: "✸"; }
+
+/* Radarbefund: die Zahl liegt auf der Mitte des abgesuchten Quadrats. */
+.radarmarke {
+  position: absolute; z-index: 2; pointer-events: none;
+  grid-column: calc(var(--rx) + 1); grid-row: calc(var(--ry) + 1);
+  display: grid; place-items: center;
+  font-family: var(--font-num); font-size: 0.62em; font-weight: 800;
+  color: #0b1a24; background: rgba(240, 196, 25, 0.92);
+  border-radius: 50%; width: 1.5em; height: 1.5em; align-self: center; justify-self: center;
+}
+
+.waffenleiste {
+  display: flex; gap: 8px; padding: 0 16px 8px;
+  max-width: 560px; margin-inline: auto; width: 100%;
+}
+.waffe {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 6px; border-radius: 12px; font-size: 13px; font-weight: 650;
+  background: var(--panel); border: 1px solid var(--naht); color: var(--schrift-dim);
+}
+.waffe--an { background: var(--sand); border-color: var(--sand); color: #2b2007; }
+.waffe:disabled { opacity: 0.32; }
+.waffe .zahl { font-family: var(--font-num); font-size: 12px; opacity: 0.8; }
 
 </style>
 </head>
@@ -1087,18 +1131,75 @@ const LAENGEN = FLOTTE.flatMap((s) => Array.from({ length: s.anzahl }, () => s.l
 const VORGABE = {
   abstand: true,          // Schiffe dürfen sich nicht berühren, auch nicht über Eck
   trefferNochmal: true,   // ein Treffer bringt einen weiteren Schuss
+  breite: BREITE,
+  hoehe: HOEHE,
+  laengen: LAENGEN,       // die Flotte als Liste von Schiffslängen
+  salve: false,           // wenn an: so viele Schüsse je Zug, wie man Schiffe hat
+  waffen: false,          // wenn an: Luftschlag, Radar und Mine, je einmal
 };
+
+/** Die kleine Flotte für das 8 × 8-Meer: 16 Felder statt 30. */
+const KURZE_LAENGEN = [4, 3, 3, 2, 2, 2];
+
+const MODI = [
+  {
+    id: 'klassisch',
+    titel: 'Klassisch',
+    zeile: '10 × 10, zehn Schiffe, Treffer bringt einen Nachschuss',
+    regeln: {},
+  },
+  {
+    id: 'kurz',
+    titel: 'Kurz',
+    zeile: '8 × 8 und nur sechs Schiffe — halb so lang',
+    regeln: { breite: 8, hoehe: 8, laengen: KURZE_LAENGEN },
+  },
+  {
+    id: 'salve',
+    titel: 'Salve',
+    zeile: 'So viele Schüsse auf einmal, wie du noch Schiffe hast',
+    regeln: { salve: true, trefferNochmal: false },
+  },
+  {
+    id: 'waffen',
+    titel: 'Sonderwaffen',
+    zeile: 'Luftschlag, Radar und Mine — jede einmal je Partie',
+    regeln: { waffen: true },
+  },
+];
+
+const WAFFEN_LEER = { luftschlag: 0, radar: 0, mine: 0 };
+const WAFFEN_VOLL = { luftschlag: 1, radar: 1, mine: 1 };
 
 /* ---------------------------------------------------------------- Felder */
 
-const imMeer = (x, y) => x >= 0 && y >= 0 && x < BREITE && y < HOEHE;
+/**
+ * Die Maße eines Meeres. Sie stehen am Meer selbst, nicht als Konstante —
+ * nur so kann eine Fassung ein kleineres Brett haben. Ältere Spielstände
+ * kennen die Felder nicht; für die gilt das klassische 10 × 10.
+ */
+const masse = (meer) => ({
+  breite: meer && meer.breite ? meer.breite : BREITE,
+  hoehe: meer && meer.hoehe ? meer.hoehe : HOEHE,
+});
+
+/** Die Flotte dieses Meeres als Liste von Schiffslängen. */
+const flottenLaengen = (meer) =>
+  (meer && Array.isArray(meer.laengen) ? meer.laengen : LAENGEN);
+
+function imMeer(meer, x, y) {
+  const { breite, hoehe } = masse(meer);
+  return x >= 0 && y >= 0 && x < breite && y < hoehe;
+}
+
 const feldName = (x, y) => `${SPALTEN[x]}${y + 1}`;
 
-function feldAus(text) {
+function feldAus(text, meer = null) {
   const t = String(text || '').trim().toUpperCase();
   const m = t.match(/^([A-J])(10|[1-9])$/);
   if (!m) return null;
-  return { x: SPALTEN.indexOf(m[1]), y: Number(m[2]) - 1 };
+  const feld = { x: SPALTEN.indexOf(m[1]), y: Number(m[2]) - 1 };
+  return meer && !imMeer(meer, feld.x, feld.y) ? null : feld;
 }
 
 /** Die Felder eines Schiffs, das an (x,y) beginnt. */
@@ -1106,7 +1207,7 @@ const felderVon = ({ x, y, laenge, quer }) =>
   Array.from({ length: laenge }, (_, i) => (quer ? { x: x + i, y } : { x, y: y + i }));
 
 /** Alle Nachbarfelder einer Feldmenge — ohne die Felder selbst, ohne Rand. */
-function umgebung(felder) {
+function umgebung(meer, felder) {
   const eigen = new Set(felder.map((f) => `${f.x},${f.y}`));
   const raus = new Map();
   for (const f of felder) {
@@ -1114,7 +1215,7 @@ function umgebung(felder) {
       for (let dy = -1; dy <= 1; dy++) {
         const x = f.x + dx;
         const y = f.y + dy;
-        if (!imMeer(x, y) || eigen.has(`${x},${y}`)) continue;
+        if (!imMeer(meer, x, y) || eigen.has(`${x},${y}`)) continue;
         raus.set(`${x},${y}`, { x, y });
       }
     }
@@ -1124,8 +1225,14 @@ function umgebung(felder) {
 
 /* ------------------------------------------------------------------ Meer */
 
-function leeresMeer(abstand = true) {
-  return { schiffe: [], schuesse: {}, versenkte: [], abstand };
+function leeresMeer(regeln = {}) {
+  const r = { ...VORGABE, ...regeln };
+  return {
+    schiffe: [], schuesse: {}, versenkte: [],
+    abstand: r.abstand,
+    breite: r.breite, hoehe: r.hoehe, laengen: [...r.laengen],
+    minen: [], radare: [],
+  };
 }
 
 const schiffAn = (meer, x, y) =>
@@ -1134,10 +1241,10 @@ const schiffAn = (meer, x, y) =>
 /** Passt ein Schiff an diese Stelle? */
 function passt(meer, form) {
   const felder = felderVon(form);
-  if (felder.some((f) => !imMeer(f.x, f.y))) return false;
+  if (felder.some((f) => !imMeer(meer, f.x, f.y))) return false;
   if (felder.some((f) => schiffAn(meer, f.x, f.y))) return false;
   if (meer.abstand === false) return true;
-  return !umgebung(felder).some((n) => schiffAn(meer, n.x, n.y));
+  return !umgebung(meer, felder).some((n) => schiffAn(meer, n.x, n.y));
 }
 
 function setzen(meer, form) {
@@ -1157,7 +1264,7 @@ function entfernen(meer, x, y) {
 const gelegteSchiffe = (meer) =>
   (typeof meer.anzahl === 'number' ? meer.anzahl : meer.schiffe.length);
 
-const flotteFertig = (meer) => gelegteSchiffe(meer) === LAENGEN.length;
+const flotteFertig = (meer) => gelegteSchiffe(meer) === flottenLaengen(meer).length;
 
 /**
  * Legt eine vollständige Flotte zufällig aus. Die langen Schiffe zuerst —
@@ -1175,28 +1282,34 @@ function zufallsflotte(meer, rnd = Math.random) {
  * Die langen zuerst — sonst verstellen die kurzen die letzten freien Bahnen.
  */
 function flotteAuffuellen(meer, rnd = Math.random) {
-  const fehlt = LAENGEN.slice();
-  for (const s of meer.schiffe) {
-    const i = fehlt.indexOf(s.laenge);
-    if (i >= 0) fehlt.splice(i, 1);
-  }
+  const { breite, hoehe } = masse(meer);
   const vorher = meer.schiffe.slice();
-  for (const laenge of fehlt) {
-    let gelegt = false;
-    for (let versuch = 0; versuch < 800 && !gelegt; versuch++) {
-      const quer = rnd() < 0.5;
-      const x = Math.floor(rnd() * (quer ? BREITE - laenge + 1 : BREITE));
-      const y = Math.floor(rnd() * (quer ? HOEHE : HOEHE - laenge + 1));
-      gelegt = setzen(meer, { x, y, laenge, quer });
+  // Schleife statt Rekursion, und mit Deckel: bei einem Zufallsgeber, der immer
+  // dieselbe Zahl liefert, lief sich die alte Fassung in den Stapelüberlauf.
+  // Mit echtem Zufall greift der Deckel praktisch nie — beim ersten Anlauf
+  // klappt es fast immer.
+  for (let anlauf = 0; anlauf < 60; anlauf++) {
+    meer.schiffe = vorher.slice();
+    const fehlt = flottenLaengen(meer).slice();
+    for (const s of meer.schiffe) {
+      const i = fehlt.indexOf(s.laenge);
+      if (i >= 0) fehlt.splice(i, 1);
     }
-    if (!gelegt) {
-      // In einer engen Ecke gelandet — lieber von vorn als halb fertig. Was
-      // von Hand gelegt wurde, bleibt dabei stehen.
-      meer.schiffe = vorher.slice();
-      return flotteAuffuellen(meer, rnd);
+    let alleGelegt = true;
+    for (const laenge of fehlt) {
+      let gelegt = false;
+      for (let versuch = 0; versuch < 800 && !gelegt; versuch++) {
+        const quer = rnd() < 0.5;
+        const x = Math.floor(rnd() * (quer ? breite - laenge + 1 : breite));
+        const y = Math.floor(rnd() * (quer ? hoehe : hoehe - laenge + 1));
+        gelegt = setzen(meer, { x, y, laenge, quer });
+      }
+      if (!gelegt) { alleGelegt = false; break; }
     }
+    if (alleGelegt) return meer;
   }
-  return meer;
+  meer.schiffe = vorher.slice();
+  throw new Error('Für diese Flotte ist im Meer kein Platz.');
 }
 
 const versenkt = (meer, schiff) =>
@@ -1212,12 +1325,17 @@ function neuerStand(namen = ['Monty', 'Christina'], regeln = {}) {
   return {
     v: SAVE_VERSION,
     spieler: namen.map((name) => ({ name })),
-    meere: [leeresMeer(r.abstand), leeresMeer(r.abstand)],
+    meere: [leeresMeer(r), leeresMeer(r)],
     dran: 0,
     siege: [0, 0],
     partie: 1,
     regeln: r,
+    waffen: [{ ...(r.waffen ? WAFFEN_VOLL : WAFFEN_LEER) },
+      { ...(r.waffen ? WAFFEN_VOLL : WAFFEN_LEER) }],
+    salve: [],
+    aussetzen: [0, 0],
     letzterSchuss: null,
+    letzteWaffe: null,
     fertig: null,
   };
 }
@@ -1248,11 +1366,22 @@ const anderer = (i) => (i === 0 ? 1 : 0);
 function schiessen(stand, x, y) {
   if (vorbei(stand)) return null;
   if (phase(stand) !== 'schiessen') return null;
-  if (!imMeer(x, y)) return null;
   const ziel = anderer(stand.dran);
   const meer = stand.meere[ziel];
+  if (!imMeer(meer, x, y)) return null;
   if (meer.schuesse[`${x},${y}`]) return null;
+  return treffenUndPruefen(stand, x, y);
+}
 
+/**
+ * Ein einzelnes Feld beschießen und alles daran hängende auflösen: versenkt,
+ * Umgebung aufdecken, Mine ausgelöst, Sieg. Gibt weder ab noch prüft es, ob
+ * geschossen werden darf — das machen die Aufrufer, weil Salve und Luftschlag
+ * mehrere Felder auf einmal treffen.
+ */
+function treffenUndPruefen(stand, x, y, abgeben = true) {
+  const ziel = anderer(stand.dran);
+  const meer = stand.meere[ziel];
   const schiff = schiffAn(meer, x, y);
   meer.schuesse[`${x},${y}`] = schiff ? 'treffer' : 'wasser';
 
@@ -1260,13 +1389,22 @@ function schiessen(stand, x, y) {
   if (schiff && versenkt(meer, schiff)) {
     istVersenkt = true;
     // Rund um ein versenktes Schiff kann nichts mehr liegen — das deckt sich auf.
-    for (const n of umgebung(schiff.felder)) {
+    for (const n of umgebung(meer, schiff.felder)) {
       if (!meer.schuesse[`${n.x},${n.y}`]) meer.schuesse[`${n.x},${n.y}`] = 'wasser';
     }
     meer.versenkte.push({ laenge: schiff.laenge, felder: schiff.felder.map((f) => ({ ...f })) });
   }
 
-  const ergebnis = { treffer: !!schiff, versenkt: istVersenkt, x, y, schuetze: stand.dran };
+  // Eine Mine der Gegenseite: sie fliegt auf, und der Schütze setzt aus.
+  const mine = (meer.minen || []).find((m) => m.x === x && m.y === y && !m.ausgeloest);
+  if (mine) {
+    mine.ausgeloest = true;
+    stand.aussetzen[stand.dran] = 1;
+  }
+
+  const ergebnis = {
+    treffer: !!schiff, versenkt: istVersenkt, mine: !!mine, x, y, schuetze: stand.dran,
+  };
   stand.letzterSchuss = ergebnis;
 
   if (alleVersenkt(meer)) {
@@ -1274,8 +1412,149 @@ function schiessen(stand, x, y) {
     stand.siege[stand.dran] += 1;
     return ergebnis;
   }
-  if (!(schiff && stand.regeln.trefferNochmal)) stand.dran = ziel;
+  if (abgeben && !(schiff && !mine && stand.regeln.trefferNochmal)) abgeben1(stand);
   return ergebnis;
+}
+
+/**
+ * Den Zug abgeben — und dabei ein Aussetzen einlösen. Wer auf eine Mine
+ * geschossen hat, wird beim nächsten Mal übersprungen; dadurch kommt die
+ * Gegenseite zweimal hintereinander an die Reihe.
+ */
+function abgeben1(stand) {
+  const naechster = anderer(stand.dran);
+  if (stand.aussetzen && stand.aussetzen[naechster] > 0) {
+    stand.aussetzen[naechster] -= 1;
+    return;                                   // derselbe bleibt dran
+  }
+  stand.dran = naechster;
+}
+
+/* ------------------------------------------------------------------ Salve */
+
+/** Wie viele Schüsse hat man diesen Zug? 0, wenn nicht im Salve-Modus. */
+function salveGroesse(stand) {
+  if (!stand.regeln.salve || vorbei(stand) || phase(stand) !== 'schiessen') return 0;
+  return nochUebrig(stand.meere[stand.dran]);
+}
+
+/** Ein Feld für die Salve vormerken — oder die Vormerkung zurücknehmen. */
+function markieren(stand, x, y) {
+  if (!stand.regeln.salve) throw new Error('Diese Fassung kennt keine Salve.');
+  if (salveGroesse(stand) <= 0) throw new Error('Gerade ist keine Salve möglich.');
+  const meer = stand.meere[anderer(stand.dran)];
+  if (!imMeer(meer, x, y)) return false;
+  if (meer.schuesse[`${x},${y}`]) return false;
+  const i = stand.salve.findIndex((f) => f.x === x && f.y === y);
+  if (i >= 0) { stand.salve.splice(i, 1); return false; }
+  if (stand.salve.length >= salveGroesse(stand)) return false;
+  stand.salve.push({ x, y });
+  return true;
+}
+
+/** Die vorgemerkten Felder alle auf einmal beschießen. */
+function salveFeuern(stand) {
+  if (!stand.regeln.salve) throw new Error('Diese Fassung kennt keine Salve.');
+  const soll = salveGroesse(stand);
+  const meer = stand.meere[anderer(stand.dran)];
+  // Am Ende sind vielleicht weniger freie Felder übrig als Schüsse.
+  const { breite, hoehe } = masse(meer);
+  let frei = 0;
+  for (let x = 0; x < breite; x++) {
+    for (let y = 0; y < hoehe; y++) if (!meer.schuesse[`${x},${y}`]) frei += 1;
+  }
+  if (stand.salve.length < Math.min(soll, frei)) {
+    throw new Error('Es fehlen noch Ziele für die Salve.');
+  }
+  const felder = stand.salve.slice();
+  stand.salve = [];
+  const ergebnisse = [];
+  for (const f of felder) {
+    // Kein Abgeben zwischendurch: erst wenn die ganze Salve draußen ist.
+    ergebnisse.push(treffenUndPruefen(stand, f.x, f.y, false));
+    if (vorbei(stand)) break;
+  }
+  if (!vorbei(stand)) abgeben1(stand);
+  return ergebnisse;
+}
+
+/* ------------------------------------------------------------ Sonderwaffen */
+
+const waffenVorrat = (stand, spieler) =>
+  ({ ...WAFFEN_LEER, ...((stand.waffen || [])[spieler] || {}) });
+
+function waffePruefen(stand, name) {
+  if (vorbei(stand)) throw new Error('Die Partie ist vorbei.');
+  if (phase(stand) !== 'schiessen') throw new Error('Erst müssen beide Flotten liegen.');
+  if (stand.salve && stand.salve.length) throw new Error('Erst die Salve abschließen.');
+  if (waffenVorrat(stand, stand.dran)[name] <= 0) {
+    throw new Error('Diese Waffe ist schon verbraucht.');
+  }
+}
+
+/**
+ * Luftschlag: drei Felder in einer Reihe, waagerecht oder senkrecht.
+ * Beendet den Zug in jedem Fall — auch bei Treffern. Sonst wäre er zu stark.
+ */
+function luftschlag(stand, x, y, quer) {
+  waffePruefen(stand, 'luftschlag');
+  const meer = stand.meere[anderer(stand.dran)];
+  const felder = Array.from({ length: 3 }, (_, i) => (quer ? { x: x + i, y } : { x, y: y + i }));
+  if (felder.some((f) => !imMeer(meer, f.x, f.y))) {
+    throw new Error('Der Luftschlag ginge über den Rand hinaus.');
+  }
+  stand.waffen[stand.dran].luftschlag -= 1;
+  const ergebnisse = [];
+  for (const f of felder) {
+    if (meer.schuesse[`${f.x},${f.y}`]) continue;      // schon beschossen: überspringen
+    ergebnisse.push(treffenUndPruefen(stand, f.x, f.y, false));
+    if (vorbei(stand)) break;
+  }
+  stand.letzteWaffe = { art: 'luftschlag', spieler: stand.dran, x, y, quer };
+  if (!vorbei(stand)) abgeben1(stand);
+  return ergebnisse;
+}
+
+/**
+ * Radar: meldet, wie viele Schiffsfelder in einem 3 × 3-Feld liegen — mehr
+ * nicht. Es deckt nichts auf und markiert nichts; man weiß danach nur, dass
+ * dort etwas ist. Die Gegenseite sieht, wo geschaut wurde: in der Papierfassung
+ * müsste sie die Frage ja beantworten.
+ */
+function radar(stand, x, y) {
+  waffePruefen(stand, 'radar');
+  const meer = stand.meere[anderer(stand.dran)];
+  if (!imMeer(meer, x, y)) throw new Error('Dieses Feld gibt es nicht.');
+  stand.waffen[stand.dran].radar -= 1;
+  let anzahl = 0;
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      if (imMeer(meer, x + dx, y + dy) && schiffAn(meer, x + dx, y + dy)) anzahl += 1;
+    }
+  }
+  meer.radare = [...(meer.radare || []), { x, y, anzahl }];
+  stand.letzteWaffe = { art: 'radar', spieler: stand.dran, x, y, anzahl };
+  abgeben1(stand);
+  return anzahl;
+}
+
+/**
+ * Mine: auf das **eigene** Meer gelegt und bis zur Auslösung geheim. Wer
+ * daraufschießt, setzt einen Zug aus.
+ */
+function mineLegen(stand, x, y) {
+  waffePruefen(stand, 'mine');
+  const meer = stand.meere[stand.dran];
+  if (!imMeer(meer, x, y)) throw new Error('Dieses Feld gibt es nicht.');
+  if (meer.schuesse[`${x},${y}`]) throw new Error('Auf dieses Feld wurde schon geschossen.');
+  if ((meer.minen || []).some((m) => m.x === x && m.y === y)) {
+    throw new Error('Dort liegt schon eine Mine.');
+  }
+  stand.waffen[stand.dran].mine -= 1;
+  meer.minen = [...(meer.minen || []), { x, y, ausgeloest: false }];
+  stand.letzteWaffe = { art: 'mine', spieler: stand.dran, x, y };
+  abgeben1(stand);
+  return true;
 }
 
 /** Wie viele Schiffe stehen hier noch? */
@@ -1297,6 +1576,8 @@ function gegnerSicht(stand, empfaenger) {
     ...k.meere[gegner],
     schiffe: [],
     anzahl: stand.meere[gegner].schiffe.length,
+    // Eine Mine ist so geheim wie ein Schiff — bis sie hochgeht.
+    minen: (stand.meere[gegner].minen || []).filter((m) => m.ausgeloest).map((m) => ({ ...m })),
   };
   return k;
 }
@@ -1304,7 +1585,10 @@ function gegnerSicht(stand, empfaenger) {
 /* --------------------------------------------------- Punktestand mitnehmen */
 
 function alsCode(stand) {
-  const kern = { v: SAVE_VERSION, n: stand.spieler.map((s) => s.name), s: stand.siege, p: stand.partie };
+  const kern = {
+    v: SAVE_VERSION, n: stand.spieler.map((s) => s.name),
+    s: stand.siege, p: stand.partie, r: stand.regeln,
+  };
   return `SEE1-${btoa(unescape(encodeURIComponent(JSON.stringify(kern))))}`;
 }
 
@@ -1320,7 +1604,10 @@ function ausCode(code) {
   if (!kern || !Array.isArray(kern.s) || kern.s.length !== 2) {
     throw new Error('Der Code passt nicht zu diesem Spiel.');
   }
-  const stand = neuerStand(Array.isArray(kern.n) && kern.n.length === 2 ? kern.n : undefined);
+  const stand = neuerStand(
+    Array.isArray(kern.n) && kern.n.length === 2 ? kern.n : undefined,
+    kern.r && typeof kern.r === 'object' ? kern.r : {},
+  );
   stand.siege = kern.s.map((n) => (Number.isFinite(n) ? n : 0));
   stand.partie = Number.isFinite(kern.p) ? kern.p : 1;
   return stand;
@@ -1329,9 +1616,13 @@ function ausCode(code) {
 /** Neue Partie: Meere leer, Punkte bleiben. Der Verlierer beginnt. */
 function partieNeu(stand) {
   const beginnt = stand.fertig === null ? stand.dran : anderer(stand.fertig);
-  stand.meere = [leeresMeer(stand.regeln.abstand), leeresMeer(stand.regeln.abstand)];
+  stand.meere = [leeresMeer(stand.regeln), leeresMeer(stand.regeln)];
   stand.dran = beginnt;
+  stand.waffen = [0, 1].map(() => ({ ...(stand.regeln.waffen ? WAFFEN_VOLL : WAFFEN_LEER) }));
+  stand.salve = [];
+  stand.aussetzen = [0, 0];
   stand.letzterSchuss = null;
+  stand.letzteWaffe = null;
   stand.fertig = null;
   stand.partie += 1;
   return stand;
@@ -1350,6 +1641,9 @@ const app = document.getElementById('app');
 
 let stand = null;
 let ui = {
+  modusWahl: 'klassisch',
+  waffe: null,           // 'luftschlag' | 'radar' | 'mine', wenn eine gezielt wird
+  waffeQuer: true,       // Ausrichtung des Luftschlags
   screen: 'start',
   overlay: null,
   halter: 0,          // wer das Handy in der Hand hat (nur an einem Gerät)
@@ -1451,6 +1745,13 @@ function nachrichtVerarbeiten(m) {
   if (m.typ === 'aktion') {
     try {
       if (m.name === 'schiessen') schiessen(stand, m.wert.x, m.wert.y);
+      else if (m.name === 'markieren') markieren(stand, m.wert.x, m.wert.y);
+      else if (m.name === 'feuern') salveFeuern(stand);
+      else if (m.name === 'waffe') {
+        if (m.wert.art === 'luftschlag') luftschlag(stand, m.wert.x, m.wert.y, m.wert.quer);
+        else if (m.wert.art === 'radar') radar(stand, m.wert.x, m.wert.y);
+        else if (m.wert.art === 'mine') mineLegen(stand, m.wert.x, m.wert.y);
+      }
       else if (m.name === 'partieNeu') partieNeu(stand);
       else if (m.name === 'regel') stand.regeln = { ...stand.regeln, ...m.wert };
       else return;
@@ -1588,32 +1889,49 @@ const SICHER_TEXT = {
 
 function renderStart() {
   app.innerHTML = `
-    <div class="screen start">
-      <div class="wrap">
-        <h1 class="wortmarke">See<em>schlacht</em></h1>
-        <p class="unterzeile">Zehn Schiffe, zehn mal zehn Felder, ein Schuss nach dem
-          anderen. Wer zuerst die ganze Flotte versenkt, gewinnt.</p>
-        <div class="feldlabel">Wer spielt?</div>
-        <input class="feld" id="n1" maxlength="14" placeholder="Erster Name" value="Monty">
-        <div style="height:10px"></div>
-        <input class="feld" id="n2" maxlength="14" placeholder="Zweiter Name" value="Christina">
-        <div class="knopfsaeule">
-          <button class="btn btn--signal" id="los">Los geht's</button>
-          <button class="btn btn--leise" id="regeln">Wie geht das?</button>
-        </div>
+    <div class="screen"><div class="scroll"><div class="wrap" style="text-align:center">
+      <h1 class="wortmarke">See<em>schlacht</em></h1>
+      <p class="unterzeile">Flotte verstecken, Feld für Feld suchen. Wer zuerst
+        die ganze gegnerische Flotte versenkt, gewinnt.</p>
+      <div class="feldlabel">Wer spielt?</div>
+      <input class="feld" id="n1" maxlength="14" placeholder="Erster Name" value="Monty">
+      <div style="height:10px"></div>
+      <input class="feld" id="n2" maxlength="14" placeholder="Zweiter Name" value="Christina">
+      <div class="feldlabel">Welche Fassung?</div>
+      <div class="wahlliste">
+        ${MODI.map((m) => `
+          <button class="wahl${m.id === ui.modusWahl ? ' wahl--an' : ''}" data-modus="${m.id}">
+            <div class="haupt">
+              <div class="oben">${esc(m.titel)}</div>
+              <div class="unten">${esc(m.zeile)}</div>
+            </div>
+            <span class="haken">✓</span>
+          </button>`).join('')}
       </div>
-    </div>`;
+      <div class="knopfsaeule">
+        <button class="btn btn--signal" id="los">Los geht's</button>
+        <button class="btn btn--leise" id="regeln">Wie geht das?</button>
+      </div>
+    </div></div></div>`;
+  app.querySelectorAll('[data-modus]').forEach((k) => {
+    k.onclick = () => { ui.modusWahl = k.dataset.modus; render(); };
+  });
   app.querySelector('#los').onclick = () => {
     const a = app.querySelector('#n1').value.trim() || 'Eins';
     const b = app.querySelector('#n2').value.trim() || 'Zwei';
-    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)]);
+    const m = MODI.find((x) => x.id === ui.modusWahl) || MODI[0];
+    stand = neuerStand([a.slice(0, 14), b.slice(0, 14)], m.regeln);
+    stand.modusId = m.id;
     ui.screen = 'spiel';
     ui.legtGerade = 0;
     ui.halter = 0;
+    ui.waffe = null;
     nachAenderung();
   };
   app.querySelector('#regeln').onclick = () => { ui.overlay = 'regeln'; render(); };
 }
+
+const modusInfo = () => MODI.find((m) => m.id === stand?.modusId) || MODI[0];
 
 /* ------------------------------------------------------------- Das Raster */
 
@@ -1621,28 +1939,50 @@ function renderStart() {
  * Zeichnet ein Meer. `zeigeSchiffe` entscheidet über die eigenen Rümpfe,
  * `klickbar` schaltet die Zellen scharf.
  */
-function meerGitter(meer, { zeigeSchiffe, klickbar, klasse = '', letzter = null }) {
-  const zellen = ['<div class="kopfzelle"></div>'];
-  for (const s of SPALTEN) zellen.push(`<div class="kopfzelle">${s}</div>`);
-  for (let y = 0; y < HOEHE; y++) {
+function meerGitter(meer, {
+  zeigeSchiffe, klickbar, klasse = '', letzter = null,
+  markiert = [], vorschau = [], zeigeMinen = false,
+}) {
+  // `zeigeMinen` ist absichtlich dreiwertig: auf dem **eigenen** Meer sieht man
+  // alle eigenen Minen ('alle'), auf dem **fremden** nur die, die schon
+  // hochgegangen sind ('ausgeloest'). Am einen Handy gibt es keine Redaktion
+  // durch `gegnerSicht` — stünde hier `true`, verriete der Schießbildschirm die
+  // gelegte Mine der Gegenseite, und man müsste das Feld nur meiden.
+  const { breite, hoehe } = masse(meer);
+  const istMarkiert = (x, y) => markiert.some((f) => f.x === x && f.y === y);
+  const istVorschau = (x, y) => vorschau.some((f) => f.x === x && f.y === y);
+  const zellen = [`<div class="kopfzelle"></div>`];
+  for (const sp of SPALTEN.slice(0, breite)) zellen.push(`<div class="kopfzelle">${sp}</div>`);
+  for (let y = 0; y < hoehe; y++) {
     zellen.push(`<div class="kopfzelle">${y + 1}</div>`);
-    for (let x = 0; x < BREITE; x++) {
+    for (let x = 0; x < breite; x++) {
       const schuss = meer.schuesse[`${x},${y}`];
       const schiff = zeigeSchiffe ? schiffAn(meer, x, y) : null;
       const wrack = schuss === 'treffer'
         && (meer.versenkte || []).some((v) => v.felder.some((f) => f.x === x && f.y === y));
+      const gefunden = zeigeMinen
+        ? (meer.minen || []).find((m) => m.x === x && m.y === y) : null;
+      const mine = gefunden && (zeigeMinen === 'alle' || gefunden.ausgeloest) ? gefunden : null;
       const teile = ['zelle'];
       if (schiff && !schuss) teile.push('zelle--schiff');
       if (schuss === 'wasser') teile.push('zelle--daneben');
       if (schuss === 'treffer') teile.push(wrack ? 'zelle--wrack' : 'zelle--treffer');
       if (letzter && letzter.x === x && letzter.y === y) teile.push('zelle--letzter');
-      const frei = klickbar && !schuss;
+      if (istMarkiert(x, y)) teile.push('zelle--markiert');
+      if (istVorschau(x, y)) teile.push('zelle--vorschau');
+      if (mine) teile.push(mine.ausgeloest ? 'zelle--mine-weg' : 'zelle--mine');
+      const frei = klickbar && (!schuss || istMarkiert(x, y));
       if (frei) teile.push('zelle--frei');
-      zellen.push(`<button class="${teile.join(' ')}" ${frei ? '' : 'disabled'}`
+      zellen.push(`<button class="${teile.join(' ')}" ${klickbar ? '' : 'disabled'}`
         + ` data-x="${x}" data-y="${y}" aria-label="${feldName(x, y)}"></button>`);
     }
   }
-  return `<div class="meer ${klasse}">${zellen.join('')}</div>`;
+  // Radarbefunde: eine kleine Zahl auf der Mitte des abgesuchten Quadrats.
+  const marken = (meer.radare || []).map((r) =>
+    `<span class="radarmarke" style="--rx:${r.x + 1};--ry:${r.y + 1}"
+      title="Radar: ${r.anzahl}">${r.anzahl}</span>`).join('');
+  return `<div class="meer ${klasse}" style="--spalten:${breite + 1}">`
+    + `${zellen.join('')}${marken}</div>`;
 }
 
 /** Die Flottenliste — welche Schiffe stehen noch, welche sind weg. */
@@ -1655,7 +1995,7 @@ function flottenLeiste(meer, { alsGegner = false } = {}) {
   const offenVersenkt = versenkteLaengen.slice();
   const offenGelegt = gelegt.slice();
 
-  for (const laenge of LAENGEN) {
+  for (const laenge of flottenLaengen(meer)) {
     const iw = offenVersenkt.indexOf(laenge);
     const weg = iw >= 0;
     if (weg) offenVersenkt.splice(iw, 1);
@@ -2005,7 +2345,7 @@ function renderKopplung() {
 
 /** Welche Länge kommt als Nächstes dran? */
 function naechsteLaenge(meer) {
-  const fehlt = LAENGEN.slice();
+  const fehlt = flottenLaengen(meer).slice();
   for (const s of meer.schiffe) {
     const i = fehlt.indexOf(s.laenge);
     if (i >= 0) fehlt.splice(i, 1);
@@ -2034,7 +2374,7 @@ function renderLegen() {
       </div>
       <div class="scroll"><div class="meerfeld">
         <div class="meertitel">Dein Meer</div>
-        ${meerGitter(meer, { zeigeSchiffe: true, klickbar: false })}
+        ${meerGitter(meer, { zeigeSchiffe: true, klickbar: false, zeigeMinen: 'alle' })}
         ${flottenLeiste(meer)}
         <div class="leiste">
           <div class="sagt">
@@ -2127,15 +2467,23 @@ function renderSchiessen() {
   const gegner = andere(wer);
   const amZug = einHandy() || stand.dran === ui.meinIndex;
   const l = stand.letzterSchuss;
+  const gegnerMeer = stand.meere[andere(stand.dran)];
 
   const meineUebrig = nochUebrig(stand.meere[wer]);
-  const fremdUebrig = LAENGEN.length - (stand.meere[gegner].versenkte || []).length;
+  const flotteN = flottenLaengen(stand.meere[gegner]).length;
+  const fremdUebrig = flotteN - (stand.meere[gegner].versenkte || []).length;
+  const salveN = salveGroesse(stand);
+  const vorrat = waffenVorrat(stand, stand.dran);
+  const hatWaffen = stand.regeln.waffen;
+  // Beim Minenlegen zielt man auf das **eigene** Meer, nicht auf das fremde.
+  const zieltAufEigenes = ui.waffe === 'mine';
 
   app.innerHTML = `
     <div class="screen">
       <div class="kopf">
         <div class="titel">
-          <div class="ober">Partie ${stand.partie} · ${stand.siege[0]} : ${stand.siege[1]}</div>
+          <div class="ober">${esc(modusInfo().titel)} · Partie ${stand.partie}
+            · ${stand.siege[0]} : ${stand.siege[1]}</div>
           <h1>${amZug ? `${name(stand.dran)} schießt` : `${name(stand.dran)} ist dran`}</h1>
         </div>
         <div class="werkzeuge">
@@ -2145,26 +2493,59 @@ function renderSchiessen() {
       </div>
       <div class="scroll"><div class="meerfeld">
         <div class="meerspalte">
-          <div class="meertitel">Meer von ${name(andere(stand.dran))} · noch ${
-  LAENGEN.length - (stand.meere[andere(stand.dran)].versenkte || []).length} Schiffe</div>
-          ${meerGitter(stand.meere[andere(stand.dran)], {
-    zeigeSchiffe: false, klickbar: amZug && !vorbei(stand), letzter: l,
-  })}
+          <div class="meertitel">${zieltAufEigenes
+    ? `Dein Meer — wohin mit der Mine?`
+    : `Meer von ${name(andere(stand.dran))} · noch ${
+      flotteN - (gegnerMeer.versenkte || []).length} Schiffe`}</div>
+          ${zieltAufEigenes
+    ? meerGitter(stand.meere[stand.dran], {
+      zeigeSchiffe: true, klickbar: amZug, zeigeMinen: 'alle',
+    })
+    : meerGitter(gegnerMeer, {
+      zeigeSchiffe: false, klickbar: amZug && !vorbei(stand), letzter: l,
+      markiert: stand.salve || [], zeigeMinen: 'ausgeloest',
+    })}
         </div>
-        ${einHandy() ? '' : `
+        ${einHandy() || zieltAufEigenes ? '' : `
         <div class="meerspalte">
           <div class="meertitel">Dein Meer · noch ${meineUebrig} Schiffe</div>
-          ${meerGitter(stand.meere[wer], { zeigeSchiffe: true, klickbar: false, klasse: 'meer--klein' })}
+          ${meerGitter(stand.meere[wer], {
+    zeigeSchiffe: true, klickbar: false, klasse: 'meer--klein', zeigeMinen: 'alle',
+  })}
         </div>`}
         <div class="leiste">
           <div class="sagt">
             <div class="zeile1">${meldung()}</div>
             <div class="zeile2">${einHandy()
-    ? `Deine Flotte: noch ${meineUebrig} von ${LAENGEN.length}.`
-    : `Gegenüber: noch ${fremdUebrig} von ${LAENGEN.length}.`}</div>
+    ? `Deine Flotte: noch ${meineUebrig} von ${flotteN}.`
+    : `Gegenüber: noch ${fremdUebrig} von ${flotteN}.`}</div>
           </div>
         </div>
-        ${einHandy() ? `<div class="wrap" style="padding-top:0">
+        ${amZug && !vorbei(stand) && salveN > 0 ? `
+        <div class="wrap" style="padding-top:0">
+          <button class="btn btn--signal" id="feuern"
+            ${(stand.salve || []).length >= Math.min(salveN, freieFelder(gegnerMeer)) ? '' : 'disabled'}>
+            Salve abfeuern (${(stand.salve || []).length} / ${salveN})</button>
+        </div>` : ''}
+        ${amZug && !vorbei(stand) && hatWaffen ? `
+        <div class="waffenleiste">
+          ${ui.waffe ? `<button class="waffe" id="waffeZurueck">Abbrechen</button>` : ''}
+          <button class="waffe${ui.waffe === 'luftschlag' ? ' waffe--an' : ''}"
+            id="wLuftschlag" ${vorrat.luftschlag ? '' : 'disabled'}>
+            Luftschlag <span class="zahl">${vorrat.luftschlag}</span></button>
+          <button class="waffe${ui.waffe === 'radar' ? ' waffe--an' : ''}"
+            id="wRadar" ${vorrat.radar ? '' : 'disabled'}>
+            Radar <span class="zahl">${vorrat.radar}</span></button>
+          <button class="waffe${ui.waffe === 'mine' ? ' waffe--an' : ''}"
+            id="wMine" ${vorrat.mine ? '' : 'disabled'}>
+            Mine <span class="zahl">${vorrat.mine}</span></button>
+        </div>
+        ${ui.waffe === 'luftschlag' ? `
+        <div class="waffenleiste">
+          <button class="waffe${ui.waffeQuer ? ' waffe--an' : ''}" id="wQuer">▬ quer</button>
+          <button class="waffe${ui.waffeQuer ? '' : ' waffe--an'}" id="wLaengs">▮ längs</button>
+        </div>` : ''}` : ''}
+        ${einHandy() && !zieltAufEigenes ? `<div class="wrap" style="padding-top:0">
           <button class="btn btn--geist" id="meineFlotte">Meine Flotte ansehen</button>
         </div>` : ''}
       </div></div>
@@ -2177,28 +2558,102 @@ function renderSchiessen() {
     ui.halter = andere(stand.dran);      // erzwingt die Übergabe
     render();
   });
+  app.querySelector('#feuern')?.addEventListener('click', feuernTippen);
+  const waffeWaehlen = (was) => { ui.waffe = ui.waffe === was ? null : was; render(); };
+  app.querySelector('#wLuftschlag')?.addEventListener('click', () => waffeWaehlen('luftschlag'));
+  app.querySelector('#wRadar')?.addEventListener('click', () => waffeWaehlen('radar'));
+  app.querySelector('#wMine')?.addEventListener('click', () => waffeWaehlen('mine'));
+  app.querySelector('#waffeZurueck')?.addEventListener('click', () => { ui.waffe = null; render(); });
+  app.querySelector('#wQuer')?.addEventListener('click', () => { ui.waffeQuer = true; render(); });
+  app.querySelector('#wLaengs')?.addEventListener('click', () => { ui.waffeQuer = false; render(); });
   if (amZug && !vorbei(stand)) {
-    app.querySelectorAll('.zelle--frei').forEach((z) => {
-      z.onclick = () => schussTippen(Number(z.dataset.x), Number(z.dataset.y));
+    app.querySelectorAll('.zelle[data-x]').forEach((z) => {
+      z.onclick = () => feldTippen(Number(z.dataset.x), Number(z.dataset.y));
     });
   }
+}
+
+/** Wie viele Felder sind auf diesem Meer noch unbeschossen? */
+function freieFelder(meer) {
+  const { breite, hoehe } = masse(meer);
+  let n = 0;
+  for (let x = 0; x < breite; x++) {
+    for (let y = 0; y < hoehe; y++) if (!meer.schuesse[`${x},${y}`]) n += 1;
+  }
+  return n;
 }
 
 function meldung() {
   const l = stand.letzterSchuss;
   if (vorbei(stand)) return `${name(stand.fertig)} hat die Flotte versenkt.`;
+  if (ui.waffenFehler) return `<span class="senk">${esc(ui.waffenFehler)}</span>`;
+  if (ui.waffe === 'luftschlag') return 'Luftschlag: linkes oberes der drei Felder antippen.';
+  if (ui.waffe === 'radar') return 'Radar: Mitte des Quadrats antippen, das abgesucht wird.';
+  if (ui.waffe === 'mine') return 'Mine: ein Feld im eigenen Meer antippen.';
+  const w = stand.letzteWaffe;
+  if (w && (!l || w.spieler !== undefined)) {
+    if (w.art === 'radar' && w.spieler === stand.dran) {
+      return `<span class="treff">Radar bei ${feldName(w.x, w.y)}: ${w.anzahl} Schiffsfelder.</span>`;
+    }
+  }
+  if (salveGroesse(stand) > 0 && !(stand.salve || []).length) {
+    return `Salve: ${salveGroesse(stand)} Felder antippen, dann feuern.`;
+  }
   if (!l) return 'Ein Feld antippen.';
+  if (l.mine) return `<span class="senk">${feldName(l.x, l.y)} — Mine! Ein Zug ausgesetzt.</span>`;
   const feld = feldName(l.x, l.y);
   if (l.versenkt) return `<span class="senk">${feld} — versenkt!</span>`;
   if (l.treffer) return `<span class="treff">${feld} — Treffer.</span> Noch einmal.`;
   return `${feld} — Wasser.`;
 }
 
+/**
+ * Ein Feld antippen. Was dabei passiert, hängt davon ab, was gerade ansteht:
+ * eine gezielte Waffe, eine Salve zum Vormerken, oder ein gewöhnlicher Schuss.
+ */
+function feldTippen(x, y) {
+  if (ui.waffe) { waffeTippen(x, y); return; }
+  if (salveGroesse(stand) > 0) {
+    if (!tun('markieren', { x, y })) { render(); return; }
+    markieren(stand, x, y);
+    buzz(6);
+    nachAenderung();
+    return;
+  }
+  schussTippen(x, y);
+}
+
 function schussTippen(x, y) {
   if (!tun('schiessen', { x, y })) { render(); return; }
   const was = schiessen(stand, x, y);
   if (!was) return;
-  buzz(was.versenkt ? [30, 60, 30] : was.treffer ? 24 : 8);
+  buzz(was.mine ? [40, 60, 40, 60] : was.versenkt ? [30, 60, 30] : was.treffer ? 24 : 8);
+  nachAenderung();
+}
+
+function feuernTippen() {
+  if (!tun('feuern')) { render(); return; }
+  try { salveFeuern(stand); } catch { render(); return; }
+  buzz([25, 40, 25]);
+  nachAenderung();
+}
+
+function waffeTippen(x, y) {
+  const art = ui.waffe;
+  const wert = { x, y, quer: ui.waffeQuer };
+  if (!tun('waffe', { art, ...wert })) { ui.waffe = null; render(); return; }
+  try {
+    if (art === 'luftschlag') luftschlag(stand, x, y, ui.waffeQuer);
+    else if (art === 'radar') radar(stand, x, y);
+    else if (art === 'mine') mineLegen(stand, x, y);
+  } catch (fehler) {
+    ui.waffenFehler = fehler.message;
+    render();
+    return;
+  }
+  ui.waffe = null;
+  ui.waffenFehler = '';
+  buzz(art === 'luftschlag' ? [30, 40, 30, 40, 30] : [15, 30]);
   nachAenderung();
 }
 
@@ -2227,7 +2682,7 @@ function renderMeineFlotte() {
   const l = overlayHuelle(`
     <h2>Deine Flotte, ${name(wer)}</h2>
     <p>Was die Gegenseite bisher getroffen hat.</p>
-    ${meerGitter(meer, { zeigeSchiffe: true, klickbar: false })}
+    ${meerGitter(meer, { zeigeSchiffe: true, klickbar: false, zeigeMinen: 'alle' })}
     ${flottenLeiste(meer)}
     <div class="knopfsaeule"><button class="btn btn--signal" id="zu">Zurück zum Schießen</button></div>`);
   l.querySelector('#zu').onclick = () => {
@@ -2310,6 +2765,28 @@ function renderRegeln() {
       klein das eigene. Die Schiffe der Gegenseite werden nie mitgeschickt — nur Treffer,
       Wasser und was schon versenkt ist.</p>
 
+    <h3>Die Fassungen</h3>
+    <ul>${MODI.map((m) => `<li><b>${esc(m.titel)}</b> — ${esc(m.zeile)}</li>`).join('')}</ul>
+
+    <h3>Salve</h3>
+    <p>Statt einem Schuss gibst du <b>so viele auf einmal ab, wie du selbst noch Schiffe
+      hast</b>. Du tippst die Felder an — sie werden markiert, mehr passiert noch nicht —
+      und drückst dann auf <em>Salve abfeuern</em>. Erst danach erfährst du, was getroffen
+      hat. Wer Schiffe verliert, schießt weniger: das Spiel dreht sich schneller.</p>
+
+    <h3>Sonderwaffen</h3>
+    <p>Jede Seite hat jede der drei Waffen <b>genau einmal</b>. Der Einsatz kostet den
+      ganzen Zug — auch ein Volltreffer bringt keinen Nachschuss.</p>
+    <ul>
+      <li><b>Luftschlag</b> — drei Felder in einer Reihe, quer oder längs. Du tippst das
+        erste an.</li>
+      <li><b>Radar</b> — sagt dir, <b>wie viele</b> Schiffsfelder in einem 3 × 3-Quadrat
+        liegen. Nicht wo. Die Zahl bleibt auf dem Brett stehen; die Gegenseite sieht sie
+        auch — in der Papierfassung müsste sie die Frage ja beantworten.</li>
+      <li><b>Mine</b> — legst du auf dein <b>eigenes</b> Meer. Sie bleibt geheim; wer
+        daraufschießt, <b>setzt einen Zug aus</b>. Danach ist sie für beide sichtbar.</li>
+    </ul>
+
     <div class="knopfsaeule"><button class="btn btn--signal" id="zu">Verstanden</button></div>`);
   l.querySelector('#zu').onclick = () => { ui.overlay = null; render(); };
 }
@@ -2346,6 +2823,7 @@ function renderMenue() {
     ? '<button class="btn btn--geist" id="zweiGeraete">Auf zwei Handys spielen</button>'
     : '<button class="btn btn--geist" id="trennen">Verbindung trennen</button>'}
       <button class="btn btn--geist" id="neuePartie">Neue Partie</button>
+      <button class="btn btn--geist" id="andereFassung">Andere Fassung wählen</button>
       <button class="btn btn--geist" id="code">Punktestand sichern oder laden</button>
       <button class="btn btn--geist" id="sichern">Spiel als Datei sichern</button>
       <button class="btn btn--geist" id="nullen">Siege zurücksetzen</button>
@@ -2380,6 +2858,14 @@ function renderMenue() {
     ui.overlay = null;
     nachAenderung();
   };
+  l.querySelector('#andereFassung')?.addEventListener('click', () => {
+    ui.modusWahl = stand.modusId || 'klassisch';
+    ui.overlay = null;
+    stand = null;
+    ui.screen = 'start';
+    try { localStorage.removeItem(KEY); } catch { /* privater Modus */ }
+    render();
+  });
   l.querySelector('#code').onclick = () => { ui.overlay = 'code'; render(); };
   l.querySelector('#sichern').onclick = async (e) => {
     e.currentTarget.disabled = true;
