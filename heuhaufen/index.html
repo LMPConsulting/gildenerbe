@@ -4766,11 +4766,23 @@ async function seitenQuelltext() {
   ].join('\n');
 }
 
+let downloadsVersprechen = null;
+function downloadsFaehigkeit() {
+  if (!downloadsVersprechen) {
+    const c = typeof window !== 'undefined' ? window.claude : null;
+    downloadsVersprechen = c && typeof c.use === 'function'
+      ? Promise.resolve(c.use('downloads')).catch(() => null)
+      : Promise.resolve(null);
+  }
+  return downloadsVersprechen;
+}
+
 async function dateiSichern() {
   const name = `Heuhaufen-Ladung-${stand.ladung}.html`;
   const html = await seitenQuelltext();
   if (!html) { toast('Die Datei lässt sich hier nicht zusammenbauen. In der gebauten Fassung geht es.', 'warn'); return; }
-  const dl = typeof window !== 'undefined' && window.claude ? window.claude.downloads : null;
+  // Im Artifact-Viewer gibt es Downloads nur über die Fähigkeit "downloads"; sonst null.
+  const dl = await downloadsFaehigkeit();
   if (dl) {
     try {
       await dl.save({ filename: name, data: html });
@@ -4859,6 +4871,7 @@ function anderesFenster() {
 
 function start() {
   let alteFassung = false;
+  downloadsFaehigkeit();
   try {
     klangStumm(localStorage.getItem(TON_KEY) === 'aus');
     if (localStorage.getItem('heuhaufen-stand-v1')) {
