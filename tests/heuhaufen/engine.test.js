@@ -606,6 +606,48 @@ describe('Speichern und Abwesenheit', () => {
   });
 });
 
+describe('Alte Stände und kurze Pausen', () => {
+  it('erstattet entfernte Forschung und Maschinen aus Fassung 2 und rechnet die Mission um', () => {
+    const s = neuerStand(3);
+    const alt = JSON.parse(speichern(s));
+    alt.version = 2;
+    alt.geld = 100;
+    alt.tech = { ...alt.tech, lange_halle: 2, zweite_halle: 1, arbeitslampen: 3, heugabel: 1 };
+    alt.maschinen = { dampf: 2, rechen: 1 };
+    alt.aus = { dampf: true };
+    alt.mission = 13; // "Bau einen Scanner" in der alten Liste
+    const neu = laden(JSON.stringify(alt));
+    expect(neu).not.toBeNull();
+    const erwartet = 2000 + 2000 * 1.9 + 810000 + 9900 * 2.5 + 9900 * 2.5 * 2.5 + 32000 + 32000 * 1.18;
+    expect(neu.geld).toBeCloseTo(100 + Math.round(erwartet), 0);
+    expect(neu.erstattet).toBe(Math.round(erwartet));
+    expect(neu.tech.lange_halle).toBeUndefined();
+    expect(neu.tech.arbeitslampen).toBe(1);
+    expect(neu.maschinen.dampf).toBeUndefined();
+    expect(neu.aus.dampf).toBeUndefined();
+    expect(MISSIONEN[neu.mission].text).toBe('Bau einen Scanner');
+    expect(JSON.parse(speichern(neu)).erstattet).toBeUndefined();
+    expect(JSON.parse(speichern(neu)).version).toBe(3);
+  });
+
+  it('meldet Funde auch nach einer kurzen Pause und kühlt den Sauger nur so weit, wie Zeit verging', () => {
+    const s = neuerStand(3);
+    freischalten(s, 'drohne', 'sauger');
+    s.drohnen = 3;
+    s.haufen.entfernt = s.nadeln[0].tiefe - 5;
+    s.sauger.hitze = 1; s.sauger.heiss = true;
+    s.zuletzt = 0;
+    const b = offlineNachholen(s, 20 * 1000);
+    expect(b.kurz).toBe(true);
+    expect(b.ereignisse.some((e) => e.typ === 'nadel')).toBe(true);
+    s.sauger.hitze = 1; s.sauger.heiss = true;
+    s.zuletzt = 0;
+    offlineNachholen(s, 200);
+    expect(s.sauger.heiss).toBe(true);
+    expect(s.sauger.hitze).toBeGreaterThan(0.9);
+  });
+});
+
 describe('Zahlen', () => {
   it('schreibt deutsch, kürzt große Zahlen und bricht nicht zwischen Zahl und Einheit um', () => {
     expect(zahl(1234567)).toBe('1,23 Mio.');

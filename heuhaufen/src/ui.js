@@ -11,7 +11,7 @@ import {
   maschineFrei, maschinenKosten, maschineKaufen, maschineAbbauen, maschineUmschalten, plaetzeBelegt,
   platzFrei, anzahl, fabrik, drohneKaufen, drohnenKosten, nadelnGefunden, alleNadeln, artenGefunden,
   detektor, rest, stichMenge, taschePlatz, preisRoh, produktPreis, hatBand, speichern, laden,
-  offlineNachholen, werkzeugWaehlen, bestesWerkzeug, werkzeugFrei, missionStand, auftrag, auftragLohn,
+  offlineNachholen, werkzeugWaehlen, werkzeugFrei, missionStand, auftrag, auftragLohn,
   auftragAblehnen, ladungMoeglich, ladungBestellen, ladungPreis, ladungGroesse, kreditAufschlag,
   NADELN_JE_LADUNG,
 } from './engine.js';
@@ -338,6 +338,7 @@ function bestellen(aufRechnung) {
 
 function abwesenheitsbericht(b) {
   if (!b) return;
+  if (b.kurz) { ereignisse(b.ereignisse); return; }
   const wer = b.drohnenAllein ? 'Die Drohnen haben' : stand.drohnen ? 'Halle und Drohnen haben' : 'Die Halle hat';
   const zeilen = [`${wer} ${halme(b.halme)} Halme abgetragen und ${geld(b.verdient)} verdient.`];
   if (b.verdient > b.geld + 0.01) zeilen.push(`Davon gingen ${geld(b.verdient - b.geld)} an die Schulden.`);
@@ -397,16 +398,16 @@ function bildHaufen() {
   const missionText = h('span', { class: 'missiontext' });
   const missionLohn = h('span', { class: 'missionlohn' });
   const missionBalken = h('div', { class: 'fuellung' });
-  const mission = h('div', { class: 'mission' }, sym(SYM.mission), h('div', { class: 'missionkern' },
+  const mission = h('div', { class: 'mission', 'aria-live': 'polite' }, sym(SYM.mission), h('div', { class: 'missionkern' },
     h('div', { class: 'missionzeile' }, missionText, missionLohn), h('div', { class: 'missionbalken' }, missionBalken)));
   const hinweisZeile = h('div', { class: 'hinweis' });
   const taschenFuellung = h('div', { class: 'fuellung' });
   const taschenText = h('span', {});
-  const tasche = h('div', { class: 'balken tasche' }, taschenFuellung, sym(SYM.tasche), taschenText);
+  const tasche = h('div', { class: 'balken tasche', role: 'progressbar', 'aria-label': 'Tasche', 'aria-valuemin': '0' }, taschenFuellung, sym(SYM.tasche), taschenText);
   const ausdauerFuellung = h('div', { class: 'fuellung' });
-  const ausdauer = h('div', { class: 'balken ausdauer', title: 'Ausdauer' }, ausdauerFuellung, sym(SYM.ausdauer));
+  const ausdauer = h('div', { class: 'balken ausdauer', title: 'Ausdauer', role: 'progressbar', 'aria-label': 'Ausdauer', 'aria-valuemin': '0', 'aria-valuemax': '100' }, ausdauerFuellung, sym(SYM.ausdauer));
   const hitzeFuellung = h('div', { class: 'fuellung' });
-  const hitze = h('div', { class: 'balken hitze', title: 'Hitze des Saugers' }, hitzeFuellung, h('span', {}, 'Hitze'));
+  const hitze = h('div', { class: 'balken hitze', title: 'Hitze des Saugers', role: 'progressbar', 'aria-label': 'Hitze des Saugers', 'aria-valuemin': '0', 'aria-valuemax': '100' }, hitzeFuellung, h('span', {}, 'Hitze'));
   const werkzeugSchild = h('div', { class: 'werkzeugschild' });
   const maschinenZeile = h('div', { class: 'maschinenzeile' });
   const unten = h('div', { class: 'szeneunten' }, h('div', { class: 'balkenreihe' }, tasche, ausdauer, hitze),
@@ -543,6 +544,10 @@ function bildHaufen() {
     setzeText(taschenText, `${halme(stand.tasche)} / ${halme(platz)}`);
     schalte(tasche, 'voll', stand.tasche >= platz);
     ausdauerFuellung.style.width = `${Math.min(100, (stand.ausdauer / w.ausdauer) * 100)}%`;
+    tasche.setAttribute('aria-valuemax', String(Math.round(platz)));
+    tasche.setAttribute('aria-valuenow', String(Math.round(stand.tasche)));
+    ausdauer.setAttribute('aria-valuenow', String(Math.round((stand.ausdauer / w.ausdauer) * 100)));
+    hitze.setAttribute('aria-valuenow', String(Math.round(stand.sauger.hitze * 100)));
     schalte(ausdauer, 'leer', stand.ausdauer < w.ausdauerKosten);
     hitze.hidden = stand.werkzeug !== 'sauger' && stand.sauger.hitze <= 0;
     hitzeFuellung.style.width = `${Math.round(stand.sauger.hitze * 100)}%`;
@@ -550,7 +555,7 @@ function bildHaufen() {
     // Was in der Halle arbeitet, steht als Zeile unten im Bild, nicht auf die Leinwand gemalt.
     const zaehl = [['arm', 'Arm', 'Arme'], ['rechen', 'Rechen', 'Rechen'], ['generator', 'Generator', 'Generatoren']]
       .filter(([id]) => stand.maschinen[id] > 0)
-      .map(([id, eins, viele]) => `${stand.maschinen[id]} ${stand.maschinen[id] === 1 ? eins : viele}`);
+      .map(([id, eins, viele]) => `${stand.maschinen[id]} ${stand.maschinen[id] === 1 ? eins : viele}${stand.aus[id] ? ' (aus)' : ''}`);
     if (stand.drohnen) zaehl.push(`${stand.drohnen} ${stand.drohnen === 1 ? 'Drohne' : 'Drohnen'}`);
     setzeText(maschinenZeile, zaehl.join(' · '));
     maschinenZeile.hidden = !zaehl.length;
@@ -1039,7 +1044,7 @@ function bildForschung() {
         karte.classList.add('gekauft');
         if (t.effekt.some((e) => e[0] === 'frei') && techStufe(stand, id) === 1) toast(`${t.name} freigeschaltet.`, 'gut');
         // Wer die Heugabel kauft, will nicht weiter mit dem Spaten graben.
-        if (stand.werkzeug === 'spaten' && bestesWerkzeug(werte(stand)) !== 'spaten') werkzeugWaehlen(stand, bestesWerkzeug(werte(stand)));
+        if (id === 'heugabel' && stand.werkzeug === 'spaten') werkzeugWaehlen(stand, 'heugabel');
       } else klang.fehler();
       blattAktualisieren();
     } });
@@ -1328,13 +1333,18 @@ function schleife() {
         } else if (d.staerke <= 0) ui.naechsterPiep = jetzt;
       }
 
-      if (ui.bildschirm && ui.bildschirm.zeichnen) ui.bildschirm.zeichnen(dt);
+      // Speichern und Anzeige zuerst: ein Fehler beim Zeichnen darf beides nie aufhalten.
+      if (jetzt - ui.gespeichert > 5000) sichern();
       if (jetzt - letzteAnzeige > 200) {
         letzteAnzeige = jetzt;
         kopfAktualisieren();
         if (ui.bildschirm) ui.bildschirm.aktualisieren();
       }
-      if (jetzt - ui.gespeichert > 5000) sichern();
+      if (ui.bildschirm && ui.bildschirm.zeichnen) {
+        try { ui.bildschirm.zeichnen(dt); } catch (fehler) {
+          if (!ui.zeichenFehler) { ui.zeichenFehler = true; if (typeof console !== 'undefined') console.error(fehler); }
+        }
+      }
     } catch (fehler) {
       // Ein Fehler in einem Bild darf nicht das ganze Spiel anhalten.
       if (typeof console !== 'undefined') console.error(fehler);
@@ -1387,6 +1397,7 @@ function start() {
   if (neu) einfuehrung();
   else abwesenheitsbericht(offlineNachholen(stand));
   if (neu && alteFassung) toast('Das Spiel wurde umgebaut. Der alte Spielstand passt nicht mehr, es geht von vorn los.', 'warn');
+  if (stand.erstattet) toast(`Der Forschungsbaum wurde umgebaut. Für entfernte Forschung und Maschinen gab es ${geld(stand.erstattet)} zurück.`, 'gut');
   sichern();
 
   document.addEventListener('visibilitychange', () => {

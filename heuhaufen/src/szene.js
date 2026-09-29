@@ -40,6 +40,18 @@ function leinwand(canvas) {
   return g;
 }
 
+/** roundRect gibt es erst ab iOS 16 und Chrome 99; darunter von Hand. */
+function rundRect(c, x, y, w, h, r) {
+  if (typeof c.roundRect === 'function') { c.roundRect(x, y, w, h, r); return; }
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+
 function puffer(g) {
   const c = document.createElement('canvas');
   c.width = Math.max(1, g.w * g.dpr);
@@ -495,7 +507,7 @@ export function haufenSzene(canvas) {
     if (bis - von < 20) return;
     const bh = 9 * S;
     ctx.fillStyle = '#2a2927';
-    ctx.beginPath(); ctx.roundRect(von, y, bis - von, bh, bh / 2); ctx.fill();
+    ctx.beginPath(); rundRect(ctx, von, y, bis - von, bh, bh / 2); ctx.fill();
     ctx.fillStyle = '#8b8883';
     ctx.fillRect(von + bh / 2, y, bis - von - bh, 1.8 * S);
     ctx.fillRect(von + bh / 2, y + bh - 1.8 * S, bis - von - bh, 1.8 * S);
@@ -707,7 +719,7 @@ export function haufenSzene(canvas) {
     const rot = Math.round(200 + info.hitze * 55);
     const gruen = Math.round(60 + (1 - info.hitze) * 120);
     ctx.fillStyle = `rgb(${rot},${gruen},40)`;
-    ctx.beginPath(); ctx.roundRect(sx - 14 * S, sy - 14 * S, 30 * S, 20 * S, 4 * S); ctx.fill();
+    ctx.beginPath(); rundRect(ctx, sx - 14 * S, sy - 14 * S, 30 * S, 20 * S, 4 * S); ctx.fill();
     ctx.fillStyle = '#222';
     ctx.beginPath(); ctx.arc(sx - 8 * S, sy + 7 * S, 4.5 * S, 0, Math.PI * 2); ctx.arc(sx + 10 * S, sy + 7 * S, 4.5 * S, 0, Math.PI * 2); ctx.fill();
     if (info.saugt) {

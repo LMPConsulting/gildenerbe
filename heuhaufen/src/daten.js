@@ -208,7 +208,7 @@ export const TECH = [
   k('daecher', 'hofbau', 'Dach-Pläne', 1, 1100, 1, ['waende'], [['maschinenTempo', '*', 1.03], ['frei', 'daecher']],
     'Ein Dach über den Maschinen. Sie laufen 3 % schneller.'),
   k('arbeitslampen', 'hofbau', 'Arbeitslampen', 1, 2400, 1, ['daecher'], [['maschinenTempo', '*', 1.03]],
-    'Lampen über den Maschinen. Nachts sieht man mehr, und alles läuft 3 % runder.'),
+    'Lampen über den Maschinen. Alles läuft 3 % schneller, weil man sieht, was man tut.'),
   k('heutreppe', 'hofbau', 'Heutreppe', 1, 900, 1, ['plattform'], [['plaetze', '+', 6]],
     'Eine Treppe auf die Plattform. Oben ist Platz für sechs Maschinen mehr.'),
   k('heulift', 'hofbau', 'Heulift', 1, 2700, 1, ['heutreppe'], [['plaetze', '+', 6], ['verteilung', '+', 0.05]],
@@ -229,7 +229,7 @@ export const TECH = [
   k('vorrangarm', 'linien', 'Vorrangarm', 1, 300, 1, ['weiche'], [['verteilung', '+', 0.1]],
     'Ein Arm, der eine Seite bevorzugt. Die wichtigste Maschine bekommt zuerst.'),
   k('rohrwerfer', 'linien', 'Rohrwerfer-Pläne', 1, 260, 1, ['weiche'], [['frei', 'rohrwerfer']],
-    'Schießt Knäuel durch ein Rohr zur zweiten Linie. Jeder Werfer ist eine Strecke mehr.'),
+    'Schießt Heu durch ein Rohr zu einer zweiten Linie. Jeder Werfer macht das Band breiter.'),
   // Strom
   k('elektrizitaet', 'strom', 'Elektrizität', 1, 500, 1, ['foerderband'], [['frei', 'generator']],
     'Ein Heu-Generator. Er frisst Halme vom Band und macht daraus Strom.'),
@@ -492,7 +492,7 @@ export const AUFTRAG_PAUSE = 20;
 
 // Das Missionsbuch: immer eine offene Aufgabe, der Reihe nach. Die Art sagt
 // der Engine, was sie prüft (siehe missionStand). Belohnung: Geld oder eine
-// geschenkte Maschine.
+// geschenkte Maschine (geschenk, samt ihren Plänen) oder eine geschenkte Forschungsstufe (geschenkTech).
 export const MISSIONEN = [
   { text: 'Heb etwas Heu auf', art: 'tipps', ziel: 1, geld: 1 },
   { text: 'Bring 25 Halme zum Stand', art: 'verkauft', ziel: 25, geld: 1 },

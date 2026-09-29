@@ -768,7 +768,7 @@ const TECH = [
   k('daecher', 'hofbau', 'Dach-Pläne', 1, 1100, 1, ['waende'], [['maschinenTempo', '*', 1.03], ['frei', 'daecher']],
     'Ein Dach über den Maschinen. Sie laufen 3 % schneller.'),
   k('arbeitslampen', 'hofbau', 'Arbeitslampen', 1, 2400, 1, ['daecher'], [['maschinenTempo', '*', 1.03]],
-    'Lampen über den Maschinen. Nachts sieht man mehr, und alles läuft 3 % runder.'),
+    'Lampen über den Maschinen. Alles läuft 3 % schneller, weil man sieht, was man tut.'),
   k('heutreppe', 'hofbau', 'Heutreppe', 1, 900, 1, ['plattform'], [['plaetze', '+', 6]],
     'Eine Treppe auf die Plattform. Oben ist Platz für sechs Maschinen mehr.'),
   k('heulift', 'hofbau', 'Heulift', 1, 2700, 1, ['heutreppe'], [['plaetze', '+', 6], ['verteilung', '+', 0.05]],
@@ -789,7 +789,7 @@ const TECH = [
   k('vorrangarm', 'linien', 'Vorrangarm', 1, 300, 1, ['weiche'], [['verteilung', '+', 0.1]],
     'Ein Arm, der eine Seite bevorzugt. Die wichtigste Maschine bekommt zuerst.'),
   k('rohrwerfer', 'linien', 'Rohrwerfer-Pläne', 1, 260, 1, ['weiche'], [['frei', 'rohrwerfer']],
-    'Schießt Knäuel durch ein Rohr zur zweiten Linie. Jeder Werfer ist eine Strecke mehr.'),
+    'Schießt Heu durch ein Rohr zu einer zweiten Linie. Jeder Werfer macht das Band breiter.'),
   // Strom
   k('elektrizitaet', 'strom', 'Elektrizität', 1, 500, 1, ['foerderband'], [['frei', 'generator']],
     'Ein Heu-Generator. Er frisst Halme vom Band und macht daraus Strom.'),
@@ -1052,7 +1052,7 @@ const AUFTRAG_PAUSE = 20;
 
 // Das Missionsbuch: immer eine offene Aufgabe, der Reihe nach. Die Art sagt
 // der Engine, was sie prüft (siehe missionStand). Belohnung: Geld oder eine
-// geschenkte Maschine.
+// geschenkte Maschine (geschenk, samt ihren Plänen) oder eine geschenkte Forschungsstufe (geschenkTech).
 const MISSIONEN = [
   { text: 'Heb etwas Heu auf', art: 'tipps', ziel: 1, geld: 1 },
   { text: 'Bring 25 Halme zum Stand', art: 'verkauft', ziel: 25, geld: 1 },
@@ -1090,7 +1090,7 @@ const MISSIONEN = [
 // Stand, damit Tests und Simulation reproduzierbar bleiben.
 
 
-const STAND_VERSION = 2;
+const STAND_VERSION = 3;
 const TECH_NACH_ID = Object.fromEntries(TECH.map((t) => [t.id, t]));
 const MASCHINE_NACH_ID = Object.fromEntries(MASCHINEN.map((m) => [m.id, m]));
 /** Welcher Knoten schaltet was frei: frei-Name → Knoten-ID. */
@@ -1562,6 +1562,7 @@ function techLage(aeste) {
 
   for (const ast of aeste) {
     const knoten = TECH.filter((t) => t.ast === ast.id);
+    if (!knoten.length) continue;
     const imAst = new Set(knoten.map((t) => t.id));
     const vater = (t) => t.braucht.find((b) => imAst.has(b)) || null;
     // Gruppen nach hinten, damit die großen Karten oben stehen.
@@ -1838,7 +1839,7 @@ function missionenPruefen(s, ereignisse) {
       if (platzFrei(s, m.geschenk)) {
         s.maschinen[m.geschenk] = anzahl(s, m.geschenk) + 1;
         s.rev++;
-        text = `${mm.name} geschenkt`;
+        text = plan && techStufe(s, plan) === 1 ? `${mm.name} samt Plänen geschenkt` : `${mm.name} geschenkt`;
       } else {
         einnahme(s, mm.kosten);
         betrag = mm.kosten;
@@ -2039,9 +2040,10 @@ function offlineNachholen(s, jetzt = Date.now()) {
     if (s.laufen <= 0) { s.laufen = 0; ankommen(s, e0); }
   }
   s.ausdauer = Math.min(w.ausdauer, s.ausdauer + w.ausdauerRegen * weg);
+  // Der Sauger kühlt in der Zeit ab, die man weg war, nicht auf einen Schlag.
   s.sauger.an = false;
-  s.sauger.hitze = 0;
-  s.sauger.heiss = false;
+  s.sauger.hitze = Math.max(0, s.sauger.hitze - weg / (w.saugerHitze * 0.6));
+  s.sauger.heiss = s.sauger.heiss && s.sauger.hitze > 0;
   const sek = Math.min(weg, w.offlineStunden * 3600);
   if (sek <= 0 || (s.drohnen === 0 && !hatBand(w))) return null;
   const geldVor = s.geld;
@@ -2053,9 +2055,10 @@ function offlineNachholen(s, jetzt = Date.now()) {
   const dt = sek / schritte;
   const ereignisse = [...e0];
   for (let i = 0; i < schritte; i++) ereignisse.push(...tick(s, dt, { offline: true }));
-  // Auch kurze Abwesenheiten zählen; erzählt wird erst ab einer halben Minute.
-  if (sek < 30) return null;
+  // Auch kurze Abwesenheiten zählen; der Bericht kommt erst ab einer halben Minute,
+  // Funde und Missionen aber immer.
   return {
+    kurz: sek < 30,
     sekunden: sek,
     abwesend: weg,
     geld: s.geld - geldVor,
@@ -2083,10 +2086,61 @@ const zahlOder = (x, ersatz) => (typeof x === 'number' && Number.isFinite(x) ? x
  * abgelehnt, Kleinigkeiten repariert: unbekannte ids fliegen raus, Zahlen
  * werden Zahlen, der Sauger ist nach dem Laden aus.
  */
+/* Was Fassung 2 noch kannte: entfernte Knoten und Maschinen mit ihrem alten Preis,
+   damit alte Stände das Geld zurückbekommen, und die alte Missionsliste zum Umrechnen. */
+const ENTFERNT_TECH = {
+  lange_halle: [2000, 1.9], hohes_dach: [19800, 1], zweite_halle: [810000, 1],
+  werfer2: [1600, 2.1], breitband: [7200, 2.8], dampf: [36000, 1],
+};
+const ENTFERNT_MASCHINE = { dampf: [32000, 1.18] };
+/** Stufen, die es nicht mehr gibt, mit altem Grundpreis, Faktor und alter Höchststufe. */
+const GEKUERZT_TECH = { arbeitslampen: [9900, 2.5] };
+const MISSIONEN_V2 = ['Heb etwas Heu auf', 'Bring 25 Halme zum Stand', 'Kauf einen Eimer', 'Kauf die Heugabel',
+  'Halte den Detektor an den Haufen', 'Verdiene 30 $', 'Feg verschüttetes Heu zusammen', 'Kauf die Förderband-Pläne',
+  'Stell einen zweiten Kolbenrechen auf', 'Kauf Elektrizität', 'Finde die erste Nadel', 'Bau ein Silo',
+  'Bau einen Greifarm', 'Bau einen Scanner', 'Erfülle einen Auftrag', 'Presse 100 Pressballen',
+  'Trag eine Million Halme ab', 'Finde drei Nadeln', 'Bohr einen Brunnen', 'Trag den Haufen zur Hälfte ab',
+  'Stell 20 Greifarme auf', 'Mach 50 Bögen Heupapier', 'Finde alle sechs Nadeln', 'Bestell eine neue Ladung',
+  'Presse 100 Öko-Ziegel', 'Finde zwölf Nadeln', 'Erforsche 200 Stufen', 'Finde alle 24 Nadelarten'];
+const summePreise = (kosten, faktor, von, bis) => {
+  let n = 0;
+  for (let i = von; i < bis; i++) n += kosten * Math.pow(faktor, i);
+  return n;
+};
+
+/** Hebt einen Stand der Fassung 2 an: Erstattung für Entferntes, Mission nach Text. */
+function vonFassung2(roh) {
+  let erstattung = 0;
+  const tech = istObjekt(roh.tech) ? roh.tech : {};
+  for (const [id, [kosten, faktor]] of Object.entries(ENTFERNT_TECH)) {
+    const n = Math.floor(zahlOder(tech[id], 0));
+    if (n > 0) erstattung += summePreise(kosten, faktor, 0, n);
+  }
+  for (const [id, [kosten, faktor]] of Object.entries(GEKUERZT_TECH)) {
+    const n = Math.floor(zahlOder(tech[id], 0));
+    const max = TECH_NACH_ID[id].stufen;
+    if (n > max) erstattung += summePreise(kosten, faktor, max, n);
+  }
+  const maschinen = istObjekt(roh.maschinen) ? roh.maschinen : {};
+  for (const [id, [kosten, faktor]] of Object.entries(ENTFERNT_MASCHINE)) {
+    const n = Math.floor(zahlOder(maschinen[id], 0));
+    if (n > 0) erstattung += summePreise(kosten, faktor, 0, n);
+  }
+  roh.geld = zahlOder(roh.geld, 0) + Math.round(erstattung);
+  const text = MISSIONEN_V2[Math.floor(zahlOder(roh.mission, 0))];
+  const neu = text ? MISSIONEN.findIndex((m) => m.text === text) : -1;
+  roh.mission = text == null ? MISSIONEN.length : Math.max(0, neu);
+  roh.version = STAND_VERSION;
+  return erstattung;
+}
+
 function laden(text) {
   let roh;
   try { roh = JSON.parse(text); } catch { return null; }
-  if (!istObjekt(roh) || roh.version !== STAND_VERSION) return null;
+  if (!istObjekt(roh)) return null;
+  let erstattung = 0;
+  if (roh.version === 2) erstattung = vonFassung2(roh);
+  if (roh.version !== STAND_VERSION) return null;
   if (!istObjekt(roh.haufen) || !Number.isFinite(roh.haufen.gesamt) || !Number.isFinite(roh.haufen.entfernt)
     || roh.haufen.gesamt <= 0) return null;
   if (!Array.isArray(roh.nadeln) || roh.nadeln.length !== NADELN_JE_LADUNG) return null;
@@ -2107,7 +2161,9 @@ function laden(text) {
       s[key] = wert;
     }
   }
-  s.tech = Object.fromEntries(Object.entries(s.tech).filter(([id, n]) => TECH_NACH_ID[id] && Number.isFinite(n) && n > 0));
+  s.tech = Object.fromEntries(Object.entries(s.tech)
+    .filter(([id, n]) => TECH_NACH_ID[id] && Number.isFinite(n) && n > 0)
+    .map(([id, n]) => [id, Math.min(Math.floor(n), TECH_NACH_ID[id].stufen)]));
   s.tech.scheune = 1;
   s.maschinen = Object.fromEntries(Object.entries(s.maschinen)
     .filter(([id, n]) => MASCHINE_NACH_ID[id] && Number.isFinite(n) && n >= 0));
@@ -2124,6 +2180,8 @@ function laden(text) {
   s.ladung = Math.max(1, Math.floor(s.ladung));
   s.stat.produziert = Object.fromEntries(Object.entries(s.stat.produziert).filter(([p, n]) => PRODUKTE[p] && Number.isFinite(n)));
   s.haufen.entfernt = Math.max(0, Math.min(s.haufen.entfernt, s.haufen.gesamt));
+  // Steckt noch eine Nadel im Haufen, darf er nicht ganz leer sein, sonst findet sie keiner.
+  if (s.nadeln.some((n) => n.zustand === 'versteckt')) s.haufen.entfernt = Math.min(s.haufen.entfernt, s.haufen.gesamt - 1);
   for (const n of s.nadeln) {
     if (n.zustand === 'versteckt' && (n.tiefe <= s.haufen.entfernt || n.tiefe > s.haufen.gesamt)) {
       n.tiefe = Math.min(s.haufen.gesamt, Math.floor(s.haufen.entfernt) + 1);
@@ -2132,6 +2190,8 @@ function laden(text) {
   s.radar = { rest: zahlOder(s.radar.rest, 0), abstand: zahlOder(s.radar.abstand, null), zeit: zahlOder(s.radar.zeit, null) };
   s.sauger = { an: false, hitze: zahlOder(s.sauger.hitze, 0), heiss: !!s.sauger.heiss };
   s.rev = 0;
+  // Nur für die Oberfläche: wird nicht gespeichert (speichern nimmt die Felder von neuerStand).
+  if (erstattung > 0) Object.defineProperty(s, 'erstattet', { value: Math.round(erstattung), enumerable: false });
   return s;
 }
 
@@ -2477,6 +2537,18 @@ function leinwand(canvas) {
     return false;
   };
   return g;
+}
+
+/** roundRect gibt es erst ab iOS 16 und Chrome 99; darunter von Hand. */
+function rundRect(c, x, y, w, h, r) {
+  if (typeof c.roundRect === 'function') { c.roundRect(x, y, w, h, r); return; }
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
 }
 
 function puffer(g) {
@@ -2934,7 +3006,7 @@ function haufenSzene(canvas) {
     if (bis - von < 20) return;
     const bh = 9 * S;
     ctx.fillStyle = '#2a2927';
-    ctx.beginPath(); ctx.roundRect(von, y, bis - von, bh, bh / 2); ctx.fill();
+    ctx.beginPath(); rundRect(ctx, von, y, bis - von, bh, bh / 2); ctx.fill();
     ctx.fillStyle = '#8b8883';
     ctx.fillRect(von + bh / 2, y, bis - von - bh, 1.8 * S);
     ctx.fillRect(von + bh / 2, y + bh - 1.8 * S, bis - von - bh, 1.8 * S);
@@ -3146,7 +3218,7 @@ function haufenSzene(canvas) {
     const rot = Math.round(200 + info.hitze * 55);
     const gruen = Math.round(60 + (1 - info.hitze) * 120);
     ctx.fillStyle = `rgb(${rot},${gruen},40)`;
-    ctx.beginPath(); ctx.roundRect(sx - 14 * S, sy - 14 * S, 30 * S, 20 * S, 4 * S); ctx.fill();
+    ctx.beginPath(); rundRect(ctx, sx - 14 * S, sy - 14 * S, 30 * S, 20 * S, 4 * S); ctx.fill();
     ctx.fillStyle = '#222';
     ctx.beginPath(); ctx.arc(sx - 8 * S, sy + 7 * S, 4.5 * S, 0, Math.PI * 2); ctx.arc(sx + 10 * S, sy + 7 * S, 4.5 * S, 0, Math.PI * 2); ctx.fill();
     if (info.saugt) {
@@ -3848,6 +3920,7 @@ function bestellen(aufRechnung) {
 
 function abwesenheitsbericht(b) {
   if (!b) return;
+  if (b.kurz) { ereignisse(b.ereignisse); return; }
   const wer = b.drohnenAllein ? 'Die Drohnen haben' : stand.drohnen ? 'Halle und Drohnen haben' : 'Die Halle hat';
   const zeilen = [`${wer} ${halme(b.halme)} Halme abgetragen und ${geld(b.verdient)} verdient.`];
   if (b.verdient > b.geld + 0.01) zeilen.push(`Davon gingen ${geld(b.verdient - b.geld)} an die Schulden.`);
@@ -3907,16 +3980,16 @@ function bildHaufen() {
   const missionText = h('span', { class: 'missiontext' });
   const missionLohn = h('span', { class: 'missionlohn' });
   const missionBalken = h('div', { class: 'fuellung' });
-  const mission = h('div', { class: 'mission' }, sym(SYM.mission), h('div', { class: 'missionkern' },
+  const mission = h('div', { class: 'mission', 'aria-live': 'polite' }, sym(SYM.mission), h('div', { class: 'missionkern' },
     h('div', { class: 'missionzeile' }, missionText, missionLohn), h('div', { class: 'missionbalken' }, missionBalken)));
   const hinweisZeile = h('div', { class: 'hinweis' });
   const taschenFuellung = h('div', { class: 'fuellung' });
   const taschenText = h('span', {});
-  const tasche = h('div', { class: 'balken tasche' }, taschenFuellung, sym(SYM.tasche), taschenText);
+  const tasche = h('div', { class: 'balken tasche', role: 'progressbar', 'aria-label': 'Tasche', 'aria-valuemin': '0' }, taschenFuellung, sym(SYM.tasche), taschenText);
   const ausdauerFuellung = h('div', { class: 'fuellung' });
-  const ausdauer = h('div', { class: 'balken ausdauer', title: 'Ausdauer' }, ausdauerFuellung, sym(SYM.ausdauer));
+  const ausdauer = h('div', { class: 'balken ausdauer', title: 'Ausdauer', role: 'progressbar', 'aria-label': 'Ausdauer', 'aria-valuemin': '0', 'aria-valuemax': '100' }, ausdauerFuellung, sym(SYM.ausdauer));
   const hitzeFuellung = h('div', { class: 'fuellung' });
-  const hitze = h('div', { class: 'balken hitze', title: 'Hitze des Saugers' }, hitzeFuellung, h('span', {}, 'Hitze'));
+  const hitze = h('div', { class: 'balken hitze', title: 'Hitze des Saugers', role: 'progressbar', 'aria-label': 'Hitze des Saugers', 'aria-valuemin': '0', 'aria-valuemax': '100' }, hitzeFuellung, h('span', {}, 'Hitze'));
   const werkzeugSchild = h('div', { class: 'werkzeugschild' });
   const maschinenZeile = h('div', { class: 'maschinenzeile' });
   const unten = h('div', { class: 'szeneunten' }, h('div', { class: 'balkenreihe' }, tasche, ausdauer, hitze),
@@ -4053,6 +4126,10 @@ function bildHaufen() {
     setzeText(taschenText, `${halme(stand.tasche)} / ${halme(platz)}`);
     schalte(tasche, 'voll', stand.tasche >= platz);
     ausdauerFuellung.style.width = `${Math.min(100, (stand.ausdauer / w.ausdauer) * 100)}%`;
+    tasche.setAttribute('aria-valuemax', String(Math.round(platz)));
+    tasche.setAttribute('aria-valuenow', String(Math.round(stand.tasche)));
+    ausdauer.setAttribute('aria-valuenow', String(Math.round((stand.ausdauer / w.ausdauer) * 100)));
+    hitze.setAttribute('aria-valuenow', String(Math.round(stand.sauger.hitze * 100)));
     schalte(ausdauer, 'leer', stand.ausdauer < w.ausdauerKosten);
     hitze.hidden = stand.werkzeug !== 'sauger' && stand.sauger.hitze <= 0;
     hitzeFuellung.style.width = `${Math.round(stand.sauger.hitze * 100)}%`;
@@ -4060,7 +4137,7 @@ function bildHaufen() {
     // Was in der Halle arbeitet, steht als Zeile unten im Bild, nicht auf die Leinwand gemalt.
     const zaehl = [['arm', 'Arm', 'Arme'], ['rechen', 'Rechen', 'Rechen'], ['generator', 'Generator', 'Generatoren']]
       .filter(([id]) => stand.maschinen[id] > 0)
-      .map(([id, eins, viele]) => `${stand.maschinen[id]} ${stand.maschinen[id] === 1 ? eins : viele}`);
+      .map(([id, eins, viele]) => `${stand.maschinen[id]} ${stand.maschinen[id] === 1 ? eins : viele}${stand.aus[id] ? ' (aus)' : ''}`);
     if (stand.drohnen) zaehl.push(`${stand.drohnen} ${stand.drohnen === 1 ? 'Drohne' : 'Drohnen'}`);
     setzeText(maschinenZeile, zaehl.join(' · '));
     maschinenZeile.hidden = !zaehl.length;
@@ -4549,7 +4626,7 @@ function bildForschung() {
         karte.classList.add('gekauft');
         if (t.effekt.some((e) => e[0] === 'frei') && techStufe(stand, id) === 1) toast(`${t.name} freigeschaltet.`, 'gut');
         // Wer die Heugabel kauft, will nicht weiter mit dem Spaten graben.
-        if (stand.werkzeug === 'spaten' && bestesWerkzeug(werte(stand)) !== 'spaten') werkzeugWaehlen(stand, bestesWerkzeug(werte(stand)));
+        if (id === 'heugabel' && stand.werkzeug === 'spaten') werkzeugWaehlen(stand, 'heugabel');
       } else klang.fehler();
       blattAktualisieren();
     } });
@@ -4838,13 +4915,18 @@ function schleife() {
         } else if (d.staerke <= 0) ui.naechsterPiep = jetzt;
       }
 
-      if (ui.bildschirm && ui.bildschirm.zeichnen) ui.bildschirm.zeichnen(dt);
+      // Speichern und Anzeige zuerst: ein Fehler beim Zeichnen darf beides nie aufhalten.
+      if (jetzt - ui.gespeichert > 5000) sichern();
       if (jetzt - letzteAnzeige > 200) {
         letzteAnzeige = jetzt;
         kopfAktualisieren();
         if (ui.bildschirm) ui.bildschirm.aktualisieren();
       }
-      if (jetzt - ui.gespeichert > 5000) sichern();
+      if (ui.bildschirm && ui.bildschirm.zeichnen) {
+        try { ui.bildschirm.zeichnen(dt); } catch (fehler) {
+          if (!ui.zeichenFehler) { ui.zeichenFehler = true; if (typeof console !== 'undefined') console.error(fehler); }
+        }
+      }
     } catch (fehler) {
       // Ein Fehler in einem Bild darf nicht das ganze Spiel anhalten.
       if (typeof console !== 'undefined') console.error(fehler);
@@ -4897,6 +4979,7 @@ function start() {
   if (neu) einfuehrung();
   else abwesenheitsbericht(offlineNachholen(stand));
   if (neu && alteFassung) toast('Das Spiel wurde umgebaut. Der alte Spielstand passt nicht mehr, es geht von vorn los.', 'warn');
+  if (stand.erstattet) toast(`Der Forschungsbaum wurde umgebaut. Für entfernte Forschung und Maschinen gab es ${geld(stand.erstattet)} zurück.`, 'gut');
   sichern();
 
   document.addEventListener('visibilitychange', () => {

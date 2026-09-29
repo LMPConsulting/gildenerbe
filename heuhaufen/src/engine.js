@@ -8,7 +8,7 @@ import {
   PRODUKTE, AUFTRAEGE, AUFTRAG_PAUSE, MISSIONEN, KUNDEN,
 } from './daten.js';
 
-export const STAND_VERSION = 2;
+export const STAND_VERSION = 3;
 export const TECH_NACH_ID = Object.fromEntries(TECH.map((t) => [t.id, t]));
 export const MASCHINE_NACH_ID = Object.fromEntries(MASCHINEN.map((m) => [m.id, m]));
 /** Welcher Knoten schaltet was frei: frei-Name → Knoten-ID. */
@@ -480,6 +480,7 @@ export function techLage(aeste) {
 
   for (const ast of aeste) {
     const knoten = TECH.filter((t) => t.ast === ast.id);
+    if (!knoten.length) continue;
     const imAst = new Set(knoten.map((t) => t.id));
     const vater = (t) => t.braucht.find((b) => imAst.has(b)) || null;
     // Gruppen nach hinten, damit die großen Karten oben stehen.
@@ -756,7 +757,7 @@ function missionenPruefen(s, ereignisse) {
       if (platzFrei(s, m.geschenk)) {
         s.maschinen[m.geschenk] = anzahl(s, m.geschenk) + 1;
         s.rev++;
-        text = `${mm.name} geschenkt`;
+        text = plan && techStufe(s, plan) === 1 ? `${mm.name} samt Plänen geschenkt` : `${mm.name} geschenkt`;
       } else {
         einnahme(s, mm.kosten);
         betrag = mm.kosten;
@@ -957,9 +958,10 @@ export function offlineNachholen(s, jetzt = Date.now()) {
     if (s.laufen <= 0) { s.laufen = 0; ankommen(s, e0); }
   }
   s.ausdauer = Math.min(w.ausdauer, s.ausdauer + w.ausdauerRegen * weg);
+  // Der Sauger kühlt in der Zeit ab, die man weg war, nicht auf einen Schlag.
   s.sauger.an = false;
-  s.sauger.hitze = 0;
-  s.sauger.heiss = false;
+  s.sauger.hitze = Math.max(0, s.sauger.hitze - weg / (w.saugerHitze * 0.6));
+  s.sauger.heiss = s.sauger.heiss && s.sauger.hitze > 0;
   const sek = Math.min(weg, w.offlineStunden * 3600);
   if (sek <= 0 || (s.drohnen === 0 && !hatBand(w))) return null;
   const geldVor = s.geld;
@@ -971,9 +973,10 @@ export function offlineNachholen(s, jetzt = Date.now()) {
   const dt = sek / schritte;
   const ereignisse = [...e0];
   for (let i = 0; i < schritte; i++) ereignisse.push(...tick(s, dt, { offline: true }));
-  // Auch kurze Abwesenheiten zählen; erzählt wird erst ab einer halben Minute.
-  if (sek < 30) return null;
+  // Auch kurze Abwesenheiten zählen; der Bericht kommt erst ab einer halben Minute,
+  // Funde und Missionen aber immer.
   return {
+    kurz: sek < 30,
     sekunden: sek,
     abwesend: weg,
     geld: s.geld - geldVor,
@@ -1001,10 +1004,61 @@ const zahlOder = (x, ersatz) => (typeof x === 'number' && Number.isFinite(x) ? x
  * abgelehnt, Kleinigkeiten repariert: unbekannte ids fliegen raus, Zahlen
  * werden Zahlen, der Sauger ist nach dem Laden aus.
  */
+/* Was Fassung 2 noch kannte: entfernte Knoten und Maschinen mit ihrem alten Preis,
+   damit alte Stände das Geld zurückbekommen, und die alte Missionsliste zum Umrechnen. */
+const ENTFERNT_TECH = {
+  lange_halle: [2000, 1.9], hohes_dach: [19800, 1], zweite_halle: [810000, 1],
+  werfer2: [1600, 2.1], breitband: [7200, 2.8], dampf: [36000, 1],
+};
+const ENTFERNT_MASCHINE = { dampf: [32000, 1.18] };
+/** Stufen, die es nicht mehr gibt, mit altem Grundpreis, Faktor und alter Höchststufe. */
+const GEKUERZT_TECH = { arbeitslampen: [9900, 2.5] };
+const MISSIONEN_V2 = ['Heb etwas Heu auf', 'Bring 25 Halme zum Stand', 'Kauf einen Eimer', 'Kauf die Heugabel',
+  'Halte den Detektor an den Haufen', 'Verdiene 30 $', 'Feg verschüttetes Heu zusammen', 'Kauf die Förderband-Pläne',
+  'Stell einen zweiten Kolbenrechen auf', 'Kauf Elektrizität', 'Finde die erste Nadel', 'Bau ein Silo',
+  'Bau einen Greifarm', 'Bau einen Scanner', 'Erfülle einen Auftrag', 'Presse 100 Pressballen',
+  'Trag eine Million Halme ab', 'Finde drei Nadeln', 'Bohr einen Brunnen', 'Trag den Haufen zur Hälfte ab',
+  'Stell 20 Greifarme auf', 'Mach 50 Bögen Heupapier', 'Finde alle sechs Nadeln', 'Bestell eine neue Ladung',
+  'Presse 100 Öko-Ziegel', 'Finde zwölf Nadeln', 'Erforsche 200 Stufen', 'Finde alle 24 Nadelarten'];
+const summePreise = (kosten, faktor, von, bis) => {
+  let n = 0;
+  for (let i = von; i < bis; i++) n += kosten * Math.pow(faktor, i);
+  return n;
+};
+
+/** Hebt einen Stand der Fassung 2 an: Erstattung für Entferntes, Mission nach Text. */
+function vonFassung2(roh) {
+  let erstattung = 0;
+  const tech = istObjekt(roh.tech) ? roh.tech : {};
+  for (const [id, [kosten, faktor]] of Object.entries(ENTFERNT_TECH)) {
+    const n = Math.floor(zahlOder(tech[id], 0));
+    if (n > 0) erstattung += summePreise(kosten, faktor, 0, n);
+  }
+  for (const [id, [kosten, faktor]] of Object.entries(GEKUERZT_TECH)) {
+    const n = Math.floor(zahlOder(tech[id], 0));
+    const max = TECH_NACH_ID[id].stufen;
+    if (n > max) erstattung += summePreise(kosten, faktor, max, n);
+  }
+  const maschinen = istObjekt(roh.maschinen) ? roh.maschinen : {};
+  for (const [id, [kosten, faktor]] of Object.entries(ENTFERNT_MASCHINE)) {
+    const n = Math.floor(zahlOder(maschinen[id], 0));
+    if (n > 0) erstattung += summePreise(kosten, faktor, 0, n);
+  }
+  roh.geld = zahlOder(roh.geld, 0) + Math.round(erstattung);
+  const text = MISSIONEN_V2[Math.floor(zahlOder(roh.mission, 0))];
+  const neu = text ? MISSIONEN.findIndex((m) => m.text === text) : -1;
+  roh.mission = text == null ? MISSIONEN.length : Math.max(0, neu);
+  roh.version = STAND_VERSION;
+  return erstattung;
+}
+
 export function laden(text) {
   let roh;
   try { roh = JSON.parse(text); } catch { return null; }
-  if (!istObjekt(roh) || roh.version !== STAND_VERSION) return null;
+  if (!istObjekt(roh)) return null;
+  let erstattung = 0;
+  if (roh.version === 2) erstattung = vonFassung2(roh);
+  if (roh.version !== STAND_VERSION) return null;
   if (!istObjekt(roh.haufen) || !Number.isFinite(roh.haufen.gesamt) || !Number.isFinite(roh.haufen.entfernt)
     || roh.haufen.gesamt <= 0) return null;
   if (!Array.isArray(roh.nadeln) || roh.nadeln.length !== NADELN_JE_LADUNG) return null;
@@ -1025,7 +1079,9 @@ export function laden(text) {
       s[key] = wert;
     }
   }
-  s.tech = Object.fromEntries(Object.entries(s.tech).filter(([id, n]) => TECH_NACH_ID[id] && Number.isFinite(n) && n > 0));
+  s.tech = Object.fromEntries(Object.entries(s.tech)
+    .filter(([id, n]) => TECH_NACH_ID[id] && Number.isFinite(n) && n > 0)
+    .map(([id, n]) => [id, Math.min(Math.floor(n), TECH_NACH_ID[id].stufen)]));
   s.tech.scheune = 1;
   s.maschinen = Object.fromEntries(Object.entries(s.maschinen)
     .filter(([id, n]) => MASCHINE_NACH_ID[id] && Number.isFinite(n) && n >= 0));
@@ -1042,6 +1098,8 @@ export function laden(text) {
   s.ladung = Math.max(1, Math.floor(s.ladung));
   s.stat.produziert = Object.fromEntries(Object.entries(s.stat.produziert).filter(([p, n]) => PRODUKTE[p] && Number.isFinite(n)));
   s.haufen.entfernt = Math.max(0, Math.min(s.haufen.entfernt, s.haufen.gesamt));
+  // Steckt noch eine Nadel im Haufen, darf er nicht ganz leer sein, sonst findet sie keiner.
+  if (s.nadeln.some((n) => n.zustand === 'versteckt')) s.haufen.entfernt = Math.min(s.haufen.entfernt, s.haufen.gesamt - 1);
   for (const n of s.nadeln) {
     if (n.zustand === 'versteckt' && (n.tiefe <= s.haufen.entfernt || n.tiefe > s.haufen.gesamt)) {
       n.tiefe = Math.min(s.haufen.gesamt, Math.floor(s.haufen.entfernt) + 1);
@@ -1050,5 +1108,7 @@ export function laden(text) {
   s.radar = { rest: zahlOder(s.radar.rest, 0), abstand: zahlOder(s.radar.abstand, null), zeit: zahlOder(s.radar.zeit, null) };
   s.sauger = { an: false, hitze: zahlOder(s.sauger.hitze, 0), heiss: !!s.sauger.heiss };
   s.rev = 0;
+  // Nur für die Oberfläche: wird nicht gespeichert (speichern nimmt die Felder von neuerStand).
+  if (erstattung > 0) Object.defineProperty(s, 'erstattet', { value: Math.round(erstattung), enumerable: false });
   return s;
 }
