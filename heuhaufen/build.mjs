@@ -20,7 +20,7 @@ const MODULE = ['src/daten.js', 'src/engine.js', 'src/format.js', 'src/klang.js'
 function kollisionenPruefen(namen) {
   const gesehen = new Map();
   for (const [datei, roh] of namen) {
-    const re = /^(?:export )?(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/gm;
+    const re = /^(?:export )?(?:const|let|var|(?:async\s+)?function\*?|class)\s+([A-Za-z_$][\w$]*)/gm;
     for (const treffer of roh.matchAll(re)) {
       const id = treffer[1];
       if (gesehen.has(id)) {

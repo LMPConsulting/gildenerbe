@@ -11,6 +11,8 @@ import {
 export const STAND_VERSION = 2;
 export const TECH_NACH_ID = Object.fromEntries(TECH.map((t) => [t.id, t]));
 export const MASCHINE_NACH_ID = Object.fromEntries(MASCHINEN.map((m) => [m.id, m]));
+/** Welcher Knoten schaltet was frei: frei-Name → Knoten-ID. */
+const PLAN_FUER = Object.fromEntries(TECH.flatMap((t) => t.effekt.filter((e) => e[0] === 'frei').map((e) => [e[1], t.id])));
 export const WERKZEUG_NACH_ID = Object.fromEntries(WERKZEUGE.map((w) => [w.id, w]));
 export const TECH_STUFEN_GESAMT = TECH.reduce((n, t) => n + (t.id === 'scheune' ? 0 : t.stufen), 0);
 export const NADELN_JE_LADUNG = NADEL_BEREICHE.length;
@@ -199,6 +201,13 @@ function einnahme(s, betrag) {
 
 function nadelFinden(s, i, ereignisse) {
   const nd = s.nadeln[i];
+  // Die Arten werden in der Reihenfolge des Findens vergeben, damit die
+  // Geschichte stimmt, auch wenn eine zurückgefallene Nadel eine andere überholt.
+  for (const andere of s.nadeln) {
+    if (andere !== nd && andere.zustand === 'versteckt' && andere.art < nd.art) {
+      [andere.art, nd.art] = [nd.art, andere.art];
+    }
+  }
   nd.zustand = 'gefunden';
   nd.zeit = s.aktiv;
   s.arten[nd.art] = (s.arten[nd.art] || 0) + 1;
@@ -560,23 +569,29 @@ export function fabrik(s) {
   for (const m of MASCHINEN) if (m.strom > 0) f.bedarf += n(m.id) * m.strom * w.verbrauch;
   f.brennBedarf = MASCHINEN.reduce((sum, m) => sum + (m.brennstoff ? n(m.id) * m.brennstoff * w.brennstoff : 0), 0);
 
-  let strom = 1;
-  for (let runde = 0; runde < 12; runde++) {
-    const fluss = voll ? Math.min(f.moeglich * strom, f.band) : 0;
+  // Erzeugt(p) wächst mit der Leistung p. Von p = 1 aus abwärts iteriert
+  // landet man beim größten Gleichgewicht; danach einmal sauber auswerten.
+  const erzeugtBei = (p) => {
+    const fluss = voll ? Math.min(f.moeglich * p, f.band) : 0;
     const brennAnteil = f.brennBedarf > 0 ? Math.min(1, fluss / f.brennBedarf) : 1;
-    let erzeugt = GRUNDSTROM;
+    let summe = GRUNDSTROM;
+    f.leistung = {};
     for (const m of MASCHINEN) {
       if (m.strom >= 0 || !n(m.id)) continue;
       const l = -m.strom * n(m.id) * w.generatorMul * w.stromMul * (m.brennstoff ? brennAnteil : 1);
       f.leistung[m.id] = l;
-      erzeugt += l;
+      summe += l;
     }
-    f.erzeugt = erzeugt;
-    const neu = f.bedarf > 0 ? Math.min(1, erzeugt / f.bedarf) : 1;
-    const fertig = Math.abs(neu - strom) < 1e-9;
+    return summe;
+  };
+  const leistungBei = (p) => (f.bedarf > 0 ? Math.min(1, erzeugtBei(p) / f.bedarf) : 1);
+  let strom = 1;
+  for (let runde = 0; runde < 200; runde++) {
+    const neu = leistungBei(strom);
+    if (strom - neu < 1e-10) { strom = Math.min(strom, neu); break; }
     strom = neu;
-    if (fertig) break;
   }
+  f.erzeugt = erzeugtBei(strom);
   f.strom = strom;
   f.foerderung = f.moeglich * strom;
   f.fluss = voll ? Math.min(f.foerderung, f.band) : 0;
@@ -604,7 +619,7 @@ export function fabrik(s) {
       stueck = Math.min(stueck, lager[zutat] / bedarf);
     }
     if (m.wasser) {
-      f.wasserBedarf += max * m.wasser;
+      f.wasserBedarf += Math.max(0, stueck) * m.wasser;
       stueck = Math.min(stueck, wasser / m.wasser);
       wasser -= Math.max(0, stueck) * m.wasser;
     }
@@ -684,21 +699,40 @@ function missionenPruefen(s, ereignisse) {
     if (!ms || !ms.erfuellt) return;
     const { m } = ms;
     let text = '';
+    let betrag = 0;
     if (m.geschenk) {
       const mm = MASCHINE_NACH_ID[m.geschenk];
+      // Wer die Maschine geschenkt bekommt, darf sie auch nachkaufen.
+      const plan = PLAN_FUER[mm.frei];
+      if (plan && !techStufe(s, plan) && techOffen(s, plan)) { s.tech[plan] = 1; s.rev++; }
       if (platzFrei(s, m.geschenk)) {
         s.maschinen[m.geschenk] = anzahl(s, m.geschenk) + 1;
+        s.rev++;
         text = `${mm.name} geschenkt`;
       } else {
         einnahme(s, mm.kosten);
-        text = `${mm.kosten} $ statt ${mm.name}`;
+        betrag = mm.kosten;
+        text = `statt ${mm.name}`;
+      }
+    } else if (m.geschenkTech) {
+      const t = TECH_NACH_ID[m.geschenkTech];
+      if (techStufe(s, t.id) < t.stufen) {
+        s.tech[t.id] = techStufe(s, t.id) + 1;
+        s.rev++;
+        text = `${t.name} geschenkt`;
+      } else {
+        const preis = t.kosten;
+        einnahme(s, preis);
+        betrag = preis;
+        text = `statt ${t.name}`;
       }
     } else if (m.geld) {
       einnahme(s, m.geld);
-      text = `+${m.geld} $`;
+      betrag = m.geld;
     }
     s.mission++;
-    ereignisse.push({ typ: 'mission', text: m.text, belohnung: text, geld: m.geld || 0 });
+    // belohnung ist nur der Text zum Geschenk; den Betrag formatiert die Oberfläche.
+    ereignisse.push({ typ: 'mission', text: m.text, belohnung: text, geld: betrag });
   }
 }
 
@@ -876,8 +910,10 @@ export function offlineNachholen(s, jetzt = Date.now()) {
   }
   s.ausdauer = Math.min(w.ausdauer, s.ausdauer + w.ausdauerRegen * weg);
   s.sauger.an = false;
+  s.sauger.hitze = 0;
+  s.sauger.heiss = false;
   const sek = Math.min(weg, w.offlineStunden * 3600);
-  if (sek < 30 || (s.drohnen === 0 && !hatBand(w))) return null;
+  if (sek <= 0 || (s.drohnen === 0 && !hatBand(w))) return null;
   const geldVor = s.geld;
   const verdientVor = s.verdient;
   const halmeVor = s.stat.abgetragen;
@@ -887,6 +923,8 @@ export function offlineNachholen(s, jetzt = Date.now()) {
   const dt = sek / schritte;
   const ereignisse = [...e0];
   for (let i = 0; i < schritte; i++) ereignisse.push(...tick(s, dt, { offline: true }));
+  // Auch kurze Abwesenheiten zählen; erzählt wird erst ab einer halben Minute.
+  if (sek < 30) return null;
   return {
     sekunden: sek,
     abwesend: weg,
@@ -950,7 +988,17 @@ export function laden(text) {
   if (!istObjekt(s.stat.werkzeug)) s.stat.werkzeug = {};
   for (const k of ['tipps', 'hand', 'drohne', 'maschine', 'gaenge', 'verkauft', 'gefegt', 'abgetragen',
     'auftraege', 'besterVerkauf', 'maxGeld']) s.stat[k] = zahlOder(s.stat[k], 0);
-  for (const k of ['nr', 'geliefert', 'pause']) s.auftrag[k] = zahlOder(s.auftrag[k], 0);
+  for (const k of ['nr', 'geliefert', 'pause']) s.auftrag[k] = Math.max(0, zahlOder(s.auftrag[k], 0));
+  s.auftrag.nr = Math.floor(s.auftrag.nr);
+  s.mission = Math.max(0, Math.floor(s.mission));
+  s.ladung = Math.max(1, Math.floor(s.ladung));
+  s.stat.produziert = Object.fromEntries(Object.entries(s.stat.produziert).filter(([p, n]) => PRODUKTE[p] && Number.isFinite(n)));
+  s.haufen.entfernt = Math.max(0, Math.min(s.haufen.entfernt, s.haufen.gesamt));
+  for (const n of s.nadeln) {
+    if (n.zustand === 'versteckt' && (n.tiefe <= s.haufen.entfernt || n.tiefe > s.haufen.gesamt)) {
+      n.tiefe = Math.min(s.haufen.gesamt, Math.floor(s.haufen.entfernt) + 1);
+    }
+  }
   s.radar = { rest: zahlOder(s.radar.rest, 0), abstand: zahlOder(s.radar.abstand, null), zeit: zahlOder(s.radar.zeit, null) };
   s.sauger = { an: false, hitze: zahlOder(s.sauger.hitze, 0), heiss: !!s.sauger.heiss };
   s.rev = 0;

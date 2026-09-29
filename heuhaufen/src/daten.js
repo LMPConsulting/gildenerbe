@@ -15,8 +15,8 @@ export const GRUND = {
   kritFaktor: 5,
   tasche: 30,          // Halme, die man in den Armen trägt
   laufzeit: 4,         // Sekunden zum Verkaufsstand und zurück
-  ausdauer: 40,        // volle Ausdauer
-  ausdauerRegen: 4,    // pro Sekunde
+  ausdauer: 25,        // volle Ausdauer
+  ausdauerRegen: 3,    // pro Sekunde
   ausdauerKosten: 1,   // pro Stich
   erschoepft: 0.3,     // Anteil des Griffs ohne Ausdauer
   verschuetten: 0.12,  // so viel fällt bei jedem Stich zusätzlich auf den Boden
@@ -130,12 +130,12 @@ export const GESCHICHTE = {
 
 /** Die Werkzeugleiste. frei: null = von Anfang an da. */
 export const WERKZEUGE = [
-  { id: 'spaten', name: 'Spaten', frei: null, text: 'Sticht Heu aus dem Haufen.' },
-  { id: 'heugabel', name: 'Heugabel', frei: 'heugabel', text: 'Mehr pro Stich als der Spaten.' },
-  { id: 'sandschaufel', name: 'Sandschaufel', frei: 'sandschaufel', text: 'Winzig, aber sie kostet keine Ausdauer.' },
-  { id: 'besen', name: 'Besen', frei: 'besen', text: 'Fegt verschüttetes Heu vom Boden in die Tasche.' },
-  { id: 'sauger', name: 'Hofsauger', frei: 'sauger', text: 'Gedrückt halten, bis er zu heiß wird.' },
-  { id: 'detektor', name: 'Detektor', frei: null, text: 'Piept, wenn eine Nadel nah ist.' },
+  { id: 'spaten', name: 'Spaten', kurz: 'Spaten', frei: null, text: 'Sticht Heu aus dem Haufen.' },
+  { id: 'heugabel', name: 'Heugabel', kurz: 'Gabel', frei: 'heugabel', text: 'Mehr pro Stich als der Spaten.' },
+  { id: 'sandschaufel', name: 'Sandschaufel', kurz: 'Sand', frei: 'sandschaufel', text: 'Winzig, aber sie kostet keine Ausdauer.' },
+  { id: 'besen', name: 'Besen', kurz: 'Besen', frei: 'besen', text: 'Fegt verschüttetes Heu vom Boden in die Tasche.' },
+  { id: 'sauger', name: 'Hofsauger', kurz: 'Sauger', frei: 'sauger', text: 'Gedrückt halten, bis er zu heiß wird.' },
+  { id: 'detektor', name: 'Detektor', kurz: 'Detektor', frei: null, text: 'Piept, wenn eine Nadel nah ist.' },
 ];
 
 /* ------------------------------------------------------------ Forschung */
@@ -164,13 +164,13 @@ const k = (id, ast, name, stufen, kosten, faktor, braucht, effekt, text, gruppe 
   ({ id, ast, name, stufen, kosten, faktor, braucht, effekt, text, gruppe });
 
 export const TECH = [
-  k('scheune', null, 'Start', 1, 0, 1, [], [], 'Ein Spaten, ein Metalldetektor und sehr viel Heu.'),
+  k('scheune', null, 'Bloße Hände', 1, 0, 1, [], [], 'Ein Spaten, ein Metalldetektor und sehr viel Heu.'),
 
   // Handarbeit
   k('eimer', 'hand', 'Eimer', 1, 3, 1, ['scheune'], [['tasche', '+', 70], ['frei', 'eimer']],
     'Trägt 100 statt 30 Halme.'),
-  k('eimer2', 'hand', 'Größerer Eimer', 6, 2, 1.7, ['eimer'], [['tasche', '+', 25]],
-    'Fünfundzwanzig Halme mehr pro Gang.', 'Eimer-Upgrades'),
+  k('eimer2', 'hand', 'Größerer Eimer', 6, 2, 1.7, ['eimer'], [['tasche', '+', 83]],
+    'Dreiundachtzig Halme mehr pro Gang. Voll ausgebaut fasst der Eimer 600.', 'Eimer-Upgrades'),
   k('schubkarre', 'hand', 'Schubkarre', 1, 15, 1, ['eimer'], [['tasche', '*', 2], ['laufzeit', '*', 0.9], ['frei', 'schubkarre']],
     'Doppelt so viel pro Gang, und rollen geht schneller als tragen.'),
   k('mulde', 'hand', 'Tiefere Mulde', 6, 45, 1.9, ['schubkarre'], [['tasche', '+', 60]],
@@ -201,32 +201,27 @@ export const TECH = [
     'Eine Holzplattform neben dem Haufen. Zwei Stellplätze mehr.'),
   k('waende', 'hofbau', 'Wand-Pläne', 1, 80, 1, ['plattform'], [['offlineEff', '+', 0.05], ['frei', 'waende']],
     'Wände halten den Wind ab. Nachts wird 5 % mehr geschafft.'),
-  k('schuppen', 'hofbau', 'Schuppen erweitern', 6, 150, 2.1, ['waende'], [['plaetze', '+', 5]],
-    'Die Halle wird ein Feld länger. Fünf Stellplätze mehr.'),
+  k('schuppen', 'hofbau', 'Schuppen erweitern', 6, 150, 2.4, ['waende'], [['plaetze', '+', 20]],
+    'Die Halle wird ein Feld länger. Zwanzig Stellplätze mehr.'),
   k('material', 'hofbau', 'Weniger Materialverschnitt', 3, 100, 2.4, ['waende'], [['maschinenKosten', '*', 0.95]],
     'Alles, was du baust, wird 5 % billiger.'),
   k('daecher', 'hofbau', 'Dach-Pläne', 1, 1100, 1, ['waende'], [['maschinenTempo', '*', 1.03], ['frei', 'daecher']],
     'Ein Dach über den Maschinen. Sie laufen 3 % schneller.'),
-  k('lange_halle', 'hofbau', 'Lange Halle', 8, 2000, 1.9, ['schuppen', 'foerderband'], [['plaetze', '+', 10]],
-    'Zehn Stellplätze mehr.'),
-  k('arbeitslampen', 'hofbau', 'Arbeitslampen', 3, 9900, 2.5, ['daecher'], [['maschinenTempo', '*', 1.05]],
-    'Licht über jeder Maschine. 5 % schneller.'),
-  k('kran', 'hofbau', 'Hallenkran', 3, 16200, 2.5, ['material', 'foerderband'], [['maschinenKosten', '*', 0.9]],
-    'Aufbauen wird 10 % billiger.'),
+  k('arbeitslampen', 'hofbau', 'Arbeitslampen', 1, 2400, 1, ['daecher'], [['maschinenTempo', '*', 1.03]],
+    'Lampen über den Maschinen. Nachts sieht man mehr, und alles läuft 3 % runder.'),
+  k('heutreppe', 'hofbau', 'Heutreppe', 1, 900, 1, ['plattform'], [['plaetze', '+', 6]],
+    'Eine Treppe auf die Plattform. Oben ist Platz für sechs Maschinen mehr.'),
+  k('heulift', 'hofbau', 'Heulift', 1, 2700, 1, ['heutreppe'], [['plaetze', '+', 6], ['verteilung', '+', 0.05]],
+    'Hebt Heu auf die obere Ebene. Sechs Stellplätze mehr, und die Bänder kreuzen sich nicht.'),
+  k('klappe', 'hofbau', 'Abwurfklappe', 1, 1800, 1, ['waende'], [['plaetze', '+', 6], ['verteilung', '+', 0.05]],
+    'Eine Klappe im Boden, durch die Heu nach unten fällt. Sechs Stellplätze mehr.'),
   k('schrank', 'hofbau', 'Werkzeugschrank', 1, 720, 1, ['plattform'], [['tasche', '+', 50]],
     'Alles an seinem Platz. Fünfzig Halme mehr pro Gang.'),
-  k('hohes_dach', 'hofbau', 'Hohes Dach', 1, 19800, 1, ['lange_halle'], [['plaetze', '+', 25]],
-    'Fünfundzwanzig Stellplätze mehr.'),
-  k('ordnung', 'hofbau', 'Ordnung muss sein', 3, 81000, 3, ['arbeitslampen'], [['maschinenTempo', '*', 1.1]],
-    'Alle Maschinen 10 % schneller.'),
-  k('zweite_halle', 'hofbau', 'Zweite Halle', 1, 810000, 1, ['hohes_dach'], [['plaetze', '+', 100]],
-    'Hundert Stellplätze mehr.'),
-
   // Heulinien
   k('foerderband', 'linien', 'Förderband-Pläne', 1, 250, 1, ['scheune'], [['frei', 'band'], ['plaetze', '+', 12]],
     'Ein Band vom Haufen zum Stand. Was du darauf wirfst, wird verkauft, ohne dass du laufen musst.'),
-  k('bandmotor', 'linien', 'Schnellerer Bandmotor', 12, 15, 1.75, ['foerderband'], [['band', '*', 1.3]],
-    'Das Band läuft 30 % schneller.', 'Band-Upgrades'),
+  k('bandmotor', 'linien', 'Schnellerer Bandmotor', 12, 15, 2.2, ['foerderband'], [['band', '*', 1.5]],
+    'Das Band läuft 50 % schneller.', 'Band-Upgrades'),
   k('weiche', 'linien', 'Wechselweiche', 1, 120, 1, ['foerderband'], [['verteilung', '+', 0.15]],
     'Verteilt das Heu abwechselnd auf zwei Bänder. Weniger Stau vor den Maschinen.'),
   k('vereiniger', 'linien', 'Bandvereiniger', 1, 200, 1, ['weiche'], [['verteilung', '+', 0.1]],
@@ -234,14 +229,7 @@ export const TECH = [
   k('vorrangarm', 'linien', 'Vorrangarm', 1, 300, 1, ['weiche'], [['verteilung', '+', 0.1]],
     'Ein Arm, der eine Seite bevorzugt. Die wichtigste Maschine bekommt zuerst.'),
   k('rohrwerfer', 'linien', 'Rohrwerfer-Pläne', 1, 260, 1, ['weiche'], [['frei', 'rohrwerfer']],
-    'Schießt Heu durch ein Rohr quer über die Halle. Jeder Werfer ist eine zweite Strecke.'),
-  k('werfer2', 'linien', 'Mehr Druck', 5, 1600, 2.1, ['rohrwerfer'], [['werfer', '*', 1.3]],
-    'Werfer schaffen 30 % mehr.', 'Werfer-Upgrades'),
-  k('heulift', 'linien', 'Heulift', 1, 2700, 1, ['vereiniger'], [['verteilung', '+', 0.05]],
-    'Hebt Heu auf die obere Ebene. Die Bänder kreuzen sich nicht mehr.'),
-  k('breitband', 'linien', 'Breiteres Band', 6, 7200, 2.8, ['foerderband'], [['band', '*', 1.5]],
-    'Das Band trägt 50 % mehr.', 'Band-Upgrades'),
-
+    'Schießt Knäuel durch ein Rohr zur zweiten Linie. Jeder Werfer ist eine Strecke mehr.'),
   // Strom
   k('elektrizitaet', 'strom', 'Elektrizität', 1, 900, 1, ['foerderband'], [['frei', 'generator']],
     'Ein Heu-Generator. Er frisst Halme vom Band und macht daraus Strom.'),
@@ -255,13 +243,8 @@ export const TECH = [
     'Weniger Masten, weniger Verlust.', 'Mast-Upgrades'),
   k('abspannung', 'strom', 'Längere Abspannungen', 4, 90, 1.9, ['strommast'], [['stromMul', '*', 1.03]],
     'Die Leitungen hängen straffer.', 'Mast-Upgrades'),
-  k('erdkabel', 'strom', 'Erdkabel', 1, 5400, 1, ['strommast'], [['stromMul', '*', 1.15]],
+  k('erdkabel', 'strom', 'Erdkabel', 1, 3000, 1, ['strommast'], [['stromMul', '*', 1.15]],
     'Kabel unter dem Boden. Nichts, worüber man stolpert.'),
-  k('sparmotor', 'strom', 'Sparmotoren', 5, 5900, 2.2, ['erdkabel'], [['verbrauch', '*', 0.9]],
-    'Maschinen brauchen 10 % weniger Strom.'),
-  k('dampf', 'strom', 'Dampfgenerator', 1, 36000, 1, ['erdkabel'], [['frei', 'dampf']],
-    'Ein großer Generator. Sechsmal so viel Strom, viermal so viel Heu.'),
-
   // Verarbeitung
   k('silo', 'verarbeitung', 'Silo-Pläne', 1, 720, 1, ['foerderband'], [['frei', 'silo']],
     'Presst loses Heu zu Heuknäueln. Knäuel bringen 25 % mehr pro Halm.'),
@@ -327,6 +310,12 @@ export const TECH = [
     'Greifarme 20 % schneller.'),
   k('serie', 'auto', 'Serienfertigung', 5, 8100, 2.3, ['greifarm'], [['maschinenKosten', '*', 0.9]],
     'Alle Maschinen 10 % billiger.'),
+  k('sparmotor', 'auto', 'Sparmotoren', 5, 5900, 2.2, ['greifarm'], [['verbrauch', '*', 0.9]],
+    'Maschinen brauchen 10 % weniger Strom.'),
+  k('kran', 'auto', 'Hallenkran', 3, 16200, 2.5, ['greifarm'], [['maschinenKosten', '*', 0.9]],
+    'Aufbauen wird 10 % billiger.'),
+  k('ordnung', 'auto', 'Ordnung muss sein', 3, 81000, 3, ['greifarm'], [['maschinenTempo', '*', 1.1]],
+    'Alle Maschinen 10 % schneller.'),
   k('drohne', 'auto', 'Heudrohne', 1, 70, 1, ['scheune'], [['frei', 'drohne'], ['drohnenMax', '+', 3]],
     'Kleine Drohnen fliegen Heu zum Stand. Bis zu drei.'),
   k('schwarm', 'auto', 'Drohnenschwarm', 5, 330, 2, ['drohne'], [['drohnenMax', '+', 2]],
@@ -434,8 +423,6 @@ export const MASCHINEN = [
     strom: 2, plaetze: 1, text: 'Meldet regelmäßig, wie viele Halme es noch bis zur nächsten Nadel sind. Jeder weitere pingt öfter.' },
   { id: 'generator', name: 'Heu-Generator', gruppe: 'strom', frei: 'generator', kosten: 330, faktor: 1.15,
     strom: -15, plaetze: 1, brennstoff: 2, text: 'Verbrennt 2 Halme pro Sekunde vom Band für 15 Strom.' },
-  { id: 'dampf', name: 'Dampfgenerator', gruppe: 'strom', frei: 'dampf', kosten: 32000, faktor: 1.18,
-    strom: -90, plaetze: 2, brennstoff: 8, text: 'Verbrennt 8 Halme pro Sekunde für 90 Strom.' },
   { id: 'brunnen', name: 'Brunnen', gruppe: 'wasser', frei: 'brunnen', kosten: 1400, faktor: 1.15,
     strom: 3, wasser: -10, plaetze: 1, text: 'Pumpt 10 Wasser pro Sekunde.' },
   { id: 'silo', name: 'Silo', gruppe: 'verarbeitung', frei: 'silo', kosten: 90, faktor: 1.14,
@@ -479,22 +466,25 @@ export const PRODUKTE = {
 // ist, und zahlt dann den Lohn. Nach der Liste geht es mit wachsenden Aufträgen
 // weiter (siehe auftrag() in der Engine).
 export const AUFTRAEGE = [
-  { will: 'roh', menge: 2000, lohn: 90 },
-  { will: 'knaeuel', menge: 100, lohn: 40 },
-  { will: 'ballen', menge: 20, lohn: 150 },
-  { will: 'roh', menge: 20000, lohn: 800 },
-  { will: 'knaeuel', menge: 800, lohn: 300 },
-  { will: 'ballen', menge: 150, lohn: 280 },
-  { will: 'pellet', menge: 600, lohn: 400 },
-  { will: 'ballen', menge: 500, lohn: 900 },
-  { will: 'silage', menge: 200, lohn: 700 },
-  { will: 'brei', menge: 300, lohn: 600 },
-  { will: 'papier', menge: 200, lohn: 1200 },
-  { will: 'silage', menge: 1000, lohn: 3400 },
-  { will: 'papier', menge: 800, lohn: 4600 },
-  { will: 'brikett', menge: 150, lohn: 2400 },
-  { will: 'brikett', menge: 600, lohn: 9000 },
+  { titel: 'Pferdehof Lindner', will: 'roh', menge: 2000, lohn: 90 },
+  { titel: 'Kleintierzucht Wagner', will: 'knaeuel', menge: 100, lohn: 40 },
+  { titel: 'Reitstall Brandt', will: 'ballen', menge: 20, lohn: 150 },
+  { titel: 'Gärtnerei Moosbach', will: 'roh', menge: 20000, lohn: 800 },
+  { titel: 'Bastelladen Kunterbunt', will: 'knaeuel', menge: 800, lohn: 300 },
+  { titel: 'Reitstall Brandt', will: 'ballen', menge: 150, lohn: 280 },
+  { titel: 'Pelletofen Nord', will: 'pellet', menge: 600, lohn: 400 },
+  { titel: 'Gut Eichenhof', will: 'ballen', menge: 500, lohn: 900 },
+  { titel: 'Milchhof Berger', will: 'silage', menge: 200, lohn: 700 },
+  { titel: 'Papierwerk Seeburg', will: 'brei', menge: 300, lohn: 600 },
+  { titel: 'Molkerei Almtal', will: 'papier', menge: 200, lohn: 1200 },
+  { titel: 'Druckerei Feder', will: 'silage', menge: 1000, lohn: 3400 },
+  { titel: 'Ökobau Grünwerk', will: 'papier', menge: 800, lohn: 4600 },
+  { titel: 'Passivhaus Hansen', will: 'brikett', menge: 150, lohn: 2400 },
+  { titel: 'Hühnerhof Petersen', will: 'brikett', menge: 600, lohn: 9000 },
 ];
+/** Kunden für die Aufträge nach der festen Liste. */
+export const KUNDEN = ['Reitstall Brandt', 'Papierwerk Seeburg', 'Ökobau Grünwerk', 'Gut Eichenhof', 'Molkerei Almtal',
+  'Pelletofen Nord', 'Zoo am Stadtrand', 'Baumarkt Kellner', 'Theater Kulisse', 'Landhandel Voss'];
 /** Pause zwischen zwei Aufträgen in Sekunden. */
 export const AUFTRAG_PAUSE = 20;
 
@@ -513,9 +503,10 @@ export const MISSIONEN = [
   { text: 'Feg verschüttetes Heu zusammen', art: 'gefegt', ziel: 50, geld: 5 },
   { text: 'Kauf die Förderband-Pläne', art: 'tech', ziel: 'foerderband', geschenk: 'rechen' },
   { text: 'Stell einen zweiten Kolbenrechen auf', art: 'maschine', ziel: ['rechen', 2], geld: 30 },
-  { text: 'Kauf Elektrizität', art: 'tech', ziel: 'elektrizitaet', geschenk: 'generator' },
+  { text: 'Kauf Elektrizität', art: 'tech', ziel: 'elektrizitaet', geschenkTech: 'strommast' },
   { text: 'Finde die erste Nadel', art: 'nadeln', ziel: 1, geld: 150 },
   { text: 'Bau ein Silo', art: 'maschine', ziel: ['silo', 1], geld: 60 },
+  { text: 'Kauf die Plattform-Pläne', art: 'tech', ziel: 'plattform', geschenkTech: 'schrank' },
   { text: 'Bau einen Greifarm', art: 'maschine', ziel: ['arm', 1], geld: 200 },
   { text: 'Bau einen Scanner', art: 'maschine', ziel: ['scanner', 1], geld: 250 },
   { text: 'Erfülle einen Auftrag', art: 'auftraege', ziel: 1, geld: 300 },
@@ -528,7 +519,7 @@ export const MISSIONEN = [
   { text: 'Mach 50 Bögen Heupapier', art: 'produziert', ziel: ['papier', 50], geld: 12000 },
   { text: 'Finde alle sechs Nadeln', art: 'nadeln', ziel: 6, geld: 20000 },
   { text: 'Bestell eine neue Ladung', art: 'ladungen', ziel: 2, geld: 10000 },
-  { text: 'Press 100 Öko-Ziegel', art: 'produziert', ziel: ['brikett', 100], geld: 40000 },
+  { text: 'Presse 100 Öko-Ziegel', art: 'produziert', ziel: ['brikett', 100], geld: 40000 },
   { text: 'Finde zwölf Nadeln', art: 'nadeln', ziel: 12, geld: 80000 },
   { text: 'Erforsche 200 Stufen', art: 'forschung', ziel: 200, geld: 100000 },
   { text: 'Finde alle 24 Nadelarten', art: 'arten', ziel: 24, geld: 1_000_000 },

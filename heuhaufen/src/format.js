@@ -7,9 +7,9 @@ const EINHEITEN = [
   [1e15, 'Brd.'], [1e12, 'Bio.'], [1e9, 'Mrd.'], [1e6, 'Mio.'],
 ];
 
-const deutsch = (n, stellen) => n.toLocaleString('de-DE', {
-  minimumFractionDigits: stellen, maximumFractionDigits: stellen,
-});
+// Ein Formatierer je Nachkommastellen, einmal gebaut: toLocaleString baut sonst bei jedem Aufruf neu.
+const FORMATE = [0, 1, 2].map((st) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: st, maximumFractionDigits: st }));
+const deutsch = (n, stellen) => FORMATE[stellen].format(n);
 
 const stellenFuer = (x) => (x >= 100 ? 0 : x >= 10 ? 1 : 2);
 

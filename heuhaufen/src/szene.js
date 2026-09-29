@@ -298,11 +298,15 @@ export function haufenSzene(canvas) {
   /* -------------------------------------------------- Der Haufen */
 
   function haufenZeichnen(k) {
-    const key = `${g.w}x${g.h}@${g.dpr}:${k.toFixed(4)}`;
+    const key = `${g.w}x${g.h}@${g.dpr}:${Math.round(lage().h0 * k * g.dpr)}`;
     if (key === haufenKey && haufenBild) return haufenBild.c;
     haufenKey = key;
-    haufenBild = puffer(g);
+    if (!haufenBild || haufenBild.c.width !== Math.max(1, g.w * g.dpr) || haufenBild.c.height !== Math.max(1, g.h * g.dpr)) {
+      haufenBild = puffer(g);
+    }
     const c = haufenBild.x;
+    c.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+    c.clearRect(0, 0, g.w, g.h);
     if (k <= 0.0005) return haufenBild.c;
     const H = haufenForm(k);
     c.fillStyle = 'rgba(60,40,15,0.35)';
@@ -507,7 +511,7 @@ export function haufenSzene(canvas) {
       ctx.fillStyle = '#fff4dc';
       ctx.fillText(t, 8, g.h - 10);
     }
-    const gens = Math.min(4, (s.maschinen.generator || 0) + (s.maschinen.dampf || 0));
+    const gens = Math.min(4, (s.maschinen.generator || 0));
     for (let i = 0; i < gens; i++) {
       const x = 16 + i * 30;
       const y = L.boden - 2;
@@ -912,7 +916,7 @@ export function halleSzene(canvas) {
           ctx.fillRect(x - 3 + p * (rechts - x), bandY - 8 - Math.sin(p * Math.PI) * 14, 7, 6);
         }
       });
-      const gens = Math.min(5, (s.maschinen.generator || 0) + (s.maschinen.dampf || 0));
+      const gens = Math.min(5, (s.maschinen.generator || 0));
       for (let i = 0; i < gens; i++) {
         const x = 70 + i * 22;
         const y = h * 0.62;

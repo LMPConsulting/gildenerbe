@@ -50,7 +50,6 @@ export const MASCHINEN_SYM = {
   scanner: symSvg(`<path d="M5 27V7h22v20" ${LINIE}/><path d="M9 17h14" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/>`),
   radar: symSvg(`<path d="M6 24a14 14 0 0 1 20 0M10 20a8 8 0 0 1 12 0" ${LINIE}/><circle cx="16" cy="24" r="2.5" ${FLAECHE}/>`),
   generator: symSvg(`<rect x="4" y="11" width="22" height="15" rx="2" ${LINIE}/><path d="M22 11V5M17 13l-4 6h5l-2 5" ${LINIE}/>`),
-  dampf: symSvg(`<path d="M8 27V13a8 8 0 0 1 16 0v14Z" ${LINIE}/><path d="M12 5c1 2-1 3 0 5M18 4c1 2-1 3 0 5" ${LINIE}/>`),
   brunnen: symSvg(`<path d="M8 27h16M11 27V15h10v12" ${LINIE}/><path d="M6 12l20-5" ${LINIE}/><path d="M16 18c-2 3-2 5 0 5s2-2 0-5Z" ${FLAECHE}/>`),
   silo: symSvg(`<path d="M9 27V10a7 5 0 0 1 14 0v17Z" ${LINIE}/><circle cx="16" cy="21" r="3" ${FLAECHE}/>`),
   presse: symSvg(`<rect x="7" y="14" width="18" height="12" rx="2" ${LINIE}/><path d="M16 4v8M11 12h10" ${LINIE}/><path d="M10 19h12M10 23h12" ${LINIE} stroke-width="1.4"/>`),

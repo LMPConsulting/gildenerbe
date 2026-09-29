@@ -11,7 +11,7 @@ import {
   maschineFrei, maschinenKosten, maschineKaufen, maschineAbbauen, maschineUmschalten, plaetzeBelegt,
   platzFrei, anzahl, fabrik, drohneKaufen, drohnenKosten, nadelnGefunden, alleNadeln, artenGefunden,
   detektor, rest, stichMenge, taschePlatz, preisRoh, produktPreis, hatBand, speichern, laden,
-  offlineNachholen, werkzeugWaehlen, werkzeugFrei, missionStand, auftrag, auftragLohn,
+  offlineNachholen, werkzeugWaehlen, bestesWerkzeug, werkzeugFrei, missionStand, auftrag, auftragLohn,
   auftragAblehnen, ladungMoeglich, ladungBestellen, ladungPreis, ladungGroesse, kreditAufschlag,
   NADELN_JE_LADUNG,
 } from './engine.js';
@@ -97,14 +97,20 @@ function sichern() {
   ui.gespeichert = performance.now();
 }
 
+/** Der neueste lesbare Stand: aus dem Browser oder aus der mitgenommenen Datei. */
 function einlesen() {
+  let lokal = null;
   try {
     const roh = localStorage.getItem(SPEICHER_KEY);
-    if (roh) return laden(roh);
+    if (roh) {
+      lokal = laden(roh);
+      // Unlesbares nicht einfach überschreiben, sondern zur Seite legen.
+      if (!lokal) localStorage.setItem(`${SPEICHER_KEY}-kaputt`, roh);
+    }
   } catch { /* kein Speicher */ }
-  // Eine mitgenommene Datei bringt ihren Spielstand selbst mit.
-  if (typeof HEUHAUFEN_MITGEBRACHT === 'string') return laden(HEUHAUFEN_MITGEBRACHT);
-  return null;
+  const mit = typeof HEUHAUFEN_MITGEBRACHT === 'string' ? laden(HEUHAUFEN_MITGEBRACHT) : null;
+  if (lokal && mit) return (mit.zuletzt || 0) > (lokal.zuletzt || 0) ? mit : lokal;
+  return lokal || mit;
 }
 
 /* ------------------------------------------------------------ Gerüst */
@@ -158,15 +164,17 @@ function wechseln(id) {
 
 function kopfAktualisieren() {
   setzeText(el.geld, geld(stand.geld));
-  setzeText(el.schulden, stand.schulden > 0 ? `Schulden ${geld(stand.schulden)}` : '');
+  setzeText(el.schulden, stand.schulden > 0 ? `−${geld(stand.schulden)}` : '');
+  el.schulden.title = stand.schulden > 0 ? 'Schulden' : '';
   setzeText(el.halme, halme(rest(stand)));
-  setzeText(el.ladung, `Halme · Ladung ${stand.ladung}`);
-  stand.nadeln.forEach((n, i) => {
+  setzeText(el.ladung, `Ladung ${stand.ladung}`);
+  const gefunden = nadelnGefunden(stand);
+  for (let i = 0; i < NADELN_JE_LADUNG; i++) {
     const m = el.nadeln.children[i];
-    schalte(m, 'gefunden', n.zustand === 'gefunden');
-    schalte(m, 'gold', n.zustand === 'gefunden' && i === NADELN_JE_LADUNG - 1);
-  });
-  setzeText(el.nadelZahl, `${nadelnGefunden(stand)}/${NADELN_JE_LADUNG}`);
+    schalte(m, 'gefunden', i < gefunden);
+    schalte(m, 'gold', i < gefunden && i === NADELN_JE_LADUNG - 1);
+  }
+  setzeText(el.nadelZahl, `${gefunden}/${NADELN_JE_LADUNG}`);
   const kaufbar = TECH.filter((t) => techStatus(stand, t.id) === 'kaufbar').length;
   setzeText(el.reiter.forschung.marke, kaufbar ? String(kaufbar) : '');
   schalte(el.reiter.forschung.marke, 'sichtbar', kaufbar > 0);
@@ -184,9 +192,13 @@ function toast(text, art = '') {
   }
   const t = h('div', { class: `toast ${art}` }, text);
   el.toasts.append(t);
-  while (el.toasts.children.length > 2) el.toasts.firstChild.remove();
+  while (el.toasts.children.length > 3) el.toasts.firstChild.remove();
+  document.getElementById('app').classList.add('toastan');
   setTimeout(() => t.classList.add('weg'), 2600);
-  setTimeout(() => t.remove(), 3000);
+  setTimeout(() => {
+    t.remove();
+    if (!el.toasts.children.length) document.getElementById('app').classList.remove('toastan');
+  }, 3000);
 }
 
 const warteschlange = [];
@@ -231,7 +243,7 @@ function modal(optionen) {
 function einfuehrung() {
   modal({
     klasse: 'intromodal',
-    ober: `Rund ${halme(ladungGroesse(1))} Halme`,
+    ober: `Rund ${halme(ladungGroesse(stand ? stand.ladung : 1))} Halme`,
     titel: 'Find die Nadel',
     absaetze: GESCHICHTE.anfang,
     inhalt: h('ul', { class: 'anleitung' },
@@ -266,7 +278,7 @@ function nadelGefunden(e, sofort = false) {
     }],
   });
   // Erst den Moment im Bild zeigen, dann die Karte.
-  if (sofort) zeigen(); else setTimeout(zeigen, 900);
+  if (sofort) zeigen(); else setTimeout(() => { if (!ui.passiv) zeigen(); }, 900);
   sichern();
 }
 
@@ -326,11 +338,14 @@ function bestellen(aufRechnung) {
 
 function abwesenheitsbericht(b) {
   if (!b) return;
-  const wer = b.drohnenAllein ? 'Die Drohnen haben' : 'Halle und Drohnen haben';
+  const wer = b.drohnenAllein ? 'Die Drohnen haben' : stand.drohnen ? 'Halle und Drohnen haben' : 'Die Halle hat';
   const zeilen = [`${wer} ${halme(b.halme)} Halme abgetragen und ${geld(b.verdient)} verdient.`];
   if (b.verdient > b.geld + 0.01) zeilen.push(`Davon gingen ${geld(b.verdient - b.geld)} an die Schulden.`);
   if (b.auftraege) zeilen.push(b.auftraege === 1 ? 'Ein Auftrag wurde geliefert.' : `${b.auftraege} Aufträge wurden geliefert.`);
   if (b.nadeln) zeilen.push(b.nadeln === 1 ? 'Und eine Nadel wurde gefunden.' : `Und ${b.nadeln} Nadeln wurden gefunden.`);
+  for (const e of b.ereignisse) {
+    if (e.typ === 'mission') zeilen.push(`Mission erfüllt: ${e.text}${belohnungText(e) ? ` · ${belohnungText(e)}` : ''}`);
+  }
   if (b.abwesend > b.sekunden + 60) {
     zeilen.push(`Gezählt wurden ${dauer(b.sekunden)} von ${dauer(b.abwesend)}. Mehr schafft die Nachtschicht noch nicht.`);
   }
@@ -340,7 +355,21 @@ function abwesenheitsbericht(b) {
 
 /* ------------------------------------------------------------ Ereignisse */
 
+/** "+10.000 $", "Heu-Generator geschenkt" oder "330 $ statt Greifarm". */
+function belohnungText(e) {
+  if (e.belohnung) return e.geld ? `${geld(e.geld)} ${e.belohnung}` : e.belohnung;
+  return e.geld ? `+${geld(e.geld)}` : '';
+}
+
 function ereignisse(liste) {
+  const missionen = liste.filter((e) => e.typ === 'mission');
+  if (missionen.length) {
+    klang.fund(2);
+    const letzte = missionen[missionen.length - 1];
+    toast(missionen.length === 1
+      ? `Mission erfüllt: ${letzte.text}${belohnungText(letzte) ? ` · ${belohnungText(letzte)}` : ''}`
+      : `${missionen.length} Missionen erfüllt, zuletzt: ${letzte.text}`, 'gut');
+  }
   for (const e of liste) {
     if (e.typ === 'nadel') nadelGefunden(e);
     else if (e.typ === 'zurueck') {
@@ -352,9 +381,6 @@ function ereignisse(liste) {
     } else if (e.typ === 'ueberhitzt') {
       klang.heiss();
       toast('Der Sauger ist überhitzt und muss abkühlen.', 'warn');
-    } else if (e.typ === 'mission') {
-      klang.fund(2);
-      toast(`Mission erfüllt: ${e.text}${e.belohnung ? ` · ${e.belohnung}` : ''}`, 'gut');
     } else if (e.typ === 'auftrag') {
       klang.kasse();
       toast(`Auftrag geliefert: ${zahl(e.auftrag.menge)} ${PRODUKTE[e.auftrag.will].name} · +${geld(e.lohn)}`, 'gut');
@@ -482,8 +508,12 @@ function bildHaufen() {
     mission.hidden = !ms;
     if (ms) {
       setzeText(missionText, ms.m.text);
-      const lohn = ms.m.geschenk ? 'Geschenk' : ms.m.geld ? `+${geld(ms.m.geld)}` : '';
-      const fortschritt = ms.ziel > 1 && ms.ziel !== 0.5 ? ` · ${zahl(ms.ist)}/${zahl(ms.ziel)}` : ms.m.art === 'haelfte' ? ` · ${prozentAb(ms.ist)}` : '';
+      const lohn = ms.m.geschenk || ms.m.geschenkTech ? 'Geschenk' : ms.m.geld ? `+${geld(ms.m.geld)}` : '';
+      const zaehlbar = !['tech', 'werkzeug', 'ladungen', 'haelfte'].includes(ms.m.art) && ms.ziel > 1;
+      // Große Ziele als Prozent: "456.834/1,00 Mio." liest keiner.
+      const fortschritt = ms.m.art === 'haelfte' ? ` · ${prozentAb(ms.ist)}`
+        : zaehlbar && ms.ziel >= 1e5 ? ` · ${prozentAb(ms.ist / ms.ziel)}`
+        : zaehlbar ? ` · ${zahl(ms.ist)}/${zahl(ms.ziel)}` : '';
       setzeText(missionLohn, `${lohn}${fortschritt}`);
       missionBalken.style.width = `${Math.min(100, (ms.ist / ms.ziel) * 100)}%`;
     }
@@ -491,7 +521,7 @@ function bildHaufen() {
     let hw = '';
     if (ladungMoeglich(stand)) hw = 'Alle Nadeln dieser Ladung gefunden. Unter „Nadeln“ bestellst du die nächste.';
     else if (rest(stand) <= 0) hw = 'Der Haufen ist leer.';
-    else if (!hatBand(w) && stand.tasche >= taschePlatz(w)) hw = 'Die Tasche ist voll. Bring das Heu zum Stand.';
+    else if (!hatBand(w) && stand.laufen <= 0 && stand.tasche >= taschePlatz(w)) hw = 'Die Tasche ist voll. Bring das Heu zum Stand.';
     else if (hatBand(w) && fabrik(stand).fluss > 0 && fabrik(stand).deckung < 0.95) {
       hw = w.frei.has('scanner') ? 'Nicht alles Heu auf dem Band wird gescannt. Nadeln können zurückfallen.'
         : 'Ohne Scanner fallen Nadeln, die Maschinen erwischen, zurück in den Haufen.';
@@ -703,7 +733,7 @@ function bildHalle() {
       setzeText(kz.strom.unter, f.strom < 1 ? `nur ${prozentAb(f.strom)} Leistung` : 'reicht');
       kz.wasser.box.hidden = !wv.frei.has('brunnen');
       setzeText(kz.wasser.wert, `${rate(f.wasser)} / ${rate(f.wasserBedarf)}`);
-      setzeText(kz.wasser.unter, f.wasserAnteil < 1 ? `nur ${prozentAb(f.wasserAnteil)} für die Pulper` : 'reicht');
+      setzeText(kz.wasser.unter, f.wasserAnteil < 1 ? `nur ${prozentAb(f.wasserAnteil)} des Bedarfs` : 'reicht');
       setzeText(kz.scanner.wert, prozentAb(f.deckung));
       setzeText(kz.scanner.unter, 'des Heus gescannt');
       setzeText(kz.plaetze.wert, `${plaetzeBelegt(stand)} / ${wv.plaetze}`);
@@ -743,7 +773,7 @@ function bildHalle() {
           setzeText(aTitel, `${zahl(au.menge)} ${name} · ${geld(auftragLohn(stand, au))}`);
           setzeText(aInfo, rateP > 0
             ? `${zahl(stand.auftrag.geliefert)} von ${zahl(au.menge)} geladen · ${rate(rateP)}/s`
-            : `Die Halle macht gerade keine ${name}. Ablehnen, oder die passende Maschine bauen.`);
+            : `Gerade entsteht in der Halle nichts davon (${name}). Ablehnen, oder die passende Maschine bauen.`);
           aBalken.style.width = `${Math.min(100, (stand.auftrag.geliefert / au.menge) * 100)}%`;
           aAblehnen.hidden = false;
         }
@@ -780,7 +810,9 @@ function bildHalle() {
         if (frei && n) {
           if (m.gruppe === 'strom') {
             const l = f.leistung[m.id] || 0;
-            st = aus ? 'ausgeschaltet' : `liefert ${rate(l)} Strom${m.brennstoff ? `, frisst ${rate(m.brennstoff * n * wv.brennstoff)} Halme/s` : ''}`;
+            // Frisst, was wirklich ankommt, nicht was er gern hätte.
+            const hunger = m.brennstoff && f.brennBedarf > 0 && f.brennstoff < f.brennBedarf * 0.95;
+            st = aus ? 'ausgeschaltet' : `liefert ${rate(l)} Strom${m.brennstoff ? `, frisst ${rate(f.brennstoff)} Halme/s` : ''}${hunger ? ' · zu wenig Heu' : ''}`;
           } else if (m.id === 'arm' || m.id === 'rechen') st = `Auslastung ${prozent(f.auslastung.arm || 0)}`;
           else if (m.id === 'rohrwerfer') st = `Band +${prozent(n * m.rate * wv.werfer)}`;
           else if (m.id === 'scanner') st = `prüft ${rate(n * m.rate * wv.scanDeckung * wv.maschinenTempo * f.strom)} Halme/s`;
@@ -789,7 +821,8 @@ function bildHalle() {
           else if (m.produkt) {
             const aus2 = f.auslastung[m.id] || 0;
             st = `Auslastung ${prozent(aus2)} · ${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
-            if (aus2 < 0.05 && !aus) st += ' · bekommt nichts vom Band';
+            if (aus2 < 0.05 && !aus) st += m.rezept.halme ? ' · bekommt nichts vom Band' : ' · es fehlen Zutaten';
+            else if (wv.verteilung < 1 && aus2 >= wv.verteilung - 0.01) st += ' · Stau, Weichen helfen';
           }
           if (m.strom > 0 && !aus) st += ` · braucht ${rate(m.strom * n * wv.verbrauch)} Strom`;
         } else if (frei && m.produkt) st = `${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
@@ -807,6 +840,8 @@ const ZEILE = 74;
 const KARTE_B = 156;
 const RAND_L = 34;
 const RAND_O = 36;
+/** Maßstab der Übersicht; muss zu .baum.uebersicht .brettrahmen in style.css passen. */
+const UEBERSICHT = 0.6;
 
 const schritteName = (n) => (n === 0 ? 'Start' : n === 1 ? '1 Schritt' : `${n} Schritte`);
 
@@ -815,10 +850,20 @@ function bildForschung() {
   const zaehler = h('span', { class: 'num' });
   const treffer = h('span', { class: 'treffer' });
   const zoomKnopf = h('button', { class: 'rund', 'aria-label': 'Übersicht umschalten', onclick: () => {
+    // Die Mitte des Blicks bleibt, wo sie war, oder die gewählte Karte.
+    const f0 = ui.zoom ? UEBERSICHT : 1;
+    const mx = (scroller.scrollLeft + scroller.clientWidth / 2) / f0;
+    const my = (scroller.scrollTop + scroller.clientHeight / 2) / f0;
     ui.zoom = !ui.zoom;
     schalte(scroller, 'uebersicht', ui.zoom);
     zoomKnopf.innerHTML = '';
     zoomKnopf.append(sym(ui.zoom ? SYM.zoomEin : SYM.zoomAus));
+    if (ui.wahl) zuKarte(ui.wahl, false);
+    else {
+      const f1 = ui.zoom ? UEBERSICHT : 1;
+      scroller.scrollLeft = Math.max(0, mx * f1 - scroller.clientWidth / 2);
+      scroller.scrollTop = Math.max(0, my * f1 - scroller.clientHeight / 2);
+    }
   } }, sym(ui.zoom ? SYM.zoomEin : SYM.zoomAus));
   const kopf = h('div', { class: 'forschungskopf' },
     h('div', { class: 'fkopflinks' }, h('p', { class: 'ober' }, 'Hof-Forschung'), h('p', { class: 'fortschritt' }, zaehler, ' Stufen')),
@@ -831,7 +876,7 @@ function bildForschung() {
       class: 'astchip', style: { '--astfarbe': a.farbe },
       onclick: () => {
         const b = BAUM.aeste.find((x) => x.ast === a.id);
-        scroller.scrollTo({ top: Math.max(0, (RAND_O + b.von * ZEILE - 30) * (ui.zoom ? 0.55 : 1)), behavior: 'smooth' });
+        scroller.scrollTo({ top: Math.max(0, (RAND_O + b.von * ZEILE - 30) * (ui.zoom ? UEBERSICHT : 1)), behavior: 'smooth' });
       },
     }, a.name, n);
     chips[a.id] = { c, n };
@@ -920,7 +965,7 @@ function bildForschung() {
 
   function zuKarte(id, sanft = true) {
     const p = pos(id);
-    const f = ui.zoom ? 0.55 : 1;
+    const f = ui.zoom ? UEBERSICHT : 1;
     const sichtbar = scroller.clientHeight - (blatt.classList.contains('offen') ? blatt.offsetHeight + 16 : 0);
     scroller.scrollTo({
       left: Math.max(0, (p.x - scroller.clientWidth / 2 + KARTE_B / 2) * f),
@@ -944,7 +989,8 @@ function bildForschung() {
     for (const t of TECH) {
       const ja = !q || passt(t, q);
       if (q && ja) n++;
-      schalte(karten[t.id].karte, 'blass', !!q && !ja);
+      // Die gewählte Karte bleibt kräftig, auch wenn sie nicht zur Suche passt.
+      schalte(karten[t.id].karte, 'blass', !!q && !ja && t.id !== ui.wahl);
     }
     setzeText(treffer, q ? (n ? `${n} Treffer` : 'keine Treffer') : '');
     return q;
@@ -958,6 +1004,7 @@ function bildForschung() {
   anwendenSuche();
 
   function blattZeigen() {
+    anwendenSuche();
     const id = ui.wahl;
     for (const [k, v] of Object.entries(karten)) schalte(v.karte, 'gewaehlt', k === id);
     if (!id) { blatt.classList.remove('offen'); blatt.innerHTML = ''; blatt.aktualisieren = null; return; }
@@ -974,6 +1021,8 @@ function bildForschung() {
         void karte.offsetWidth;
         karte.classList.add('gekauft');
         if (t.effekt.some((e) => e[0] === 'frei') && techStufe(stand, id) === 1) toast(`${t.name} freigeschaltet.`, 'gut');
+        // Wer die Heugabel kauft, will nicht weiter mit dem Spaten graben.
+        if (stand.werkzeug === 'spaten' && bestesWerkzeug(werte(stand)) !== 'spaten') werkzeugWaehlen(stand, bestesWerkzeug(werte(stand)));
       } else klang.fehler();
       blattAktualisieren();
     } });
@@ -1086,7 +1135,8 @@ function bildNadeln() {
         : `${prozentAb(anteil)} abgetragen, ${nadelnGefunden(stand)} von ${NADELN_JE_LADUNG} Nadeln gefunden. Neue Ladungen gibt es, wenn alle sechs gefunden sind.`);
       lKnopf.hidden = !fertig;
       setzeText(lKnopf, stand.geld >= ladungPreis(stand) ? `Bestellen · ${geld(ladungPreis(stand))}` : 'Auf Rechnung bestellen');
-      stand.nadeln.forEach((n, i) => {
+      // Nach Art sortiert: so stehen sie in der Reihenfolge, in der man sie findet.
+      [...stand.nadeln].sort((a, b) => a.art - b.art).forEach((n, i) => {
         const k = nadelKarten[i];
         const gef = n.zustand === 'gefunden';
         schalte(k.k, 'gefunden', gef);
@@ -1270,6 +1320,8 @@ function anderesFenster() {
   if (ui.passiv) return;
   ui.passiv = true;
   saugen(stand, false);
+  saugerAus();
+  ui.saugerLaeuft = false;
   warteschlange.length = 0;
   modalSchliessen();
   modal({
@@ -1279,15 +1331,23 @@ function anderesFenster() {
       const neu = einlesen();
       if (neu) stand = neu;
       ui.passiv = false;
-      offlineNachholen(stand);
-      sichern();
+      ui.endeGezeigt = alleNadeln(stand) ? stand.ladung : stand.ladung - 1;
       wechseln(ui.reiter);
+      abwesenheitsbericht(offlineNachholen(stand));
+      sichern();
     } }],
   });
 }
 
 function start() {
-  try { klangStumm(localStorage.getItem(TON_KEY) === 'aus'); } catch { /* egal */ }
+  let alteFassung = false;
+  try {
+    klangStumm(localStorage.getItem(TON_KEY) === 'aus');
+    if (localStorage.getItem('heuhaufen-stand-v1')) {
+      alteFassung = true;
+      localStorage.removeItem('heuhaufen-stand-v1');
+    }
+  } catch { /* egal */ }
   stand = einlesen();
   const neu = !stand;
   if (neu) stand = neuerStand();
@@ -1296,6 +1356,7 @@ function start() {
   wechseln('haufen');
   if (neu) einfuehrung();
   else abwesenheitsbericht(offlineNachholen(stand));
+  if (neu && alteFassung) toast('Das Spiel wurde umgebaut. Der alte Spielstand passt nicht mehr, es geht von vorn los.', 'warn');
   sichern();
 
   document.addEventListener('visibilitychange', () => {

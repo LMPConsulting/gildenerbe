@@ -24,8 +24,8 @@ function freischalten(s, ...ids) {
 }
 
 describe('Daten', () => {
-  it('hat über 350 Stufen im Forschungsbaum, wie das Vorbild', () => {
-    expect(TECH_STUFEN_GESAMT).toBeGreaterThanOrEqual(351);
+  it('hat an die 380 Stufen im Forschungsbaum, wie das Vorbild', () => {
+    expect(TECH_STUFEN_GESAMT).toBeGreaterThanOrEqual(370);
   });
 
   it('kennt jede Voraussetzung und hat keine doppelten ids', () => {
@@ -350,7 +350,7 @@ describe('Halle', () => {
   it('rechnet Strom und Brennstoff im Gleichgewicht: die Generatoren liefern, was sie verbrennen', () => {
     const s = halle();
     freischalten(s, 'presse');
-    s.tech.lange_halle = 8; s.tech.schuppen = 6; s.rev++;
+    s.tech.schuppen = 6; s.tech.heutreppe = 1; s.tech.heulift = 1; s.tech.klappe = 1; s.rev++;
     for (let i = 0; i < 5; i++) maschineKaufen(s, 'arm');
     for (let i = 0; i < 15; i++) maschineKaufen(s, 'generator');
     for (let i = 0; i < 40; i++) maschineKaufen(s, 'presse');

@@ -93,7 +93,7 @@ button:disabled { cursor: default; }
   min-width: 0;
 }
 .kopf > * { min-width: 0; }
-.kasse { display: flex; align-items: center; gap: 5px; color: var(--heu-hell); font-weight: 700; flex: 0 1 auto; }
+.kasse { display: flex; align-items: center; gap: 5px; color: var(--heu-hell); font-weight: 700; flex: none; }
 .kasse .symhalter { color: var(--heu); }
 .kassetext { display: flex; flex-direction: column; line-height: 1.05; min-width: 0; }
 .kassetext > span { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -104,7 +104,7 @@ button:disabled { cursor: default; }
 .zaehler small { font-size: 9.5px; color: var(--leise); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .nadelblock { display: flex; align-items: center; flex: none; }
 .nadelreihe { display: flex; gap: 0; }
-.nadelmarke { width: 13px; height: 13px; color: #6b5a45; }
+.nadelmarke { width: 11px; height: 11px; color: #6b5a45; }
 .nadelmarke.gefunden { color: var(--heu-hell); filter: drop-shadow(0 0 3px rgba(247, 218, 138, 0.6)); }
 .nadelmarke.gold { color: var(--gold); }
 .nadelzahl { display: none; font-size: 13px; color: var(--heu-hell); font-weight: 700; }
@@ -151,6 +151,7 @@ button:disabled { cursor: default; }
 .knopf:active:not(:disabled) { transform: scale(0.98); }
 .knopf:disabled { opacity: 0.45; }
 .knopf.primaer { background: linear-gradient(180deg, #f2c75c, #d49a30); border-color: #f7da8a; color: #2a1c08; }
+.knopf.primaer:disabled { background: #2a251d; color: var(--leise); border-color: var(--naht); box-shadow: none; opacity: 1; }
 .knopf.gefahr { background: #4a1e16; border-color: #7a3325; color: #ffcbbd; }
 .knopf.breit { width: 100%; }
 .knopf.klein { min-height: 40px; padding: 4px 10px; font-size: 13px; border-radius: 10px; }
@@ -325,14 +326,15 @@ button:disabled { cursor: default; }
 .suchbox { flex: 1; min-width: 0; position: relative; }
 .suche {
   width: 100%; height: 40px; border-radius: 8px; border: 1px solid #2a332a;
-  background: #121612; color: var(--text); padding: 0 10px; font: inherit; font-size: 13px;
+  background: #121612; color: var(--text); padding: 0 84px 0 10px; font: inherit; font-size: 13px;
   user-select: text; -webkit-user-select: text;
 }
+.suche::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 .treffer { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--leise); pointer-events: none; }
 .astchips { display: flex; gap: 6px; padding: 6px 10px; overflow-x: auto; background: #080a08; border-bottom: 1px solid #1f261f; scrollbar-width: none; }
 .astchips::-webkit-scrollbar { display: none; }
 .astchip {
-  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 3px 10px;
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 3px 12px;
   border-radius: 999px; border: 1px solid #2a332a; background: #121612; font-size: 12px; color: var(--text-dim);
   font-family: var(--font-schmal); letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700;
 }
@@ -341,7 +343,8 @@ button:disabled { cursor: default; }
 .astchip.bereit { border-color: color-mix(in srgb, var(--astfarbe) 55%, #2a332a); color: var(--text); }
 .baum { flex: 1; overflow: auto; position: relative; -webkit-overflow-scrolling: touch; }
 .brettrahmen { position: relative; width: max-content; }
-.baum.uebersicht .brettrahmen { zoom: 0.55; }
+.baum.uebersicht .brettrahmen { zoom: 0.6; }
+.baum.uebersicht .karte .astname, .baum.uebersicht .karte .stufe { display: none; }
 .spaltenkopf {
   position: sticky; top: 0; z-index: 4; height: 28px;
   background: #080a08; border-bottom: 1px solid #1f261f;
@@ -372,7 +375,7 @@ button:disabled { cursor: default; }
   background: #161a15; border: 1px solid #2d372c; border-radius: 4px;
   line-height: 1.12; z-index: 1;
 }
-.karte .astname { font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--astfarbe); font-weight: 800; font-family: var(--font-schmal); }
+.karte .astname { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--astfarbe); font-weight: 800; font-family: var(--font-schmal); }
 .karte b { font-size: 12.5px; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .kartenfuss { display: flex; justify-content: space-between; font-size: 11px; }
 .karte .preis { color: var(--text-dim); }
@@ -432,6 +435,7 @@ button:disabled { cursor: default; }
 .nadelkarte { min-height: 100px; }
 .nsym { width: 34px; height: 34px; color: #5a4a38; margin-bottom: 4px; }
 .nadelkarte b, .sammelkarte b { font-size: 12px; }
+.sammelkarte b { padding: 0 6px; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: anywhere; }
 .nadelkarte small, .sammelkarte small { font-size: 10.5px; color: var(--leise); margin-top: 2px; }
 .nadelkarte.gefunden, .sammelkarte.gefunden { border-style: solid; border-color: #6b5327; background: #241e12; }
 .nadelkarte.gefunden .nsym, .sammelkarte.gefunden .nsym { color: var(--heu-hell); filter: drop-shadow(0 0 4px rgba(247, 218, 138, 0.5)); }
@@ -457,6 +461,8 @@ button:disabled { cursor: default; }
 .toast.weg { opacity: 0; transform: translateY(-6px); }
 .toast.warn { border-left-color: var(--rot); }
 .toast.gut { border-left-color: var(--gruen); }
+/* Toast und Mission teilen sich den Platz oben im Bild. */
+.toastan .szeneoben .mission { visibility: hidden; }
 @keyframes rein { from { opacity: 0; transform: translateY(-8px); } }
 
 .modalhalter { display: none; }
@@ -518,7 +524,8 @@ button:disabled { cursor: default; }
   .aktionen { flex-wrap: wrap; }
   .aktion { flex: 1 1 45%; }
   .blatt { left: auto; width: min(360px, 60%); top: 8px; max-height: none; }
-  .toasts { left: auto; width: min(360px, 60%); }
+  .toasts { left: 12px; right: auto; width: calc(64% - 24px); }
+  .marke { left: auto; right: 4px; top: 2px; }
   .toast:nth-child(n + 2) { display: none; }
   .hallenszene { height: 130px; }
 }
@@ -552,8 +559,8 @@ const GRUND = {
   kritFaktor: 5,
   tasche: 30,          // Halme, die man in den Armen trägt
   laufzeit: 4,         // Sekunden zum Verkaufsstand und zurück
-  ausdauer: 40,        // volle Ausdauer
-  ausdauerRegen: 4,    // pro Sekunde
+  ausdauer: 25,        // volle Ausdauer
+  ausdauerRegen: 3,    // pro Sekunde
   ausdauerKosten: 1,   // pro Stich
   erschoepft: 0.3,     // Anteil des Griffs ohne Ausdauer
   verschuetten: 0.12,  // so viel fällt bei jedem Stich zusätzlich auf den Boden
@@ -667,12 +674,12 @@ const GESCHICHTE = {
 
 /** Die Werkzeugleiste. frei: null = von Anfang an da. */
 const WERKZEUGE = [
-  { id: 'spaten', name: 'Spaten', frei: null, text: 'Sticht Heu aus dem Haufen.' },
-  { id: 'heugabel', name: 'Heugabel', frei: 'heugabel', text: 'Mehr pro Stich als der Spaten.' },
-  { id: 'sandschaufel', name: 'Sandschaufel', frei: 'sandschaufel', text: 'Winzig, aber sie kostet keine Ausdauer.' },
-  { id: 'besen', name: 'Besen', frei: 'besen', text: 'Fegt verschüttetes Heu vom Boden in die Tasche.' },
-  { id: 'sauger', name: 'Hofsauger', frei: 'sauger', text: 'Gedrückt halten, bis er zu heiß wird.' },
-  { id: 'detektor', name: 'Detektor', frei: null, text: 'Piept, wenn eine Nadel nah ist.' },
+  { id: 'spaten', name: 'Spaten', kurz: 'Spaten', frei: null, text: 'Sticht Heu aus dem Haufen.' },
+  { id: 'heugabel', name: 'Heugabel', kurz: 'Gabel', frei: 'heugabel', text: 'Mehr pro Stich als der Spaten.' },
+  { id: 'sandschaufel', name: 'Sandschaufel', kurz: 'Sand', frei: 'sandschaufel', text: 'Winzig, aber sie kostet keine Ausdauer.' },
+  { id: 'besen', name: 'Besen', kurz: 'Besen', frei: 'besen', text: 'Fegt verschüttetes Heu vom Boden in die Tasche.' },
+  { id: 'sauger', name: 'Hofsauger', kurz: 'Sauger', frei: 'sauger', text: 'Gedrückt halten, bis er zu heiß wird.' },
+  { id: 'detektor', name: 'Detektor', kurz: 'Detektor', frei: null, text: 'Piept, wenn eine Nadel nah ist.' },
 ];
 
 /* ------------------------------------------------------------ Forschung */
@@ -701,13 +708,13 @@ const k = (id, ast, name, stufen, kosten, faktor, braucht, effekt, text, gruppe 
   ({ id, ast, name, stufen, kosten, faktor, braucht, effekt, text, gruppe });
 
 const TECH = [
-  k('scheune', null, 'Start', 1, 0, 1, [], [], 'Ein Spaten, ein Metalldetektor und sehr viel Heu.'),
+  k('scheune', null, 'Bloße Hände', 1, 0, 1, [], [], 'Ein Spaten, ein Metalldetektor und sehr viel Heu.'),
 
   // Handarbeit
   k('eimer', 'hand', 'Eimer', 1, 3, 1, ['scheune'], [['tasche', '+', 70], ['frei', 'eimer']],
     'Trägt 100 statt 30 Halme.'),
-  k('eimer2', 'hand', 'Größerer Eimer', 6, 2, 1.7, ['eimer'], [['tasche', '+', 25]],
-    'Fünfundzwanzig Halme mehr pro Gang.', 'Eimer-Upgrades'),
+  k('eimer2', 'hand', 'Größerer Eimer', 6, 2, 1.7, ['eimer'], [['tasche', '+', 83]],
+    'Dreiundachtzig Halme mehr pro Gang. Voll ausgebaut fasst der Eimer 600.', 'Eimer-Upgrades'),
   k('schubkarre', 'hand', 'Schubkarre', 1, 15, 1, ['eimer'], [['tasche', '*', 2], ['laufzeit', '*', 0.9], ['frei', 'schubkarre']],
     'Doppelt so viel pro Gang, und rollen geht schneller als tragen.'),
   k('mulde', 'hand', 'Tiefere Mulde', 6, 45, 1.9, ['schubkarre'], [['tasche', '+', 60]],
@@ -738,32 +745,27 @@ const TECH = [
     'Eine Holzplattform neben dem Haufen. Zwei Stellplätze mehr.'),
   k('waende', 'hofbau', 'Wand-Pläne', 1, 80, 1, ['plattform'], [['offlineEff', '+', 0.05], ['frei', 'waende']],
     'Wände halten den Wind ab. Nachts wird 5 % mehr geschafft.'),
-  k('schuppen', 'hofbau', 'Schuppen erweitern', 6, 150, 2.1, ['waende'], [['plaetze', '+', 5]],
-    'Die Halle wird ein Feld länger. Fünf Stellplätze mehr.'),
+  k('schuppen', 'hofbau', 'Schuppen erweitern', 6, 150, 2.4, ['waende'], [['plaetze', '+', 20]],
+    'Die Halle wird ein Feld länger. Zwanzig Stellplätze mehr.'),
   k('material', 'hofbau', 'Weniger Materialverschnitt', 3, 100, 2.4, ['waende'], [['maschinenKosten', '*', 0.95]],
     'Alles, was du baust, wird 5 % billiger.'),
   k('daecher', 'hofbau', 'Dach-Pläne', 1, 1100, 1, ['waende'], [['maschinenTempo', '*', 1.03], ['frei', 'daecher']],
     'Ein Dach über den Maschinen. Sie laufen 3 % schneller.'),
-  k('lange_halle', 'hofbau', 'Lange Halle', 8, 2000, 1.9, ['schuppen', 'foerderband'], [['plaetze', '+', 10]],
-    'Zehn Stellplätze mehr.'),
-  k('arbeitslampen', 'hofbau', 'Arbeitslampen', 3, 9900, 2.5, ['daecher'], [['maschinenTempo', '*', 1.05]],
-    'Licht über jeder Maschine. 5 % schneller.'),
-  k('kran', 'hofbau', 'Hallenkran', 3, 16200, 2.5, ['material', 'foerderband'], [['maschinenKosten', '*', 0.9]],
-    'Aufbauen wird 10 % billiger.'),
+  k('arbeitslampen', 'hofbau', 'Arbeitslampen', 1, 2400, 1, ['daecher'], [['maschinenTempo', '*', 1.03]],
+    'Lampen über den Maschinen. Nachts sieht man mehr, und alles läuft 3 % runder.'),
+  k('heutreppe', 'hofbau', 'Heutreppe', 1, 900, 1, ['plattform'], [['plaetze', '+', 6]],
+    'Eine Treppe auf die Plattform. Oben ist Platz für sechs Maschinen mehr.'),
+  k('heulift', 'hofbau', 'Heulift', 1, 2700, 1, ['heutreppe'], [['plaetze', '+', 6], ['verteilung', '+', 0.05]],
+    'Hebt Heu auf die obere Ebene. Sechs Stellplätze mehr, und die Bänder kreuzen sich nicht.'),
+  k('klappe', 'hofbau', 'Abwurfklappe', 1, 1800, 1, ['waende'], [['plaetze', '+', 6], ['verteilung', '+', 0.05]],
+    'Eine Klappe im Boden, durch die Heu nach unten fällt. Sechs Stellplätze mehr.'),
   k('schrank', 'hofbau', 'Werkzeugschrank', 1, 720, 1, ['plattform'], [['tasche', '+', 50]],
     'Alles an seinem Platz. Fünfzig Halme mehr pro Gang.'),
-  k('hohes_dach', 'hofbau', 'Hohes Dach', 1, 19800, 1, ['lange_halle'], [['plaetze', '+', 25]],
-    'Fünfundzwanzig Stellplätze mehr.'),
-  k('ordnung', 'hofbau', 'Ordnung muss sein', 3, 81000, 3, ['arbeitslampen'], [['maschinenTempo', '*', 1.1]],
-    'Alle Maschinen 10 % schneller.'),
-  k('zweite_halle', 'hofbau', 'Zweite Halle', 1, 810000, 1, ['hohes_dach'], [['plaetze', '+', 100]],
-    'Hundert Stellplätze mehr.'),
-
   // Heulinien
   k('foerderband', 'linien', 'Förderband-Pläne', 1, 250, 1, ['scheune'], [['frei', 'band'], ['plaetze', '+', 12]],
     'Ein Band vom Haufen zum Stand. Was du darauf wirfst, wird verkauft, ohne dass du laufen musst.'),
-  k('bandmotor', 'linien', 'Schnellerer Bandmotor', 12, 15, 1.75, ['foerderband'], [['band', '*', 1.3]],
-    'Das Band läuft 30 % schneller.', 'Band-Upgrades'),
+  k('bandmotor', 'linien', 'Schnellerer Bandmotor', 12, 15, 2.2, ['foerderband'], [['band', '*', 1.5]],
+    'Das Band läuft 50 % schneller.', 'Band-Upgrades'),
   k('weiche', 'linien', 'Wechselweiche', 1, 120, 1, ['foerderband'], [['verteilung', '+', 0.15]],
     'Verteilt das Heu abwechselnd auf zwei Bänder. Weniger Stau vor den Maschinen.'),
   k('vereiniger', 'linien', 'Bandvereiniger', 1, 200, 1, ['weiche'], [['verteilung', '+', 0.1]],
@@ -771,14 +773,7 @@ const TECH = [
   k('vorrangarm', 'linien', 'Vorrangarm', 1, 300, 1, ['weiche'], [['verteilung', '+', 0.1]],
     'Ein Arm, der eine Seite bevorzugt. Die wichtigste Maschine bekommt zuerst.'),
   k('rohrwerfer', 'linien', 'Rohrwerfer-Pläne', 1, 260, 1, ['weiche'], [['frei', 'rohrwerfer']],
-    'Schießt Heu durch ein Rohr quer über die Halle. Jeder Werfer ist eine zweite Strecke.'),
-  k('werfer2', 'linien', 'Mehr Druck', 5, 1600, 2.1, ['rohrwerfer'], [['werfer', '*', 1.3]],
-    'Werfer schaffen 30 % mehr.', 'Werfer-Upgrades'),
-  k('heulift', 'linien', 'Heulift', 1, 2700, 1, ['vereiniger'], [['verteilung', '+', 0.05]],
-    'Hebt Heu auf die obere Ebene. Die Bänder kreuzen sich nicht mehr.'),
-  k('breitband', 'linien', 'Breiteres Band', 6, 7200, 2.8, ['foerderband'], [['band', '*', 1.5]],
-    'Das Band trägt 50 % mehr.', 'Band-Upgrades'),
-
+    'Schießt Knäuel durch ein Rohr zur zweiten Linie. Jeder Werfer ist eine Strecke mehr.'),
   // Strom
   k('elektrizitaet', 'strom', 'Elektrizität', 1, 900, 1, ['foerderband'], [['frei', 'generator']],
     'Ein Heu-Generator. Er frisst Halme vom Band und macht daraus Strom.'),
@@ -792,13 +787,8 @@ const TECH = [
     'Weniger Masten, weniger Verlust.', 'Mast-Upgrades'),
   k('abspannung', 'strom', 'Längere Abspannungen', 4, 90, 1.9, ['strommast'], [['stromMul', '*', 1.03]],
     'Die Leitungen hängen straffer.', 'Mast-Upgrades'),
-  k('erdkabel', 'strom', 'Erdkabel', 1, 5400, 1, ['strommast'], [['stromMul', '*', 1.15]],
+  k('erdkabel', 'strom', 'Erdkabel', 1, 3000, 1, ['strommast'], [['stromMul', '*', 1.15]],
     'Kabel unter dem Boden. Nichts, worüber man stolpert.'),
-  k('sparmotor', 'strom', 'Sparmotoren', 5, 5900, 2.2, ['erdkabel'], [['verbrauch', '*', 0.9]],
-    'Maschinen brauchen 10 % weniger Strom.'),
-  k('dampf', 'strom', 'Dampfgenerator', 1, 36000, 1, ['erdkabel'], [['frei', 'dampf']],
-    'Ein großer Generator. Sechsmal so viel Strom, viermal so viel Heu.'),
-
   // Verarbeitung
   k('silo', 'verarbeitung', 'Silo-Pläne', 1, 720, 1, ['foerderband'], [['frei', 'silo']],
     'Presst loses Heu zu Heuknäueln. Knäuel bringen 25 % mehr pro Halm.'),
@@ -864,6 +854,12 @@ const TECH = [
     'Greifarme 20 % schneller.'),
   k('serie', 'auto', 'Serienfertigung', 5, 8100, 2.3, ['greifarm'], [['maschinenKosten', '*', 0.9]],
     'Alle Maschinen 10 % billiger.'),
+  k('sparmotor', 'auto', 'Sparmotoren', 5, 5900, 2.2, ['greifarm'], [['verbrauch', '*', 0.9]],
+    'Maschinen brauchen 10 % weniger Strom.'),
+  k('kran', 'auto', 'Hallenkran', 3, 16200, 2.5, ['greifarm'], [['maschinenKosten', '*', 0.9]],
+    'Aufbauen wird 10 % billiger.'),
+  k('ordnung', 'auto', 'Ordnung muss sein', 3, 81000, 3, ['greifarm'], [['maschinenTempo', '*', 1.1]],
+    'Alle Maschinen 10 % schneller.'),
   k('drohne', 'auto', 'Heudrohne', 1, 70, 1, ['scheune'], [['frei', 'drohne'], ['drohnenMax', '+', 3]],
     'Kleine Drohnen fliegen Heu zum Stand. Bis zu drei.'),
   k('schwarm', 'auto', 'Drohnenschwarm', 5, 330, 2, ['drohne'], [['drohnenMax', '+', 2]],
@@ -971,8 +967,6 @@ const MASCHINEN = [
     strom: 2, plaetze: 1, text: 'Meldet regelmäßig, wie viele Halme es noch bis zur nächsten Nadel sind. Jeder weitere pingt öfter.' },
   { id: 'generator', name: 'Heu-Generator', gruppe: 'strom', frei: 'generator', kosten: 330, faktor: 1.15,
     strom: -15, plaetze: 1, brennstoff: 2, text: 'Verbrennt 2 Halme pro Sekunde vom Band für 15 Strom.' },
-  { id: 'dampf', name: 'Dampfgenerator', gruppe: 'strom', frei: 'dampf', kosten: 32000, faktor: 1.18,
-    strom: -90, plaetze: 2, brennstoff: 8, text: 'Verbrennt 8 Halme pro Sekunde für 90 Strom.' },
   { id: 'brunnen', name: 'Brunnen', gruppe: 'wasser', frei: 'brunnen', kosten: 1400, faktor: 1.15,
     strom: 3, wasser: -10, plaetze: 1, text: 'Pumpt 10 Wasser pro Sekunde.' },
   { id: 'silo', name: 'Silo', gruppe: 'verarbeitung', frei: 'silo', kosten: 90, faktor: 1.14,
@@ -1016,22 +1010,25 @@ const PRODUKTE = {
 // ist, und zahlt dann den Lohn. Nach der Liste geht es mit wachsenden Aufträgen
 // weiter (siehe auftrag() in der Engine).
 const AUFTRAEGE = [
-  { will: 'roh', menge: 2000, lohn: 90 },
-  { will: 'knaeuel', menge: 100, lohn: 40 },
-  { will: 'ballen', menge: 20, lohn: 150 },
-  { will: 'roh', menge: 20000, lohn: 800 },
-  { will: 'knaeuel', menge: 800, lohn: 300 },
-  { will: 'ballen', menge: 150, lohn: 280 },
-  { will: 'pellet', menge: 600, lohn: 400 },
-  { will: 'ballen', menge: 500, lohn: 900 },
-  { will: 'silage', menge: 200, lohn: 700 },
-  { will: 'brei', menge: 300, lohn: 600 },
-  { will: 'papier', menge: 200, lohn: 1200 },
-  { will: 'silage', menge: 1000, lohn: 3400 },
-  { will: 'papier', menge: 800, lohn: 4600 },
-  { will: 'brikett', menge: 150, lohn: 2400 },
-  { will: 'brikett', menge: 600, lohn: 9000 },
+  { titel: 'Pferdehof Lindner', will: 'roh', menge: 2000, lohn: 90 },
+  { titel: 'Kleintierzucht Wagner', will: 'knaeuel', menge: 100, lohn: 40 },
+  { titel: 'Reitstall Brandt', will: 'ballen', menge: 20, lohn: 150 },
+  { titel: 'Gärtnerei Moosbach', will: 'roh', menge: 20000, lohn: 800 },
+  { titel: 'Bastelladen Kunterbunt', will: 'knaeuel', menge: 800, lohn: 300 },
+  { titel: 'Reitstall Brandt', will: 'ballen', menge: 150, lohn: 280 },
+  { titel: 'Pelletofen Nord', will: 'pellet', menge: 600, lohn: 400 },
+  { titel: 'Gut Eichenhof', will: 'ballen', menge: 500, lohn: 900 },
+  { titel: 'Milchhof Berger', will: 'silage', menge: 200, lohn: 700 },
+  { titel: 'Papierwerk Seeburg', will: 'brei', menge: 300, lohn: 600 },
+  { titel: 'Molkerei Almtal', will: 'papier', menge: 200, lohn: 1200 },
+  { titel: 'Druckerei Feder', will: 'silage', menge: 1000, lohn: 3400 },
+  { titel: 'Ökobau Grünwerk', will: 'papier', menge: 800, lohn: 4600 },
+  { titel: 'Passivhaus Hansen', will: 'brikett', menge: 150, lohn: 2400 },
+  { titel: 'Hühnerhof Petersen', will: 'brikett', menge: 600, lohn: 9000 },
 ];
+/** Kunden für die Aufträge nach der festen Liste. */
+const KUNDEN = ['Reitstall Brandt', 'Papierwerk Seeburg', 'Ökobau Grünwerk', 'Gut Eichenhof', 'Molkerei Almtal',
+  'Pelletofen Nord', 'Zoo am Stadtrand', 'Baumarkt Kellner', 'Theater Kulisse', 'Landhandel Voss'];
 /** Pause zwischen zwei Aufträgen in Sekunden. */
 const AUFTRAG_PAUSE = 20;
 
@@ -1050,9 +1047,10 @@ const MISSIONEN = [
   { text: 'Feg verschüttetes Heu zusammen', art: 'gefegt', ziel: 50, geld: 5 },
   { text: 'Kauf die Förderband-Pläne', art: 'tech', ziel: 'foerderband', geschenk: 'rechen' },
   { text: 'Stell einen zweiten Kolbenrechen auf', art: 'maschine', ziel: ['rechen', 2], geld: 30 },
-  { text: 'Kauf Elektrizität', art: 'tech', ziel: 'elektrizitaet', geschenk: 'generator' },
+  { text: 'Kauf Elektrizität', art: 'tech', ziel: 'elektrizitaet', geschenkTech: 'strommast' },
   { text: 'Finde die erste Nadel', art: 'nadeln', ziel: 1, geld: 150 },
   { text: 'Bau ein Silo', art: 'maschine', ziel: ['silo', 1], geld: 60 },
+  { text: 'Kauf die Plattform-Pläne', art: 'tech', ziel: 'plattform', geschenkTech: 'schrank' },
   { text: 'Bau einen Greifarm', art: 'maschine', ziel: ['arm', 1], geld: 200 },
   { text: 'Bau einen Scanner', art: 'maschine', ziel: ['scanner', 1], geld: 250 },
   { text: 'Erfülle einen Auftrag', art: 'auftraege', ziel: 1, geld: 300 },
@@ -1065,7 +1063,7 @@ const MISSIONEN = [
   { text: 'Mach 50 Bögen Heupapier', art: 'produziert', ziel: ['papier', 50], geld: 12000 },
   { text: 'Finde alle sechs Nadeln', art: 'nadeln', ziel: 6, geld: 20000 },
   { text: 'Bestell eine neue Ladung', art: 'ladungen', ziel: 2, geld: 10000 },
-  { text: 'Press 100 Öko-Ziegel', art: 'produziert', ziel: ['brikett', 100], geld: 40000 },
+  { text: 'Presse 100 Öko-Ziegel', art: 'produziert', ziel: ['brikett', 100], geld: 40000 },
   { text: 'Finde zwölf Nadeln', art: 'nadeln', ziel: 12, geld: 80000 },
   { text: 'Erforsche 200 Stufen', art: 'forschung', ziel: 200, geld: 100000 },
   { text: 'Finde alle 24 Nadelarten', art: 'arten', ziel: 24, geld: 1_000_000 },
@@ -1079,6 +1077,8 @@ const MISSIONEN = [
 const STAND_VERSION = 2;
 const TECH_NACH_ID = Object.fromEntries(TECH.map((t) => [t.id, t]));
 const MASCHINE_NACH_ID = Object.fromEntries(MASCHINEN.map((m) => [m.id, m]));
+/** Welcher Knoten schaltet was frei: frei-Name → Knoten-ID. */
+const PLAN_FUER = Object.fromEntries(TECH.flatMap((t) => t.effekt.filter((e) => e[0] === 'frei').map((e) => [e[1], t.id])));
 const WERKZEUG_NACH_ID = Object.fromEntries(WERKZEUGE.map((w) => [w.id, w]));
 const TECH_STUFEN_GESAMT = TECH.reduce((n, t) => n + (t.id === 'scheune' ? 0 : t.stufen), 0);
 const NADELN_JE_LADUNG = NADEL_BEREICHE.length;
@@ -1267,6 +1267,13 @@ function einnahme(s, betrag) {
 
 function nadelFinden(s, i, ereignisse) {
   const nd = s.nadeln[i];
+  // Die Arten werden in der Reihenfolge des Findens vergeben, damit die
+  // Geschichte stimmt, auch wenn eine zurückgefallene Nadel eine andere überholt.
+  for (const andere of s.nadeln) {
+    if (andere !== nd && andere.zustand === 'versteckt' && andere.art < nd.art) {
+      [andere.art, nd.art] = [nd.art, andere.art];
+    }
+  }
   nd.zustand = 'gefunden';
   nd.zeit = s.aktiv;
   s.arten[nd.art] = (s.arten[nd.art] || 0) + 1;
@@ -1628,23 +1635,29 @@ function fabrik(s) {
   for (const m of MASCHINEN) if (m.strom > 0) f.bedarf += n(m.id) * m.strom * w.verbrauch;
   f.brennBedarf = MASCHINEN.reduce((sum, m) => sum + (m.brennstoff ? n(m.id) * m.brennstoff * w.brennstoff : 0), 0);
 
-  let strom = 1;
-  for (let runde = 0; runde < 12; runde++) {
-    const fluss = voll ? Math.min(f.moeglich * strom, f.band) : 0;
+  // Erzeugt(p) wächst mit der Leistung p. Von p = 1 aus abwärts iteriert
+  // landet man beim größten Gleichgewicht; danach einmal sauber auswerten.
+  const erzeugtBei = (p) => {
+    const fluss = voll ? Math.min(f.moeglich * p, f.band) : 0;
     const brennAnteil = f.brennBedarf > 0 ? Math.min(1, fluss / f.brennBedarf) : 1;
-    let erzeugt = GRUNDSTROM;
+    let summe = GRUNDSTROM;
+    f.leistung = {};
     for (const m of MASCHINEN) {
       if (m.strom >= 0 || !n(m.id)) continue;
       const l = -m.strom * n(m.id) * w.generatorMul * w.stromMul * (m.brennstoff ? brennAnteil : 1);
       f.leistung[m.id] = l;
-      erzeugt += l;
+      summe += l;
     }
-    f.erzeugt = erzeugt;
-    const neu = f.bedarf > 0 ? Math.min(1, erzeugt / f.bedarf) : 1;
-    const fertig = Math.abs(neu - strom) < 1e-9;
+    return summe;
+  };
+  const leistungBei = (p) => (f.bedarf > 0 ? Math.min(1, erzeugtBei(p) / f.bedarf) : 1);
+  let strom = 1;
+  for (let runde = 0; runde < 200; runde++) {
+    const neu = leistungBei(strom);
+    if (strom - neu < 1e-10) { strom = Math.min(strom, neu); break; }
     strom = neu;
-    if (fertig) break;
   }
+  f.erzeugt = erzeugtBei(strom);
   f.strom = strom;
   f.foerderung = f.moeglich * strom;
   f.fluss = voll ? Math.min(f.foerderung, f.band) : 0;
@@ -1672,7 +1685,7 @@ function fabrik(s) {
       stueck = Math.min(stueck, lager[zutat] / bedarf);
     }
     if (m.wasser) {
-      f.wasserBedarf += max * m.wasser;
+      f.wasserBedarf += Math.max(0, stueck) * m.wasser;
       stueck = Math.min(stueck, wasser / m.wasser);
       wasser -= Math.max(0, stueck) * m.wasser;
     }
@@ -1752,21 +1765,40 @@ function missionenPruefen(s, ereignisse) {
     if (!ms || !ms.erfuellt) return;
     const { m } = ms;
     let text = '';
+    let betrag = 0;
     if (m.geschenk) {
       const mm = MASCHINE_NACH_ID[m.geschenk];
+      // Wer die Maschine geschenkt bekommt, darf sie auch nachkaufen.
+      const plan = PLAN_FUER[mm.frei];
+      if (plan && !techStufe(s, plan) && techOffen(s, plan)) { s.tech[plan] = 1; s.rev++; }
       if (platzFrei(s, m.geschenk)) {
         s.maschinen[m.geschenk] = anzahl(s, m.geschenk) + 1;
+        s.rev++;
         text = `${mm.name} geschenkt`;
       } else {
         einnahme(s, mm.kosten);
-        text = `${mm.kosten} $ statt ${mm.name}`;
+        betrag = mm.kosten;
+        text = `statt ${mm.name}`;
+      }
+    } else if (m.geschenkTech) {
+      const t = TECH_NACH_ID[m.geschenkTech];
+      if (techStufe(s, t.id) < t.stufen) {
+        s.tech[t.id] = techStufe(s, t.id) + 1;
+        s.rev++;
+        text = `${t.name} geschenkt`;
+      } else {
+        const preis = t.kosten;
+        einnahme(s, preis);
+        betrag = preis;
+        text = `statt ${t.name}`;
       }
     } else if (m.geld) {
       einnahme(s, m.geld);
-      text = `+${m.geld} $`;
+      betrag = m.geld;
     }
     s.mission++;
-    ereignisse.push({ typ: 'mission', text: m.text, belohnung: text, geld: m.geld || 0 });
+    // belohnung ist nur der Text zum Geschenk; den Betrag formatiert die Oberfläche.
+    ereignisse.push({ typ: 'mission', text: m.text, belohnung: text, geld: betrag });
   }
 }
 
@@ -1944,8 +1976,10 @@ function offlineNachholen(s, jetzt = Date.now()) {
   }
   s.ausdauer = Math.min(w.ausdauer, s.ausdauer + w.ausdauerRegen * weg);
   s.sauger.an = false;
+  s.sauger.hitze = 0;
+  s.sauger.heiss = false;
   const sek = Math.min(weg, w.offlineStunden * 3600);
-  if (sek < 30 || (s.drohnen === 0 && !hatBand(w))) return null;
+  if (sek <= 0 || (s.drohnen === 0 && !hatBand(w))) return null;
   const geldVor = s.geld;
   const verdientVor = s.verdient;
   const halmeVor = s.stat.abgetragen;
@@ -1955,6 +1989,8 @@ function offlineNachholen(s, jetzt = Date.now()) {
   const dt = sek / schritte;
   const ereignisse = [...e0];
   for (let i = 0; i < schritte; i++) ereignisse.push(...tick(s, dt, { offline: true }));
+  // Auch kurze Abwesenheiten zählen; erzählt wird erst ab einer halben Minute.
+  if (sek < 30) return null;
   return {
     sekunden: sek,
     abwesend: weg,
@@ -2018,7 +2054,17 @@ function laden(text) {
   if (!istObjekt(s.stat.werkzeug)) s.stat.werkzeug = {};
   for (const k of ['tipps', 'hand', 'drohne', 'maschine', 'gaenge', 'verkauft', 'gefegt', 'abgetragen',
     'auftraege', 'besterVerkauf', 'maxGeld']) s.stat[k] = zahlOder(s.stat[k], 0);
-  for (const k of ['nr', 'geliefert', 'pause']) s.auftrag[k] = zahlOder(s.auftrag[k], 0);
+  for (const k of ['nr', 'geliefert', 'pause']) s.auftrag[k] = Math.max(0, zahlOder(s.auftrag[k], 0));
+  s.auftrag.nr = Math.floor(s.auftrag.nr);
+  s.mission = Math.max(0, Math.floor(s.mission));
+  s.ladung = Math.max(1, Math.floor(s.ladung));
+  s.stat.produziert = Object.fromEntries(Object.entries(s.stat.produziert).filter(([p, n]) => PRODUKTE[p] && Number.isFinite(n)));
+  s.haufen.entfernt = Math.max(0, Math.min(s.haufen.entfernt, s.haufen.gesamt));
+  for (const n of s.nadeln) {
+    if (n.zustand === 'versteckt' && (n.tiefe <= s.haufen.entfernt || n.tiefe > s.haufen.gesamt)) {
+      n.tiefe = Math.min(s.haufen.gesamt, Math.floor(s.haufen.entfernt) + 1);
+    }
+  }
   s.radar = { rest: zahlOder(s.radar.rest, 0), abstand: zahlOder(s.radar.abstand, null), zeit: zahlOder(s.radar.zeit, null) };
   s.sauger = { an: false, hitze: zahlOder(s.sauger.hitze, 0), heiss: !!s.sauger.heiss };
   s.rev = 0;
@@ -2034,9 +2080,9 @@ const EINHEITEN = [
   [1e15, 'Brd.'], [1e12, 'Bio.'], [1e9, 'Mrd.'], [1e6, 'Mio.'],
 ];
 
-const deutsch = (n, stellen) => n.toLocaleString('de-DE', {
-  minimumFractionDigits: stellen, maximumFractionDigits: stellen,
-});
+// Ein Formatierer je Nachkommastellen, einmal gebaut: toLocaleString baut sonst bei jedem Aufruf neu.
+const FORMATE = [0, 1, 2].map((st) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: st, maximumFractionDigits: st }));
+const deutsch = (n, stellen) => FORMATE[stellen].format(n);
 
 const stellenFuer = (x) => (x >= 100 ? 0 : x >= 10 ? 1 : 2);
 
@@ -2317,7 +2363,6 @@ const MASCHINEN_SYM = {
   scanner: symSvg(`<path d="M5 27V7h22v20" ${LINIE}/><path d="M9 17h14" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/>`),
   radar: symSvg(`<path d="M6 24a14 14 0 0 1 20 0M10 20a8 8 0 0 1 12 0" ${LINIE}/><circle cx="16" cy="24" r="2.5" ${FLAECHE}/>`),
   generator: symSvg(`<rect x="4" y="11" width="22" height="15" rx="2" ${LINIE}/><path d="M22 11V5M17 13l-4 6h5l-2 5" ${LINIE}/>`),
-  dampf: symSvg(`<path d="M8 27V13a8 8 0 0 1 16 0v14Z" ${LINIE}/><path d="M12 5c1 2-1 3 0 5M18 4c1 2-1 3 0 5" ${LINIE}/>`),
   brunnen: symSvg(`<path d="M8 27h16M11 27V15h10v12" ${LINIE}/><path d="M6 12l20-5" ${LINIE}/><path d="M16 18c-2 3-2 5 0 5s2-2 0-5Z" ${FLAECHE}/>`),
   silo: symSvg(`<path d="M9 27V10a7 5 0 0 1 14 0v17Z" ${LINIE}/><circle cx="16" cy="21" r="3" ${FLAECHE}/>`),
   presse: symSvg(`<rect x="7" y="14" width="18" height="12" rx="2" ${LINIE}/><path d="M16 4v8M11 12h10" ${LINIE}/><path d="M10 19h12M10 23h12" ${LINIE} stroke-width="1.4"/>`),
@@ -2628,11 +2673,15 @@ function haufenSzene(canvas) {
   /* -------------------------------------------------- Der Haufen */
 
   function haufenZeichnen(k) {
-    const key = `${g.w}x${g.h}@${g.dpr}:${k.toFixed(4)}`;
+    const key = `${g.w}x${g.h}@${g.dpr}:${Math.round(lage().h0 * k * g.dpr)}`;
     if (key === haufenKey && haufenBild) return haufenBild.c;
     haufenKey = key;
-    haufenBild = puffer(g);
+    if (!haufenBild || haufenBild.c.width !== Math.max(1, g.w * g.dpr) || haufenBild.c.height !== Math.max(1, g.h * g.dpr)) {
+      haufenBild = puffer(g);
+    }
     const c = haufenBild.x;
+    c.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+    c.clearRect(0, 0, g.w, g.h);
     if (k <= 0.0005) return haufenBild.c;
     const H = haufenForm(k);
     c.fillStyle = 'rgba(60,40,15,0.35)';
@@ -2837,7 +2886,7 @@ function haufenSzene(canvas) {
       ctx.fillStyle = '#fff4dc';
       ctx.fillText(t, 8, g.h - 10);
     }
-    const gens = Math.min(4, (s.maschinen.generator || 0) + (s.maschinen.dampf || 0));
+    const gens = Math.min(4, (s.maschinen.generator || 0));
     for (let i = 0; i < gens; i++) {
       const x = 16 + i * 30;
       const y = L.boden - 2;
@@ -3242,7 +3291,7 @@ function halleSzene(canvas) {
           ctx.fillRect(x - 3 + p * (rechts - x), bandY - 8 - Math.sin(p * Math.PI) * 14, 7, 6);
         }
       });
-      const gens = Math.min(5, (s.maschinen.generator || 0) + (s.maschinen.dampf || 0));
+      const gens = Math.min(5, (s.maschinen.generator || 0));
       for (let i = 0; i < gens; i++) {
         const x = 70 + i * 22;
         const y = h * 0.62;
@@ -3404,14 +3453,20 @@ function sichern() {
   ui.gespeichert = performance.now();
 }
 
+/** Der neueste lesbare Stand: aus dem Browser oder aus der mitgenommenen Datei. */
 function einlesen() {
+  let lokal = null;
   try {
     const roh = localStorage.getItem(SPEICHER_KEY);
-    if (roh) return laden(roh);
+    if (roh) {
+      lokal = laden(roh);
+      // Unlesbares nicht einfach überschreiben, sondern zur Seite legen.
+      if (!lokal) localStorage.setItem(`${SPEICHER_KEY}-kaputt`, roh);
+    }
   } catch { /* kein Speicher */ }
-  // Eine mitgenommene Datei bringt ihren Spielstand selbst mit.
-  if (typeof HEUHAUFEN_MITGEBRACHT === 'string') return laden(HEUHAUFEN_MITGEBRACHT);
-  return null;
+  const mit = typeof HEUHAUFEN_MITGEBRACHT === 'string' ? laden(HEUHAUFEN_MITGEBRACHT) : null;
+  if (lokal && mit) return (mit.zuletzt || 0) > (lokal.zuletzt || 0) ? mit : lokal;
+  return lokal || mit;
 }
 
 /* ------------------------------------------------------------ Gerüst */
@@ -3465,15 +3520,17 @@ function wechseln(id) {
 
 function kopfAktualisieren() {
   setzeText(el.geld, geld(stand.geld));
-  setzeText(el.schulden, stand.schulden > 0 ? `Schulden ${geld(stand.schulden)}` : '');
+  setzeText(el.schulden, stand.schulden > 0 ? `−${geld(stand.schulden)}` : '');
+  el.schulden.title = stand.schulden > 0 ? 'Schulden' : '';
   setzeText(el.halme, halme(rest(stand)));
-  setzeText(el.ladung, `Halme · Ladung ${stand.ladung}`);
-  stand.nadeln.forEach((n, i) => {
+  setzeText(el.ladung, `Ladung ${stand.ladung}`);
+  const gefunden = nadelnGefunden(stand);
+  for (let i = 0; i < NADELN_JE_LADUNG; i++) {
     const m = el.nadeln.children[i];
-    schalte(m, 'gefunden', n.zustand === 'gefunden');
-    schalte(m, 'gold', n.zustand === 'gefunden' && i === NADELN_JE_LADUNG - 1);
-  });
-  setzeText(el.nadelZahl, `${nadelnGefunden(stand)}/${NADELN_JE_LADUNG}`);
+    schalte(m, 'gefunden', i < gefunden);
+    schalte(m, 'gold', i < gefunden && i === NADELN_JE_LADUNG - 1);
+  }
+  setzeText(el.nadelZahl, `${gefunden}/${NADELN_JE_LADUNG}`);
   const kaufbar = TECH.filter((t) => techStatus(stand, t.id) === 'kaufbar').length;
   setzeText(el.reiter.forschung.marke, kaufbar ? String(kaufbar) : '');
   schalte(el.reiter.forschung.marke, 'sichtbar', kaufbar > 0);
@@ -3491,9 +3548,13 @@ function toast(text, art = '') {
   }
   const t = h('div', { class: `toast ${art}` }, text);
   el.toasts.append(t);
-  while (el.toasts.children.length > 2) el.toasts.firstChild.remove();
+  while (el.toasts.children.length > 3) el.toasts.firstChild.remove();
+  document.getElementById('app').classList.add('toastan');
   setTimeout(() => t.classList.add('weg'), 2600);
-  setTimeout(() => t.remove(), 3000);
+  setTimeout(() => {
+    t.remove();
+    if (!el.toasts.children.length) document.getElementById('app').classList.remove('toastan');
+  }, 3000);
 }
 
 const warteschlange = [];
@@ -3538,7 +3599,7 @@ function modal(optionen) {
 function einfuehrung() {
   modal({
     klasse: 'intromodal',
-    ober: `Rund ${halme(ladungGroesse(1))} Halme`,
+    ober: `Rund ${halme(ladungGroesse(stand ? stand.ladung : 1))} Halme`,
     titel: 'Find die Nadel',
     absaetze: GESCHICHTE.anfang,
     inhalt: h('ul', { class: 'anleitung' },
@@ -3573,7 +3634,7 @@ function nadelGefunden(e, sofort = false) {
     }],
   });
   // Erst den Moment im Bild zeigen, dann die Karte.
-  if (sofort) zeigen(); else setTimeout(zeigen, 900);
+  if (sofort) zeigen(); else setTimeout(() => { if (!ui.passiv) zeigen(); }, 900);
   sichern();
 }
 
@@ -3633,11 +3694,14 @@ function bestellen(aufRechnung) {
 
 function abwesenheitsbericht(b) {
   if (!b) return;
-  const wer = b.drohnenAllein ? 'Die Drohnen haben' : 'Halle und Drohnen haben';
+  const wer = b.drohnenAllein ? 'Die Drohnen haben' : stand.drohnen ? 'Halle und Drohnen haben' : 'Die Halle hat';
   const zeilen = [`${wer} ${halme(b.halme)} Halme abgetragen und ${geld(b.verdient)} verdient.`];
   if (b.verdient > b.geld + 0.01) zeilen.push(`Davon gingen ${geld(b.verdient - b.geld)} an die Schulden.`);
   if (b.auftraege) zeilen.push(b.auftraege === 1 ? 'Ein Auftrag wurde geliefert.' : `${b.auftraege} Aufträge wurden geliefert.`);
   if (b.nadeln) zeilen.push(b.nadeln === 1 ? 'Und eine Nadel wurde gefunden.' : `Und ${b.nadeln} Nadeln wurden gefunden.`);
+  for (const e of b.ereignisse) {
+    if (e.typ === 'mission') zeilen.push(`Mission erfüllt: ${e.text}${belohnungText(e) ? ` · ${belohnungText(e)}` : ''}`);
+  }
   if (b.abwesend > b.sekunden + 60) {
     zeilen.push(`Gezählt wurden ${dauer(b.sekunden)} von ${dauer(b.abwesend)}. Mehr schafft die Nachtschicht noch nicht.`);
   }
@@ -3647,7 +3711,21 @@ function abwesenheitsbericht(b) {
 
 /* ------------------------------------------------------------ Ereignisse */
 
+/** "+10.000 $", "Heu-Generator geschenkt" oder "330 $ statt Greifarm". */
+function belohnungText(e) {
+  if (e.belohnung) return e.geld ? `${geld(e.geld)} ${e.belohnung}` : e.belohnung;
+  return e.geld ? `+${geld(e.geld)}` : '';
+}
+
 function ereignisse(liste) {
+  const missionen = liste.filter((e) => e.typ === 'mission');
+  if (missionen.length) {
+    klang.fund(2);
+    const letzte = missionen[missionen.length - 1];
+    toast(missionen.length === 1
+      ? `Mission erfüllt: ${letzte.text}${belohnungText(letzte) ? ` · ${belohnungText(letzte)}` : ''}`
+      : `${missionen.length} Missionen erfüllt, zuletzt: ${letzte.text}`, 'gut');
+  }
   for (const e of liste) {
     if (e.typ === 'nadel') nadelGefunden(e);
     else if (e.typ === 'zurueck') {
@@ -3659,9 +3737,6 @@ function ereignisse(liste) {
     } else if (e.typ === 'ueberhitzt') {
       klang.heiss();
       toast('Der Sauger ist überhitzt und muss abkühlen.', 'warn');
-    } else if (e.typ === 'mission') {
-      klang.fund(2);
-      toast(`Mission erfüllt: ${e.text}${e.belohnung ? ` · ${e.belohnung}` : ''}`, 'gut');
     } else if (e.typ === 'auftrag') {
       klang.kasse();
       toast(`Auftrag geliefert: ${zahl(e.auftrag.menge)} ${PRODUKTE[e.auftrag.will].name} · +${geld(e.lohn)}`, 'gut');
@@ -3789,8 +3864,12 @@ function bildHaufen() {
     mission.hidden = !ms;
     if (ms) {
       setzeText(missionText, ms.m.text);
-      const lohn = ms.m.geschenk ? 'Geschenk' : ms.m.geld ? `+${geld(ms.m.geld)}` : '';
-      const fortschritt = ms.ziel > 1 && ms.ziel !== 0.5 ? ` · ${zahl(ms.ist)}/${zahl(ms.ziel)}` : ms.m.art === 'haelfte' ? ` · ${prozentAb(ms.ist)}` : '';
+      const lohn = ms.m.geschenk || ms.m.geschenkTech ? 'Geschenk' : ms.m.geld ? `+${geld(ms.m.geld)}` : '';
+      const zaehlbar = !['tech', 'werkzeug', 'ladungen', 'haelfte'].includes(ms.m.art) && ms.ziel > 1;
+      // Große Ziele als Prozent: "456.834/1,00 Mio." liest keiner.
+      const fortschritt = ms.m.art === 'haelfte' ? ` · ${prozentAb(ms.ist)}`
+        : zaehlbar && ms.ziel >= 1e5 ? ` · ${prozentAb(ms.ist / ms.ziel)}`
+        : zaehlbar ? ` · ${zahl(ms.ist)}/${zahl(ms.ziel)}` : '';
       setzeText(missionLohn, `${lohn}${fortschritt}`);
       missionBalken.style.width = `${Math.min(100, (ms.ist / ms.ziel) * 100)}%`;
     }
@@ -3798,7 +3877,7 @@ function bildHaufen() {
     let hw = '';
     if (ladungMoeglich(stand)) hw = 'Alle Nadeln dieser Ladung gefunden. Unter „Nadeln“ bestellst du die nächste.';
     else if (rest(stand) <= 0) hw = 'Der Haufen ist leer.';
-    else if (!hatBand(w) && stand.tasche >= taschePlatz(w)) hw = 'Die Tasche ist voll. Bring das Heu zum Stand.';
+    else if (!hatBand(w) && stand.laufen <= 0 && stand.tasche >= taschePlatz(w)) hw = 'Die Tasche ist voll. Bring das Heu zum Stand.';
     else if (hatBand(w) && fabrik(stand).fluss > 0 && fabrik(stand).deckung < 0.95) {
       hw = w.frei.has('scanner') ? 'Nicht alles Heu auf dem Band wird gescannt. Nadeln können zurückfallen.'
         : 'Ohne Scanner fallen Nadeln, die Maschinen erwischen, zurück in den Haufen.';
@@ -4010,7 +4089,7 @@ function bildHalle() {
       setzeText(kz.strom.unter, f.strom < 1 ? `nur ${prozentAb(f.strom)} Leistung` : 'reicht');
       kz.wasser.box.hidden = !wv.frei.has('brunnen');
       setzeText(kz.wasser.wert, `${rate(f.wasser)} / ${rate(f.wasserBedarf)}`);
-      setzeText(kz.wasser.unter, f.wasserAnteil < 1 ? `nur ${prozentAb(f.wasserAnteil)} für die Pulper` : 'reicht');
+      setzeText(kz.wasser.unter, f.wasserAnteil < 1 ? `nur ${prozentAb(f.wasserAnteil)} des Bedarfs` : 'reicht');
       setzeText(kz.scanner.wert, prozentAb(f.deckung));
       setzeText(kz.scanner.unter, 'des Heus gescannt');
       setzeText(kz.plaetze.wert, `${plaetzeBelegt(stand)} / ${wv.plaetze}`);
@@ -4050,7 +4129,7 @@ function bildHalle() {
           setzeText(aTitel, `${zahl(au.menge)} ${name} · ${geld(auftragLohn(stand, au))}`);
           setzeText(aInfo, rateP > 0
             ? `${zahl(stand.auftrag.geliefert)} von ${zahl(au.menge)} geladen · ${rate(rateP)}/s`
-            : `Die Halle macht gerade keine ${name}. Ablehnen, oder die passende Maschine bauen.`);
+            : `Gerade entsteht in der Halle nichts davon (${name}). Ablehnen, oder die passende Maschine bauen.`);
           aBalken.style.width = `${Math.min(100, (stand.auftrag.geliefert / au.menge) * 100)}%`;
           aAblehnen.hidden = false;
         }
@@ -4087,7 +4166,9 @@ function bildHalle() {
         if (frei && n) {
           if (m.gruppe === 'strom') {
             const l = f.leistung[m.id] || 0;
-            st = aus ? 'ausgeschaltet' : `liefert ${rate(l)} Strom${m.brennstoff ? `, frisst ${rate(m.brennstoff * n * wv.brennstoff)} Halme/s` : ''}`;
+            // Frisst, was wirklich ankommt, nicht was er gern hätte.
+            const hunger = m.brennstoff && f.brennBedarf > 0 && f.brennstoff < f.brennBedarf * 0.95;
+            st = aus ? 'ausgeschaltet' : `liefert ${rate(l)} Strom${m.brennstoff ? `, frisst ${rate(f.brennstoff)} Halme/s` : ''}${hunger ? ' · zu wenig Heu' : ''}`;
           } else if (m.id === 'arm' || m.id === 'rechen') st = `Auslastung ${prozent(f.auslastung.arm || 0)}`;
           else if (m.id === 'rohrwerfer') st = `Band +${prozent(n * m.rate * wv.werfer)}`;
           else if (m.id === 'scanner') st = `prüft ${rate(n * m.rate * wv.scanDeckung * wv.maschinenTempo * f.strom)} Halme/s`;
@@ -4096,7 +4177,8 @@ function bildHalle() {
           else if (m.produkt) {
             const aus2 = f.auslastung[m.id] || 0;
             st = `Auslastung ${prozent(aus2)} · ${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
-            if (aus2 < 0.05 && !aus) st += ' · bekommt nichts vom Band';
+            if (aus2 < 0.05 && !aus) st += m.rezept.halme ? ' · bekommt nichts vom Band' : ' · es fehlen Zutaten';
+            else if (wv.verteilung < 1 && aus2 >= wv.verteilung - 0.01) st += ' · Stau, Weichen helfen';
           }
           if (m.strom > 0 && !aus) st += ` · braucht ${rate(m.strom * n * wv.verbrauch)} Strom`;
         } else if (frei && m.produkt) st = `${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
@@ -4114,6 +4196,8 @@ const ZEILE = 74;
 const KARTE_B = 156;
 const RAND_L = 34;
 const RAND_O = 36;
+/** Maßstab der Übersicht; muss zu .baum.uebersicht .brettrahmen in style.css passen. */
+const UEBERSICHT = 0.6;
 
 const schritteName = (n) => (n === 0 ? 'Start' : n === 1 ? '1 Schritt' : `${n} Schritte`);
 
@@ -4122,10 +4206,20 @@ function bildForschung() {
   const zaehler = h('span', { class: 'num' });
   const treffer = h('span', { class: 'treffer' });
   const zoomKnopf = h('button', { class: 'rund', 'aria-label': 'Übersicht umschalten', onclick: () => {
+    // Die Mitte des Blicks bleibt, wo sie war, oder die gewählte Karte.
+    const f0 = ui.zoom ? UEBERSICHT : 1;
+    const mx = (scroller.scrollLeft + scroller.clientWidth / 2) / f0;
+    const my = (scroller.scrollTop + scroller.clientHeight / 2) / f0;
     ui.zoom = !ui.zoom;
     schalte(scroller, 'uebersicht', ui.zoom);
     zoomKnopf.innerHTML = '';
     zoomKnopf.append(sym(ui.zoom ? SYM.zoomEin : SYM.zoomAus));
+    if (ui.wahl) zuKarte(ui.wahl, false);
+    else {
+      const f1 = ui.zoom ? UEBERSICHT : 1;
+      scroller.scrollLeft = Math.max(0, mx * f1 - scroller.clientWidth / 2);
+      scroller.scrollTop = Math.max(0, my * f1 - scroller.clientHeight / 2);
+    }
   } }, sym(ui.zoom ? SYM.zoomEin : SYM.zoomAus));
   const kopf = h('div', { class: 'forschungskopf' },
     h('div', { class: 'fkopflinks' }, h('p', { class: 'ober' }, 'Hof-Forschung'), h('p', { class: 'fortschritt' }, zaehler, ' Stufen')),
@@ -4138,7 +4232,7 @@ function bildForschung() {
       class: 'astchip', style: { '--astfarbe': a.farbe },
       onclick: () => {
         const b = BAUM.aeste.find((x) => x.ast === a.id);
-        scroller.scrollTo({ top: Math.max(0, (RAND_O + b.von * ZEILE - 30) * (ui.zoom ? 0.55 : 1)), behavior: 'smooth' });
+        scroller.scrollTo({ top: Math.max(0, (RAND_O + b.von * ZEILE - 30) * (ui.zoom ? UEBERSICHT : 1)), behavior: 'smooth' });
       },
     }, a.name, n);
     chips[a.id] = { c, n };
@@ -4227,7 +4321,7 @@ function bildForschung() {
 
   function zuKarte(id, sanft = true) {
     const p = pos(id);
-    const f = ui.zoom ? 0.55 : 1;
+    const f = ui.zoom ? UEBERSICHT : 1;
     const sichtbar = scroller.clientHeight - (blatt.classList.contains('offen') ? blatt.offsetHeight + 16 : 0);
     scroller.scrollTo({
       left: Math.max(0, (p.x - scroller.clientWidth / 2 + KARTE_B / 2) * f),
@@ -4251,7 +4345,8 @@ function bildForschung() {
     for (const t of TECH) {
       const ja = !q || passt(t, q);
       if (q && ja) n++;
-      schalte(karten[t.id].karte, 'blass', !!q && !ja);
+      // Die gewählte Karte bleibt kräftig, auch wenn sie nicht zur Suche passt.
+      schalte(karten[t.id].karte, 'blass', !!q && !ja && t.id !== ui.wahl);
     }
     setzeText(treffer, q ? (n ? `${n} Treffer` : 'keine Treffer') : '');
     return q;
@@ -4265,6 +4360,7 @@ function bildForschung() {
   anwendenSuche();
 
   function blattZeigen() {
+    anwendenSuche();
     const id = ui.wahl;
     for (const [k, v] of Object.entries(karten)) schalte(v.karte, 'gewaehlt', k === id);
     if (!id) { blatt.classList.remove('offen'); blatt.innerHTML = ''; blatt.aktualisieren = null; return; }
@@ -4281,6 +4377,8 @@ function bildForschung() {
         void karte.offsetWidth;
         karte.classList.add('gekauft');
         if (t.effekt.some((e) => e[0] === 'frei') && techStufe(stand, id) === 1) toast(`${t.name} freigeschaltet.`, 'gut');
+        // Wer die Heugabel kauft, will nicht weiter mit dem Spaten graben.
+        if (stand.werkzeug === 'spaten' && bestesWerkzeug(werte(stand)) !== 'spaten') werkzeugWaehlen(stand, bestesWerkzeug(werte(stand)));
       } else klang.fehler();
       blattAktualisieren();
     } });
@@ -4393,7 +4491,8 @@ function bildNadeln() {
         : `${prozentAb(anteil)} abgetragen, ${nadelnGefunden(stand)} von ${NADELN_JE_LADUNG} Nadeln gefunden. Neue Ladungen gibt es, wenn alle sechs gefunden sind.`);
       lKnopf.hidden = !fertig;
       setzeText(lKnopf, stand.geld >= ladungPreis(stand) ? `Bestellen · ${geld(ladungPreis(stand))}` : 'Auf Rechnung bestellen');
-      stand.nadeln.forEach((n, i) => {
+      // Nach Art sortiert: so stehen sie in der Reihenfolge, in der man sie findet.
+      [...stand.nadeln].sort((a, b) => a.art - b.art).forEach((n, i) => {
         const k = nadelKarten[i];
         const gef = n.zustand === 'gefunden';
         schalte(k.k, 'gefunden', gef);
@@ -4577,6 +4676,8 @@ function anderesFenster() {
   if (ui.passiv) return;
   ui.passiv = true;
   saugen(stand, false);
+  saugerAus();
+  ui.saugerLaeuft = false;
   warteschlange.length = 0;
   modalSchliessen();
   modal({
@@ -4586,15 +4687,23 @@ function anderesFenster() {
       const neu = einlesen();
       if (neu) stand = neu;
       ui.passiv = false;
-      offlineNachholen(stand);
-      sichern();
+      ui.endeGezeigt = alleNadeln(stand) ? stand.ladung : stand.ladung - 1;
       wechseln(ui.reiter);
+      abwesenheitsbericht(offlineNachholen(stand));
+      sichern();
     } }],
   });
 }
 
 function start() {
-  try { klangStumm(localStorage.getItem(TON_KEY) === 'aus'); } catch { /* egal */ }
+  let alteFassung = false;
+  try {
+    klangStumm(localStorage.getItem(TON_KEY) === 'aus');
+    if (localStorage.getItem('heuhaufen-stand-v1')) {
+      alteFassung = true;
+      localStorage.removeItem('heuhaufen-stand-v1');
+    }
+  } catch { /* egal */ }
   stand = einlesen();
   const neu = !stand;
   if (neu) stand = neuerStand();
@@ -4603,6 +4712,7 @@ function start() {
   wechseln('haufen');
   if (neu) einfuehrung();
   else abwesenheitsbericht(offlineNachholen(stand));
+  if (neu && alteFassung) toast('Das Spiel wurde umgebaut. Der alte Spielstand passt nicht mehr, es geht von vorn los.', 'warn');
   sichern();
 
   document.addEventListener('visibilitychange', () => {

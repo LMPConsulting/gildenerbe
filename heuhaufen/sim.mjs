@@ -22,7 +22,7 @@ function sinnvolleMaschinen(s) {
   const ids = [];
   if (!f.aktiv) return ids;
   if (f.strom < 1 || (f.bedarf > 0 && f.erzeugt - f.bedarf < 4)) {
-    for (const id of ['generator', 'dampf']) if (frei(id)) ids.push(id);
+    for (const id of ['generator']) if (frei(id)) ids.push(id);
     if (ids.length) return ids;
   }
   if (frei('brunnen') && f.wasserBedarf > f.wasser * 0.95 && (anzahl(s, 'pulper') || anzahl(s, 'papier'))) ids.push('brunnen');
@@ -54,7 +54,7 @@ function einkaufen(s) {
       const st = techStatus(s, t.id);
       if (st !== 'kaufbar' && st !== 'teuer') continue;
       let gewicht = 1;
-      if ((t.id === 'bandmotor' || t.id === 'breitband') && bandVoll) gewicht = 0.25;
+      if (t.id === 'bandmotor' && bandVoll) gewicht = 0.25;
       if (t.ast === 'verarbeitung' || t.id === 'foerderband' || t.id === 'greifarm') gewicht = 0.6;
       if (t.id === 'nachtschicht' || t.id === 'nachtwaechter' || t.id === 'kredit') gewicht = 4;
       if (ziel.tech === t.id) gewicht = 0.2;
