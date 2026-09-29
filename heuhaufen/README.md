@@ -62,7 +62,7 @@ Ladung, größter Verkauf, meiste Kasse.
 
 Wie im Vorbild nach **Schritten vom Start** in Spalten gelegt, mit Suchfeld und
 Upgrade-Gruppen als schmale Zeilen unter einer Überschrift („Band-Upgrades: Schnellerer
-Bandmotor 15 $ 0/12“). 113 Knoten mit zusammen **401 Stufen** in zehn Ästen:
+Bandmotor 15 $ 0/12“). 114 Knoten mit zusammen **401 Stufen** in zehn Ästen:
 
 Handarbeit · Hofbau · Heulinien · Strom · Verarbeitung · Automatisierung · Wasser · Suche · Verkauf · Fitness
 
