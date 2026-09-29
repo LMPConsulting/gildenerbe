@@ -62,7 +62,7 @@ Ladung, größter Verkauf, meiste Kasse.
 
 Wie im Vorbild nach **Schritten vom Start** in Spalten gelegt, mit Suchfeld und
 Upgrade-Gruppen als schmale Zeilen unter einer Überschrift („Band-Upgrades: Schnellerer
-Bandmotor 15 $ 0/12“). 114 Knoten mit zusammen **401 Stufen** in zehn Ästen:
+Bandmotor 15 $ 0/12“). 111 Knoten mit zusammen **379 Stufen** in zehn Ästen:
 
 Handarbeit · Hofbau · Heulinien · Strom · Verarbeitung · Automatisierung · Wasser · Suche · Verkauf · Fitness
 
@@ -79,11 +79,11 @@ sonst das Billigste mit Nutzen und lehnt Aufträge ab, die die Halle nicht bedie
 | | Median |
 |---|---|
 | Heugabel | 1 min |
-| Förderband | 12 min |
-| erste Nadel | 16 min |
-| halbe Ladung | 90 min |
-| Ladung 1 geschafft | 117 min |
-| alle 24 Nadelarten (vier Ladungen) | etwa 5½ h |
+| Förderband | 10 min |
+| erste Nadel | 13 min |
+| halbe Ladung | 83 min |
+| Ladung 1 geschafft | 107 min |
+| alle 24 Nadelarten (vier Ladungen) | etwa 5¼ h |
 
 Am Ende tragen Maschinen gut zwei Drittel ab, die Hand weniger als ein Drittel.
 `tests/heuhaufen/balance.test.js` hält das fest, dazu einen langsamen Spieler mit einem

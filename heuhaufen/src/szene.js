@@ -101,7 +101,7 @@ export function haufenSzene(canvas) {
   const g = leinwand(canvas);
   const { ctx } = g;
   const z = musterZufall(20260929);
-  const halme = Array.from({ length: 1100 }, () => ({
+  const halme = Array.from({ length: 3000 }, () => ({
     u: z() * 2 - 1, v: Math.pow(z(), 0.75), a: (z() - 0.5) * 2.2, l: 5 + z() * 9,
     farbe: ['#e3a948', '#f7d98a', '#b98232', '#d6983a', '#f0c461', '#8f6120'][Math.floor(z() * 6)],
   }));
@@ -124,13 +124,16 @@ export function haufenSzene(canvas) {
   const lage = () => {
     const boden = g.h * 0.8;
     const r0 = Math.min(g.w * 0.56, g.h * 0.85);
+    // Maßstab für alles, was keine Kulisse ist: auf dem Tablet wächst es mit.
+    const S = Math.max(1, Math.min(1.8, Math.min(g.w / 390, g.h / 600)));
     return {
       boden,
       wand: g.h * 0.36,
       cx: g.w * 0.42,
       r0,
       h0: Math.min(boden - g.h * 0.14, r0 * 1.15),
-      standX: g.w - 58,
+      standX: g.w - 64 * S,
+      S,
     };
   };
 
@@ -283,6 +286,28 @@ export function haufenSzene(canvas) {
     }
   }
 
+  /** Die Bögen werfen breite, schräge Schatten über Boden und Haufen, wie im Vorbild bei Tag. */
+  function bogenSchatten() {
+    const L = lage();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, L.wand, g.w, g.h - L.wand);
+    ctx.clip();
+    ctx.fillStyle = 'rgba(20,10,0,0.14)';
+    for (let i = 0; i < 3; i++) {
+      const x0 = g.w * (0.05 + i * 0.36);
+      const breite = g.w * 0.11;
+      ctx.beginPath();
+      ctx.moveTo(x0, L.wand);
+      ctx.lineTo(x0 + breite, L.wand);
+      ctx.lineTo(x0 + breite - g.w * 0.3, g.h);
+      ctx.lineTo(x0 - g.w * 0.3, g.h);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function uhr(sekunden, torOffen) {
     const { tw, tx, ty } = torMasse();
     const m = Math.floor(sekunden / 60);
@@ -333,8 +358,10 @@ export function haufenSzene(canvas) {
     fuss.addColorStop(1, 'rgba(70,40,10,0.35)');
     c.fillStyle = fuss;
     c.fillRect(H.cx - H.r, H.boden - 18, H.r * 2, 18);
-    const massstab = Math.max(0.5, Math.min(1, k * 1.25 + 0.2));
-    const anzahl = Math.round(120 + 980 * Math.pow(k, 0.6));
+    const massstab = Math.max(0.5, Math.min(1, k * 1.25 + 0.2)) * H.S;
+    // Gleiche Dichte auf jeder Fläche: ein Tablet-Haufen braucht mehr Halme als ein Handy-Haufen.
+    const dichte = Math.max(1, Math.min(2.7, (H.r0 * H.h0) / (218 * 250)));
+    const anzahl = Math.min(halme.length, Math.round((120 + 980 * Math.pow(k, 0.6)) * dichte));
     c.lineCap = 'round';
     for (let i = 0; i < anzahl; i++) {
       const hm = halme[i];
@@ -382,13 +409,16 @@ export function haufenSzene(canvas) {
     for (let i = 0; i < n; i++) {
       const t = tuffs[i];
       const x = H.cx + t.u * (H.r + 30);
-      const y = H.boden + 4 + t.v * (g.h - H.boden - 34);
-      ctx.fillStyle = HEU_DUNKEL;
-      ctx.beginPath(); ctx.ellipse(x, y + 1, 7 * t.s, 2.4 * t.s, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = HEU;
+      const y = Math.min(H.boden + 4 + t.v * (g.h - H.boden - 34), g.h - 80);
+      ctx.fillStyle = 'rgba(154,106,36,0.55)';
+      ctx.beginPath(); ctx.ellipse(x, y + 1, 7 * t.s * H.S, 2 * t.s * H.S, 0, 0, Math.PI * 2); ctx.fill();
       ctx.lineWidth = 1.2;
-      for (let j = -2; j <= 2; j++) {
-        ctx.beginPath(); ctx.moveTo(x + j * 2 * t.s, y + 1); ctx.lineTo(x + j * 3.2 * t.s, y - 4 * t.s); ctx.stroke();
+      for (let j = 0; j < 7; j++) {
+        const a = ((j * 97 + i * 31) % 180) / 180 * Math.PI;
+        const l = (5 + ((j * 13 + i * 7) % 5)) * t.s * H.S;
+        const ox = (((j * 53 + i * 17) % 11) - 5) * t.s * H.S;
+        ctx.strokeStyle = j % 3 === 0 ? HEU_HELL : j % 3 === 1 ? HEU : HEU_DUNKEL;
+        ctx.beginPath(); ctx.moveTo(x + ox, y); ctx.lineTo(x + ox + Math.cos(a) * l, y - Math.sin(a) * l * 0.35); ctx.stroke();
       }
     }
   }
@@ -397,67 +427,96 @@ export function haufenSzene(canvas) {
 
   function stand(preisText) {
     const L = lage();
-    const x = L.standX;
-    const y = L.boden;
+    ctx.save();
+    ctx.translate(L.standX, L.boden);
+    ctx.scale(L.S, L.S);
+    // Bude aus Brettern mit Vordach
+    ctx.fillStyle = 'rgba(40,25,10,0.3)';
+    ctx.fillRect(-24, -2, 78, 6);
+    ctx.fillStyle = '#5a3c22';
+    ctx.fillRect(-20, -44, 70, 44);
+    ctx.fillStyle = 'rgba(0,0,0,0.16)';
+    for (let x = -20; x < 50; x += 7) ctx.fillRect(x, -44, 1, 44);
+    ctx.fillStyle = '#2a1c10';
+    ctx.fillRect(-14, -36, 34, 16);
+    ctx.fillStyle = '#7a5433';
+    ctx.fillRect(-24, -20, 78, 6);
     ctx.fillStyle = '#4a321d';
-    ctx.fillRect(x - 22, y - 46, 70, 46);
-    ctx.fillStyle = '#5d4027';
-    ctx.fillRect(x - 22, y - 46, 70, 6);
-    ctx.fillStyle = '#2a1c10';
-    ctx.fillRect(x - 16, y - 36, 26, 18);
-    ctx.fillStyle = '#6b4a2d';
-    ctx.fillRect(x - 25, y - 20, 76, 6);
-    ctx.fillStyle = '#2a1c10';
-    ctx.fillRect(x - 20, y - 66, 66, 18);
-    ctx.fillStyle = '#e9dcc0';
-    ctx.fillRect(x - 18, y - 64, 62, 14);
-    ctx.fillStyle = '#3b2a17';
-    ctx.font = '800 8.5px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('HEU VERKAUFEN', x + 13, y - 57, 58);
-    // Aufsteller mit dem Preis, wie im Vorbild
-    const ax = x - 34;
-    ctx.fillStyle = '#1f1f1f';
-    ctx.beginPath();
-    ctx.moveTo(ax - 12, y + 6); ctx.lineTo(ax - 8, y - 26); ctx.lineTo(ax + 8, y - 26); ctx.lineTo(ax + 12, y + 6);
-    ctx.closePath(); ctx.fill();
+    ctx.fillRect(-18, -14, 4, 14); ctx.fillRect(44, -14, 4, 14);
+    // Kasse auf dem Tresen
+    ctx.fillStyle = '#3d4447';
+    ctx.fillRect(26, -30, 16, 10);
+    ctx.fillStyle = '#7cf29a';
+    ctx.fillRect(29, -28, 10, 3);
+    // Vordach
+    ctx.fillStyle = '#8a2f22';
+    ctx.beginPath(); ctx.moveTo(-28, -44); ctx.lineTo(58, -44); ctx.lineTo(52, -54); ctx.lineTo(-22, -54); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#f0e6d2';
+    for (let x = -22; x < 52; x += 12) {
+      ctx.beginPath(); ctx.moveTo(x, -54); ctx.lineTo(x + 6, -54); ctx.lineTo(x + 5, -44); ctx.lineTo(x - 1, -44); ctx.closePath(); ctx.fill();
+    }
+    // Schild: dunkle Planke, helle Schrift
+    ctx.fillStyle = '#3a3a3a';
+    ctx.fillRect(-12, -62, 2, 8); ctx.fillRect(40, -62, 2, 8);
+    ctx.fillStyle = '#2b1d12';
+    ctx.fillRect(-22, -78, 74, 18);
     ctx.strokeStyle = '#6b4a2d';
     ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.fillStyle = '#f2f2f2';
-    ctx.font = '700 6.5px system-ui, sans-serif';
-    ctx.fillText(preisText, ax, y - 15, 20);
-    ctx.fillText('PRO HALM', ax, y - 7, 20);
+    ctx.strokeRect(-22, -78, 74, 18);
+    ctx.fillStyle = '#f3e7cc';
+    ctx.font = '700 10px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('HEU VERKAUFEN', 15, -68.5, 68);
+    // Aufsteller mit dem Preis, wie im Vorbild, groß genug zum Lesen
+    const ax = -42;
+    ctx.fillStyle = '#6b4a2d';
+    ctx.beginPath(); ctx.moveTo(ax - 17, 4); ctx.lineTo(ax - 12, -40); ctx.lineTo(ax + 12, -40); ctx.lineTo(ax + 17, 4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#1e2320';
+    ctx.beginPath(); ctx.moveTo(ax - 14, 0); ctx.lineTo(ax - 10, -37); ctx.lineTo(ax + 10, -37); ctx.lineTo(ax + 14, 0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#f4f4ee';
+    ctx.font = '700 10px system-ui, sans-serif';
+    ctx.fillText(preisText.replace(' $', ''), ax, -27, 24);
+    ctx.font = '700 8px system-ui, sans-serif';
+    ctx.fillText('$ PRO', ax, -16, 24);
+    ctx.fillText('HALM', ax, -7, 24);
+    ctx.restore();
+  }
+
+  /** Wo das Band liegt: vom linken Rand bis vor den Stand. */
+  function bandLage() {
+    const L = lage();
+    return { y: L.boden + 22 * L.S, von: Math.max(g.w * 0.08, 12), bis: L.standX - 64 * L.S, S: L.S };
   }
 
   function foerderband(s, f, H) {
     if (!f || !f.aktiv) return;
-    const L = lage();
-    const y = L.boden + 16;
-    const von = Math.max(10, H.cx + H.r * 0.35);
-    const bis = L.standX - 30;
+    const { y, von, bis, S } = bandLage();
     if (bis - von < 20) return;
+    const bh = 9 * S;
     ctx.fillStyle = '#2a2927';
-    ctx.fillRect(von, y, bis - von, 9);
-    ctx.fillStyle = '#4a4744';
-    ctx.fillRect(von, y, bis - von, 2.5);
+    ctx.beginPath(); ctx.roundRect(von, y, bis - von, bh, bh / 2); ctx.fill();
+    ctx.fillStyle = '#8b8883';
+    ctx.fillRect(von + bh / 2, y, bis - von - bh, 1.8 * S);
+    ctx.fillRect(von + bh / 2, y + bh - 1.8 * S, bis - von - bh, 1.8 * S);
     ctx.fillStyle = '#6d6a66';
-    for (let x = von + 8; x < bis; x += 26) ctx.fillRect(x, y + 9, 3, 7);
+    for (let x = von + 10; x < bis - 6; x += 30 * S) ctx.fillRect(x, y + bh, 3 * S, 7 * S);
     const tempo = f.fluss > 0 ? 30 + 90 * Math.min(1, f.fluss / Math.max(1, f.band)) : 22;
     ctx.strokeStyle = '#3a3835';
     ctx.lineWidth = 1;
     const off = (zeit * tempo) % 10;
-    for (let x = von + off; x < bis; x += 10) { ctx.beginPath(); ctx.moveTo(x, y + 3); ctx.lineTo(x, y + 9); ctx.stroke(); }
+    for (let x = von + 6 + off; x < bis - 6; x += 10) { ctx.beginPath(); ctx.moveTo(x, y + 3 * S); ctx.lineTo(x, y + bh - 2 * S); ctx.stroke(); }
     const len = bis - von;
+    const kr = 4 * S;
     if (f.fluss > 0) {
-      const n = Math.min(14, 3 + Math.round(Math.log2(1 + f.fluss / 10) * 1.6));
+      // Abstand zwischen den Knäueln, auch wenn das Band voll ist: keine Raupe.
+      const n = Math.min(Math.floor(len / (16 * S)), 3 + Math.round(Math.log2(1 + f.fluss / 10) * 1.6));
       for (let i = 0; i < n; i++) {
         const x = von + ((zeit * tempo + (i * len) / n) % len);
         ctx.fillStyle = KNAEUEL;
-        ctx.beginPath(); ctx.arc(x, y - 3, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y - kr + 1, kr, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = 'rgba(255,230,170,0.6)';
-        ctx.beginPath(); ctx.arc(x - 1.3, y - 4.3, 1.4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x - kr * 0.33, y - kr * 1.3 + 1, kr * 0.35, 0, Math.PI * 2); ctx.fill();
       }
     }
     for (let i = wuerfe.length - 1; i >= 0; i--) {
@@ -466,66 +525,64 @@ export function haufenSzene(canvas) {
       if (wf.p >= 1) { wuerfe.splice(i, 1); continue; }
       const x = von + wf.p * len;
       ctx.fillStyle = KNAEUEL;
-      ctx.beginPath(); ctx.arc(x, y - 3, 4.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y - kr + 1, kr * 1.1, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  /** Generatoren stehen hinten an der Wand links vom Tor; der Haufen verdeckt sie, bis er schrumpft. */
+  function generatoren(s, f) {
+    const L = lage();
+    const gens = Math.min(5, s.maschinen.generator || 0);
+    const { tx } = torMasse();
+    for (let i = 0; i < gens; i++) {
+      const gw = 24 * L.S;
+      const x = tx - 10 - gw - i * (gw + 6);
+      if (x < 4) break;
+      const y = L.boden - 2;
+      ctx.fillStyle = '#4b5a3b';
+      ctx.fillRect(x, y - 18 * L.S, gw, 18 * L.S);
+      ctx.fillStyle = '#2d3524';
+      ctx.fillRect(x + gw * 0.66, y - 26 * L.S, 5 * L.S, 8 * L.S);
+      if (f && f.strom > 0 && f.brennstoff > 0) {
+        const p = (zeit * 0.7 + i * 0.37) % 1;
+        ctx.fillStyle = `rgba(220,220,215,${0.5 * (1 - p)})`;
+        ctx.beginPath(); ctx.arc(x + gw * 0.75 + p * 6, y - 28 * L.S - p * 22, (3 + p * 6) * L.S, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = f && f.strom < 1 ? '#ff6b4a' : '#7cf29a';
+      ctx.fillRect(x + 3, y - 14 * L.S, 3, 3);
     }
   }
 
   function maschinen(s, f, H) {
     const L = lage();
+    const B = bandLage();
     const leer = s.haufen.entfernt >= s.haufen.gesamt;
     const arme = s.aus.arm ? 0 : (s.maschinen.arm || 0);
     const rechen = s.aus.rechen ? 0 : (s.maschinen.rechen || 0);
     const laeuft = !!f && f.fluss > 0 && !leer;
-    const zr = Math.min(3, rechen);
-    for (let i = 0; i < zr; i++) {
-      const x = Math.max(24, H.cx - H.r * 0.55 - 20 - i * 26);
-      const y = L.boden + 10 + i * 4;
-      const hub = laeuft ? (Math.sin(zeit * 3 + i) + 1) * 4 : 0;
-      ctx.fillStyle = '#5b5f63';
-      ctx.fillRect(x - 10, y - 8, 20, 10);
-      ctx.fillStyle = '#9aa0a5';
-      ctx.fillRect(x + 10, y - 5, 6 + hub, 3);
-      ctx.fillStyle = '#6b4a2d';
-      ctx.fillRect(x + 16 + hub, y - 9, 3, 12);
-    }
-    const za = Math.min(6, arme);
+    const zr = Math.min(4, rechen);
+    // Arme stehen hinter dem Band, gleichmäßig verteilt, alle zum Stand gewandt; links davon die Rechen.
+    const links = Math.max(20, B.von + 14 * L.S + zr * 30 * L.S);
+    const rechts = Math.max(links, L.standX - 70 * L.S);
+    const platz = Math.max(1, Math.floor((rechts - links) / (30 * L.S)) + 1);
+    const za = Math.min(8, arme, platz);
     for (let i = 0; i < za; i++) {
-      const seite = i % 2 === 0 ? 1 : -1;
-      const reihe = Math.floor(i / 2);
-      const x = H.cx + seite * (Math.max(H.r * 0.72, 26) + reihe * 22);
-      const y = L.boden + 6 + reihe * 9;
+      const x = za === 1 ? (links + rechts) / 2 : links + ((rechts - links) * i) / (za - 1);
+      const y = B.y - 2 * L.S;
       const ph = laeuft ? Math.sin(zeit * 2.6 + i * 1.3) : 0.3;
-      ctx.save();
-      if (seite < 0) { ctx.translate(x * 2, 0); ctx.scale(-1, 1); }
-      roboterarm(ctx, x, y, 0.9, ph, laeuft && ph > 0.2);
-      ctx.restore();
+      roboterarm(ctx, x, y, 0.95 * L.S, ph, laeuft && ph > 0.2);
     }
-    if (arme + rechen > za + zr) {
-      ctx.font = '700 11px system-ui, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'alphabetic';
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'rgba(30,20,10,0.7)';
-      const t = `${arme ? `${arme} Arme` : ''}${arme && rechen ? ' · ' : ''}${rechen ? `${rechen} Rechen` : ''}`;
-      ctx.strokeText(t, 8, g.h - 10);
-      ctx.fillStyle = '#fff4dc';
-      ctx.fillText(t, 8, g.h - 10);
-    }
-    const gens = Math.min(4, (s.maschinen.generator || 0));
-    for (let i = 0; i < gens; i++) {
-      const x = 16 + i * 30;
-      const y = L.boden - 2;
-      ctx.fillStyle = '#4b5a3b';
-      ctx.fillRect(x, y - 18, 24, 18);
-      ctx.fillStyle = '#2d3524';
-      ctx.fillRect(x + 16, y - 26, 5, 8);
-      if (f && f.strom > 0 && f.brennstoff > 0) {
-        const p = (zeit * 0.7 + i * 0.37) % 1;
-        ctx.fillStyle = `rgba(220,220,215,${0.5 * (1 - p)})`;
-        ctx.beginPath(); ctx.arc(x + 18 + p * 6, y - 28 - p * 22, 3 + p * 6, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.fillStyle = f && f.strom < 1 ? '#ff6b4a' : '#7cf29a';
-      ctx.fillRect(x + 3, y - 14, 3, 3);
+    // Rechen schieben am Anfang des Bands Heu drauf.
+    for (let i = 0; i < zr; i++) {
+      const x = B.von + 12 * L.S + i * 30 * L.S;
+      const y = B.y + 2 * L.S;
+      const hub = laeuft ? (Math.sin(zeit * 3 + i) + 1) * 4 * L.S : 0;
+      ctx.fillStyle = '#5b5f63';
+      ctx.fillRect(x - 10 * L.S, y - 8 * L.S, 20 * L.S, 10 * L.S);
+      ctx.fillStyle = '#9aa0a5';
+      ctx.fillRect(x - 4 * L.S, y - 8 * L.S - hub - 6 * L.S, 3 * L.S, 6 * L.S + hub);
+      ctx.fillStyle = '#6b4a2d';
+      ctx.fillRect(x - 10 * L.S, y - 8 * L.S - hub - 9 * L.S, 20 * L.S, 3 * L.S);
     }
     if (s.maschinen.radar) {
       const x = L.standX - 6;
@@ -550,8 +607,8 @@ export function haufenSzene(canvas) {
     const leer = s.haufen.entfernt >= s.haufen.gesamt;
     const ax = H.cx;
     const ay = H.boden - H.h - 16;
-    const bx = L.standX + 12;
-    const by = L.boden - 70;
+    const bx = L.standX + 14 * L.S;
+    const by = L.boden - 96 * L.S;
     for (let i = 0; i < n; i++) {
       let x;
       let y;
@@ -589,60 +646,83 @@ export function haufenSzene(canvas) {
   function laeufer(anteil, H) {
     if (anteil == null) return;
     const L = lage();
-    const von = Math.min(H.cx + H.r * 0.8, L.standX - 60);
-    const bis = L.standX - 34;
+    const bis = L.standX - 6 * L.S;
+    const von = Math.min(H.cx + H.r * 0.3, bis - 90 * L.S);
     const hin = anteil < 0.5;
     const q = Math.max(0, Math.min(1, hin ? anteil * 2 : 2 - anteil * 2));
-    const x = von + (bis - von) * q;
-    const y = L.boden + 18;
+    const e = (1 - Math.cos(q * Math.PI)) / 2;
+    const x = von + (bis - von) * e;
+    const y = L.boden + 34 * L.S;
     const schritt = Math.sin(zeit * 14);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(1.4 * L.S * (hin ? 1 : -1), 1.4 * L.S);
+    ctx.fillStyle = 'rgba(40,25,10,0.25)';
+    ctx.beginPath(); ctx.ellipse(0, 1, 8, 2.2, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#2f3a4a';
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(x, y - 14); ctx.lineTo(x - 5 * schritt, y);
-    ctx.moveTo(x, y - 14); ctx.lineTo(x + 5 * schritt, y);
+    ctx.moveTo(0, -14); ctx.lineTo(-5 * schritt, 0);
+    ctx.moveTo(0, -14); ctx.lineTo(5 * schritt, 0);
     ctx.stroke();
     ctx.strokeStyle = '#3f6b9a';
     ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.moveTo(x, y - 30); ctx.lineTo(x, y - 14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -30); ctx.lineTo(0, -14); ctx.stroke();
     ctx.fillStyle = '#f0c9a0';
-    ctx.beginPath(); ctx.arc(x, y - 35, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -35, 4.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#c9a227';
-    ctx.fillRect(x - 5, y - 41, 10, 3);
+    ctx.fillRect(-5, -41, 10, 3);
     if (hin) {
       ctx.fillStyle = '#d9d9d9';
-      ctx.beginPath(); ctx.moveTo(x + 4, y - 26); ctx.lineTo(x + 16, y - 26); ctx.lineTo(x + 14, y - 16); ctx.lineTo(x + 6, y - 16); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(4, -26); ctx.lineTo(16, -26); ctx.lineTo(14, -16); ctx.lineTo(6, -16); ctx.fill();
       ctx.fillStyle = HEU;
-      ctx.beginPath(); ctx.ellipse(x + 10, y - 27, 6, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(10, -27, 6, 3.5, 0, 0, Math.PI * 2); ctx.fill();
     }
+    ctx.restore();
   }
 
   function sauger(info, H) {
     if (!info.saugerAktiv) return;
     const L = lage();
-    const sx = Math.min(H.cx + H.r + 34, L.standX - 70);
-    const sy = L.boden + 20;
-    const zx = H.cx + H.r * 0.5;
-    const zy = H.boden - H.h * 0.3;
+    const S = L.S;
+    const sx = Math.min(H.cx + H.r + 34 * S, L.standX - 80 * S);
+    const sy = L.boden + 30 * S;
+    const zx = Math.min(H.cx + H.r * 0.5, sx - 40 * S);
+    const zy = H.boden - Math.max(H.h * 0.3, 14);
     ctx.lineCap = 'round';
-    ctx.strokeStyle = '#1f2327';
-    ctx.lineWidth = 9;
-    ctx.beginPath(); ctx.moveTo(sx, sy - 6); ctx.quadraticCurveTo(sx - 10, zy + 30, zx + 8, zy); ctx.stroke();
-    ctx.strokeStyle = '#8a9299';
-    ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.moveTo(sx, sy - 6); ctx.quadraticCurveTo(sx - 10, zy + 30, zx + 8, zy); ctx.stroke();
+    for (const [farbe, breite] of [['#1f2327', 9 * S], ['#8a9299', 6 * S]]) {
+      ctx.strokeStyle = farbe;
+      ctx.lineWidth = breite;
+      ctx.beginPath(); ctx.moveTo(sx, sy - 8 * S); ctx.quadraticCurveTo(sx - 10 * S, zy + 30 * S, zx + 10 * S, zy + 3 * S); ctx.stroke();
+    }
+    // Düse: ein breiter Trichter, der auf den Haufen zeigt
+    ctx.save();
+    ctx.translate(zx + 10 * S, zy + 3 * S);
+    ctx.rotate(Math.PI + 0.35);
+    ctx.fillStyle = '#3a4046';
+    ctx.beginPath(); ctx.moveTo(0, -3 * S); ctx.lineTo(14 * S, -8 * S); ctx.lineTo(14 * S, 8 * S); ctx.lineTo(0, 3 * S); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    // Wagen färbt sich mit der Hitze
     const rot = Math.round(200 + info.hitze * 55);
     const gruen = Math.round(60 + (1 - info.hitze) * 120);
     ctx.fillStyle = `rgb(${rot},${gruen},40)`;
-    ctx.fillRect(sx - 12, sy - 12, 26, 18);
+    ctx.beginPath(); ctx.roundRect(sx - 14 * S, sy - 14 * S, 30 * S, 20 * S, 4 * S); ctx.fill();
     ctx.fillStyle = '#222';
-    ctx.beginPath(); ctx.arc(sx - 7, sy + 7, 4, 0, Math.PI * 2); ctx.arc(sx + 9, sy + 7, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx - 8 * S, sy + 7 * S, 4.5 * S, 0, Math.PI * 2); ctx.arc(sx + 10 * S, sy + 7 * S, 4.5 * S, 0, Math.PI * 2); ctx.fill();
     if (info.saugt) {
-      for (let i = 0; i < 2; i++) {
+      // Helle Halme fliegen aus einem Kegel in die Düse.
+      const dx = zx - 4 * S;
+      const dy = zy + 6 * S;
+      for (let i = 0; i < 5; i++) {
+        const a = Math.PI + 0.35 + (Math.random() - 0.5) * 0.9;
+        const d = (40 + Math.random() * 30) * S;
+        const x = dx + Math.cos(a) * d;
+        const y = dy + Math.sin(a) * d;
+        const leben = 0.4;
         teilchen.push({
-          x: zx - 12 - Math.random() * 24, y: zy + (Math.random() - 0.5) * 24,
-          vx: 110, vy: -8, leben: 0.25, max: 0.25, a: Math.random() * 3, l: 7, farbe: HEU_DUNKEL, schwer: 0,
+          x, y, vx: (dx - x) / leben, vy: (dy - y) / leben, leben, max: leben,
+          a: Math.random() * 3, l: 6 * S, farbe: Math.random() < 0.5 ? HEU_HELL : '#fff0c0', schwer: 0,
         });
       }
     }
@@ -667,20 +747,28 @@ export function haufenSzene(canvas) {
     ctx.restore();
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, glanz));
-    const hell = ctx.createRadialGradient(gx, gy, 0, gx, gy, 40);
+    const hr = 64 * H.S;
+    const hell = ctx.createRadialGradient(gx, gy, 0, gx, gy, hr);
     hell.addColorStop(0, 'rgba(255,255,235,0.95)');
     hell.addColorStop(1, 'rgba(255,255,235,0)');
     ctx.fillStyle = hell;
-    ctx.fillRect(gx - 40, gy - 40, 80, 80);
+    ctx.fillRect(gx - hr, gy - hr, hr * 2, hr * 2);
     ctx.translate(gx, gy);
     ctx.rotate(-0.8);
-    ctx.strokeStyle = '#e8eef2';
-    ctx.lineWidth = 2.5;
+    ctx.scale(2 * H.S, 2 * H.S);
+    ctx.strokeStyle = '#6f7a82';
+    ctx.lineWidth = 3.2;
     ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(-18, 0); ctx.lineTo(18, 0); ctx.stroke();
-    ctx.strokeStyle = '#8a959c';
+    ctx.strokeStyle = '#d9e2e8';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(-18, 0); ctx.lineTo(18, 0); ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(-16, -0.6); ctx.lineTo(10, -0.6); ctx.stroke();
+    ctx.strokeStyle = '#6f7a82';
     ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.ellipse(15, 0, 3, 1.4, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(14, 0, 3, 1.4, 0, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
 
@@ -762,7 +850,7 @@ export function haufenSzene(canvas) {
 
     standText(text) {
       const L = lage();
-      neuerText({ x: L.standX + 12, y: L.boden - 80, text, leben: 1.4, farbe: '#a6f0b0', groesse: 15 });
+      neuerText({ x: L.standX + 14 * L.S, y: L.boden - 92 * L.S, text, leben: 1.4, farbe: '#a6f0b0', groesse: 15 });
     },
 
     nadelGlanz() { glanz = 2.4; },
@@ -784,6 +872,7 @@ export function haufenSzene(canvas) {
       }
       dachboegen();
       uhr(info.uhr || 0, info.torOffen);
+      generatoren(s, info.fabrik);
       if (quetsch > 0) quetsch = Math.max(0, quetsch - dt);
       const sy = 1 - quetsch * 0.15;
       if (k > 0.0005) {
@@ -793,6 +882,7 @@ export function haufenSzene(canvas) {
         ctx.drawImage(haufenZeichnen(Math.round(k * 2000) / 2000), 0, 0, g.w, g.h);
         ctx.restore();
       } else leererBoden(H);
+      bogenSchatten();
       bodenheu(info.boden || 0, H);
       stand(info.preisText || '0,02 $');
       foerderband(s, info.fabrik, H);
@@ -872,13 +962,35 @@ export function halleSzene(canvas) {
           ctx.beginPath(); ctx.arc(x, bandY - 3, 3.6, 0, Math.PI * 2); ctx.fill();
         }
       }
+      const gens = Math.min(5, (s.maschinen.generator || 0));
+      for (let i = 0; i < gens; i++) {
+        const x = 70 + i * 22;
+        const y = h * 0.72;
+        ctx.fillStyle = '#4b5a3b';
+        ctx.fillRect(x, y - 14, 18, 14);
+        if (f.brennstoff > 0) {
+          const p = (zeit * 0.8 + i * 0.3) % 1;
+          ctx.fillStyle = `rgba(230,230,225,${0.5 * (1 - p)})`;
+          ctx.beginPath(); ctx.arc(x + 13, y - 18 - p * 16, 2 + p * 5, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      if (s.maschinen.brunnen) {
+        const x = 70 + gens * 22 + 10;
+        const y = h * 0.72;
+        ctx.fillStyle = '#3f6f9a';
+        ctx.fillRect(x, y - 16, 12, 16);
+        ctx.strokeStyle = '#5aa7e0';
+        ctx.lineWidth = 2;
+        const hub = Math.sin(zeit * 3) * 3;
+        ctx.beginPath(); ctx.moveTo(x - 4, y - 18 + hub); ctx.lineTo(x + 16, y - 18 - hub); ctx.stroke();
+      }
       const arme = s.aus.arm ? 0 : (s.maschinen.arm || 0);
       const zahl = Math.min(4, arme);
       for (let i = 0; i < zahl; i++) {
         roboterarm(ctx, links + 14 + i * 24, bandY + 2, 0.75, f.fluss > 0 ? Math.sin(zeit * 3 * (f.strom || 0) + i) : 0.3, false);
       }
       if (s.maschinen.scanner) {
-        const sx = links + (rechts - links) * 0.4;
+        const sx = Math.max(links + (rechts - links) * 0.4, links + 14 + zahl * 24 + 10);
         ctx.strokeStyle = '#b58be8';
         ctx.lineWidth = 4;
         ctx.beginPath();
@@ -908,51 +1020,14 @@ export function halleSzene(canvas) {
           ctx.font = '800 7.5px system-ui, sans-serif';
           ctx.fillText(name, x, bandY - 21 + hub / 2, bw - 4);
         }
-        ctx.font = '800 8px system-ui, sans-serif';
-        ctx.fillText(`×${s.maschinen[id]}`, x, bandY - 13);
+        ctx.font = `800 ${bw < 40 ? 7 : 8}px system-ui, sans-serif`;
+        ctx.fillText(`×${s.maschinen[id]}`, x, bandY - 13, bw - 2);
         if (an) {
           const p = (zeit * 1.4 + i * 0.3) % 1;
           ctx.fillStyle = PRODUKT_FARBE[PRODUKT_VON[id]];
           ctx.fillRect(x - 3 + p * (rechts - x), bandY - 8 - Math.sin(p * Math.PI) * 14, 7, 6);
         }
       });
-      const gens = Math.min(5, (s.maschinen.generator || 0));
-      for (let i = 0; i < gens; i++) {
-        const x = 70 + i * 22;
-        const y = h * 0.62;
-        ctx.fillStyle = '#4b5a3b';
-        ctx.fillRect(x, y - 14, 18, 14);
-        if (f.brennstoff > 0) {
-          const p = (zeit * 0.8 + i * 0.3) % 1;
-          ctx.fillStyle = `rgba(230,230,225,${0.5 * (1 - p)})`;
-          ctx.beginPath(); ctx.arc(x + 13, y - 18 - p * 16, 2 + p * 5, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-      if (s.maschinen.brunnen) {
-        const x = 70 + gens * 22 + 10;
-        const y = h * 0.62;
-        ctx.fillStyle = '#3f6f9a';
-        ctx.fillRect(x, y - 16, 12, 16);
-        ctx.strokeStyle = '#5aa7e0';
-        ctx.lineWidth = 2;
-        const hub = Math.sin(zeit * 3) * 3;
-        ctx.beginPath(); ctx.moveTo(x - 4, y - 18 + hub); ctx.lineTo(x + 16, y - 18 - hub); ctx.stroke();
-      }
-      const ziel = lasterDa ? w - 2 : w + 90;
-      if (lasterX == null) lasterX = ziel;
-      lasterX += (ziel - lasterX) * Math.min(1, dt * 1.5);
-      if (lasterX < w + 60) {
-        const lx = lasterX;
-        const ly = bandY - 30;
-        ctx.fillStyle = '#c9412e';
-        ctx.fillRect(lx - 40, ly - 22, 30, 22);
-        ctx.fillStyle = '#e9e4da';
-        ctx.fillRect(lx - 10, ly - 16, 16, 16);
-        ctx.fillStyle = '#9ec3dc';
-        ctx.fillRect(lx - 7, ly - 13, 9, 6);
-        ctx.fillStyle = '#1d1d1f';
-        ctx.beginPath(); ctx.arc(lx - 30, ly + 2, 4, 0, Math.PI * 2); ctx.arc(lx, ly + 2, 4, 0, Math.PI * 2); ctx.fill();
-      }
       ctx.fillStyle = '#4a321d';
       ctx.fillRect(rechts, bandY - 36, 60, 46);
       ctx.fillStyle = '#e9dcc0';
@@ -962,8 +1037,23 @@ export function halleSzene(canvas) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('VERKAUF', rechts + 30, bandY - 43);
+      const ziel = lasterDa ? rechts + 16 : w + 90;
+      if (lasterX == null) lasterX = ziel;
+      lasterX += (ziel - lasterX) * Math.min(1, dt * 1.5);
+      if (lasterX < w + 60) {
+        const lx = lasterX;
+        const ly = Math.min(h - 8, bandY + 34);
+        ctx.fillStyle = '#c9412e';
+        ctx.fillRect(lx - 40, ly - 22, 30, 22);
+        ctx.fillStyle = '#e9e4da';
+        ctx.fillRect(lx - 10, ly - 16, 16, 16);
+        ctx.fillStyle = '#9ec3dc';
+        ctx.fillRect(lx - 7, ly - 13, 9, 6);
+        ctx.fillStyle = '#1d1d1f';
+        ctx.beginPath(); ctx.arc(lx - 30, ly + 2, 4, 0, Math.PI * 2); ctx.arc(lx, ly + 2, 4, 0, Math.PI * 2); ctx.fill();
+      }
       ctx.fillStyle = 'rgba(20,16,12,0.7)';
-      ctx.fillRect(8, 8, 90, 16);
+      ctx.fillRect(8, 8, 104, 16);
       ctx.fillStyle = f.strom < 1 ? '#ff6b4a' : '#e8c547';
       ctx.fillRect(10, 10, 58 * Math.min(1, f.bedarf ? f.erzeugt / Math.max(f.bedarf, f.erzeugt) : 1), 12);
       ctx.fillStyle = '#fff4dc';

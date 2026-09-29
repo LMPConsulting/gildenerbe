@@ -405,8 +405,12 @@ function bildHaufen() {
   const tasche = h('div', { class: 'balken tasche' }, taschenFuellung, sym(SYM.tasche), taschenText);
   const ausdauerFuellung = h('div', { class: 'fuellung' });
   const ausdauer = h('div', { class: 'balken ausdauer', title: 'Ausdauer' }, ausdauerFuellung, sym(SYM.ausdauer));
+  const hitzeFuellung = h('div', { class: 'fuellung' });
+  const hitze = h('div', { class: 'balken hitze', title: 'Hitze des Saugers' }, hitzeFuellung, h('span', {}, 'Hitze'));
   const werkzeugSchild = h('div', { class: 'werkzeugschild' });
-  const unten = h('div', { class: 'szeneunten' }, h('div', { class: 'balkenreihe' }, tasche, ausdauer), werkzeugSchild);
+  const maschinenZeile = h('div', { class: 'maschinenzeile' });
+  const unten = h('div', { class: 'szeneunten' }, h('div', { class: 'balkenreihe' }, tasche, ausdauer, hitze),
+    h('div', { class: 'schildreihe' }, maschinenZeile, werkzeugSchild));
   const szeneBox = h('div', { class: 'szene' }, canvas, h('div', { class: 'szeneoben' }, mission, hinweisZeile), unten);
 
   const segmente = Array.from({ length: 12 }, () => h('span', { class: 'seg' }));
@@ -421,7 +425,7 @@ function bildHaufen() {
         klangWecken();
         if (werkzeugWaehlen(stand, wz.id)) { klang.klick(); letzteAktualisierung(); }
       },
-    }, sym(WERKZEUG_SYM[wz.id]), h('span', {}, wz.name));
+    }, sym(WERKZEUG_SYM[wz.id]), h('span', {}, wz.kurz || wz.name));
     werkzeugKnoepfe[wz.id] = b;
     return b;
   }));
@@ -540,7 +544,17 @@ function bildHaufen() {
     schalte(tasche, 'voll', stand.tasche >= platz);
     ausdauerFuellung.style.width = `${Math.min(100, (stand.ausdauer / w.ausdauer) * 100)}%`;
     schalte(ausdauer, 'leer', stand.ausdauer < w.ausdauerKosten);
-    const wzName = WERKZEUGE.find((x) => x.id === stand.werkzeug).name;
+    hitze.hidden = stand.werkzeug !== 'sauger' && stand.sauger.hitze <= 0;
+    hitzeFuellung.style.width = `${Math.round(stand.sauger.hitze * 100)}%`;
+    schalte(hitze, 'heiss', stand.sauger.heiss);
+    // Was in der Halle arbeitet, steht als Zeile unten im Bild, nicht auf die Leinwand gemalt.
+    const zaehl = [['arm', 'Arm', 'Arme'], ['rechen', 'Rechen', 'Rechen'], ['generator', 'Generator', 'Generatoren']]
+      .filter(([id]) => stand.maschinen[id] > 0)
+      .map(([id, eins, viele]) => `${stand.maschinen[id]} ${stand.maschinen[id] === 1 ? eins : viele}`);
+    if (stand.drohnen) zaehl.push(`${stand.drohnen} ${stand.drohnen === 1 ? 'Drohne' : 'Drohnen'}`);
+    setzeText(maschinenZeile, zaehl.join(' · '));
+    maschinenZeile.hidden = !zaehl.length;
+    const wzName = WERKZEUGE.find((x) => x.id === stand.werkzeug).kurz;
     let info = '';
     if (['spaten', 'heugabel', 'sandschaufel'].includes(stand.werkzeug)) info = `${rate(stichMenge(w, stand.werkzeug))} pro Stich`;
     else if (stand.werkzeug === 'besen') info = `${halme(stand.boden)} am Boden`;
@@ -548,7 +562,8 @@ function bildHaufen() {
       const grund = saugerBlockiert(stand);
       info = grund ? { heiss: 'kühlt ab', unterwegs: 'unterwegs', leer: 'Haufen leer', voll: 'Tasche voll' }[grund] : `${rate(w.saugerRate)}/s, gedrückt halten`;
     } else info = 'auf den Haufen tippen';
-    setzeText(werkzeugSchild, `${wzName} · ${info}${band ? ' · aufs Band' : ''}`);
+    // Mit Band sieht man, wohin das Heu geht; das Schild bleibt kurz.
+    setzeText(werkzeugSchild, `${wzName} · ${info}`);
     // Detektor
     const d = detektor(stand);
     const inHand = stand.werkzeug === 'detektor';
@@ -846,7 +861,7 @@ const UEBERSICHT = 0.6;
 const schritteName = (n) => (n === 0 ? 'Start' : n === 1 ? '1 Schritt' : `${n} Schritte`);
 
 function bildForschung() {
-  const suchfeld = h('input', { class: 'suche', type: 'search', id: 'baum-suche', placeholder: 'Baum durchsuchen', 'aria-label': 'Forschung durchsuchen', value: ui.suche });
+  const suchfeld = h('input', { class: 'suche', type: 'search', id: 'baum-suche', placeholder: 'Suchen', 'aria-label': 'Forschung durchsuchen', value: ui.suche });
   const zaehler = h('span', { class: 'num' });
   const treffer = h('span', { class: 'treffer' });
   const zoomKnopf = h('button', { class: 'rund', 'aria-label': 'Übersicht umschalten', onclick: () => {

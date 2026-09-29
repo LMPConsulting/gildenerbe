@@ -442,15 +442,51 @@ export function techLage(aeste) {
   const lage = {};
   const gruppen = [];
   const baender = [];
-  let zeile = 0;
+
+  // Ein Block ist ein fertig gelegter Teilbaum mit eigener Umrisslinie je Spalte.
+  // Blöcke werden untereinander gestapelt und rücken so weit nach oben, wie ihre
+  // Spalten es zulassen: ein kurzer Ast braucht dann keine eigene Zeile über die ganze Breite.
+  const block = () => ({ karten: [], koepfe: [], oben: new Map(), unten: new Map(), anker: 0 });
+  const belege = (bl, x, y, h) => {
+    bl.oben.set(x, Math.min(bl.oben.has(x) ? bl.oben.get(x) : Infinity, y));
+    bl.unten.set(x, Math.max(bl.unten.has(x) ? bl.unten.get(x) : -Infinity, y + h));
+  };
+  const schiebe = (bl, d) => {
+    for (const k of bl.karten) k.y += d;
+    for (const k of bl.koepfe) k.y += d;
+    for (const [x, v] of bl.oben) bl.oben.set(x, v + d);
+    for (const [x, v] of bl.unten) bl.unten.set(x, v + d);
+    bl.anker += d;
+  };
+  const stapeln = (bloecke) => {
+    const ges = block();
+    const anker = [];
+    let zuletzt = 0;
+    for (const bl of bloecke) {
+      let d = zuletzt;
+      for (const [x, v] of bl.oben) {
+        if (ges.unten.has(x)) d = Math.max(d, ges.unten.get(x) + M.luecke - v);
+      }
+      schiebe(bl, d);
+      zuletzt = d;
+      ges.karten.push(...bl.karten);
+      ges.koepfe.push(...bl.koepfe);
+      for (const [x, v] of bl.oben) belege(ges, x, v, bl.unten.get(x) - v);
+      anker.push(bl.anker);
+    }
+    ges.anker = anker.length ? (anker[0] + anker[anker.length - 1]) / 2 : 0;
+    return ges;
+  };
+
   for (const ast of aeste) {
     const knoten = TECH.filter((t) => t.ast === ast.id);
     const imAst = new Set(knoten.map((t) => t.id));
     const vater = (t) => t.braucht.find((b) => imAst.has(b)) || null;
-    const von = zeile;
+    // Gruppen nach hinten, damit die großen Karten oben stehen.
+    const ordnen = (ks) => ks.sort((a, b) => (a.gruppe ? 1 : 0) - (b.gruppe ? 1 : 0));
 
-    const platziere = (ks) => {
-      const mitten = [];
+    const einheiten = (ks) => {
+      const liste = [];
       for (let i = 0; i < ks.length;) {
         const kk = ks[i];
         if (kk.gruppe) {
@@ -458,43 +494,48 @@ export function techLage(aeste) {
           const ids = [];
           while (j < ks.length && ks[j].gruppe === kk.gruppe) ids.push(ks[j++].id);
           const x = Math.max(...ids.map((id) => TECH_SCHRITTE[id]));
-          gruppen.push({ name: kk.gruppe, ast: ast.id, x, y: zeile, ids });
-          const oben = zeile;
-          zeile += M.kopf;
-          for (const id of ids) {
-            lage[id] = { x, y: zeile, h: M.zeile };
-            zeile += M.zeile;
-          }
-          mitten.push((oben + zeile) / 2);
-          zeile += M.luecke;
+          const bl = block();
+          bl.koepfe.push({ name: kk.gruppe, ast: ast.id, x, y: 0, ids });
+          ids.forEach((id, n) => bl.karten.push({ id, x, y: M.kopf + n * M.zeile, h: M.zeile }));
+          const hoch = M.kopf + ids.length * M.zeile;
+          belege(bl, x, 0, hoch);
+          bl.anker = hoch / 2;
+          liste.push(bl);
           i = j;
         } else {
-          mitten.push(setzen(kk));
+          liste.push(teilbaum(kk));
           i++;
         }
       }
-      return mitten;
+      return liste;
     };
-    const setzen = (t) => {
-      // Gruppen nach hinten, damit die großen Karten oben stehen.
-      const ks = knoten.filter((kk) => vater(kk) === t.id)
-        .sort((a, b) => (a.gruppe ? 1 : 0) - (b.gruppe ? 1 : 0));
+    const teilbaum = (t) => {
+      const x = TECH_SCHRITTE[t.id];
+      const ks = ordnen(knoten.filter((kk) => vater(kk) === t.id));
       if (!ks.length) {
-        lage[t.id] = { x: TECH_SCHRITTE[t.id], y: zeile, h: M.karte };
-        zeile += M.karte + M.luecke;
-        return lage[t.id].y + M.karte / 2;
+        const bl = block();
+        bl.karten.push({ id: t.id, x, y: 0, h: M.karte });
+        belege(bl, x, 0, M.karte);
+        bl.anker = M.karte / 2;
+        return bl;
       }
-      const mitten = platziere(ks);
-      const mitte = (mitten[0] + mitten[mitten.length - 1]) / 2;
-      lage[t.id] = { x: TECH_SCHRITTE[t.id], y: Math.max(von, mitte - M.karte / 2), h: M.karte };
-      return mitte;
+      const bl = stapeln(einheiten(ks));
+      const y = bl.anker - M.karte / 2;
+      bl.karten.push({ id: t.id, x, y, h: M.karte });
+      belege(bl, x, y, M.karte);
+      const oberkante = Math.min(...bl.oben.values());
+      if (oberkante < 0) schiebe(bl, -oberkante);
+      return bl;
     };
-    // Gruppen auch auf oberster Ebene nach hinten.
-    platziere(knoten.filter((kk) => !vater(kk)).sort((a, b) => (a.gruppe ? 1 : 0) - (b.gruppe ? 1 : 0)));
-    baender.push({ ast: ast.id, von, bis: zeile - M.luecke });
-    zeile += M.astLuecke;
+
+    const von = baender.length ? baender[baender.length - 1].bis + M.astLuecke : 0;
+    const bl = stapeln(einheiten(ordnen(knoten.filter((kk) => !vater(kk)))));
+    schiebe(bl, von - Math.min(...bl.oben.values()));
+    for (const k of bl.karten) lage[k.id] = { x: k.x, y: k.y, h: k.h };
+    gruppen.push(...bl.koepfe);
+    baender.push({ ast: ast.id, von, bis: Math.max(...bl.unten.values()) });
   }
-  const hoehe = zeile - M.astLuecke;
+  const hoehe = baender[baender.length - 1].bis;
   const erster = baender[0];
   lage.scheune = { x: 0, y: (erster.von + erster.bis) / 2 - M.karte / 2, h: M.karte };
   const breite = Math.max(...Object.values(lage).map((l) => l.x)) + 1;
