@@ -43,6 +43,7 @@
   --safe-t: env(safe-area-inset-top, 0px);
   --kopf-h: 54px;
   --reiter-h: 60px;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -75,7 +76,7 @@ button:disabled { cursor: default; }
 /* ---------- Gerüst ---------- */
 
 #app {
-  height: 100dvh;
+  height: 100%;
   display: grid;
   grid-template-rows: calc(var(--kopf-h) + var(--safe-t)) 1fr calc(var(--reiter-h) + var(--safe-b));
   max-width: 720px;
