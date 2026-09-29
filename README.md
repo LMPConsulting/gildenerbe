@@ -28,7 +28,7 @@
 >   Fairness über eine Spiegelprobe belegt.
 > - [`heuhaufen/`](heuhaufen/README.md) — *Heuhaufen*: allein gegen sechs Millionen Halme.
 >   Von Hand schaufeln, verkaufen, dann Förderbänder, Greifarme und Scanner bauen, bis der
->   Haufen sich selbst abträgt. 401 Forschungsstufen, 24 Nadelarten. Nach *Find The Needle*.
+>   Haufen sich selbst abträgt. 379 Forschungsstufen, 24 Nadelarten. Nach *Find The Needle*.
 >
 > **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle zwölf plus eine Startseite.
 > Mit `--ohne-server` entsteht eine Fassung für reine Dateiablagen (GitHub Pages) — dort

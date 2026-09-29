@@ -191,7 +191,7 @@ const SPIELE = [
     titel: 'Heuhaufen',
     zeile: 'Sechs Millionen Halme, sechs Nadeln',
     text: 'Von Hand stechen, Heu verkaufen, dann Förderbänder, orange Greifarme und Scanner bauen, '
-      + 'bis der Haufen sich selbst abträgt. 401 Stufen im Forschungsbaum, 24 Nadelarten.',
+      + 'bis der Haufen sich selbst abträgt. 379 Stufen im Forschungsbaum, 24 Nadelarten.',
     dauer: 'ein paar Abende',
     fassungen: 'Ladung um Ladung · Aufträge · Missionsbuch',
     zwei: 'Allein, läuft offline weiter',
