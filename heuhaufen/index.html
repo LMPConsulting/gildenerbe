@@ -1,0 +1,3515 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#17120d">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Heuhaufen – finde sechs Nadeln in sechs Millionen Halmen. Schaufeln, verkaufen, Förderbänder und Maschinen bauen. Komplett offline.">
+<title>Heuhaufen</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2317120d%22%2F%3E%3Cpath%20d%3D%22M6%2052%20Q14%2022%2032%2016%20Q50%2022%2058%2052%20Z%22%20fill%3D%22%23e8b64c%22%2F%3E%3Cg%20stroke%3D%22%23a8792a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M20%2044l3-7M30%2040l1-8M40%2045l3-8M25%2030l2-5M37%2031l2-5%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M36%208%20L28%2040%22%20stroke%3D%22%23dfe6ec%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2236.5%22%20cy%3D%227%22%20r%3D%224%22%20fill%3D%22%23e24b3b%22%2F%3E%3C%2Fsvg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2317120d%22%2F%3E%3Cpath%20d%3D%22M6%2052%20Q14%2022%2032%2016%20Q50%2022%2058%2052%20Z%22%20fill%3D%22%23e8b64c%22%2F%3E%3Cg%20stroke%3D%22%23a8792a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M20%2044l3-7M30%2040l1-8M40%2045l3-8M25%2030l2-5M37%2031l2-5%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M36%208%20L28%2040%22%20stroke%3D%22%23dfe6ec%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2236.5%22%20cy%3D%227%22%20r%3D%224%22%20fill%3D%22%23e24b3b%22%2F%3E%3C%2Fsvg%3E">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Heuhaufen%22%2C%22short_name%22%3A%22Heuhaufen%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%2317120d%22%2C%22theme_color%22%3A%22%2317120d%22%2C%22description%22%3A%22Sechs%20Millionen%20Halme%2C%20sechs%20Nadeln.%20Schaufeln%2C%20verkaufen%2C%20automatisieren.%20Komplett%20offline.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%252317120d%2522%252F%253E%253Cpath%2520d%253D%2522M6%252052%2520Q14%252022%252032%252016%2520Q50%252022%252058%252052%2520Z%2522%2520fill%253D%2522%2523e8b64c%2522%252F%253E%253Cg%2520stroke%253D%2522%2523a8792a%2522%2520stroke-width%253D%25222%2522%2520stroke-linecap%253D%2522round%2522%253E%253Cpath%2520d%253D%2522M20%252044l3-7M30%252040l1-8M40%252045l3-8M25%252030l2-5M37%252031l2-5%2522%252F%253E%253C%252Fg%253E%253Cpath%2520d%253D%2522M36%25208%2520L28%252040%2522%2520stroke%253D%2522%2523dfe6ec%2522%2520stroke-width%253D%25222.5%2522%2520stroke-linecap%253D%2522round%2522%252F%253E%253Ccircle%2520cx%253D%252236.5%2522%2520cy%253D%25227%2522%2520r%253D%25224%2522%2520fill%253D%2522%2523e24b3b%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D">
+<style id="heuhaufen-css">
+/* Heuhaufen — Lagerhalle bei Nacht: dunkles Wellblech, Heugold, cremiges
+   Licht aus einer einzigen Lampe. Bewusst einthemig, alles explizit gefärbt. */
+
+:root {
+  --grund: #17120d;
+  --grund-2: #0f0b08;
+  --panel: #231b14;
+  --panel-2: #2d231a;
+  --naht: #3d3024;
+  --text: #f4ead8;
+  --text-dim: #c9b99c;
+  --leise: #8f7f66;
+  --heu: #e8b64c;
+  --heu-hell: #f6da86;
+  --heu-tief: #7a5520;
+  --blau: #5b8fd6;
+  --gruen: #7cc47f;
+  --rot: #e06a4f;
+  --orange: #ffb36b;
+
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Arial Black', 'Helvetica Neue', system-ui, sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+
+  --r: 14px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --kopf-h: 54px;
+  --reiter-h: 60px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
+
+body {
+  background: var(--grund);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; touch-action: manipulation; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 2px solid var(--heu); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.leise { color: var(--leise); }
+
+.symhalter { display: inline-flex; width: 22px; height: 22px; flex: none; }
+.sym { width: 100%; height: 100%; }
+
+/* ---------- Gerüst ---------- */
+
+#app {
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: calc(var(--kopf-h) + var(--safe-t)) 1fr calc(var(--reiter-h) + var(--safe-b));
+  max-width: 720px;
+  margin-inline: auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.kopf {
+  display: flex; align-items: center; gap: 10px;
+  padding: var(--safe-t) 12px 0;
+  background: linear-gradient(180deg, #120d09, #1b140e);
+  border-bottom: 1px solid var(--naht);
+}
+.kasse { display: flex; align-items: center; gap: 5px; color: var(--heu-hell); font-weight: 700; font-size: 15px; min-width: 0; white-space: nowrap; }
+.kasse .symhalter { color: var(--heu); }
+.zaehler { flex: 1; display: flex; flex-direction: column; align-items: center; line-height: 1.1; min-width: 0; }
+.zaehler span { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.zaehler small { font-size: 9.5px; color: var(--leise); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.nadelreihe { display: flex; gap: 1px; }
+.nadelmarke { width: 13px; height: 13px; color: #4a3d30; }
+.nadelmarke.gefunden { color: var(--heu-hell); filter: drop-shadow(0 0 3px rgba(246, 218, 134, 0.6)); }
+.nadelmarke.ausschuss { color: var(--rot); animation: puls 1s ease-in-out infinite; }
+.rund {
+  width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--panel-2); border: 1px solid var(--naht); flex: none;
+}
+
+.buehne { min-height: 0; overflow: hidden; position: relative; }
+.bild { height: 100%; }
+
+.reiter {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  padding-bottom: var(--safe-b);
+  background: #120d09; border-top: 1px solid var(--naht);
+}
+.reiterknopf {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  color: var(--leise); font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+}
+.reiterknopf .symhalter { width: 24px; height: 24px; }
+.reiterknopf.aktiv { color: var(--heu); }
+.reiterknopf.aktiv::before {
+  content: ''; position: absolute; top: 0; left: 25%; right: 25%; height: 3px; border-radius: 0 0 3px 3px; background: var(--heu);
+}
+.reiterknopf.zu { opacity: 0.55; }
+.marke {
+  position: absolute; top: 6px; left: calc(50% + 8px);
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--rot); color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center;
+  display: none;
+}
+.marke.sichtbar { display: block; }
+
+/* ---------- Knöpfe ---------- */
+
+.knopf {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 42px; padding: 8px 14px; border-radius: 12px;
+  background: var(--panel-2); border: 1px solid var(--naht); color: var(--text);
+  font-weight: 650;
+}
+.knopf:active:not(:disabled) { transform: scale(0.98); }
+.knopf:disabled { opacity: 0.45; }
+.knopf.primaer { background: linear-gradient(180deg, #f0c45a, #d49a30); border-color: #f6da86; color: #2a1c08; }
+.knopf.gefahr { background: #4a1e16; border-color: #7a3325; color: #ffcbbd; }
+.knopf.breit { width: 100%; }
+.knopf.klein { min-height: 32px; padding: 4px 10px; font-size: 13px; border-radius: 9px; }
+
+/* ---------- Haufen ---------- */
+
+.haufenbild { display: flex; flex-direction: column; }
+.szene { position: relative; flex: 1; min-height: 0; }
+.haufencanvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: pointer; }
+.hinweis {
+  position: absolute; top: 10px; left: 10px; right: 10px;
+  background: rgba(18, 13, 9, 0.82); border: 1px solid var(--naht); border-left: 3px solid var(--heu);
+  border-radius: 10px; padding: 7px 10px; font-size: 13px; color: var(--text);
+  pointer-events: none; opacity: 0; transform: translateY(-6px); transition: opacity 0.25s, transform 0.25s;
+}
+.hinweis.sichtbar { opacity: 1; transform: none; }
+.werkzeugschild {
+  position: absolute; right: 10px; bottom: 44px; font-size: 11px; color: var(--text-dim);
+  background: rgba(18, 13, 9, 0.7); border-radius: 8px; padding: 3px 8px; pointer-events: none;
+}
+.taschebalken {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; height: 26px;
+  border-radius: 13px; background: rgba(18, 13, 9, 0.85); border: 1px solid var(--naht);
+  display: flex; align-items: center; gap: 6px; padding: 0 10px; overflow: hidden;
+  font-size: 12px; font-weight: 700; pointer-events: none;
+}
+.taschebalken .fuellung {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+  background: linear-gradient(90deg, rgba(232, 182, 76, 0.35), rgba(232, 182, 76, 0.6));
+  transition: width 0.15s;
+}
+.taschebalken .symhalter, .taschebalken span { position: relative; }
+.taschebalken .symhalter { width: 16px; height: 16px; color: var(--heu); }
+.taschebalken.voll { border-color: var(--orange); }
+.taschebalken.voll .fuellung { background: linear-gradient(90deg, rgba(255, 179, 107, 0.5), rgba(255, 179, 107, 0.75)); }
+
+.detektorleiste {
+  display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+  background: var(--panel); border-top: 1px solid var(--naht); font-size: 12px; color: var(--text-dim);
+}
+.detektorleiste > .symhalter { width: 20px; height: 20px; color: var(--leise); }
+.segmente { display: flex; gap: 2px; }
+.seg { width: 9px; height: 12px; border-radius: 2px; background: #3a2e23; }
+.seg.an { background: #d9c24a; box-shadow: 0 0 5px rgba(217, 194, 74, 0.5); }
+.seg.heiss { background: var(--rot); box-shadow: 0 0 6px rgba(224, 106, 79, 0.7); }
+.dtext { flex: 1; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.aktionen {
+  display: flex; gap: 6px; padding: 8px 8px 10px;
+  background: var(--panel);
+}
+.aktion {
+  position: relative; overflow: hidden; flex: 1;
+  display: flex; align-items: center; gap: 6px; min-height: 58px; padding: 8px 8px;
+  border-radius: var(--r); background: var(--panel-2); border: 1px solid var(--naht); text-align: left;
+}
+.aktion.gross { flex: 1.5; }
+.aktion .symhalter { width: 24px; height: 24px; color: var(--heu); }
+.aktion:not(.gross) .symhalter { width: 20px; height: 20px; }
+.aktiontext { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; position: relative; }
+.aktiontext .zeile1 { font-weight: 750; font-size: 14px; white-space: nowrap; }
+.aktiontext small { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aktion:disabled { opacity: 0.55; }
+.aktion:active:not(:disabled) { transform: scale(0.98); }
+.aktion.drängt { border-color: var(--heu); background: linear-gradient(180deg, #4a3818, #33260f); animation: winken 1.2s ease-in-out infinite; }
+.aktion .lauf { position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: var(--heu); }
+.aktion .hitze { position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: linear-gradient(90deg, #d9c24a, var(--rot)); }
+.aktion.sauger { touch-action: none; }
+.aktion.sauger.heiss { border-color: var(--rot); }
+.aktion.sauger:active { background: #3b2e1f; }
+
+@keyframes winken { 50% { box-shadow: 0 0 0 3px rgba(232, 182, 76, 0.25); } }
+@keyframes puls { 50% { opacity: 0.35; } }
+
+/* ---------- Halle ---------- */
+
+.hallenbild, .fundebild { overflow-y: auto; padding: 0 12px 24px; -webkit-overflow-scrolling: touch; }
+.hallenszene { height: 150px; margin: 10px 0; border-radius: var(--r); overflow: hidden; border: 1px solid var(--naht); }
+.hallecanvas { width: 100%; height: 100%; display: block; }
+.kennzahlen { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kz { background: var(--panel); border: 1px solid var(--naht); border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; line-height: 1.2; }
+.kz span { font-size: 11px; color: var(--leise); text-transform: uppercase; letter-spacing: 0.08em; }
+.kz b { font-size: 16px; margin: 2px 0; }
+.kz small { font-size: 11px; color: var(--text-dim); }
+.kz.schlecht { border-color: #7a3325; }
+.kz.schlecht b { color: var(--rot); }
+.kz.engpass b { color: var(--orange); }
+.kz-einnahmen b { color: var(--gruen); }
+.warnungen p {
+  margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; font-size: 13px;
+  background: #3a1d14; border: 1px solid #6b3425; color: #ffd2c4;
+}
+.gruppe { margin: 20px 2px 8px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--leise); }
+
+.mkarte {
+  display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r);
+  padding: 10px; margin-bottom: 8px;
+}
+.msym { width: 38px; height: 38px; color: var(--blau); background: #1b2230; border-radius: 10px; padding: 5px; }
+.mtext { min-width: 0; }
+.mtext p { margin: 0; }
+.mname { display: flex; gap: 6px; align-items: baseline; }
+.mname b { font-size: 15px; }
+.anzahl { color: var(--heu); font-weight: 700; }
+.mbeschr { font-size: 12px; color: var(--text-dim); }
+.mstatus { font-size: 11.5px; color: var(--leise); margin-top: 2px !important; }
+.mknoepfe { display: flex; flex-direction: column; gap: 5px; align-items: stretch; min-width: 96px; }
+.mklein { display: flex; gap: 5px; }
+.mklein .knopf { flex: 1; }
+.knopf.kaufen { font-size: 13px; }
+.knopf.klein.aus { color: var(--rot); }
+.knopf.sperre { font-size: 11px; max-width: 130px; white-space: normal; line-height: 1.2; color: var(--text-dim); }
+.mkarte.gesperrt { opacity: 0.6; }
+.mkarte.gesperrt .msym { color: var(--leise); background: var(--panel-2); }
+.mkarte.ausgeschaltet { border-style: dashed; }
+
+.leerkarte { text-align: center; padding: 40px 18px; }
+.leerkarte h2 { margin: 12px 0 8px; font-family: var(--font-display); letter-spacing: 0.01em; }
+.leerkarte p { color: var(--text-dim); margin: 0 0 10px; }
+.grosssym { width: 72px; height: 72px; margin: 0 auto; color: var(--heu); opacity: 0.8; }
+
+/* ---------- Forschung ---------- */
+
+.forschungsbild { display: flex; flex-direction: column; position: relative; }
+.forschungskopf {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: #0d0a07; border-bottom: 1px solid var(--naht);
+}
+.forschungskopf > div { flex: none; }
+.ober { margin: 0; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--heu); font-weight: 800; }
+.fortschritt { margin: 0; font-size: 12px; color: var(--text-dim); }
+.suche {
+  flex: 1; min-width: 0; height: 34px; border-radius: 8px; border: 1px solid var(--naht);
+  background: #1a140e; color: var(--text); padding: 0 10px; font: inherit; font-size: 13px;
+  user-select: text; -webkit-user-select: text;
+}
+.baum { flex: 1; overflow: auto; position: relative; background: #0d0a07; -webkit-overflow-scrolling: touch; }
+.spaltenkopf {
+  position: sticky; top: 0; z-index: 3; height: 26px;
+  background: rgba(13, 10, 7, 0.94); border-bottom: 1px solid #241c14;
+}
+.spaltenkopf span {
+  position: absolute; top: 6px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--leise); font-weight: 700;
+}
+.brett { position: relative; }
+.linien { position: absolute; left: 0; top: 0; pointer-events: none; }
+.linien path { fill: none; stroke: #3b3023; stroke-width: 2; }
+.linien path.fremd { stroke-dasharray: 4 4; stroke: #2e261d; }
+.linien path.offen { stroke: #8a6a32; }
+.band {
+  position: absolute; left: 0; right: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--astfarbe) 12%, transparent), transparent 60%);
+  border-top: 1px solid color-mix(in srgb, var(--astfarbe) 25%, transparent);
+}
+.band span {
+  position: absolute; left: 4px; top: 6px; writing-mode: vertical-rl; transform: rotate(180deg);
+  font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 800; color: var(--astfarbe); opacity: 0.8;
+}
+.karte {
+  position: absolute; width: 148px; height: 56px; padding: 5px 8px;
+  display: flex; flex-direction: column; justify-content: space-between; text-align: left;
+  background: #1d1711; border: 1px solid #3a2f24; border-left: 3px solid var(--astfarbe); border-radius: 6px;
+  line-height: 1.15; z-index: 1;
+}
+.karte .astname { font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--astfarbe); font-weight: 800; }
+.karte b { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kartenfuss { display: flex; justify-content: space-between; font-size: 11px; }
+.karte .preis { color: var(--text-dim); }
+.karte.kaufbar .preis { color: var(--gruen); }
+.karte .stufe { color: var(--leise); }
+.karte.gesperrt { opacity: 0.42; }
+.karte.kaufbar { border-color: #6d8f45; box-shadow: 0 0 0 1px rgba(124, 196, 127, 0.25), 0 0 12px rgba(124, 196, 127, 0.12); }
+.karte.begonnen { background: #241d14; }
+.karte.max { background: #2a2113; border-color: #6b5327; }
+.karte.max .preis { color: var(--heu); }
+.karte.gewaehlt { outline: 2px solid var(--heu); outline-offset: 2px; z-index: 2; }
+.karte.blass { opacity: 0.15; }
+
+.blatt {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 5;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: 18px; padding: 12px 14px 14px;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+  transform: translateY(120%); transition: transform 0.22s ease;
+}
+.blatt.offen { transform: none; }
+.blattkopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border-left: 3px solid var(--astfarbe); padding-left: 10px; }
+.blattkopf .astname { margin: 0; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--astfarbe); font-weight: 800; }
+.blattkopf h3 { margin: 2px 0 0; font-size: 19px; }
+.blatttext { margin: 10px 0 4px; color: var(--text-dim); font-size: 14px; }
+.blattstufe { margin: 0 0 8px; font-size: 13px; color: var(--leise); }
+.voraus { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.voraus li {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 8px 3px 5px; border-radius: 999px;
+  border: 1px solid var(--naht); cursor: pointer;
+}
+.voraus li .symhalter { width: 14px; height: 14px; }
+.voraus li.erfuellt { color: var(--gruen); }
+.voraus li.fehlt { color: var(--orange); }
+
+/* ---------- Funde ---------- */
+
+.nadelgitter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.nadelkarte {
+  background: var(--panel); border: 1px dashed var(--naht); border-radius: 12px; padding: 8px;
+  display: flex; flex-direction: column; align-items: center; text-align: center; line-height: 1.2; min-height: 96px;
+}
+.nadelkarte .nsym { width: 34px; height: 34px; color: #4a3d30; margin-bottom: 4px; }
+.nadelkarte b { font-size: 12px; }
+.nadelkarte small { font-size: 10.5px; color: var(--leise); margin-top: 2px; }
+.nadelkarte.gefunden { border-style: solid; border-color: #6b5327; background: #2a2113; }
+.nadelkarte.gefunden .nsym { color: var(--heu-hell); filter: drop-shadow(0 0 4px rgba(246, 218, 134, 0.5)); }
+.nadelkarte.ausschuss { border-style: solid; border-color: var(--rot); }
+.nadelkarte.ausschuss .nsym { color: var(--rot); }
+
+.ausschusskarte, .kiste {
+  margin-top: 12px; background: var(--panel); border: 1px solid var(--naht); border-radius: var(--r); padding: 12px;
+}
+.ausschusskarte { border-color: #7a3325; background: #2b1812; }
+.kartenkopf { display: flex; align-items: center; gap: 8px; }
+.kartenkopf h3 { margin: 0; font-size: 16px; }
+.kartenkopf .symhalter { color: var(--rot); }
+.ausschusskarte p { margin: 6px 0 8px; font-size: 13px; color: var(--text-dim); }
+.balken { height: 8px; border-radius: 4px; background: #1a110c; overflow: hidden; margin-bottom: 10px; }
+.balken .fuellung { height: 100%; width: 0; background: var(--rot); transition: width 0.15s; }
+.kiste { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kiste h3 { margin: 0; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--leise); }
+.kiste b { display: block; font-size: 20px; color: var(--gruen); }
+.kiste small { color: var(--text-dim); font-size: 12px; }
+.kiste p { margin: 4px 0 0; font-size: 11.5px; }
+
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.fundkarte {
+  background: var(--panel); border: 1px solid var(--naht); border-top: 3px solid var(--seltenfarbe); border-radius: 10px;
+  padding: 8px; display: flex; flex-direction: column; align-items: center; text-align: center; line-height: 1.2;
+}
+.fundkarte .fsym { width: 34px; height: 34px; color: var(--seltenfarbe); margin-bottom: 4px; }
+.fundkarte b { font-size: 12px; }
+.fundkarte .selten { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--seltenfarbe); margin: 2px 0; }
+.fundkarte small { font-size: 10.5px; color: var(--leise); }
+.fundkarte .wert { color: var(--text-dim); }
+.fundkarte.unbekannt .fsym { color: #3d3228; }
+.fundkarte.unbekannt { border-top-color: var(--naht); }
+.fundkarte.unbekannt .selten { color: var(--leise); }
+
+.werte { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 13px; }
+.werte dt { color: var(--leise); }
+.werte dd { margin: 0; text-align: right; }
+
+/* ---------- Toasts und Modals ---------- */
+
+.toasts {
+  position: absolute; left: 12px; right: 12px; top: calc(var(--kopf-h) + var(--safe-t) + 8px);
+  display: flex; flex-direction: column; gap: 6px; z-index: 20; pointer-events: none;
+}
+.toast {
+  background: rgba(35, 27, 20, 0.96); border: 1px solid var(--naht); border-left: 3px solid var(--heu);
+  border-radius: 10px; padding: 8px 12px; font-size: 13px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  animation: rein 0.2s ease; transition: opacity 0.35s, transform 0.35s;
+}
+.toast.weg { opacity: 0; transform: translateY(-6px); }
+.toast.warn { border-left-color: var(--rot); }
+.toast.gut { border-left-color: var(--gruen); }
+.toast.fund.r1 { border-left-color: #6fb3e0; }
+.toast.fund.r2 { border-left-color: #b58be8; }
+.toast.fund.r3 { border-left-color: #f0b43c; }
+.toast.fund.r4 { border-left-color: #ff7a59; }
+@keyframes rein { from { opacity: 0; transform: translateY(-8px); } }
+
+.modalhalter { display: none; }
+.modalhalter.offen {
+  display: flex; position: absolute; inset: 0; z-index: 30; align-items: center; justify-content: center; padding: 18px;
+}
+.schleier { position: absolute; inset: 0; background: rgba(8, 5, 3, 0.72); }
+.modal {
+  position: relative; width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--naht); border-radius: 20px; padding: 20px 18px 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); animation: auf 0.22s ease;
+}
+@keyframes auf { from { opacity: 0; transform: scale(0.96); } }
+.modal h2 { margin: 4px 0 10px; font-family: var(--font-display); font-size: 24px; letter-spacing: 0.01em; color: var(--heu-hell); }
+.modal p { margin: 0 0 10px; color: var(--text-dim); text-wrap: pretty; }
+.modalknoepfe { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.menuemodal .modalknoepfe .knopf { justify-content: flex-start; }
+.anleitung { margin: 4px 0 0; padding-left: 18px; color: var(--text); font-size: 14px; }
+.anleitung li { margin-bottom: 4px; }
+.nadelgross { width: 84px; height: 84px; margin: 4px auto 10px; color: var(--heu-hell); filter: drop-shadow(0 0 10px rgba(246, 218, 134, 0.6)); animation: glanz 2s ease-in-out infinite; }
+@keyframes glanz { 50% { filter: drop-shadow(0 0 18px rgba(246, 218, 134, 0.9)); transform: rotate(-6deg); } }
+.geschichte { font-style: italic; }
+.bonus { color: var(--heu) !important; font-weight: 700; }
+.endemodal .werte { margin-top: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media (min-height: 760px) {
+  .hallenszene { height: 180px; }
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script id="heuhaufen-js">
+const SEITENKOPF = "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no\">\n<meta name=\"theme-color\" content=\"#17120d\">\n<meta name=\"color-scheme\" content=\"dark\">\n<meta name=\"mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\">\n<meta name=\"description\" content=\"Heuhaufen – finde sechs Nadeln in sechs Millionen Halmen. Schaufeln, verkaufen, Förderbänder und Maschinen bauen. Komplett offline.\">\n<title>Heuhaufen</title>\n<link rel=\"icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2317120d%22%2F%3E%3Cpath%20d%3D%22M6%2052%20Q14%2022%2032%2016%20Q50%2022%2058%2052%20Z%22%20fill%3D%22%23e8b64c%22%2F%3E%3Cg%20stroke%3D%22%23a8792a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M20%2044l3-7M30%2040l1-8M40%2045l3-8M25%2030l2-5M37%2031l2-5%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M36%208%20L28%2040%22%20stroke%3D%22%23dfe6ec%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2236.5%22%20cy%3D%227%22%20r%3D%224%22%20fill%3D%22%23e24b3b%22%2F%3E%3C%2Fsvg%3E\">\n<link rel=\"apple-touch-icon\" href=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2317120d%22%2F%3E%3Cpath%20d%3D%22M6%2052%20Q14%2022%2032%2016%20Q50%2022%2058%2052%20Z%22%20fill%3D%22%23e8b64c%22%2F%3E%3Cg%20stroke%3D%22%23a8792a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M20%2044l3-7M30%2040l1-8M40%2045l3-8M25%2030l2-5M37%2031l2-5%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M36%208%20L28%2040%22%20stroke%3D%22%23dfe6ec%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2236.5%22%20cy%3D%227%22%20r%3D%224%22%20fill%3D%22%23e24b3b%22%2F%3E%3C%2Fsvg%3E\">\n<link rel=\"manifest\" href=\"data:application/manifest+json,%7B%22name%22%3A%22Heuhaufen%22%2C%22short_name%22%3A%22Heuhaufen%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%2317120d%22%2C%22theme_color%22%3A%22%2317120d%22%2C%22description%22%3A%22Sechs%20Millionen%20Halme%2C%20sechs%20Nadeln.%20Schaufeln%2C%20verkaufen%2C%20automatisieren.%20Komplett%20offline.%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2522http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2522%2520viewBox%253D%25220%25200%252064%252064%2522%253E%253Crect%2520width%253D%252264%2522%2520height%253D%252264%2522%2520rx%253D%252214%2522%2520fill%253D%2522%252317120d%2522%252F%253E%253Cpath%2520d%253D%2522M6%252052%2520Q14%252022%252032%252016%2520Q50%252022%252058%252052%2520Z%2522%2520fill%253D%2522%2523e8b64c%2522%252F%253E%253Cg%2520stroke%253D%2522%2523a8792a%2522%2520stroke-width%253D%25222%2522%2520stroke-linecap%253D%2522round%2522%253E%253Cpath%2520d%253D%2522M20%252044l3-7M30%252040l1-8M40%252045l3-8M25%252030l2-5M37%252031l2-5%2522%252F%253E%253C%252Fg%253E%253Cpath%2520d%253D%2522M36%25208%2520L28%252040%2522%2520stroke%253D%2522%2523dfe6ec%2522%2520stroke-width%253D%25222.5%2522%2520stroke-linecap%253D%2522round%2522%252F%253E%253Ccircle%2520cx%253D%252236.5%2522%2520cy%253D%25227%2522%2520r%253D%25224%2522%2520fill%253D%2522%2523e24b3b%2522%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D\">";
+(function () {
+'use strict';
+// Alle Zahlen des Spiels an einer Stelle: Techtree, Maschinen, Produkte,
+// Fundstücke, Nadeln und die kleinen Geschichten dazwischen. Die Engine liest
+// nur hieraus; wer umbalanciert, fasst ausschließlich diese Datei an.
+
+/** Grundwerte, bevor irgendein Upgrade greift. */
+const GRUND = {
+  griff: 2,            // Halme pro Stich mit der Schaufel
+  werkzeug: 1,         // Faktor auf den Griff durch Werkzeuge
+  krit: 0,             // Chance auf einen Glücksgriff
+  kritFaktor: 5,
+  tasche: 25,          // Halme, die man tragen kann
+  laufzeit: 4,         // Sekunden bis zum Ankauf und zurück
+  autotipp: 0,         // Tipps pro Sekunde, die von allein passieren
+  saugerRate: 25,      // Halme pro Sekunde, solange man hält
+  saugerHitze: 6,      // Sekunden bis zur Überhitzung
+  drohnenMax: 0,
+  drohnenRate: 2,
+  detektor: 3000,      // Reichweite in Halmen
+  fundChance: 0.0005,  // Fundstücke pro Halm
+  fundWert: 1,
+  preisRoh: 0.1,       // was der Ankauf pro Halm zahlt
+  preisAlle: 1,
+  preisProdukt: 1,
+  armTempo: 1,
+  baggerTempo: 1,
+  band: 40,            // Förderband: Halme pro Sekunde
+  scanDeckung: 1,
+  sortDeckung: 1,
+  stromMul: 1,
+  verbrauch: 1,
+  kesselMul: 1,
+  verarbeitung: 1,
+  ausbeute: 1,         // Anteil der Eingangsmenge, der pro Stück gebraucht wird
+  plaetze: 0,
+  maschinenKosten: 1,
+  maschinenTempo: 1,
+  offlineStunden: 2,
+  offlineEff: 0.5,
+};
+
+const HAUFEN_GROESSE = 6_000_000;
+
+/** Wo die sechs Nadeln stecken können, als Anteil des Haufens von oben. */
+const NADEL_BEREICHE = [
+  [0.003, 0.01], [0.02, 0.06], [0.08, 0.2], [0.25, 0.45], [0.5, 0.75], [0.8, 0.99],
+];
+
+const NADELN = [
+  { name: 'Rostige Nähnadel', bonus: 'Griff +1 %', effekt: [['griff', '*', 1.01]] },
+  { name: 'Stopfnadel', bonus: 'Tasche +1 Halm', effekt: [['tasche', '+', 1]] },
+  { name: 'Stecknadel', bonus: 'Der Ankauf zahlt 1 % mehr', effekt: [['preisRoh', '*', 1.01]] },
+  { name: 'Sticknadel', bonus: 'Greifarme 2 % schneller', effekt: [['armTempo', '*', 1.02]] },
+  { name: 'Kompassnadel', bonus: 'Detektor reicht 5 % weiter', effekt: [['detektor', '*', 1.05]] },
+  { name: 'Goldene Nadel', bonus: 'Alles 5 % mehr wert', effekt: [['preisAlle', '*', 1.05]] },
+];
+
+const GESCHICHTE = {
+  anfang: [
+    'Du wachst in einer Lagerhalle auf. Die Tore sind zu, das Licht brennt, '
+      + 'und du weißt nicht, wie du hergekommen bist.',
+    'Vor dir ein Heuhaufen bis unters Dach. Auf einem Zettel am Pfosten steht: '
+      + '„Rund sechs Millionen Halme. Sechs Nadeln. Finde sie.“',
+    'Neben dir liegen eine Schaufel und ein Metalldetektor. In der Wand ist eine Klappe '
+      + 'mit dem Schild „Heu-Ankauf“. Wer auf der anderen Seite bezahlt, sieht man nicht.',
+  ],
+  nadeln: [
+    'Etwas sticht dich in den Daumen. Eine Nähnadel, rostig, völlig wertlos. '
+      + 'Auf der Rückseite des Zettels steht plötzlich: „Eine.“',
+    'Die zweite Nadel ist dicker, eine Stopfnadel. Irgendwo hinter dem Haufen klackt ein Schloss. '
+      + 'Die Tore bleiben trotzdem zu.',
+    'Eine Stecknadel mit rotem Kopf. Jemand hat sie mit Absicht hier versteckt, '
+      + 'da bist du dir jetzt sicher. Durch die Ankaufklappe kommt ein Zettel: „Weiter.“',
+    'Die Sticknadel liegt in einem Bett aus besonders ordentlichem Heu. '
+      + 'Hat hier jemand vor dir gesucht? Auf dem Boden: Kratzspuren, die zum Haufen führen.',
+    'Eine Kompassnadel. Sie zeigt nicht nach Norden, sondern stur auf die Ankaufklappe. '
+      + 'Von drüben hörst du jemanden lachen.',
+    'Die sechste Nadel ist aus Gold. Die Tore springen auf, draußen ist heller Tag. '
+      + 'Auf dem Zettel steht nur noch: „Danke.“',
+  ],
+  ende: 'Die Halle ist leer, die Nadeln sind gefunden. Draußen steht eine zweite Halle, '
+    + 'die Tore offen, darin ein noch größerer Haufen. Auf dem Pfosten: ein neuer Zettel.',
+};
+
+/* ------------------------------------------------------------ Techtree */
+
+const AESTE = [
+  { id: 'hand', name: 'Hofarbeit', farbe: '#e2b04a' },
+  { id: 'werkzeug', name: 'Werkzeug', farbe: '#e07b39' },
+  { id: 'halle', name: 'Hofbau', farbe: '#c4a07a' },
+  { id: 'erkennung', name: 'Erkennung', farbe: '#4fb3a9' },
+  { id: 'foerderung', name: 'Förderung', farbe: '#5b8fd6' },
+  { id: 'strom', name: 'Strom', farbe: '#b5c94a' },
+  { id: 'verarbeitung', name: 'Verarbeitung', farbe: '#9b7ad8' },
+  { id: 'handel', name: 'Handel', farbe: '#d4607a' },
+];
+
+// Kurzschreibweise: id, Ast, Name, Stufen, Grundkosten, Kostenfaktor je Stufe,
+// Voraussetzungen, Effekte je Stufe, Beschreibung.
+// Effekt: [wert, '+', x] addiert je Stufe, [wert, '*', x] multipliziert je
+// Stufe, ['frei', name] schaltet etwas frei.
+const k = (id, ast, name, stufen, kosten, faktor, braucht, effekt, text) =>
+  ({ id, ast, name, stufen, kosten, faktor, braucht, effekt, text });
+
+const TECH = [
+  k('scheune', null, 'Start', 1, 0, 1, [], [], 'Eine Schaufel, ein Metalldetektor und sehr viel Heu.'),
+
+  // Handel
+  k('sauber', 'handel', 'Sauberes Heu', 5, 12, 1.9, ['scheune'], [['preisRoh', '*', 1.15]],
+    'Ohne Staub und Steine zahlt der Ankauf 15 % mehr pro Halm.'),
+  k('feilschen', 'handel', 'Feilschen', 5, 250, 2.1, ['sauber'], [['preisRoh', '*', 1.1]],
+    'Mit der Klappe lässt sich reden. +10 % auf rohes Heu.'),
+  k('troedler', 'handel', 'Trödler', 1, 2000, 1, ['feilschen'], [['fundWert', '*', 1.5]],
+    'Ein Händler, der Fundstücke 50 % teurer abnimmt.'),
+  k('stand', 'handel', 'Heu-Verkaufsstand', 1, 6000, 1, ['feilschen', 'automatisierung'], [['preisAlle', '*', 1.1]],
+    'Das Band endet direkt am Stand. Alles 10 % mehr wert.'),
+  k('markt', 'handel', 'Wochenmarkt', 5, 25000, 2.2, ['stand'], [['preisAlle', '*', 1.1]],
+    'Jeden Samstag. +10 % auf alle Preise.'),
+  k('export', 'handel', 'Export', 5, 400000, 2.4, ['markt'], [['preisAlle', '*', 1.15]],
+    'Heu aus dieser Halle ist im Ausland gefragt. +15 %.'),
+  k('bio', 'handel', 'Bio-Siegel', 3, 1.5e6, 2.8, ['export'], [['preisProdukt', '*', 1.2]],
+    'Verarbeitete Waren 20 % teurer.'),
+  k('marke', 'handel', 'Eigene Marke', 3, 5e6, 3, ['export'], [['preisAlle', '*', 1.25]],
+    '„Aus der Halle“. +25 % auf alles.'),
+  k('nachtschicht', 'handel', 'Nachtschicht', 5, 8000, 2.2, ['stand'], [['offlineStunden', '+', 2]],
+    'Die Halle läuft 2 Stunden länger weiter, während du weg bist.'),
+  k('nachtwaechter', 'handel', 'Nachtwächter', 5, 30000, 2.2, ['nachtschicht'], [['offlineEff', '+', 0.1]],
+    'Nachts wird 10 % mehr geschafft.'),
+
+  // Hände
+  k('griff1', 'hand', 'Tiefer stechen', 5, 3, 1.6, ['scheune'], [['griff', '+', 1]],
+    'Ein Halm mehr pro Schaufelstich.'),
+  k('griff2', 'hand', 'Breites Blatt', 5, 150, 2, ['griff1'], [['griff', '+', 1]],
+    'Noch ein Halm mehr pro Stich.'),
+  k('handschuh', 'hand', 'Arbeitshandschuhe', 3, 400, 2.5, ['griff2'], [['krit', '+', 0.03]],
+    '3 % Chance auf einen Glücksstich mit fünffacher Menge.'),
+  k('griff3', 'hand', 'Bärenkräfte', 5, 5000, 2.2, ['handschuh'], [['griff', '+', 1]],
+    'Ein Halm mehr pro Stich.'),
+  k('griff4', 'hand', 'Heuflüsterer', 5, 100000, 2.5, ['griff3'], [['griff', '+', 1]],
+    'Das Heu kommt dir entgegen. Noch ein Halm mehr pro Stich.'),
+  k('autotipp', 'hand', 'Muskelgedächtnis', 3, 2000, 2.5, ['griff2'], [['autotipp', '+', 1]],
+    'Ein Stich pro Sekunde von allein. Ist die Tasche voll, gehst du selbst zum Ankauf.'),
+  k('autotipp2', 'hand', 'Rhythmus', 3, 60000, 2.5, ['autotipp'], [['autotipp', '+', 1]],
+    'Noch ein Stich pro Sekunde.'),
+  k('tasche1', 'hand', 'Größere Tasche', 5, 5, 1.7, ['scheune'], [['tasche', '+', 10]],
+    'Zehn Halme mehr pro Gang.'),
+  k('tasche2', 'hand', 'Rucksack', 5, 200, 1.9, ['tasche1'], [['tasche', '+', 40]],
+    'Vierzig Halme mehr pro Gang.'),
+  k('tasche3', 'hand', 'Heusack', 5, 3000, 2, ['tasche2'], [['tasche', '+', 50]],
+    'Fünfzig Halme mehr pro Gang.'),
+  k('tasche4', 'hand', 'Bodenloser Sack', 5, 150000, 2.5, ['tasche3'], [['tasche', '+', 150]],
+    'Hundertfünfzig Halme mehr. Wo das hingeht, will man nicht wissen.'),
+  k('tempo1', 'hand', 'Flinke Füße', 5, 10, 1.8, ['tasche1'], [['laufzeit', '*', 0.9]],
+    'Der Weg zum Ankauf dauert 10 % kürzer.'),
+  k('tempo2', 'hand', 'Abkürzung', 5, 800, 2, ['tempo1'], [['laufzeit', '*', 0.85]],
+    'Hinter dem Balken durch. 15 % kürzer.'),
+  k('rutsche', 'hand', 'Rutsche zum Ankauf', 1, 25000, 1, ['tempo2'], [['laufzeit', '*', 0.5]],
+    'Eine Rutsche vom Haufen zur Klappe. Der Weg dauert halb so lang.'),
+
+  // Werkzeug
+  k('eimer', 'werkzeug', 'Eimer', 1, 8, 1, ['scheune'], [['tasche', '+', 25]],
+    'Fünfundzwanzig Halme mehr pro Gang.'),
+  k('schubkarre', 'werkzeug', 'Schubkarre', 1, 60, 1, ['eimer'], [['tasche', '*', 2], ['laufzeit', '*', 0.9]],
+    'Doppelte Tasche, und rollen geht schneller als tragen.'),
+  k('stapelpresse', 'werkzeug', 'Handpresse', 1, 2000, 1, ['schubkarre'], [['tasche', '*', 1.5]],
+    'Presst das Heu in der Karre zusammen. 50 % mehr Platz.'),
+  k('heugabel', 'werkzeug', 'Heugabel', 1, 25, 1, ['scheune'], [['werkzeug', '*', 1.5], ['frei', 'heugabel']],
+    '50 % mehr pro Stich als mit der Schaufel.'),
+  k('rechen', 'werkzeug', 'Zinken nachschärfen', 3, 40, 2, ['heugabel'], [['griff', '+', 1]],
+    'Ein Halm mehr pro Stich.'),
+  k('doppelgabel', 'werkzeug', 'Doppelgabel', 1, 400, 1, ['rechen'], [['werkzeug', '*', 1.25], ['frei', 'doppelgabel']],
+    'Zwei Gabeln an einem Stiel. 25 % mehr pro Stich.'),
+  k('gabelstapler', 'werkzeug', 'Heu-Gabelstapler', 1, 400000, 1, ['doppelgabel', 'stapelpresse'],
+    [['werkzeug', '*', 1.2], ['tasche', '*', 1.5], ['frei', 'gabelstapler']],
+    '20 % mehr pro Stich, 50 % mehr Tasche.'),
+  k('sauger', 'werkzeug', 'Staubsauger', 1, 70, 1, ['heugabel'], [['frei', 'sauger']],
+    'Gedrückt halten: saugt 25 Halme pro Sekunde, bis er zu heiß wird.'),
+  k('sauger2', 'werkzeug', 'Turbo-Motor', 5, 500, 2.1, ['sauger'], [['saugerRate', '*', 1.25]],
+    '25 % mehr Sog.'),
+  k('kuehlung', 'werkzeug', 'Kühlrippen', 5, 600, 2, ['sauger'], [['saugerHitze', '*', 1.3]],
+    'Hält 30 % länger durch.'),
+  k('industriesauger', 'werkzeug', 'Industriesauger', 1, 20000, 1, ['sauger2', 'kuehlung'],
+    [['saugerRate', '*', 2], ['saugerHitze', '*', 1.5]],
+    'Doppelter Sog, länger kühl.'),
+  k('saugrohr', 'werkzeug', 'Langes Saugrohr', 5, 60000, 2.4, ['industriesauger'], [['saugerRate', '*', 1.2]],
+    'Erreicht auch die Mitte des Haufens. +20 % Sog.'),
+
+  // Erkennung
+  k('spule', 'erkennung', 'Empfindliche Spule', 5, 20, 2.2, ['scheune'], [['detektor', '*', 1.6]],
+    'Der Metalldetektor schlägt 60 % früher an.'),
+  k('piepser', 'erkennung', 'Lauter Piepser', 1, 100, 1, ['spule'], [['frei', 'piepser']],
+    'Der Detektor sagt dir ungefähr, wie weit es noch ist.'),
+  k('kompass', 'erkennung', 'Nadelkompass', 1, 500000, 1, ['piepser', 'scanner2'], [['frei', 'kompass']],
+    'Zeigt auf den Halm genau, wie weit die nächste Nadel entfernt ist.'),
+  k('magnet', 'erkennung', 'Hufeisenmagnet', 3, 50, 2.5, ['scheune'], [['fundChance', '*', 1.3]],
+    '30 % mehr Fundstücke.'),
+  k('lupe', 'erkennung', 'Lupe', 3, 400, 2.5, ['magnet'], [['fundWert', '*', 1.3]],
+    'Du erkennst, was etwas wert ist. +30 % für Fundstücke.'),
+  k('sammler', 'erkennung', 'Sammlerauge', 5, 5000, 2.3, ['lupe'], [['fundChance', '*', 1.2]],
+    '20 % mehr Fundstücke.'),
+  k('antiquar', 'erkennung', 'Antiquar-Kontakte', 5, 40000, 2.4, ['sammler'], [['fundWert', '*', 1.4]],
+    '40 % mehr für Fundstücke.'),
+  k('scanner', 'erkennung', 'Scanner', 1, 5000, 1, ['piepser', 'automatisierung'], [['frei', 'scanner']],
+    'Durchleuchtet das Heu auf dem Band. Ohne Scanner rutschen Nadeln in den Ausschuss.'),
+  k('scanner2', 'erkennung', 'Breitbandscanner', 5, 20000, 2.2, ['scanner'], [['scanDeckung', '*', 1.5]],
+    'Jeder Scanner schafft 50 % mehr Heu.'),
+  k('roentgen', 'erkennung', 'Röntgentunnel', 3, 300000, 3, ['scanner2'], [['scanDeckung', '*', 2]],
+    'Doppelte Scanleistung.'),
+  k('sortierer', 'erkennung', 'Fundsortierer', 1, 15000, 1, ['scanner', 'lupe'], [['frei', 'sortierer']],
+    'Holt Fundstücke vom Band, statt sie mitzuverkaufen.'),
+  k('sortierer2', 'erkennung', 'Feinsieb', 5, 60000, 2.3, ['sortierer'], [['sortDeckung', '*', 1.5]],
+    'Jeder Sortierer schafft 50 % mehr.'),
+  k('sichter', 'erkennung', 'Nadelsichter', 1, 30000, 1, ['scanner'], [['frei', 'sichter']],
+    'Durchsucht den Ausschuss von allein.'),
+
+  // Förderung
+  k('drohne', 'foerderung', 'Heudrohne', 1, 300, 1, ['scheune'], [['frei', 'drohne'], ['drohnenMax', '+', 3]],
+    'Kleine Drohnen fliegen Heu zum Ankauf. Bis zu drei.'),
+  k('schwarm', 'foerderung', 'Drohnenschwarm', 5, 1500, 2, ['drohne'], [['drohnenMax', '+', 2]],
+    'Zwei Drohnen mehr.'),
+  k('rotoren', 'foerderung', 'Leichtbaurotoren', 5, 2000, 2.2, ['drohne'], [['drohnenRate', '*', 1.2]],
+    'Drohnen tragen 20 % mehr.'),
+  k('drohnenhafen', 'foerderung', 'Drohnenhafen', 1, 20000, 1, ['rotoren', 'automatisierung'], [['drohnenRate', '*', 2]],
+    'Ein Landeplatz auf dem Dach. Drohnen tragen doppelt.'),
+  k('automatisierung', 'foerderung', 'Automatisierung', 1, 5000, 1, ['drohne'],
+    [['frei', 'halle'], ['plaetze', '+', 20]],
+    'Förderbänder und Greifarme. Ab jetzt trägt sich der Haufen selbst ab.'),
+  k('bandtechnik', 'foerderung', 'Bandtechnik', 9, 4000, 2.9, ['automatisierung'], [['band', '*', 1.6]],
+    'Das Förderband transportiert 60 % mehr.'),
+  k('hydraulik', 'foerderung', 'Hydraulik', 10, 3000, 1.8, ['automatisierung'], [['armTempo', '*', 1.1]],
+    'Greifarme 10 % schneller.'),
+  k('serie', 'foerderung', 'Serienfertigung', 5, 20000, 2.3, ['hydraulik'], [['maschinenKosten', '*', 0.9]],
+    'Alle Maschinen 10 % billiger.'),
+  k('doppelgreifer', 'foerderung', 'Doppelgreifer', 5, 50000, 2.5, ['hydraulik'], [['armTempo', '*', 1.15]],
+    'Greifarme 15 % schneller.'),
+  k('robotik', 'foerderung', 'Robotik', 5, 500000, 3, ['doppelgreifer'], [['armTempo', '*', 1.2]],
+    'Greifarme 20 % schneller.'),
+  k('bagger', 'foerderung', 'Heubagger', 1, 250000, 1, ['doppelgreifer'], [['frei', 'bagger']],
+    'Ein Bagger, der so viel schafft wie fünfzehn Arme.'),
+  k('schaufelrad', 'foerderung', 'Schaufelrad', 5, 1e6, 2.5, ['bagger'], [['baggerTempo', '*', 1.4]],
+    'Bagger 40 % schneller.'),
+
+  // Strom
+  k('stromnetz', 'strom', 'Strommasten', 1, 3000, 1, ['automatisierung'], [['frei', 'generator']],
+    'Heu-Generatoren, die mit Halmen vom Band gefüttert werden.'),
+  k('kessel', 'strom', 'Dampfkessel', 1, 8000, 1, ['stromnetz'], [['frei', 'kessel']],
+    'Verbrennt mehr Heu und macht daraus viel mehr Strom.'),
+  k('turbine', 'strom', 'Dampfturbine', 3, 50000, 2.5, ['kessel'], [['kesselMul', '*', 1.5]],
+    'Kessel liefern 50 % mehr.'),
+  k('biogas', 'strom', 'Biogasreaktor', 1, 400000, 1, ['turbine'], [['frei', 'biogas']],
+    'Vergärt Heu zu sehr viel Strom.'),
+  k('fusion', 'strom', 'Heu-Fusion', 1, 2e7, 1, ['biogas', 'speicher'], [['frei', 'fusion']],
+    'Niemand weiß, wie das funktioniert. Es funktioniert.'),
+  k('wind', 'strom', 'Windrad', 1, 30000, 1, ['stromnetz'], [['frei', 'wind']],
+    'Strom ohne Brennstoff.'),
+  k('solar', 'strom', 'Solardach', 1, 150000, 1, ['wind'], [['frei', 'solar']],
+    'Mehr Strom ohne Brennstoff.'),
+  k('leitungen', 'strom', 'Kupferleitungen', 5, 10000, 2.2, ['stromnetz'], [['stromMul', '*', 1.15]],
+    'Alle Stromquellen liefern 15 % mehr.'),
+  k('speicher', 'strom', 'Batteriespeicher', 3, 80000, 2.5, ['leitungen'], [['stromMul', '*', 1.1]],
+    'Weniger Verlust, 10 % mehr Strom.'),
+  k('sparmotor', 'strom', 'Sparmotoren', 5, 15000, 2.2, ['stromnetz'], [['verbrauch', '*', 0.9]],
+    'Maschinen brauchen 10 % weniger Strom.'),
+
+  // Verarbeitung
+  k('presse', 'verarbeitung', 'Ballenpresse', 1, 4000, 1, ['automatisierung'], [['frei', 'presse']],
+    'Presst lose Halme zu Ballen. Ballen bringen 50 % mehr pro Halm.'),
+  k('pressdruck', 'verarbeitung', 'Pressdruck', 5, 10000, 2.2, ['presse'], [['presse', '*', 1.3]],
+    'Pressen 30 % schneller.'),
+  k('ballenwert', 'verarbeitung', 'Straffe Ballen', 5, 12000, 2.2, ['presse'], [['preis_ballen', '*', 1.15]],
+    'Ballen 15 % mehr wert.'),
+  k('wickler', 'verarbeitung', 'Heuwickler', 1, 100000, 1, ['pressdruck'], [['frei', 'wickler']],
+    'Wickelt Ballen in Folie. Wickelballen sind fast doppelt so viel wert.'),
+  k('silagewert', 'verarbeitung', 'Gute Folie', 5, 150000, 2.3, ['wickler'], [['preis_silage', '*', 1.2]],
+    'Wickelballen 20 % mehr wert.'),
+  k('verteiler', 'verarbeitung', 'Weichen & Verteiler', 3, 30000, 2.5, ['presse'], [['verarbeitung', '*', 1.15]],
+    'Alle Verarbeiter 15 % schneller.'),
+  k('muehle', 'verarbeitung', 'Pelletmühle', 1, 25000, 1, ['presse'], [['frei', 'muehle']],
+    'Mahlt Halme zu Pellets.'),
+  k('matrize', 'verarbeitung', 'Feinere Matrize', 5, 40000, 2.2, ['muehle'], [['muehle', '*', 1.3]],
+    'Mühlen 30 % schneller.'),
+  k('verschnitt', 'verarbeitung', 'Sauberer Schnitt', 5, 250000, 2.4, ['muehle'], [['ausbeute', '*', 0.93]],
+    'Jedes Produkt braucht 7 % weniger Heu.'),
+  k('pulper', 'verarbeitung', 'Heubrei-Pulper', 1, 60000, 1, ['muehle'], [['frei', 'pulper']],
+    'Weicht Heu zu Brei auf.'),
+  k('pulper2', 'verarbeitung', 'Rührwerk', 5, 100000, 2.3, ['pulper'], [['pulper', '*', 1.3]],
+    'Pulper 30 % schneller.'),
+  k('papier', 'verarbeitung', 'Papiermaschine', 1, 200000, 1, ['pulper'], [['frei', 'papier']],
+    'Macht aus Heubrei Heupapier.'),
+  k('buettenrand', 'verarbeitung', 'Büttenrand', 5, 300000, 2.3, ['papier'], [['preis_papier', '*', 1.2]],
+    'Heupapier 20 % mehr wert.'),
+  k('ziegel', 'verarbeitung', 'Öko-Ziegelpresse', 1, 600000, 1, ['pulper', 'wickler'], [['frei', 'ziegel']],
+    'Ballen und Brei werden zu Öko-Ziegeln. Das Beste, was aus Heu werden kann.'),
+  k('ziegel2', 'verarbeitung', 'Brennofen', 5, 1e6, 2.4, ['ziegel'], [['ziegel', '*', 1.3]],
+    'Ziegelpressen 30 % schneller.'),
+  k('qualitaet', 'verarbeitung', 'Qualitätskontrolle', 5, 500000, 2.5, ['verteiler', 'matrize'], [['preisProdukt', '*', 1.1]],
+    'Verarbeitete Waren 10 % mehr wert.'),
+
+  // Hofbau
+  k('schuppen', 'halle', 'Schuppen erweitern', 4, 150, 2.2, ['scheune'], [['tasche', '+', 15], ['plaetze', '+', 5]],
+    'Mehr Platz neben dem Haufen: 15 Halme mehr pro Gang, später 5 Stellplätze mehr.'),
+  k('material', 'halle', 'Weniger Materialverschnitt', 3, 100, 2.4, ['scheune'], [['maschinenKosten', '*', 0.95]],
+    'Alles, was du baust, wird 5 % billiger.'),
+  k('anbau', 'halle', 'Anbau', 10, 5000, 1.9, ['schuppen', 'automatisierung'], [['plaetze', '+', 10]],
+    'Zehn Stellplätze mehr.'),
+  k('dach', 'halle', 'Hohes Dach', 1, 50000, 1, ['anbau'], [['plaetze', '+', 25]],
+    'Fünfundzwanzig Stellplätze mehr.'),
+  k('zweitehalle', 'halle', 'Zweite Halle', 1, 2e6, 1, ['dach'], [['plaetze', '+', 100]],
+    'Hundert Stellplätze mehr.'),
+  k('kran', 'halle', 'Hallenkran', 3, 40000, 2.5, ['material', 'automatisierung'], [['maschinenKosten', '*', 0.9]],
+    'Aufbauen wird 10 % billiger.'),
+  k('flutlicht', 'halle', 'Flutlicht', 3, 25000, 2.5, ['anbau'], [['maschinenTempo', '*', 1.05]],
+    'Alle Maschinen 5 % schneller.'),
+  k('ordnung', 'halle', 'Ordnung muss sein', 3, 200000, 3, ['flutlicht'], [['maschinenTempo', '*', 1.1]],
+    'Alle Maschinen 10 % schneller.'),
+];
+
+/* ------------------------------------------------------------ Maschinen */
+
+// gruppe: foerderung | erkennung | strom | verarbeitung
+// strom: >0 Verbrauch, <0 Erzeugung. rate: Grundleistung pro Sekunde — bei
+// Förderung und Erkennung in Halmen, bei Verarbeitern in fertigen Stücken.
+const MASCHINEN = [
+  { id: 'arm', name: 'Greifarm', gruppe: 'foerderung', frei: 'halle', kosten: 600, faktor: 1.15,
+    strom: 2, plaetze: 1, rate: 8, text: 'Holt 8 Halme pro Sekunde vom Haufen aufs Band.' },
+  { id: 'bagger', name: 'Heubagger', gruppe: 'foerderung', frei: 'bagger', kosten: 200000, faktor: 1.2,
+    strom: 15, plaetze: 3, rate: 120, text: '120 Halme pro Sekunde. Braucht drei Stellplätze.' },
+  { id: 'scanner', name: 'Scanner', gruppe: 'erkennung', frei: 'scanner', kosten: 2000, faktor: 1.15,
+    strom: 3, plaetze: 1, rate: 16, text: 'Prüft 16 Halme pro Sekunde auf Nadeln. Faustregel: einer für zwei Arme.' },
+  { id: 'sortierer', name: 'Fundsortierer', gruppe: 'erkennung', frei: 'sortierer', kosten: 12000, faktor: 1.2,
+    strom: 3, plaetze: 1, rate: 50, text: 'Sucht in 50 Halmen pro Sekunde nach Fundstücken.' },
+  { id: 'sichter', name: 'Nadelsichter', gruppe: 'erkennung', frei: 'sichter', kosten: 25000, faktor: 1.5,
+    strom: 2, plaetze: 1, rate: 1 / 90, text: 'Findet eine Nadel im Ausschuss in 90 Sekunden.' },
+  { id: 'generator', name: 'Heu-Generator', gruppe: 'strom', frei: 'generator', kosten: 1500, faktor: 1.15,
+    strom: -15, plaetze: 1, brennstoff: 2, text: 'Verbrennt 2 Halme pro Sekunde vom Band für 15 Strom.' },
+  { id: 'kessel', name: 'Dampfkessel', gruppe: 'strom', frei: 'kessel', kosten: 6000, faktor: 1.15,
+    strom: -50, plaetze: 1, brennstoff: 5, text: 'Verbrennt 5 Halme pro Sekunde für 50 Strom.' },
+  { id: 'wind', name: 'Windrad', gruppe: 'strom', frei: 'wind', kosten: 20000, faktor: 1.15,
+    strom: -25, plaetze: 1, text: 'Liefert 25 Strom, ohne etwas zu verbrauchen.' },
+  { id: 'solar', name: 'Solardach', gruppe: 'strom', frei: 'solar', kosten: 100000, faktor: 1.15,
+    strom: -80, plaetze: 1, text: 'Liefert 80 Strom.' },
+  { id: 'biogas', name: 'Biogasreaktor', gruppe: 'strom', frei: 'biogas', kosten: 300000, faktor: 1.18,
+    strom: -400, plaetze: 2, brennstoff: 40, text: 'Vergärt 40 Halme pro Sekunde zu 400 Strom.' },
+  { id: 'fusion', name: 'Heu-Fusion', gruppe: 'strom', frei: 'fusion', kosten: 1.5e7, faktor: 1.3,
+    strom: -5000, plaetze: 4, text: 'Liefert 5000 Strom. Aus einem einzigen Halm, angeblich.' },
+  { id: 'presse', name: 'Ballenpresse', gruppe: 'verarbeitung', frei: 'presse', kosten: 3000, faktor: 1.14,
+    strom: 4, plaetze: 1, rate: 2, rezept: { halme: 20 }, produkt: 'ballen', text: 'Presst 40 Halme pro Sekunde zu Ballen.' },
+  { id: 'muehle', name: 'Pelletmühle', gruppe: 'verarbeitung', frei: 'muehle', kosten: 20000, faktor: 1.15,
+    strom: 6, plaetze: 1, rate: 6, rezept: { halme: 5 }, produkt: 'pellet', text: 'Mahlt 30 Halme pro Sekunde zu Pellets.' },
+  { id: 'pulper', name: 'Heubrei-Pulper', gruppe: 'verarbeitung', frei: 'pulper', kosten: 50000, faktor: 1.15,
+    strom: 8, plaetze: 1, rate: 3, rezept: { halme: 10 }, produkt: 'brei', text: 'Weicht 30 Halme pro Sekunde zu Brei auf.' },
+  { id: 'wickler', name: 'Heuwickler', gruppe: 'verarbeitung', frei: 'wickler', kosten: 80000, faktor: 1.15,
+    strom: 5, plaetze: 1, rate: 2, rezept: { ballen: 1 }, produkt: 'silage', text: 'Wickelt 2 Ballen pro Sekunde in Folie.' },
+  { id: 'papier', name: 'Papiermaschine', gruppe: 'verarbeitung', frei: 'papier', kosten: 150000, faktor: 1.16,
+    strom: 10, plaetze: 2, rate: 1.5, rezept: { brei: 2 }, produkt: 'papier', text: 'Macht aus 3 Brei pro Sekunde Heupapier.' },
+  { id: 'ziegel', name: 'Öko-Ziegelpresse', gruppe: 'verarbeitung', frei: 'ziegel', kosten: 500000, faktor: 1.17,
+    strom: 14, plaetze: 2, rate: 1, rezept: { ballen: 1, brei: 2 }, produkt: 'ziegel', text: 'Ein Ballen und zwei Brei werden zu einem Ziegel.' },
+];
+
+/** In dieser Reihenfolge greifen die Verarbeiter aufs Band zu: erst die Halm-
+ *  Verbraucher, dann die, die Zwischenprodukte weiterverarbeiten. */
+const VERARBEITUNG_REIHE = ['pulper', 'presse', 'muehle', 'ziegel', 'papier', 'wickler'];
+
+/** wert: Preis pro Stück bei 0,10 pro rohem Halm. Zahlt der Ankauf mehr, ziehen alle mit. */
+const PRODUKTE = {
+  roh: { name: 'Loses Heu', wert: 0.1 },
+  ballen: { name: 'Pressballen', wert: 3 },
+  pellet: { name: 'Heupellets', wert: 1.1 },
+  brei: { name: 'Heubrei', wert: 3.2 },
+  silage: { name: 'Wickelballen', wert: 5.5 },
+  papier: { name: 'Heupapier', wert: 9 },
+  ziegel: { name: 'Öko-Ziegel', wert: 24 },
+};
+
+/* ------------------------------------------------------------ Fundstücke */
+
+const SELTENHEIT = [
+  { id: 'gewoehnlich', name: 'gewöhnlich', gewicht: 60, farbe: '#b9ad94' },
+  { id: 'selten', name: 'selten', gewicht: 25, farbe: '#6fb3e0' },
+  { id: 'episch', name: 'episch', gewicht: 10, farbe: '#b58be8' },
+  { id: 'legendaer', name: 'legendär', gewicht: 4, farbe: '#f0b43c' },
+  { id: 'mythisch', name: 'mythisch', gewicht: 1, farbe: '#ff7a59' },
+];
+
+const FUNDE = [
+  { id: 'knopf', name: 'Hosenknopf', stufe: 'gewoehnlich', wert: 0.5 },
+  { id: 'kronkorken', name: 'Kronkorken', stufe: 'gewoehnlich', wert: 0.3 },
+  { id: 'murmel', name: 'Murmel', stufe: 'gewoehnlich', wert: 0.8 },
+  { id: 'nagel', name: 'Krummer Nagel', stufe: 'gewoehnlich', wert: 0.2 },
+  { id: 'feder', name: 'Hühnerfeder', stufe: 'gewoehnlich', wert: 0.4 },
+  { id: 'muenze', name: 'Kupfermünze', stufe: 'gewoehnlich', wert: 1 },
+  { id: 'hufeisen', name: 'Hufeisen', stufe: 'selten', wert: 4 },
+  { id: 'schluessel', name: 'Alter Schlüssel', stufe: 'selten', wert: 6 },
+  { id: 'fingerhut', name: 'Fingerhut', stufe: 'selten', wert: 5 },
+  { id: 'loeffel', name: 'Blechlöffel', stufe: 'selten', wert: 3 },
+  { id: 'brille', name: 'Nickelbrille', stufe: 'selten', wert: 8 },
+  { id: 'taschenuhr', name: 'Taschenuhr', stufe: 'episch', wert: 40 },
+  { id: 'ring', name: 'Silberring', stufe: 'episch', wert: 60 },
+  { id: 'messer', name: 'Taschenmesser', stufe: 'episch', wert: 30 },
+  { id: 'medaille', name: 'Medaille', stufe: 'episch', wert: 50 },
+  { id: 'goldzahn', name: 'Goldzahn', stufe: 'legendaer', wert: 250 },
+  { id: 'goldmuenze', name: 'Goldmünze', stufe: 'legendaer', wert: 300 },
+  { id: 'amulett', name: 'Amulett', stufe: 'legendaer', wert: 400 },
+  { id: 'ehering', name: 'Verlorener Ehering', stufe: 'mythisch', wert: 1500 },
+  { id: 'ei', name: 'Goldenes Ei', stufe: 'mythisch', wert: 5000 },
+];
+
+/** Je entdecktem Fundstück werden alle Preise um so viel besser. */
+const SAMMELBONUS = 0.01;
+
+/** Klicks, bis man eine Nadel im Ausschuss von Hand gefunden hat. */
+const AUSSCHUSS_TIPPS = 30;
+
+/** Ein neuer Haufen ist so viel größer als der letzte. */
+const NEUER_HAUFEN_FAKTOR = 1.5;
+
+// Spiellogik ohne DOM: ein Stand-Objekt, das sich als JSON speichern lässt,
+// und reine Funktionen darauf. Zufall kommt aus einem eigenen Generator im
+// Stand, damit Tests und Simulation reproduzierbar bleiben.
+
+
+const STAND_VERSION = 1;
+const TECH_NACH_ID = Object.fromEntries(TECH.map((t) => [t.id, t]));
+const MASCHINE_NACH_ID = Object.fromEntries(MASCHINEN.map((m) => [m.id, m]));
+const FUND_NACH_ID = Object.fromEntries(FUNDE.map((f) => [f.id, f]));
+const TECH_STUFEN_GESAMT = TECH.reduce((n, t) => n + (t.id === 'scheune' ? 0 : t.stufen), 0);
+
+/** Strom, den die Halle auch ohne Generator hat (eine Handkurbel in der Ecke). */
+const GRUNDSTROM = 5;
+/** Grundpreis der ersten Drohne und Faktor je weiterer. */
+const DROHNE_KOSTEN = 250;
+const DROHNE_FAKTOR = 1.35;
+
+/* ------------------------------------------------------------ Zufall */
+
+/** mulberry32: klein, schnell, und der ganze Zustand ist eine Zahl im Stand. */
+function zufall(s) {
+  s.rng = (s.rng + 0x6d2b79f5) | 0;
+  let t = s.rng;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+function nadelnVerstecken(s, gesamt) {
+  return NADEL_BEREICHE.map(([von, bis]) => ({
+    tiefe: Math.round(gesamt * (von + zufall(s) * (bis - von))),
+    zustand: 'versteckt',
+    zeit: null,
+  }));
+}
+
+/* ------------------------------------------------------------ Stand */
+
+function neuerStand(seed = Date.now()) {
+  const s = {
+    version: STAND_VERSION,
+    rng: seed | 0,
+    rev: 0,
+    zeit: 0,
+    geld: 0,
+    verdient: 0,
+    haufen: { gesamt: HAUFEN_GROESSE, entfernt: 0 },
+    tasche: 0,
+    laufen: 0,
+    autoRest: 0,
+    tech: { scheune: 1 },
+    maschinen: {},
+    aus: {},
+    drohnen: 0,
+    nadeln: [],
+    ausschuss: 0,
+    funde: {},
+    sauger: { an: false, hitze: 0, heiss: false },
+    stat: { tipps: 0, hand: 0, drohne: 0, maschine: 0, funde: 0, gaenge: 0 },
+    lauf: 1,
+    erledigt: 0,
+    gezeigt: [],
+    zuletzt: Date.now(),
+  };
+  s.nadeln = nadelnVerstecken(s, s.haufen.gesamt);
+  return s;
+}
+
+const rest = (s) => Math.max(0, s.haufen.gesamt - s.haufen.entfernt);
+const nadelnGefunden = (s) => s.nadeln.filter((n) => n.zustand === 'gefunden').length;
+const alleNadeln = (s) => s.nadeln.every((n) => n.zustand === 'gefunden');
+const imAusschuss = (s) => s.nadeln.filter((n) => n.zustand === 'ausschuss').length;
+const fundArten = (s) => Object.values(s.funde).filter((f) => f.ges > 0).length;
+
+/* ------------------------------------------------------------ Werte */
+
+const cache = new WeakMap();
+
+/** Alle abgeleiteten Zahlen: Grundwerte, darauf Techtree, Nadeln, Neustarts und Sammelbonus. */
+function werte(s) {
+  const alt = cache.get(s);
+  if (alt && alt.rev === s.rev) return alt.w;
+
+  const plus = {};
+  const mal = {};
+  const frei = new Set();
+  const anwenden = (effekte, n) => {
+    for (const e of effekte) {
+      if (e[0] === 'frei') { frei.add(e[1]); continue; }
+      if (e[1] === '+') plus[e[0]] = (plus[e[0]] || 0) + e[2] * n;
+      else mal[e[0]] = (mal[e[0]] || 1) * Math.pow(e[2], n);
+    }
+  };
+  for (const t of TECH) {
+    const n = s.tech[t.id] || 0;
+    if (n > 0) anwenden(t.effekt, n);
+  }
+  s.nadeln.forEach((nd, i) => { if (nd.zustand === 'gefunden') anwenden(NADELN[i].effekt, 1); });
+  if (s.erledigt > 0) {
+    anwenden([['preisAlle', '*', 1 + 0.5 * s.erledigt], ['griff', '*', 1 + 0.25 * s.erledigt]], 1);
+  }
+  const arten = fundArten(s);
+  if (arten > 0) anwenden([['preisAlle', '*', 1 + SAMMELBONUS * arten]], 1);
+
+  const w = { ...GRUND };
+  for (const key of new Set([...Object.keys(plus), ...Object.keys(mal)])) {
+    const basis = key in GRUND ? GRUND[key] : (key in plus ? 0 : 1);
+    w[key] = (basis + (plus[key] || 0)) * (mal[key] || 1);
+  }
+  w.frei = frei;
+  cache.set(s, { rev: s.rev, w });
+  return w;
+}
+
+const faktor = (w, key) => (key in w ? w[key] : 1);
+
+const griffMenge = (w) => w.griff * w.werkzeug;
+const taschePlatz = (w) => Math.floor(w.tasche);
+const preisRoh = (w) => w.preisRoh * w.preisAlle;
+
+function produktPreis(w, p) {
+  if (p === 'roh') return preisRoh(w);
+  return PRODUKTE[p].wert * (w.preisRoh / GRUND.preisRoh) * w.preisAlle * w.preisProdukt * faktor(w, 'preis_' + p);
+}
+
+function fundPreis(w, id) {
+  return FUND_NACH_ID[id].wert * w.fundWert * Math.sqrt(w.preisRoh / GRUND.preisRoh) * w.preisAlle;
+}
+
+/* ------------------------------------------------------------ Haufen abtragen */
+
+function fundZiehen(s) {
+  const summe = SELTENHEIT.reduce((n, r) => n + r.gewicht, 0);
+  let x = zufall(s) * summe;
+  let stufe = SELTENHEIT[SELTENHEIT.length - 1].id;
+  for (const r of SELTENHEIT) {
+    if (x < r.gewicht) { stufe = r.id; break; }
+    x -= r.gewicht;
+  }
+  const kandidaten = FUNDE.filter((f) => f.stufe === stufe);
+  return kandidaten[Math.floor(zufall(s) * kandidaten.length)];
+}
+
+function nadelFinden(s, i, ereignisse) {
+  const nd = s.nadeln[i];
+  nd.zustand = 'gefunden';
+  nd.zeit = s.zeit;
+  s.rev++;
+  ereignisse.push({ typ: 'nadel', i });
+}
+
+/**
+ * Nimmt Halme vom Haufen. quelle: 'hand' und 'drohne' sehen jede Nadel;
+ * 'maschine' nur mit der Wahrscheinlichkeit der Scannerabdeckung, sonst fällt
+ * sie in den Ausschuss. Fundstücke landen bei Maschinen nur im Anteil, den
+ * die Sortierer schaffen, in der Kiste.
+ */
+function abtragen(s, menge, quelle, ereignisse = [], deckung = 1, sortiert = 1) {
+  const vorher = s.haufen.entfernt;
+  menge = Math.min(menge, rest(s));
+  if (!(menge > 0)) return 0;
+  const nachher = vorher + menge;
+  s.haufen.entfernt = nachher;
+  s.stat[quelle] = (s.stat[quelle] || 0) + menge;
+
+  s.nadeln.forEach((nd, i) => {
+    if (nd.zustand !== 'versteckt' || nd.tiefe <= vorher || nd.tiefe > nachher) return;
+    if (quelle !== 'maschine' || zufall(s) < deckung) nadelFinden(s, i, ereignisse);
+    else {
+      nd.zustand = 'ausschuss';
+      ereignisse.push({ typ: 'ausschuss', i });
+    }
+  });
+
+  const w = werte(s);
+  const erwartet = menge * w.fundChance * (quelle === 'maschine' ? sortiert : 1);
+  let anzahl = Math.floor(erwartet) + (zufall(s) < erwartet % 1 ? 1 : 0);
+  anzahl = Math.min(anzahl, 200);
+  for (let n = 0; n < anzahl; n++) {
+    const f = fundZiehen(s);
+    const e = s.funde[f.id] || (s.funde[f.id] = { n: 0, ges: 0 });
+    e.n++;
+    e.ges++;
+    s.stat.funde++;
+    if (e.ges === 1) s.rev++;
+    ereignisse.push({ typ: 'fund', id: f.id, neu: e.ges === 1 });
+  }
+  return menge;
+}
+
+/* ------------------------------------------------------------ Hände und Werkzeug */
+
+/** Ein Griff in den Haufen. Liefert null, wenn gerade niemand da ist. */
+function tippen(s, ereignisse = []) {
+  if (s.laufen > 0) return null;
+  const w = werte(s);
+  const frei = taschePlatz(w) - s.tasche;
+  if (frei <= 0) return { menge: 0, voll: true, ereignisse };
+  let menge = griffMenge(w);
+  const krit = w.krit > 0 && zufall(s) < w.krit;
+  if (krit) menge *= w.kritFaktor;
+  menge = abtragen(s, Math.min(menge, frei), 'hand', ereignisse);
+  s.tasche += menge;
+  s.stat.tipps++;
+  return { menge, krit, voll: s.tasche >= taschePlatz(w), ereignisse };
+}
+
+function saugen(s, an) {
+  const w = werte(s);
+  s.sauger.an = !!an && w.frei.has('sauger') && !s.sauger.heiss;
+}
+
+/** Los zum Ankauf. Bezahlt wird bei der Ankunft (siehe tick). */
+function verkaufen(s) {
+  if (s.laufen > 0 || s.tasche <= 0) return false;
+  s.laufen = Math.max(0.05, werte(s).laufzeit);
+  s.sauger.an = false;
+  return true;
+}
+
+function ankommen(s, ereignisse) {
+  const w = werte(s);
+  const betrag = s.tasche * preisRoh(w);
+  s.geld += betrag;
+  s.verdient += betrag;
+  ereignisse.push({ typ: 'verkauft', menge: s.tasche, betrag });
+  s.tasche = 0;
+  s.stat.gaenge++;
+}
+
+/* ------------------------------------------------------------ Drohnen */
+
+function drohnenKosten(s) {
+  return Math.ceil(DROHNE_KOSTEN * Math.pow(DROHNE_FAKTOR, s.drohnen));
+}
+
+function drohneKaufen(s) {
+  const w = werte(s);
+  if (!w.frei.has('drohne')) return { ok: false, grund: 'gesperrt' };
+  if (s.drohnen >= w.drohnenMax) return { ok: false, grund: 'voll' };
+  const preis = drohnenKosten(s);
+  if (s.geld < preis) return { ok: false, grund: 'geld' };
+  s.geld -= preis;
+  s.drohnen++;
+  return { ok: true };
+}
+
+/* ------------------------------------------------------------ Techtree */
+
+const techStufe = (s, id) => s.tech[id] || 0;
+
+function techKosten(s, id) {
+  const t = TECH_NACH_ID[id];
+  const c = t.kosten * Math.pow(t.faktor, techStufe(s, id));
+  return c < 100 ? Math.ceil(c * 10) / 10 : Math.ceil(c);
+}
+
+const techOffen = (s, id) => TECH_NACH_ID[id].braucht.every((b) => techStufe(s, b) > 0);
+
+/** 'max' | 'kaufbar' | 'teuer' | 'gesperrt' */
+function techStatus(s, id) {
+  const t = TECH_NACH_ID[id];
+  if (techStufe(s, id) >= t.stufen) return 'max';
+  if (!techOffen(s, id)) return 'gesperrt';
+  return s.geld >= techKosten(s, id) ? 'kaufbar' : 'teuer';
+}
+
+function techKaufen(s, id) {
+  const status = techStatus(s, id);
+  if (status !== 'kaufbar') return { ok: false, grund: status };
+  s.geld -= techKosten(s, id);
+  s.tech[id] = techStufe(s, id) + 1;
+  s.rev++;
+  return { ok: true };
+}
+
+const techGekauft = (s) => TECH.reduce((n, t) => n + (t.id === 'scheune' ? 0 : techStufe(s, t.id)), 0);
+
+/** Schritte vom Start: der längste Weg über alle Voraussetzungen. */
+const TECH_SCHRITTE = (() => {
+  const schritte = {};
+  const tiefe = (id) => {
+    if (id in schritte) return schritte[id];
+    const t = TECH_NACH_ID[id];
+    schritte[id] = t.braucht.length ? 1 + Math.max(...t.braucht.map(tiefe)) : 0;
+    return schritte[id];
+  };
+  for (const t of TECH) tiefe(t.id);
+  return schritte;
+})();
+
+/**
+ * Lage der Karten im Forschungsbaum: die Spalte ist die Zahl der Schritte vom
+ * Start, die Zeile kommt aus einem ordentlich gelegten Baum je Ast (Blätter
+ * untereinander, Eltern mittig neben ihren Kindern). Voraussetzungen aus
+ * anderen Ästen zählen für die Spalte, nicht für die Zeile.
+ */
+function techLage(aeste) {
+  const lage = {};
+  const baender = [];
+  let zeile = 0;
+  for (const ast of aeste) {
+    const knoten = TECH.filter((t) => t.ast === ast.id);
+    const imAst = new Set(knoten.map((t) => t.id));
+    const vater = (t) => t.braucht.find((b) => imAst.has(b)) || null;
+    const von = zeile;
+    const setzen = (t) => {
+      const ks = knoten.filter((kk) => vater(kk) === t.id);
+      let y;
+      if (!ks.length) y = zeile++;
+      else {
+        const ys = ks.map(setzen);
+        y = (ys[0] + ys[ys.length - 1]) / 2;
+      }
+      lage[t.id] = { x: TECH_SCHRITTE[t.id], y };
+      return y;
+    };
+    for (const t of knoten.filter((kk) => !vater(kk))) setzen(t);
+    baender.push({ ast: ast.id, von, bis: zeile - 1 });
+    zeile += 0.5;
+  }
+  const hoehe = zeile - 0.5;
+  // Start steht neben dem ersten Ast, dort, wo das Spiel beginnt.
+  const erster = baender[0];
+  lage.scheune = { x: 0, y: (erster.von + erster.bis) / 2 };
+  const breite = Math.max(...Object.values(lage).map((l) => l.x)) + 1;
+  return { lage, aeste: baender, hoehe, breite };
+}
+
+/* ------------------------------------------------------------ Maschinen */
+
+const anzahl = (s, id) => s.maschinen[id] || 0;
+const maschineFrei = (s, id) => werte(s).frei.has(MASCHINE_NACH_ID[id].frei);
+
+function maschinenKosten(s, id) {
+  const m = MASCHINE_NACH_ID[id];
+  return Math.ceil(m.kosten * Math.pow(m.faktor, anzahl(s, id)) * werte(s).maschinenKosten);
+}
+
+function plaetzeBelegt(s) {
+  return MASCHINEN.reduce((n, m) => n + anzahl(s, m.id) * m.plaetze, 0);
+}
+
+function maschineKaufen(s, id) {
+  const m = MASCHINE_NACH_ID[id];
+  if (!maschineFrei(s, id)) return { ok: false, grund: 'gesperrt' };
+  if (plaetzeBelegt(s) + m.plaetze > werte(s).plaetze) return { ok: false, grund: 'platz' };
+  const preis = maschinenKosten(s, id);
+  if (s.geld < preis) return { ok: false, grund: 'geld' };
+  s.geld -= preis;
+  s.maschinen[id] = anzahl(s, id) + 1;
+  return { ok: true };
+}
+
+/** Baut eine Maschine ab und gibt die Hälfte des letzten Kaufpreises zurück. */
+function maschineAbbauen(s, id) {
+  if (anzahl(s, id) <= 0) return { ok: false };
+  s.maschinen[id]--;
+  const erstattung = Math.floor(maschinenKosten(s, id) / 2);
+  s.geld += erstattung;
+  return { ok: true, erstattung };
+}
+
+function maschineUmschalten(s, id) {
+  if (s.aus[id]) delete s.aus[id];
+  else s.aus[id] = true;
+}
+
+/**
+ * Momentaufnahme der Halle in Raten pro Sekunde. Strom, Band, Scanner und
+ * Verarbeiter begrenzen sich gegenseitig; wer zuerst in VERARBEITUNG_REIHE
+ * steht, bekommt zuerst vom Band.
+ */
+function fabrik(s) {
+  const w = werte(s);
+  const f = {
+    aktiv: w.frei.has('halle'), foerderung: 0, band: w.band, fluss: 0, strom: 1,
+    erzeugt: 0, bedarf: 0, deckung: 1, sortiert: 0, brennstoff: 0, roh: 0,
+    produkte: {}, einnahmen: 0, auslastung: {},
+  };
+  if (!f.aktiv) return f;
+  const n = (id) => (s.aus[id] ? 0 : anzahl(s, id));
+  const mt = w.maschinenTempo;
+
+  const moeglich = (n('arm') * MASCHINE_NACH_ID.arm.rate * w.armTempo
+    + n('bagger') * MASCHINE_NACH_ID.bagger.rate * w.baggerTempo) * mt;
+  const brennBedarf = MASCHINEN.reduce((sum, m) => sum + (m.brennstoff ? n(m.id) * m.brennstoff : 0), 0);
+  const vorFluss = rest(s) > 0 ? Math.min(moeglich, w.band) : 0;
+  const brennAnteil = brennBedarf > 0 ? Math.min(1, vorFluss / brennBedarf) : 1;
+
+  for (const m of MASCHINEN) {
+    const zahl = n(m.id);
+    if (!zahl) continue;
+    if (m.strom > 0) f.bedarf += zahl * m.strom * w.verbrauch;
+    else {
+      let leistung = -m.strom * zahl;
+      if (m.brennstoff) leistung *= brennAnteil * (m.id === 'kessel' ? w.kesselMul : 1);
+      f.erzeugt += leistung * w.stromMul;
+    }
+  }
+  f.erzeugt += GRUNDSTROM;
+  f.strom = f.bedarf > 0 ? Math.min(1, f.erzeugt / f.bedarf) : 1;
+
+  f.foerderung = moeglich * f.strom;
+  f.fluss = rest(s) > 0 ? Math.min(f.foerderung, w.band) : 0;
+  f.brennstoff = Math.min(brennBedarf, f.fluss);
+  f.auslastung.arm = moeglich > 0 ? f.fluss / moeglich : 0;
+
+  const scan = n('scanner') * MASCHINE_NACH_ID.scanner.rate * w.scanDeckung * mt * f.strom;
+  f.deckung = f.fluss > 0 ? Math.min(1, scan / f.fluss) : (n('scanner') > 0 ? 1 : 0);
+  const sort = n('sortierer') * MASCHINE_NACH_ID.sortierer.rate * w.sortDeckung * mt * f.strom;
+  f.sortiert = f.fluss > 0 ? Math.min(1, sort / f.fluss) : 0;
+
+  const lager = { halme: f.fluss - f.brennstoff, ballen: 0, brei: 0 };
+  for (const id of VERARBEITUNG_REIHE) {
+    const zahl = n(id);
+    if (!zahl) continue;
+    const m = MASCHINE_NACH_ID[id];
+    const max = zahl * m.rate * w.verarbeitung * mt * faktor(w, id) * f.strom;
+    let stueck = max;
+    for (const [zutat, menge] of Object.entries(m.rezept)) {
+      const bedarf = zutat === 'halme' ? menge * w.ausbeute : menge;
+      stueck = Math.min(stueck, lager[zutat] / bedarf);
+    }
+    stueck = Math.max(0, stueck);
+    for (const [zutat, menge] of Object.entries(m.rezept)) {
+      lager[zutat] -= stueck * (zutat === 'halme' ? menge * w.ausbeute : menge);
+    }
+    if (m.produkt in lager) lager[m.produkt] += stueck;
+    else f.produkte[m.produkt] = (f.produkte[m.produkt] || 0) + stueck;
+    f.auslastung[id] = max > 0 ? stueck / max : 0;
+  }
+  for (const p of ['ballen', 'brei']) if (lager[p] > 1e-9) f.produkte[p] = (f.produkte[p] || 0) + lager[p];
+  f.roh = Math.max(0, lager.halme);
+
+  f.einnahmen = f.roh * preisRoh(w);
+  for (const [p, rate] of Object.entries(f.produkte)) f.einnahmen += rate * produktPreis(w, p);
+  return f;
+}
+
+/* ------------------------------------------------------------ Ausschuss und Funde */
+
+/** Ein Griff in den Ausschuss. Nach AUSSCHUSS_TIPPS Griffen ist die Nadel da. */
+function ausschussTippen(s, ereignisse = []) {
+  if (!imAusschuss(s)) return null;
+  s.ausschuss += 1 / AUSSCHUSS_TIPPS;
+  if (s.ausschuss >= 1 - 1e-9) {
+    s.ausschuss = 0;
+    nadelFinden(s, s.nadeln.findIndex((n) => n.zustand === 'ausschuss'), ereignisse);
+  }
+  return { fortschritt: s.ausschuss, ereignisse };
+}
+
+function fundeVerkaufen(s) {
+  const w = werte(s);
+  let betrag = 0;
+  for (const [id, e] of Object.entries(s.funde)) {
+    betrag += e.n * fundPreis(w, id);
+    e.n = 0;
+  }
+  s.geld += betrag;
+  s.verdient += betrag;
+  return betrag;
+}
+
+function fundWert(s) {
+  const w = werte(s);
+  return Object.entries(s.funde).reduce((sum, [id, e]) => sum + e.n * fundPreis(w, id), 0);
+}
+
+/* ------------------------------------------------------------ Detektor */
+
+/** stufe: 'still' | 'kalt' | 'warm' | 'heiss'; abstand in Halmen oder null. */
+function detektor(s) {
+  const w = werte(s);
+  const offen = s.nadeln.filter((n) => n.zustand === 'versteckt' && n.tiefe > s.haufen.entfernt);
+  if (!offen.length) return { abstand: null, staerke: 0, stufe: 'still' };
+  const abstand = Math.min(...offen.map((n) => n.tiefe)) - s.haufen.entfernt;
+  const staerke = Math.max(0, Math.min(1, 1 - abstand / w.detektor));
+  const stufe = staerke <= 0 ? 'still' : staerke < 0.4 ? 'kalt' : staerke < 0.8 ? 'warm' : 'heiss';
+  return { abstand, staerke, stufe };
+}
+
+/* ------------------------------------------------------------ Zeit */
+
+/**
+ * Lässt dt Sekunden vergehen. offline: nur was auch ohne dich läuft (Drohnen,
+ * Halle), und das mit dem Wirkungsgrad aus dem Techtree.
+ */
+function tick(s, dt, { offline = false } = {}) {
+  const ereignisse = [];
+  if (!(dt > 0)) return ereignisse;
+  s.zeit += dt;
+  let w = werte(s);
+
+  if (s.laufen > 0) {
+    s.laufen -= dt;
+    if (s.laufen <= 0) { s.laufen = 0; ankommen(s, ereignisse); }
+  }
+
+  if (!offline) {
+    // Sauger
+    const sg = s.sauger;
+    if (sg.an && !sg.heiss && s.laufen <= 0 && w.frei.has('sauger')) {
+      const frei = taschePlatz(w) - s.tasche;
+      if (frei > 0) {
+        const weg = abtragen(s, Math.min(frei, w.saugerRate * dt), 'hand', ereignisse);
+        s.tasche += weg;
+        sg.hitze += dt / w.saugerHitze;
+        if (sg.hitze >= 1) {
+          sg.hitze = 1; sg.heiss = true; sg.an = false;
+          ereignisse.push({ typ: 'ueberhitzt' });
+        }
+      }
+    } else {
+      sg.hitze = Math.max(0, sg.hitze - dt / (w.saugerHitze * 0.6));
+      if (sg.heiss && sg.hitze <= 0) sg.heiss = false;
+    }
+
+    // Muskelgedächtnis
+    if (w.autotipp > 0) {
+      s.autoRest += w.autotipp * dt;
+      let runden = Math.min(Math.floor(s.autoRest), 100);
+      s.autoRest -= Math.floor(s.autoRest);
+      while (runden-- > 0 && s.laufen <= 0) {
+        const r = tippen(s, ereignisse);
+        if (r && r.voll) verkaufen(s);
+      }
+    }
+  }
+
+  const wirkung = offline ? Math.min(1, w.offlineEff) : 1;
+
+  // Drohnen: sehen jede Nadel und fliegen direkt zum Ankauf.
+  if (s.drohnen > 0 && rest(s) > 0) {
+    const weg = abtragen(s, s.drohnen * w.drohnenRate * dt * wirkung, 'drohne', ereignisse);
+    const betrag = weg * preisRoh(w);
+    s.geld += betrag;
+    s.verdient += betrag;
+  }
+
+  // Halle
+  w = werte(s);
+  if (w.frei.has('halle')) {
+    const f = fabrik(s);
+    const soll = f.fluss * dt * wirkung;
+    if (soll > 0) {
+      const weg = abtragen(s, soll, 'maschine', ereignisse, f.deckung, f.sortiert);
+      const betrag = f.einnahmen * dt * wirkung * (weg / soll);
+      s.geld += betrag;
+      s.verdient += betrag;
+    }
+    // Nadelsichter im Ausschuss
+    const sichter = s.aus.sichter ? 0 : anzahl(s, 'sichter');
+    if (sichter > 0 && imAusschuss(s)) {
+      s.ausschuss += dt * sichter * MASCHINE_NACH_ID.sichter.rate * f.strom * wirkung;
+      while (s.ausschuss >= 1 && imAusschuss(s)) {
+        s.ausschuss -= 1;
+        nadelFinden(s, s.nadeln.findIndex((n) => n.zustand === 'ausschuss'), ereignisse);
+      }
+      if (!imAusschuss(s)) s.ausschuss = 0;
+    }
+  }
+  return ereignisse;
+}
+
+/**
+ * Holt nach, was während der Abwesenheit passiert ist. Liefert eine
+ * Zusammenfassung oder null, wenn es sich nicht lohnt, davon zu erzählen.
+ */
+function offlineNachholen(s, jetzt = Date.now()) {
+  const w = werte(s);
+  const weg = Math.max(0, (jetzt - (s.zuletzt ?? jetzt)) / 1000);
+  s.zuletzt = jetzt;
+  if (s.laufen > 0 && weg > 0) {
+    const e = [];
+    s.laufen = 0;
+    ankommen(s, e);
+  }
+  const sek = Math.min(weg, w.offlineStunden * 3600);
+  if (sek < 30 || (s.drohnen === 0 && !w.frei.has('halle'))) return null;
+  const geldVor = s.geld;
+  const halmeVor = s.haufen.entfernt;
+  const nadelnVor = nadelnGefunden(s);
+  const ausschussVor = imAusschuss(s);
+  const schritte = Math.min(600, Math.ceil(sek));
+  const dt = sek / schritte;
+  const ereignisse = [];
+  for (let i = 0; i < schritte; i++) ereignisse.push(...tick(s, dt, { offline: true }));
+  return {
+    sekunden: sek,
+    abwesend: weg,
+    geld: s.geld - geldVor,
+    halme: s.haufen.entfernt - halmeVor,
+    nadeln: nadelnGefunden(s) - nadelnVor,
+    ausschuss: Math.max(0, imAusschuss(s) - ausschussVor),
+    funde: ereignisse.filter((e) => e.typ === 'fund').length,
+    ereignisse,
+  };
+}
+
+/* ------------------------------------------------------------ Neuer Haufen */
+
+/** Nach der sechsten Nadel: alles auf Anfang, aber mit Bonus, Album und größerem Haufen. */
+function neuerHaufen(s) {
+  if (!alleNadeln(s)) return null;
+  const neu = neuerStand(s.rng);
+  neu.rng = s.rng;
+  neu.erledigt = s.erledigt + 1;
+  neu.lauf = s.lauf + 1;
+  neu.haufen.gesamt = Math.round(s.haufen.gesamt * NEUER_HAUFEN_FAKTOR);
+  neu.nadeln = nadelnVerstecken(neu, neu.haufen.gesamt);
+  for (const [id, e] of Object.entries(s.funde)) neu.funde[id] = { n: 0, ges: e.ges };
+  neu.stat = { ...s.stat };
+  neu.zeitGesamt = (s.zeitGesamt || 0) + s.zeit;
+  return neu;
+}
+
+/* ------------------------------------------------------------ Speichern */
+
+function speichern(s, jetzt = Date.now()) {
+  s.zuletzt = jetzt;
+  return JSON.stringify(s);
+}
+
+/** Liest einen gespeicherten Stand; fehlende Felder kommen aus einem frischen Stand. */
+function laden(text) {
+  let roh;
+  try { roh = JSON.parse(text); } catch { return null; }
+  if (!roh || typeof roh !== 'object' || roh.version !== STAND_VERSION) return null;
+  if (!Array.isArray(roh.nadeln) || roh.nadeln.length !== NADELN.length) return null;
+  const s = neuerStand(roh.rng || 1);
+  for (const [key, wert] of Object.entries(roh)) {
+    if (wert && typeof wert === 'object' && !Array.isArray(wert) && s[key] && typeof s[key] === 'object'
+      && !Array.isArray(s[key])) s[key] = { ...s[key], ...wert };
+    else s[key] = wert;
+  }
+  s.rev = 0;
+  return s;
+}
+
+// Zahlen so, wie man sie auf einem Handy lesen will: deutsch getrennt, große
+// Beträge abgekürzt, Geld wie im Vorbild in Dollar.
+
+const EINHEITEN = [
+  [1e15, 'Brd.'], [1e12, 'Bio.'], [1e9, 'Mrd.'], [1e6, 'Mio.'],
+];
+
+const deutsch = (n, stellen) => n.toLocaleString('de-DE', {
+  minimumFractionDigits: stellen, maximumFractionDigits: stellen,
+});
+
+function zahl(n) {
+  if (!Number.isFinite(n)) return '–';
+  const a = Math.abs(n);
+  for (const [grenze, name] of EINHEITEN) {
+    if (a >= grenze) return `${deutsch(n / grenze, a / grenze >= 100 ? 0 : a / grenze >= 10 ? 1 : 2)} ${name}`;
+  }
+  return deutsch(Math.floor(n + 1e-9), 0);
+}
+
+/** Wie zahl(), aber ohne Abkürzung bis 10 Millionen — für den Halmzähler. */
+function halme(n) {
+  if (Math.abs(n) < 1e7) return deutsch(Math.floor(n + 1e-9), 0);
+  return zahl(n);
+}
+
+function geld(n) {
+  if (!Number.isFinite(n)) return '–';
+  if (Math.abs(n) < 100) return `${deutsch(n, 2)} $`;
+  return `${zahl(n)} $`;
+}
+
+/** Raten mit einer Nachkommastelle, wenn sie klein sind. */
+function rate(n) {
+  if (n > 0 && n < 10) return deutsch(n, 1);
+  return zahl(n);
+}
+
+function prozent(x) {
+  return `${deutsch(Math.round(x * 100), 0)} %`;
+}
+
+function dauer(sek) {
+  sek = Math.max(0, Math.round(sek));
+  const h = Math.floor(sek / 3600);
+  const m = Math.floor((sek % 3600) / 60);
+  const s = sek % 60;
+  if (h > 0) return `${h} h ${m} min`;
+  if (m > 0) return `${m} min ${s} s`;
+  return `${s} s`;
+}
+
+// Alle Geräusche werden erzeugt, nicht abgespielt: Rauschen für Heu, Sinus
+// für Münzen, ein Rechteck für den Detektor. Keine Audiodateien.
+
+let ctx = null;
+let master = null;
+let rauschPuffer = null;
+let stumm = false;
+let saugerTon = null;
+
+function klangStumm(wert) {
+  if (wert !== undefined) {
+    stumm = !!wert;
+    if (stumm) saugerAus();
+  }
+  return stumm;
+}
+
+/** Muss aus einer Nutzergeste heraus einmal aufgerufen werden (Autoplay-Regeln). */
+function klangWecken() {
+  if (ctx) {
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    return;
+  }
+  const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
+  if (!AC) return;
+  try {
+    ctx = new AC();
+  } catch {
+    ctx = null;
+    return;
+  }
+  master = ctx.createGain();
+  master.gain.value = 0.5;
+  master.connect(ctx.destination);
+  rauschPuffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const d = rauschPuffer.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+}
+
+const bereit = () => ctx && !stumm && ctx.state === 'running';
+
+function ton(frequenz, dauer, { typ = 'sine', laut = 0.2, start = 0, gleiten = null } = {}) {
+  const t = ctx.currentTime + start;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = typ;
+  o.frequency.setValueAtTime(frequenz, t);
+  if (gleiten) o.frequency.exponentialRampToValueAtTime(gleiten, t + dauer);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(laut, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+  o.connect(g).connect(master);
+  o.start(t);
+  o.stop(t + dauer + 0.02);
+}
+
+function rauschen(dauer, { frequenz = 3000, q = 1, laut = 0.25, start = 0, typ = 'bandpass' } = {}) {
+  const t = ctx.currentTime + start;
+  const quelle = ctx.createBufferSource();
+  quelle.buffer = rauschPuffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = typ;
+  filter.frequency.value = frequenz;
+  filter.Q.value = q;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(laut, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+  quelle.connect(filter).connect(g).connect(master);
+  quelle.start(t, Math.random() * 0.5);
+  quelle.stop(t + dauer + 0.02);
+}
+
+const klang = {
+  stich(krit = false) {
+    if (!bereit()) return;
+    rauschen(0.09, { frequenz: 2200 + Math.random() * 1800, q: 0.8, laut: 0.22 });
+    rauschen(0.05, { frequenz: 600, q: 1.5, laut: 0.12, typ: 'lowpass' });
+    if (krit) ton(1320, 0.18, { typ: 'triangle', laut: 0.12, start: 0.02 });
+  },
+  kasse() {
+    if (!bereit()) return;
+    rauschen(0.03, { frequenz: 5000, q: 2, laut: 0.15 });
+    ton(1046, 0.12, { laut: 0.16, start: 0.02 });
+    ton(1568, 0.25, { laut: 0.14, start: 0.09 });
+  },
+  piep(staerke) {
+    if (!bereit()) return;
+    ton(1400 + staerke * 900, 0.045, { typ: 'square', laut: 0.05 + staerke * 0.05 });
+  },
+  kauf() {
+    if (!bereit()) return;
+    ton(660, 0.06, { typ: 'triangle', laut: 0.14 });
+    ton(990, 0.1, { typ: 'triangle', laut: 0.12, start: 0.05 });
+  },
+  fehler() {
+    if (!bereit()) return;
+    ton(160, 0.14, { typ: 'sawtooth', laut: 0.08, gleiten: 120 });
+  },
+  fund(rang = 0) {
+    if (!bereit()) return;
+    const noten = [784, 988, 1175, 1568, 1976];
+    for (let i = 0; i <= rang; i++) ton(noten[i], 0.4, { laut: 0.1, start: i * 0.07 });
+  },
+  nadel() {
+    if (!bereit()) return;
+    [523, 659, 784, 1046, 1318].forEach((f, i) => ton(f, 0.6, { typ: 'triangle', laut: 0.16, start: i * 0.1 }));
+    rauschen(1.2, { frequenz: 8000, q: 0.5, laut: 0.05, start: 0.4, typ: 'highpass' });
+  },
+  heiss() {
+    if (!bereit()) return;
+    rauschen(0.5, { frequenz: 1200, q: 3, laut: 0.15 });
+    ton(300, 0.4, { typ: 'sawtooth', laut: 0.06, gleiten: 90 });
+  },
+};
+
+function saugerAn() {
+  if (!bereit() || saugerTon) return;
+  const quelle = ctx.createBufferSource();
+  quelle.buffer = rauschPuffer;
+  quelle.loop = true;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 900;
+  const brumm = ctx.createOscillator();
+  brumm.type = 'sawtooth';
+  brumm.frequency.value = 95;
+  const brummG = ctx.createGain();
+  brummG.gain.value = 0.04;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, ctx.currentTime);
+  g.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.15);
+  quelle.connect(filter).connect(g);
+  brumm.connect(brummG).connect(g);
+  g.connect(master);
+  quelle.start();
+  brumm.start();
+  saugerTon = { quelle, brumm, g, filter };
+}
+
+function saugerHitze(h) {
+  if (saugerTon) saugerTon.filter.frequency.value = 900 + h * 1400;
+}
+
+function saugerAus() {
+  if (!saugerTon || !ctx) return;
+  const { quelle, brumm, g } = saugerTon;
+  saugerTon = null;
+  g.gain.cancelScheduledValues(ctx.currentTime);
+  g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
+  g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
+  quelle.stop(ctx.currentTime + 0.25);
+  brumm.stop(ctx.currentTime + 0.25);
+}
+
+// Kleine SVG-Zeichen, alle auf einem 32er-Raster und in currentColor, damit sie
+// die Farbe ihres Knopfs oder ihrer Seltenheit übernehmen.
+
+const symSvg = (inhalt, klasse = 'sym') =>
+  `<svg class="${klasse}" viewBox="0 0 32 32" aria-hidden="true">${inhalt}</svg>`;
+
+const LINIE = 'fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"';
+const FLAECHE = 'fill="currentColor"';
+
+const SYM = {
+  haufen: symSvg(`<path d="M3 26 Q7 12 16 8 Q25 12 29 26 Z" ${FLAECHE}/><path d="M11 20l2-4M17 18l1-5M21 21l2-4" stroke="#1c1712" stroke-width="1.6" stroke-linecap="round"/>`),
+  halle: symSvg(`<path d="M3 27V13l7 4v-4l7 4v-4l7 4V6h5v21Z" ${FLAECHE}/>`),
+  forschung: symSvg(`<circle cx="7" cy="16" r="3.5" ${FLAECHE}/><circle cx="24" cy="7" r="3.5" ${FLAECHE}/><circle cx="24" cy="25" r="3.5" ${FLAECHE}/><path d="M10 16h5M15 7v18M15 7h6M15 25h6" ${LINIE}/>`),
+  funde: symSvg(`<path d="M4 12h24v14H4z" ${LINIE}/><path d="M4 12l3-6h18l3 6M13 17h6" ${LINIE}/>`),
+  menue: symSvg(`<path d="M6 9h20M6 16h20M6 23h20" ${LINIE}/>`),
+  nadel: symSvg(`<path d="M6 26 L25 7" ${LINIE}/><ellipse cx="25.5" cy="6.5" rx="2.2" ry="3.4" transform="rotate(45 25.5 6.5)" ${LINIE} stroke-width="1.6"/>`),
+  geld: symSvg(`<circle cx="16" cy="16" r="11" ${LINIE}/><path d="M20 11.5c-1-1.2-2.4-1.7-4-1.7-2.2 0-3.8 1.2-3.8 3s1.6 2.4 3.8 2.9 4 1.2 4 3.1-1.8 3.2-4 3.2c-1.7 0-3.2-.6-4.2-1.8M16 7.5v17" ${LINIE} stroke-width="2"/>`),
+  tasche: symSvg(`<path d="M6 12h20l-2 15H8Z" ${LINIE}/><path d="M11 12a5 5 0 0 1 10 0" ${LINIE}/>`),
+  sauger: symSvg(`<path d="M5 25h9l3-8" ${LINIE}/><rect x="16" y="5" width="11" height="13" rx="3" ${LINIE}/><path d="M3 25h4" ${LINIE}/>`),
+  drohne: symSvg(`<path d="M9 16h14M12 16v4h8v-4" ${LINIE}/><path d="M4 11h8M20 11h8M8 11v5M24 11v5" ${LINIE}/>`),
+  ankauf: symSvg(`<path d="M5 27V9l11-5 11 5v18Z" ${LINIE}/><path d="M11 27v-9h10v9" ${LINIE}/>`),
+  detektor: symSvg(`<path d="M8 26L20 8" ${LINIE}/><ellipse cx="7" cy="26" rx="5" ry="2.5" ${LINIE}/><path d="M20 8h5" ${LINIE}/>`),
+  ausschuss: symSvg(`<path d="M7 10h18l-2 17H9Z" ${LINIE}/><path d="M5 10h22M13 6h6" ${LINIE}/>`),
+  pfeil: symSvg(`<path d="M12 7l9 9-9 9" ${LINIE}/>`),
+  zu: symSvg(`<path d="M8 8l16 16M24 8L8 24" ${LINIE}/>`),
+  ton: symSvg(`<path d="M5 12h5l7-6v20l-7-6H5Z" ${LINIE}/><path d="M21 11c2 2.5 2 7.5 0 10M25 8c4 4.5 4 11.5 0 16" ${LINIE}/>`),
+  tonAus: symSvg(`<path d="M5 12h5l7-6v20l-7-6H5Z" ${LINIE}/><path d="M22 12l7 8M29 12l-7 8" ${LINIE}/>`),
+  haken: symSvg(`<path d="M6 17l6 6 14-14" ${LINIE}/>`),
+  schloss: symSvg(`<rect x="7" y="14" width="18" height="13" rx="2" ${LINIE}/><path d="M11 14v-4a5 5 0 0 1 10 0v4" ${LINIE}/>`),
+  blitz: symSvg(`<path d="M18 3L7 18h8l-2 11 11-15h-8Z" ${FLAECHE}/>`),
+  lupe: symSvg(`<circle cx="13" cy="13" r="8" ${LINIE}/><path d="M19 19l8 8" ${LINIE}/>`),
+};
+
+/** Ein Zeichen je Maschine. */
+const MASCHINEN_SYM = {
+  arm: symSvg(`<path d="M6 27h10M11 27v-6l8-8 5 3" ${LINIE}/><circle cx="11" cy="21" r="2" ${FLAECHE}/><path d="M24 16l3-2M24 16l1 4" ${LINIE}/>`),
+  bagger: symSvg(`<path d="M3 24h14v-6h-9v-5h5" ${LINIE}/><path d="M17 20l6-10 5 6-3 3" ${LINIE}/><circle cx="7" cy="27" r="2" ${FLAECHE}/><circle cx="14" cy="27" r="2" ${FLAECHE}/>`),
+  scanner: symSvg(`<path d="M5 27V7h22v20" ${LINIE}/><path d="M9 17h14" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"/>`),
+  sortierer: symSvg(`<path d="M4 9h24l-9 9v8l-6 3V18Z" ${LINIE}/>`),
+  sichter: symSvg(`<circle cx="13" cy="13" r="8" ${LINIE}/><path d="M19 19l8 8M9 17l8-8" ${LINIE}/>`),
+  generator: symSvg(`<rect x="4" y="9" width="24" height="16" rx="3" ${LINIE}/><path d="M17 11l-5 7h5l-2 5" ${LINIE}/>`),
+  kessel: symSvg(`<path d="M8 27V13a8 8 0 0 1 16 0v14Z" ${LINIE}/><path d="M12 5c1 2-1 3 0 5M18 4c1 2-1 3 0 5" ${LINIE}/>`),
+  wind: symSvg(`<path d="M16 16v12M16 16L10 5M16 16l11 3M16 16L7 24" ${LINIE}/>`),
+  solar: symSvg(`<path d="M4 24l4-14h16l4 14Z" ${LINIE}/><path d="M6 17h20M13 10l-2 14M19 10l2 14" ${LINIE} stroke-width="1.6"/>`),
+  biogas: symSvg(`<ellipse cx="16" cy="12" rx="10" ry="5" ${LINIE}/><path d="M6 12v12c0 3 20 3 20 0V12" ${LINIE}/>`),
+  fusion: symSvg(`<circle cx="16" cy="16" r="4" ${FLAECHE}/><ellipse cx="16" cy="16" rx="12" ry="5" ${LINIE}/><ellipse cx="16" cy="16" rx="12" ry="5" transform="rotate(60 16 16)" ${LINIE}/><ellipse cx="16" cy="16" rx="12" ry="5" transform="rotate(120 16 16)" ${LINIE}/>`),
+  presse: symSvg(`<rect x="7" y="14" width="18" height="12" rx="2" ${LINIE}/><path d="M16 4v8M11 12h10" ${LINIE}/><path d="M10 19h12M10 23h12" ${LINIE} stroke-width="1.4"/>`),
+  muehle: symSvg(`<circle cx="16" cy="14" r="8" ${LINIE}/><path d="M16 6v16M8 14h16" ${LINIE}/><path d="M9 27h14" ${LINIE}/>`),
+  pulper: symSvg(`<path d="M6 10h20l-3 17H9Z" ${LINIE}/><path d="M16 4v14M11 16c3 3 7-3 10 0" ${LINIE}/>`),
+  wickler: symSvg(`<circle cx="16" cy="17" r="9" ${LINIE}/><path d="M7 14c6 3 12 3 18 0M7 20c6 3 12 3 18 0" ${LINIE} stroke-width="1.6"/>`),
+  papier: symSvg(`<path d="M8 4h12l5 5v19H8Z" ${LINIE}/><path d="M12 14h9M12 19h9M12 24h6" ${LINIE} stroke-width="1.6"/>`),
+  ziegel: symSvg(`<path d="M3 13h26v14H3z" ${LINIE}/><path d="M3 20h26M11 13v7M21 13v7M16 20v7" ${LINIE} stroke-width="1.6"/>`),
+};
+
+/** Fundstücke, grob wiedererkennbar in 32 Pixeln. */
+const FUND_SYM = {
+  knopf: symSvg(`<circle cx="16" cy="16" r="10" ${LINIE}/><circle cx="13" cy="13" r="1.6" ${FLAECHE}/><circle cx="19" cy="13" r="1.6" ${FLAECHE}/><circle cx="13" cy="19" r="1.6" ${FLAECHE}/><circle cx="19" cy="19" r="1.6" ${FLAECHE}/>`),
+  kronkorken: symSvg(`<path d="M16 5l2.5 2.5 3.4-.9.9 3.4 3.4.9-.9 3.4L28 16l-2.5 2.5.9 3.4-3.4.9-.9 3.4-3.4-.9L16 27l-2.5-2.5-3.4.9-.9-3.4-3.4-.9.9-3.4L4 16l2.5-2.5-.9-3.4 3.4-.9.9-3.4 3.4.9Z" ${LINIE} stroke-width="1.8"/>`),
+  murmel: symSvg(`<circle cx="16" cy="16" r="10" ${LINIE}/><path d="M10 18c4-6 8 2 12-4" ${LINIE}/>`),
+  nagel: symSvg(`<path d="M8 6h10M13 6v12c0 4 6 4 6 8" ${LINIE}/>`),
+  feder: symSvg(`<path d="M7 27C9 16 16 7 26 5c-2 10-9 17-19 22Z" ${LINIE}/><path d="M7 27l12-13" ${LINIE}/>`),
+  muenze: symSvg(`<circle cx="16" cy="16" r="10" ${LINIE}/><circle cx="16" cy="16" r="6" ${LINIE} stroke-width="1.6"/>`),
+  hufeisen: symSvg(`<path d="M9 26V15a7 7 0 0 1 14 0v11" ${LINIE} stroke-width="4"/>`),
+  schluessel: symSvg(`<circle cx="9" cy="16" r="5" ${LINIE}/><path d="M14 16h14M23 16v4M27 16v3" ${LINIE}/>`),
+  fingerhut: symSvg(`<path d="M9 26V14a7 7 0 0 1 14 0v12Z" ${LINIE}/><path d="M12 15h1M16 15h1M20 15h1M12 19h1M16 19h1M20 19h1" ${LINIE}/>`),
+  loeffel: symSvg(`<ellipse cx="20" cy="10" rx="5" ry="6" transform="rotate(35 20 10)" ${LINIE}/><path d="M17 15L7 27" ${LINIE}/>`),
+  brille: symSvg(`<circle cx="9" cy="17" r="5" ${LINIE}/><circle cx="23" cy="17" r="5" ${LINIE}/><path d="M14 17h4M4 15l-1-3M28 15l1-3" ${LINIE}/>`),
+  taschenuhr: symSvg(`<circle cx="16" cy="18" r="9" ${LINIE}/><path d="M16 18v-5M16 18l3 2M16 5v4M13 5h6" ${LINIE}/>`),
+  ring: symSvg(`<circle cx="16" cy="19" r="8" ${LINIE} stroke-width="3"/><path d="M12 8l4-4 4 4-4 3Z" ${FLAECHE}/>`),
+  messer: symSvg(`<path d="M5 22l12-12 9 1-11 11Z" ${LINIE}/><path d="M5 22l-1 4 4-1" ${LINIE}/>`),
+  medaille: symSvg(`<circle cx="16" cy="20" r="7" ${LINIE}/><path d="M11 4l5 9 5-9" ${LINIE}/>`),
+  goldzahn: symSvg(`<path d="M9 7c3-2 5 0 7 0s4-2 7 0c2 3 0 8-1 13-1 4-3 5-4 1l-2-5-2 5c-1 4-3 3-4-1-1-5-3-10-1-13Z" ${LINIE}/>`),
+  goldmuenze: symSvg(`<circle cx="16" cy="16" r="10" ${FLAECHE}/><path d="M16 10v12M12 13h8M12 19h8" stroke="#1c1712" stroke-width="2" stroke-linecap="round"/>`),
+  amulett: symSvg(`<path d="M8 4l8 8 8-8" ${LINIE}/><path d="M16 12l7 8-7 8-7-8Z" ${LINIE}/><circle cx="16" cy="20" r="2" ${FLAECHE}/>`),
+  ehering: symSvg(`<circle cx="16" cy="16" r="9" ${LINIE} stroke-width="4"/>`),
+  ei: symSvg(`<path d="M16 4c6 0 10 10 10 15a10 10 0 0 1-20 0C6 14 10 4 16 4Z" ${FLAECHE}/>`),
+};
+
+// Die beiden gezeichneten Ansichten: die Lagerhalle mit dem Haufen und der
+// Blick auf das Förderband. Reines Canvas 2D, keine Bilder. Der Haufen wird
+// als Volumen gedacht: bei halbem Rest ist er noch 79 % so hoch.
+
+const HEU = '#e8b64c';
+const HEU_HELL = '#f6da86';
+const HEU_DUNKEL = '#a8792a';
+
+/** Kleiner fester Zufall für Halmmuster, damit der Haufen nicht flackert. */
+function musterZufall(seed) {
+  let x = seed >>> 0;
+  return () => {
+    x = (x + 0x6d2b79f5) >>> 0;
+    let t = x;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function leinwand(canvas) {
+  const ctx = canvas.getContext('2d');
+  const g = { ctx, w: 0, h: 0, dpr: 1 };
+  g.anpassen = () => {
+    const r = canvas.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(1, Math.round(r.width));
+    const h = Math.max(1, Math.round(r.height));
+    if (w !== g.w || h !== g.h || dpr !== g.dpr) {
+      g.w = w; g.h = h; g.dpr = dpr;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      return true;
+    }
+    return false;
+  };
+  return g;
+}
+
+/* ================================================================ Haufen */
+
+function haufenSzene(canvas) {
+  const g = leinwand(canvas);
+  const { ctx } = g;
+  const z = musterZufall(20260929);
+  const halme = Array.from({ length: 900 }, () => ({
+    u: z() * 2 - 1, v: Math.pow(z(), 0.8), a: (z() - 0.5) * 1.6, l: 6 + z() * 10,
+    farbe: [HEU, HEU_HELL, HEU_DUNKEL, '#d19c3a', '#f0c860'][Math.floor(z() * 5)],
+  }));
+  const beulen = Array.from({ length: 5 }, () => ({ f: 3 + z() * 9, p: z() * 6.28, a: 0.012 + z() * 0.02 }));
+  const teilchen = [];
+  const texte = [];
+  let zeit = 0;
+  let cache = null;
+  let cacheKey = '';
+  let glanz = 0;
+
+  const lage = () => {
+    const boden = g.h * 0.84;
+    const r0 = Math.min(g.w * 0.43, g.h * 0.75);
+    return {
+      boden,
+      cx: g.w * 0.45,
+      r0,
+      h0: Math.min(boden - g.h * 0.2, r0 * 1.05),
+      klappeX: g.w - 54,
+    };
+  };
+
+  const huelle = (t) => {
+    let y = Math.pow(Math.max(0, 1 - t * t), 0.62);
+    for (const b of beulen) y *= 1 + b.a * Math.sin(t * b.f + b.p) * (1 - t * t);
+    return y;
+  };
+
+  function haufenForm(k) {
+    const L = lage();
+    return { ...L, r: L.r0 * Math.max(k, 0.02), h: L.h0 * k };
+  }
+
+  function haufenPfad(c, H) {
+    c.beginPath();
+    c.moveTo(H.cx - H.r, H.boden);
+    for (let i = 0; i <= 60; i++) {
+      const t = -1 + (2 * i) / 60;
+      c.lineTo(H.cx + t * H.r, H.boden - H.h * huelle(t));
+    }
+    c.lineTo(H.cx + H.r, H.boden);
+    c.closePath();
+  }
+
+  function haufenZeichnen(k) {
+    const key = `${g.w}x${g.h}@${g.dpr}:${k.toFixed(4)}`;
+    if (key === cacheKey && cache) return cache;
+    cacheKey = key;
+    if (!cache) cache = document.createElement('canvas');
+    cache.width = g.w * g.dpr;
+    cache.height = g.h * g.dpr;
+    const c = cache.getContext('2d');
+    c.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+    c.clearRect(0, 0, g.w, g.h);
+    if (k <= 0.0005) return cache;
+    const H = haufenForm(k);
+    // Schatten am Boden
+    c.fillStyle = 'rgba(0,0,0,0.35)';
+    c.beginPath();
+    c.ellipse(H.cx, H.boden + 3, H.r * 1.05, 8 + H.r * 0.05, 0, 0, Math.PI * 2);
+    c.fill();
+    haufenPfad(c, H);
+    const verlauf = c.createLinearGradient(0, H.boden - H.h, 0, H.boden);
+    verlauf.addColorStop(0, '#f2cd6a');
+    verlauf.addColorStop(0.55, '#d9a444');
+    verlauf.addColorStop(1, '#94672a');
+    c.fillStyle = verlauf;
+    c.fill();
+    c.save();
+    haufenPfad(c, H);
+    c.clip();
+    // Seitliches Licht von der Lampe
+    const licht = c.createRadialGradient(H.cx - H.r * 0.3, H.boden - H.h * 0.9, 5, H.cx, H.boden - H.h * 0.5, H.r * 1.2);
+    licht.addColorStop(0, 'rgba(255,240,190,0.35)');
+    licht.addColorStop(1, 'rgba(255,240,190,0)');
+    c.fillStyle = licht;
+    c.fillRect(H.cx - H.r, H.boden - H.h, H.r * 2, H.h);
+    const massstab = Math.max(0.45, Math.min(1, k * 1.3));
+    c.lineCap = 'round';
+    for (const hm of halme) {
+      const y0 = H.boden - hm.v * H.h * huelle(hm.u);
+      const x0 = H.cx + hm.u * H.r * (0.3 + 0.7 * (1 - hm.v * 0.4));
+      const l = hm.l * massstab;
+      c.strokeStyle = hm.farbe;
+      c.lineWidth = 1.2 * massstab + 0.3;
+      c.beginPath();
+      c.moveTo(x0, y0);
+      c.lineTo(x0 + Math.cos(hm.a) * l, y0 + Math.sin(hm.a) * l);
+      c.stroke();
+    }
+    c.restore();
+    // Abstehende Halme am Rand
+    c.strokeStyle = HEU_HELL;
+    c.lineWidth = 1.1;
+    for (let i = 0; i < 40; i++) {
+      const t = -0.95 + (1.9 * i) / 39;
+      const x = H.cx + t * H.r;
+      const y = H.boden - H.h * huelle(t);
+      const a = -Math.PI / 2 + t * 1.2 + Math.sin(i * 7.3) * 0.5;
+      const l = (5 + (i * 37) % 7) * massstab;
+      c.beginPath();
+      c.moveTo(x, y + 2);
+      c.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l);
+      c.stroke();
+    }
+    return cache;
+  }
+
+  function hintergrund(tor) {
+    const L = lage();
+    const wand = ctx.createLinearGradient(0, 0, 0, L.boden);
+    wand.addColorStop(0, '#1a140f');
+    wand.addColorStop(1, '#30251a');
+    ctx.fillStyle = wand;
+    ctx.fillRect(0, 0, g.w, L.boden);
+    // Wellblech
+    ctx.strokeStyle = 'rgba(255,255,255,0.035)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < g.w; x += 9) {
+      ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, L.boden); ctx.stroke();
+    }
+    // Rolltor hinten
+    const tw = Math.min(g.w * 0.34, 170);
+    const tx = g.w * 0.62;
+    const th = L.boden * 0.52;
+    const ty = L.boden - th;
+    if (tor) {
+      const himmel = ctx.createLinearGradient(0, ty, 0, L.boden);
+      himmel.addColorStop(0, '#8fc6ef');
+      himmel.addColorStop(0.7, '#d9eefa');
+      himmel.addColorStop(0.71, '#7fb04f');
+      himmel.addColorStop(1, '#5d8c38');
+      ctx.fillStyle = himmel;
+      ctx.fillRect(tx, ty, tw, th);
+      ctx.fillStyle = 'rgba(255,250,220,0.08)';
+      ctx.beginPath();
+      ctx.moveTo(tx, L.boden); ctx.lineTo(tx + tw, L.boden);
+      ctx.lineTo(tx + tw + 60, g.h); ctx.lineTo(tx - 60, g.h); ctx.fill();
+    } else {
+      ctx.fillStyle = '#3a3129';
+      ctx.fillRect(tx, ty, tw, th);
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      for (let y = ty + 6; y < L.boden; y += 7) {
+        ctx.beginPath(); ctx.moveTo(tx, y + 0.5); ctx.lineTo(tx + tw, y + 0.5); ctx.stroke();
+      }
+    }
+    ctx.strokeStyle = '#4a3f33';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(tx - 2, ty - 2, tw + 4, th + 2);
+    // Dachbinder
+    ctx.strokeStyle = '#120e0a';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(0, g.h * 0.09); ctx.lineTo(g.w, g.h * 0.09);
+    ctx.stroke();
+    ctx.lineWidth = 3;
+    for (let x = 0; x < g.w + 40; x += 60) {
+      ctx.beginPath(); ctx.moveTo(x, g.h * 0.09); ctx.lineTo(x + 30, 0); ctx.lineTo(x + 60, g.h * 0.09); ctx.stroke();
+    }
+    // Lampe mit Lichtkegel
+    const lx = L.cx;
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(lx, g.h * 0.09); ctx.lineTo(lx, g.h * 0.14); ctx.stroke();
+    ctx.fillStyle = '#2c2c2c';
+    ctx.beginPath(); ctx.moveTo(lx - 14, g.h * 0.17); ctx.lineTo(lx + 14, g.h * 0.17); ctx.lineTo(lx + 6, g.h * 0.14); ctx.lineTo(lx - 6, g.h * 0.14); ctx.fill();
+    const kegel = ctx.createLinearGradient(0, g.h * 0.17, 0, L.boden);
+    kegel.addColorStop(0, 'rgba(255,230,160,0.22)');
+    kegel.addColorStop(1, 'rgba(255,230,160,0.02)');
+    ctx.fillStyle = kegel;
+    ctx.beginPath();
+    ctx.moveTo(lx - 12, g.h * 0.17); ctx.lineTo(lx + 12, g.h * 0.17);
+    ctx.lineTo(lx + L.r0 * 1.1, L.boden); ctx.lineTo(lx - L.r0 * 1.1, L.boden); ctx.fill();
+    // Boden
+    const boden = ctx.createLinearGradient(0, L.boden, 0, g.h);
+    boden.addColorStop(0, '#4a4036');
+    boden.addColorStop(1, '#2a241e');
+    ctx.fillStyle = boden;
+    ctx.fillRect(0, L.boden, g.w, g.h - L.boden);
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const y = L.boden + ((g.h - L.boden) * i) / 4;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(g.w, y); ctx.stroke();
+    }
+  }
+
+  function ankauf() {
+    const L = lage();
+    const x = L.klappeX;
+    const y = L.boden - 78;
+    ctx.fillStyle = '#5a3d22';
+    ctx.fillRect(x - 6, y, 52, 78);
+    ctx.fillStyle = '#6d4b2b';
+    ctx.fillRect(x - 2, y + 26, 44, 30);
+    ctx.fillStyle = '#1b130c';
+    ctx.fillRect(x + 4, y + 31, 32, 20);
+    ctx.fillStyle = '#e9d9b5';
+    ctx.fillRect(x - 12, y - 18, 64, 16);
+    ctx.fillStyle = '#3b2a17';
+    ctx.font = 'bold 9px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('HEU-ANKAUF', x + 20, y - 10);
+  }
+
+  function foerderband(s, f) {
+    const arme = (s.maschinen.arm || 0) + (s.maschinen.bagger || 0);
+    if (!arme) return;
+    const L = lage();
+    const y = L.boden + 10;
+    const xEnde = L.cx - L.r0 * 0.25;
+    ctx.fillStyle = '#26221f';
+    ctx.fillRect(0, y, xEnde, 10);
+    ctx.fillStyle = '#3a3531';
+    ctx.fillRect(0, y, xEnde, 3);
+    const tempo = f && f.band ? 40 + 120 * Math.min(1, f.fluss / f.band) : 0;
+    ctx.strokeStyle = '#4d4741';
+    ctx.lineWidth = 1;
+    const off = (zeit * tempo) % 12;
+    for (let x = xEnde - off; x > 0; x -= 12) {
+      ctx.beginPath(); ctx.moveTo(x, y + 3); ctx.lineTo(x, y + 10); ctx.stroke();
+    }
+    if (f && f.fluss > 0) {
+      ctx.fillStyle = HEU;
+      const dichte = Math.min(1, f.fluss / 400);
+      for (let i = 0; i < 20; i++) {
+        if ((i * 0.618) % 1 > dichte + 0.1) continue;
+        const x = xEnde - ((zeit * tempo + i * 37) % xEnde);
+        ctx.fillRect(x, y - 3, 6, 3);
+      }
+    }
+    // Greifarme am Fuß des Haufens
+    const zahl = Math.min(4, arme);
+    for (let i = 0; i < zahl; i++) {
+      const bx = xEnde - 20 - i * 34;
+      const phase = Math.sin(zeit * 3 + i * 1.7);
+      ctx.strokeStyle = '#d58a2c';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(bx, y);
+      const ex = bx + 10 + phase * 8;
+      const ey = y - 22 - phase * 4;
+      ctx.lineTo(bx + 4, y - 16);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.fillStyle = '#222';
+      ctx.fillRect(bx - 5, y - 2, 10, 4);
+    }
+    if (arme > zahl) {
+      ctx.fillStyle = '#e8dcc4';
+      ctx.font = '600 11px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`×${arme}`, 6, y - 10);
+    }
+  }
+
+  function drohnen(s) {
+    const n = Math.min(s.drohnen, 13);
+    if (!n) return;
+    const L = lage();
+    const k = Math.cbrt(Math.max(0, 1 - s.haufen.entfernt / s.haufen.gesamt));
+    const ax = L.cx;
+    const ay = L.boden - L.h0 * k - 20;
+    const bx = L.klappeX + 20;
+    const by = L.boden - 100;
+    for (let i = 0; i < n; i++) {
+      const p = (zeit * 0.18 + i / n) % 1;
+      const hin = p < 0.5;
+      const q = hin ? p * 2 : 2 - p * 2;
+      const e = (1 - Math.cos(q * Math.PI)) / 2;
+      const x = ax + (bx - ax) * e + Math.sin(zeit * 2 + i) * 4;
+      const y = Math.min(ay, by) - 30 - Math.sin(q * Math.PI) * 25 + (i % 3) * 8;
+      ctx.fillStyle = '#20252b';
+      ctx.fillRect(x - 6, y - 2, 12, 4);
+      ctx.strokeStyle = 'rgba(200,210,220,0.55)';
+      ctx.lineWidth = 1.5;
+      const w = 5 + Math.abs(Math.sin(zeit * 40 + i)) * 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 8 - w / 2, y - 4); ctx.lineTo(x - 8 + w / 2, y - 4);
+      ctx.moveTo(x + 8 - w / 2, y - 4); ctx.lineTo(x + 8 + w / 2, y - 4);
+      ctx.stroke();
+      ctx.fillStyle = '#78e08f';
+      ctx.fillRect(x - 1, y - 1, 2, 2);
+      if (hin) {
+        ctx.fillStyle = HEU;
+        ctx.fillRect(x - 4, y + 3, 8, 5);
+      }
+    }
+  }
+
+  function laeufer(anteil, H) {
+    if (anteil == null) return;
+    const L = lage();
+    const von = Math.min(H.cx + H.r * 0.85, L.klappeX - 40);
+    const bis = L.klappeX - 10;
+    const hin = anteil < 0.5;
+    const q = hin ? anteil * 2 : 2 - anteil * 2;
+    const x = von + (bis - von) * q;
+    const y = L.boden - 2;
+    const schritt = Math.sin(zeit * 14);
+    ctx.strokeStyle = '#e8dcc4';
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x, y - 30); ctx.lineTo(x, y - 14);
+    ctx.moveTo(x, y - 14); ctx.lineTo(x - 5 * schritt, y);
+    ctx.moveTo(x, y - 14); ctx.lineTo(x + 5 * schritt, y);
+    ctx.moveTo(x, y - 26); ctx.lineTo(x + (hin ? 7 : -6), y - 20);
+    ctx.stroke();
+    ctx.fillStyle = '#e8dcc4';
+    ctx.beginPath(); ctx.arc(x, y - 35, 4.5, 0, Math.PI * 2); ctx.fill();
+    if (hin) {
+      ctx.fillStyle = HEU;
+      ctx.beginPath(); ctx.ellipse(x + 10, y - 22, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function sauger(info, H) {
+    if (!info.saugt && !info.saugerSichtbar) return;
+    const sx = g.w * 0.86;
+    const sy = H.boden + 22;
+    const zx = H.cx + H.r * 0.55;
+    const zy = H.boden - H.h * 0.35;
+    ctx.strokeStyle = '#555c63';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo(sx - 30, zy + 40, zx + 8, zy);
+    ctx.stroke();
+    const rot = Math.round(80 + info.hitze * 175);
+    ctx.fillStyle = `rgb(${rot},${Math.round(90 - info.hitze * 60)},${Math.round(90 - info.hitze * 60)})`;
+    ctx.fillRect(sx - 12, sy - 8, 26, 18);
+    if (info.saugt && Math.random() < 0.9) {
+      teilchen.push({
+        x: zx - 10 - Math.random() * 20, y: zy + (Math.random() - 0.5) * 20,
+        vx: 90, vy: -10, leben: 0.25, max: 0.25, a: Math.random() * 3, l: 7, farbe: HEU_HELL, schwer: 0,
+      });
+    }
+  }
+
+  function detektorZeichnen(info, H) {
+    const x = 10;
+    const y = H.boden - 10;
+    ctx.strokeStyle = '#8b8f94';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x, y + 8); ctx.lineTo(x + 26, y - 14); ctx.stroke();
+    ctx.fillStyle = '#6a6f75';
+    ctx.beginPath(); ctx.ellipse(x + 2, y + 9, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
+    const an = info.blink > 0 ? info.blink : 0;
+    ctx.fillStyle = an ? `rgba(255,${Math.round(200 - an * 160)},60,${0.4 + an * 0.6})` : '#3a2c22';
+    ctx.beginPath(); ctx.arc(x + 26, y - 16, 3.5, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function teilchenZeichnen(dt) {
+    for (let i = teilchen.length - 1; i >= 0; i--) {
+      const p = teilchen[i];
+      p.leben -= dt;
+      if (p.leben <= 0) { teilchen.splice(i, 1); continue; }
+      p.vy += p.schwer * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.a += dt * 6;
+      ctx.globalAlpha = Math.min(1, p.leben / p.max * 1.5);
+      ctx.strokeStyle = p.farbe;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x + Math.cos(p.a) * p.l, p.y + Math.sin(p.a) * p.l);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = texte.length - 1; i >= 0; i--) {
+      const t = texte[i];
+      t.leben -= dt;
+      if (t.leben <= 0) { texte.splice(i, 1); continue; }
+      t.y -= dt * 38;
+      ctx.globalAlpha = Math.min(1, t.leben * 2);
+      ctx.font = `700 ${t.groesse}px system-ui, sans-serif`;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(20,14,8,0.8)';
+      ctx.strokeText(t.text, t.x, t.y);
+      ctx.fillStyle = t.farbe;
+      ctx.fillText(t.text, t.x, t.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  return {
+    anpassen: () => g.anpassen(),
+
+    /** Wo die Spitze des Haufens gerade ist — für Einblendungen. */
+    spitze(s) {
+      const k = Math.cbrt(Math.max(0, 1 - s.haufen.entfernt / s.haufen.gesamt));
+      const H = haufenForm(k);
+      return { x: H.cx, y: H.boden - H.h };
+    },
+
+    stich(x, y, menge, krit) {
+      const n = Math.min(26, 5 + Math.round(Math.log2(menge + 1) * 3));
+      for (let i = 0; i < n; i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
+        const v = 80 + Math.random() * 160;
+        teilchen.push({
+          x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, leben: 0.7, max: 0.7,
+          a: Math.random() * 6, l: 5 + Math.random() * 6, farbe: Math.random() < 0.5 ? HEU : HEU_HELL, schwer: 420,
+        });
+      }
+      texte.push({
+        x, y: y - 16, text: krit ? `Glücksstich! +${Math.round(menge)}` : `+${Math.round(menge)}`,
+        leben: 0.9, farbe: krit ? '#ffd24a' : '#f7ecd2', groesse: krit ? 17 : 14,
+      });
+    },
+
+    text(x, y, text, farbe = '#9fe0a4', groesse = 15) {
+      texte.push({ x, y, text, leben: 1.3, farbe, groesse });
+    },
+
+    nadelGlanz() { glanz = 2.5; },
+
+    zeichnen(s, info, dt) {
+      zeit += dt;
+      const neu = g.anpassen();
+      if (neu) cacheKey = '';
+      ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+      const k = Math.cbrt(Math.max(0, 1 - s.haufen.entfernt / s.haufen.gesamt));
+      const H = haufenForm(k);
+      hintergrund(info.torOffen);
+      ankauf();
+      foerderband(s, info.fabrik);
+      ctx.drawImage(haufenZeichnen(Math.round(k * 2000) / 2000), 0, 0, g.w, g.h);
+      if (glanz > 0) {
+        glanz -= dt;
+        const gx = H.cx;
+        const gy = H.boden - H.h * 0.6;
+        const r = 30 + (2.5 - glanz) * 40;
+        const verlauf = ctx.createRadialGradient(gx, gy, 0, gx, gy, r);
+        verlauf.addColorStop(0, `rgba(255,255,230,${Math.min(0.8, glanz / 2)})`);
+        verlauf.addColorStop(1, 'rgba(255,255,230,0)');
+        ctx.fillStyle = verlauf;
+        ctx.fillRect(gx - r, gy - r, r * 2, r * 2);
+      }
+      sauger(info, H);
+      drohnen(s);
+      laeufer(info.laufAnteil, H);
+      detektorZeichnen(info, H);
+      teilchenZeichnen(dt);
+    },
+  };
+}
+
+/* ================================================================ Halle */
+
+const KUERZEL = {
+  presse: 'PRESSE', muehle: 'MÜHLE', pulper: 'PULPER', wickler: 'WICKLER', papier: 'PAPIER', ziegel: 'ZIEGEL',
+};
+const PRODUKT_FARBE = {
+  ballen: '#d9a444', pellet: '#9c7a3c', brei: '#b8a47a', silage: '#e9e6df', papier: '#f3ecd8', ziegel: '#b5643c',
+};
+
+function halleSzene(canvas) {
+  const g = leinwand(canvas);
+  const { ctx } = g;
+  let zeit = 0;
+  let geldTakt = 0;
+  const texte = [];
+
+  return {
+    zeichnen(s, f, dt, geldProSek) {
+      zeit += dt;
+      g.anpassen();
+      ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+      const { w, h } = g;
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, '#221b14');
+      bg.addColorStop(1, '#16110c');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      for (let x = 0; x < w; x += 18) {
+        ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, h); ctx.stroke();
+      }
+
+      const bandY = h * 0.7;
+      const links = 52;
+      const rechts = w - 62;
+      // Haufenrand
+      ctx.fillStyle = '#c9923a';
+      ctx.beginPath();
+      ctx.moveTo(0, bandY + 12);
+      ctx.quadraticCurveTo(10, h * 0.1, 64, bandY + 12);
+      ctx.fill();
+      // Band
+      ctx.fillStyle = '#2d2824';
+      ctx.fillRect(links, bandY, rechts - links, 10);
+      ctx.fillStyle = '#48413a';
+      ctx.fillRect(links, bandY, rechts - links, 2);
+      const auslast = f.band ? Math.min(1, f.fluss / f.band) : 0;
+      const tempo = f.fluss > 0 ? 30 + 110 * auslast : 0;
+      ctx.strokeStyle = '#57504a';
+      const off = (zeit * tempo) % 14;
+      for (let x = links + off; x < rechts; x += 14) {
+        ctx.beginPath(); ctx.moveTo(x, bandY + 2); ctx.lineTo(x, bandY + 10); ctx.stroke();
+      }
+      if (f.fluss > 0) {
+        const n = 6 + Math.round(auslast * 26);
+        for (let i = 0; i < n; i++) {
+          const x = links + ((zeit * tempo + (i * (rechts - links)) / n) % (rechts - links));
+          ctx.fillStyle = i % 5 === 0 ? '#f3d27a' : '#dca84a';
+          ctx.fillRect(x, bandY - 4, 7, 4);
+        }
+      }
+      // Arme
+      const arme = s.maschinen.arm || 0;
+      const zahl = Math.min(5, arme);
+      for (let i = 0; i < zahl; i++) {
+        const bx = links + 16 + i * 22;
+        const ph = Math.sin(zeit * 4 * (f.strom || 0) + i);
+        ctx.strokeStyle = '#d58a2c';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(bx, bandY);
+        ctx.lineTo(bx - 4, bandY - 18);
+        ctx.lineTo(bx - 14 - ph * 6, bandY - 26 + ph * 6);
+        ctx.stroke();
+      }
+      ctx.font = '600 11px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#e8dcc4';
+      if (arme) ctx.fillText(`${arme} Arme${s.maschinen.bagger ? ` · ${s.maschinen.bagger} Bagger` : ''}`, links, bandY + 26);
+      // Scanner-Tor
+      if (s.maschinen.scanner) {
+        const sx = links + (rechts - links) * 0.38;
+        ctx.strokeStyle = '#4fb3a9';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(sx - 12, bandY + 10); ctx.lineTo(sx - 12, bandY - 26);
+        ctx.lineTo(sx + 12, bandY - 26); ctx.lineTo(sx + 12, bandY + 10);
+        ctx.stroke();
+        const flacker = 0.35 + 0.35 * Math.sin(zeit * 20);
+        ctx.fillStyle = f.deckung < 1 ? `rgba(224,106,79,${flacker})` : `rgba(79,179,169,${flacker})`;
+        ctx.fillRect(sx - 10, bandY - 22, 20, 22);
+        ctx.fillStyle = '#9fd8d1';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${s.maschinen.scanner}×`, sx, bandY - 32);
+      }
+      // Verarbeiter
+      const verarbeiter = Object.keys(KUERZEL).filter((id) => s.maschinen[id]);
+      const start = links + (rechts - links) * 0.5;
+      const breite = (rechts - start) / Math.max(1, verarbeiter.length);
+      verarbeiter.forEach((id, i) => {
+        const x = start + i * breite + breite / 2;
+        const bw = Math.min(46, breite - 6);
+        const aus = s.aus[id];
+        ctx.fillStyle = aus ? '#2a2622' : '#3b3257';
+        ctx.fillRect(x - bw / 2, bandY - 44, bw, 30);
+        ctx.strokeStyle = aus ? '#4a4540' : '#9b7ad8';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x - bw / 2 + 0.5, bandY - 43.5, bw - 1, 29);
+        ctx.fillStyle = aus ? '#6f675f' : '#e3d6ff';
+        ctx.font = '700 8px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(KUERZEL[id], x, bandY - 26);
+        ctx.fillText(`×${s.maschinen[id]}`, x, bandY - 17);
+        if (!aus && f.auslastung[id] > 0.01) {
+          const p = (zeit * 1.5 + i * 0.3) % 1;
+          const produkt = { presse: 'ballen', muehle: 'pellet', pulper: 'brei', wickler: 'silage', papier: 'papier', ziegel: 'ziegel' }[id];
+          ctx.fillStyle = PRODUKT_FARBE[produkt];
+          ctx.fillRect(x - 4 + p * (rechts - x), bandY - 12 - Math.sin(p * Math.PI) * 18, 8, 6);
+        }
+      });
+      // Verkaufsstand
+      ctx.fillStyle = '#5a3d22';
+      ctx.fillRect(rechts, bandY - 40, 56, 60);
+      ctx.fillStyle = '#e9d9b5';
+      ctx.fillRect(rechts + 2, bandY - 54, 52, 14);
+      ctx.fillStyle = '#3b2a17';
+      ctx.font = '800 8px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('VERKAUF', rechts + 28, bandY - 44);
+      // Strom
+      ctx.fillStyle = '#2a2622';
+      ctx.fillRect(10, 10, 64, 12);
+      ctx.fillStyle = f.strom < 1 ? '#e06a4f' : '#b5c94a';
+      ctx.fillRect(10, 10, 64 * Math.min(1, f.bedarf ? f.erzeugt / Math.max(f.bedarf, f.erzeugt) : 1), 12);
+      ctx.fillStyle = '#e8dcc4';
+      ctx.font = '600 10px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('STROM', 80, 20);
+      // Geld steigt auf
+      geldTakt += dt;
+      if (geldProSek > 0 && geldTakt > 0.8) {
+        geldTakt = 0;
+        texte.push({ x: rechts + 28, y: bandY - 60, leben: 1.2, text: `+${Math.round(geldProSek * 0.8).toLocaleString('de-DE')} $` });
+      }
+      ctx.textAlign = 'center';
+      for (let i = texte.length - 1; i >= 0; i--) {
+        const t = texte[i];
+        t.leben -= dt;
+        t.y -= dt * 22;
+        if (t.leben <= 0) { texte.splice(i, 1); continue; }
+        ctx.globalAlpha = Math.min(1, t.leben * 1.5);
+        ctx.fillStyle = '#9fe0a4';
+        ctx.font = '700 11px system-ui, sans-serif';
+        ctx.fillText(t.text, Math.min(t.x, w - 30), t.y);
+      }
+      ctx.globalAlpha = 1;
+    },
+  };
+}
+
+// Die Oberfläche: vier Reiter (Haufen, Halle, Forschung, Funde), ein Menü und
+// ein paar Einblendungen. Die Engine rechnet, hier wird nur gezeichnet,
+// angetippt und gespeichert.
+
+
+const SPEICHER_KEY = 'heuhaufen-stand-v1';
+const TON_KEY = 'heuhaufen-ton';
+const AST_NACH_ID = Object.fromEntries(AESTE.map((a) => [a.id, a]));
+const SELTEN_NACH_ID = Object.fromEntries(SELTENHEIT.map((r, i) => [r.id, { ...r, rang: i }]));
+const BAUM = techLage(AESTE);
+
+let stand = null;
+const ui = {
+  reiter: 'haufen',
+  wahl: null,          // Techknoten im Detailblatt
+  suche: '',
+  laufGesamt: 1,
+  naechsterPiep: 0,
+  blink: 0,
+  baumScroll: null,
+  bildschirm: null,    // { aktualisieren, zeichnen, weg }
+  gespeichert: 0,
+  saugerLaeuft: false,
+  endeOffen: false,
+};
+
+/* ------------------------------------------------------------ Helfer */
+
+function h(tag, attrs = {}, ...kinder) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kind of kinder.flat()) {
+    if (kind == null || kind === false) continue;
+    e.append(kind.nodeType ? kind : document.createTextNode(String(kind)));
+  }
+  return e;
+}
+
+const sym = (html) => h('span', { class: 'symhalter', html });
+
+function setzeText(e, t) {
+  if (e && e.textContent !== t) e.textContent = t;
+}
+
+function schalte(e, klasse, an) {
+  if (e && e.classList.contains(klasse) !== !!an) e.classList.toggle(klasse, !!an);
+}
+
+function summen(ms) {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch { /* egal */ }
+}
+
+/* ------------------------------------------------------------ Speichern */
+
+function sichern() {
+  if (!stand) return;
+  try { localStorage.setItem(SPEICHER_KEY, speichern(stand)); } catch { /* privater Modus */ }
+  ui.gespeichert = performance.now();
+}
+
+function einlesen() {
+  try {
+    const roh = localStorage.getItem(SPEICHER_KEY);
+    return roh ? laden(roh) : null;
+  } catch {
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------ Gerüst */
+
+const el = {};
+
+function geruest() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  el.geld = h('span', { class: 'num' });
+  el.halme = h('span', { class: 'num' });
+  el.nadeln = h('div', { class: 'nadelreihe' }, NADELN.map(() => h('span', { class: 'nadelmarke', html: SYM.nadel })));
+  el.kopf = h('header', { class: 'kopf' },
+    h('div', { class: 'kasse' }, sym(SYM.geld), el.geld),
+    h('div', { class: 'zaehler' }, el.halme, h('small', {}, 'Halme übrig')),
+    el.nadeln,
+    h('button', { class: 'rund', 'aria-label': 'Menü', onclick: menue }, sym(SYM.menue)));
+  el.buehne = h('main', { class: 'buehne' });
+  el.reiter = {};
+  const reiter = [
+    ['haufen', 'Haufen', SYM.haufen], ['halle', 'Halle', SYM.halle],
+    ['forschung', 'Forschung', SYM.forschung], ['funde', 'Funde', SYM.funde],
+  ];
+  el.nav = h('nav', { class: 'reiter' }, reiter.map(([id, name, s]) => {
+    const marke = h('span', { class: 'marke' });
+    const b = h('button', { class: 'reiterknopf', onclick: () => wechseln(id) }, sym(s), h('span', {}, name), marke);
+    el.reiter[id] = { knopf: b, marke };
+    return b;
+  }));
+  el.toasts = h('div', { class: 'toasts', 'aria-live': 'polite' });
+  el.modal = h('div', { class: 'modalhalter' });
+  app.append(el.kopf, el.buehne, el.nav, el.toasts, el.modal);
+}
+
+function wechseln(id) {
+  klangWecken();
+  if (ui.bildschirm && ui.bildschirm.weg) ui.bildschirm.weg();
+  ui.reiter = id;
+  el.buehne.innerHTML = '';
+  ui.bildschirm = { haufen: bildHaufen, halle: bildHalle, forschung: bildForschung, funde: bildFunde }[id]();
+  for (const [k, r] of Object.entries(el.reiter)) schalte(r.knopf, 'aktiv', k === id);
+  kopfAktualisieren();
+}
+
+function kopfAktualisieren() {
+  setzeText(el.geld, geld(stand.geld));
+  setzeText(el.halme, halme(rest(stand)));
+  stand.nadeln.forEach((n, i) => {
+    const m = el.nadeln.children[i];
+    schalte(m, 'gefunden', n.zustand === 'gefunden');
+    schalte(m, 'ausschuss', n.zustand === 'ausschuss');
+  });
+  const kaufbar = TECH.filter((t) => techStatus(stand, t.id) === 'kaufbar').length;
+  setzeText(el.reiter.forschung.marke, kaufbar ? String(kaufbar) : '');
+  schalte(el.reiter.forschung.marke, 'sichtbar', kaufbar > 0);
+  const aus = imAusschuss(stand);
+  setzeText(el.reiter.funde.marke, aus ? '!' : '');
+  schalte(el.reiter.funde.marke, 'sichtbar', aus > 0);
+  schalte(el.reiter.halle.knopf, 'zu', !werte(stand).frei.has('halle'));
+}
+
+/* ------------------------------------------------------------ Einblendungen */
+
+function toast(text, art = '') {
+  const t = h('div', { class: `toast ${art}` }, text);
+  el.toasts.append(t);
+  while (el.toasts.children.length > 3) el.toasts.firstChild.remove();
+  setTimeout(() => t.classList.add('weg'), 2600);
+  setTimeout(() => t.remove(), 3000);
+}
+
+const warteschlange = [];
+
+/** Zeigt eine Einblendung; ist schon eine offen, wartet die neue dahinter. */
+function modal(optionen) {
+  if (modalOffen()) { warteschlange.push(optionen); return; }
+  const { titel, ober, absaetze = [], inhalt = null, knoepfe = [], klasse = '' } = optionen;
+  el.modal.innerHTML = '';
+  const zu = () => {
+    el.modal.innerHTML = '';
+    el.modal.classList.remove('offen');
+    if (warteschlange.length) modal(warteschlange.shift());
+  };
+  const karte = h('div', { class: `modal ${klasse}`, role: 'dialog', 'aria-modal': 'true' },
+    ober ? h('p', { class: 'ober' }, ober) : null,
+    titel ? h('h2', {}, titel) : null,
+    absaetze.map((p) => h('p', {}, p)),
+    inhalt,
+    h('div', { class: 'modalknoepfe' }, knoepfe.map((k) => h('button', {
+      class: `knopf ${k.klasse || ''}`,
+      onclick: () => { klangWecken(); if (!k.bleiben) zu(); if (k.aktion) k.aktion(); },
+    }, k.text))));
+  el.modal.append(h('div', { class: 'schleier' }), karte);
+  el.modal.classList.add('offen');
+  return zu;
+}
+
+const modalOffen = () => el.modal.classList.contains('offen');
+
+function einfuehrung() {
+  modal({
+    ober: 'Rund 6.000.000 Halme',
+    titel: 'Find die Nadel',
+    absaetze: GESCHICHTE.anfang,
+    inhalt: h('ul', { class: 'anleitung' },
+      h('li', {}, 'Tippe auf den Haufen, um Heu zu schaufeln.'),
+      h('li', {}, 'Ist die Tasche voll, bring sie zum Ankauf.'),
+      h('li', {}, 'Mit dem Geld kaufst du in der Forschung bessere Werkzeuge, später Förderbänder und Maschinen.'),
+      h('li', {}, 'Der Metalldetektor piept, wenn eine Nadel nah ist.')),
+    knoepfe: [{ text: 'Los geht’s', klasse: 'primaer' }],
+  });
+}
+
+function nadelGefunden(i) {
+  klang.nadel();
+  summen([30, 60, 30]);
+  if (ui.reiter === 'haufen' && ui.bildschirm.glanz) ui.bildschirm.glanz();
+  const n = NADELN[i];
+  const zahlGefunden = nadelnGefunden(stand);
+  modal({
+    klasse: 'nadelmodal',
+    ober: `Nadel ${zahlGefunden} von ${NADELN.length}`,
+    titel: n.name,
+    inhalt: h('div', {},
+      h('div', { class: 'nadelgross', html: SYM.nadel }),
+      h('p', { class: 'geschichte' }, GESCHICHTE.nadeln[i]),
+      h('p', { class: 'bonus' }, `Bonus: ${n.bonus}`)),
+    knoepfe: [{
+      text: alleNadeln(stand) ? 'Hinaus' : 'Weitersuchen',
+      klasse: 'primaer',
+      aktion: () => { if (alleNadeln(stand)) ende(); },
+    }],
+  });
+  sichern();
+}
+
+function ende() {
+  const zeit = (stand.zeitGesamt || 0) + stand.zeit;
+  modal({
+    klasse: 'endemodal',
+    ober: stand.erledigt ? `Haufen ${stand.lauf}` : 'Geschafft',
+    titel: 'Alle sechs Nadeln',
+    absaetze: [GESCHICHTE.ende],
+    inhalt: h('dl', { class: 'werte' },
+      h('dt', {}, 'Spielzeit'), h('dd', {}, dauer(stand.zeit)),
+      h('dt', {}, 'Halme abgetragen'), h('dd', {}, halme(stand.haufen.entfernt)),
+      h('dt', {}, 'Schaufelstiche'), h('dd', {}, zahl(stand.stat.tipps)),
+      h('dt', {}, 'Upgrades'), h('dd', {}, `${techGekauft(stand)} von ${TECH_STUFEN_GESAMT}`),
+      h('dt', {}, 'Fundstücke'), h('dd', {}, `${fundArten(stand)} von ${FUNDE.length} Arten`),
+      zeit !== stand.zeit ? [h('dt', {}, 'Alle Haufen'), h('dd', {}, dauer(zeit))] : null),
+    knoepfe: [
+      { text: 'Hier bleiben', klasse: '' },
+      { text: 'Neuer Haufen', klasse: 'primaer', aktion: neuerHaufenFragen },
+    ],
+  });
+}
+
+function neuerHaufenFragen() {
+  const groesse = Math.round(stand.haufen.gesamt * 1.5);
+  modal({
+    titel: 'Neuer Haufen',
+    absaetze: [
+      `Die nächste Halle hat ${halme(groesse)} Halme und sechs neue Nadeln. Geld, Forschung und Maschinen `
+        + 'bleiben hier. Dein Fundalbum kommt mit.',
+      `Dafür bringt alles ${prozent(0.5 * (stand.erledigt + 1))} mehr ein und jeder Stich wird `
+        + `${prozent(0.25 * (stand.erledigt + 1))} kräftiger.`,
+    ],
+    knoepfe: [
+      { text: 'Noch nicht' },
+      {
+        text: 'Aufbrechen', klasse: 'primaer', aktion: () => {
+          const neu = neuerHaufen(stand);
+          if (!neu) return;
+          stand = neu;
+          sichern();
+          wechseln('haufen');
+          toast(`Haufen ${stand.lauf}: ${halme(stand.haufen.gesamt)} Halme.`, 'gut');
+        },
+      },
+    ],
+  });
+}
+
+function abwesenheitsbericht(b) {
+  if (!b) return;
+  const zeilen = [
+    `Die Halle hat ${halme(b.halme)} Halme abgetragen und ${geld(b.geld)} verdient.`,
+  ];
+  if (b.funde) zeilen.push(`Dabei sind ${zahl(b.funde)} Fundstücke in der Kiste gelandet.`);
+  if (b.nadeln) zeilen.push(b.nadeln === 1 ? 'Und eine Nadel wurde gefunden.' : `Und ${b.nadeln} Nadeln wurden gefunden.`);
+  if (b.ausschuss) zeilen.push('Eine Nadel ist dabei in den Ausschuss gerutscht. Unter Funde kannst du sie heraussuchen.');
+  if (b.abwesend > b.sekunden + 60) {
+    zeilen.push(`Gezählt wurden ${dauer(b.sekunden)} von ${dauer(b.abwesend)}. Mehr schafft die Nachtschicht noch nicht.`);
+  }
+  modal({ ober: `Du warst ${dauer(b.abwesend)} weg`, titel: 'Während du weg warst', absaetze: zeilen, knoepfe: [{ text: 'Gut', klasse: 'primaer' }] });
+  for (const e of b.ereignisse) if (e.typ === 'nadel') nadelGefunden(e.i);
+}
+
+/* ------------------------------------------------------------ Ereignisse */
+
+function ereignisse(liste) {
+  for (const e of liste) {
+    if (e.typ === 'nadel') nadelGefunden(e.i);
+    else if (e.typ === 'ausschuss') {
+      klang.fehler();
+      toast('Eine Nadel ist ungescannt durchs Band gerutscht und liegt jetzt im Ausschuss.', 'warn');
+    } else if (e.typ === 'fund') {
+      const f = FUND_NACH_ID[e.id];
+      const r = SELTEN_NACH_ID[f.stufe];
+      if (e.neu || r.rang >= 2) {
+        klang.fund(r.rang);
+        toast(`${e.neu ? 'Neu im Album: ' : ''}${f.name} (${r.name})`, `fund r${r.rang}`);
+      }
+    } else if (e.typ === 'verkauft') {
+      klang.kasse();
+      if (ui.reiter === 'haufen' && ui.bildschirm.geldText) ui.bildschirm.geldText(`+${geld(e.betrag)}`);
+    } else if (e.typ === 'ueberhitzt') {
+      klang.heiss();
+      toast('Der Sauger ist überhitzt und muss abkühlen.', 'warn');
+    }
+  }
+}
+
+/* ------------------------------------------------------------ Hinweis */
+
+function hinweis() {
+  const w = werte(stand);
+  const d = detektor(stand);
+  if (imAusschuss(stand)) return 'Eine Nadel liegt im Ausschuss. Unter „Funde“ kannst du sie heraussuchen.';
+  if (stand.stat.tipps < 3) return 'Tippe auf den Haufen, um Heu zu schaufeln.';
+  if (stand.tasche >= taschePlatz(w) && stand.stat.gaenge < 3) return 'Die Tasche ist voll. Bring das Heu zum Ankauf.';
+  if (techGekauft(stand) === 0 && stand.geld >= 3) return 'Du hast Geld. In der Forschung gibt es die ersten Upgrades.';
+  if (d.stufe === 'heiss') return 'Der Detektor schlägt aus. Die Nadel ist ganz nah.';
+  if (w.frei.has('halle') && !anzahl(stand, 'arm')) return 'Die Halle ist offen. Dort steht der erste Greifarm zum Kauf.';
+  if (w.frei.has('halle') && fabrik(stand).strom < 1) return 'In der Halle fehlt Strom. Die Maschinen laufen langsamer.';
+  if (w.frei.has('halle') && anzahl(stand, 'arm') && fabrik(stand).deckung < 1) {
+    return w.frei.has('scanner') ? 'Nicht alles Heu auf dem Band wird gescannt. Mehr Scanner kaufen.' : 'Ohne Scanner können Nadeln durchs Band rutschen. Scanner gibt es in der Forschung.';
+  }
+  if (!w.frei.has('halle') && techStufe(stand, 'drohne') && stand.geld > 1000) return 'Nächstes Ziel: Automatisierung in der Forschung.';
+  return '';
+}
+
+/* ================================================================ Haufen */
+
+function bildHaufen() {
+  const canvas = h('canvas', { class: 'haufencanvas', 'aria-label': 'Der Heuhaufen. Tippen zum Schaufeln.' });
+  const hinweisZeile = h('div', { class: 'hinweis' });
+  const taschenFuellung = h('div', { class: 'fuellung' });
+  const taschenText = h('span', {});
+  const tasche = h('div', { class: 'taschebalken' }, taschenFuellung, sym(SYM.tasche), taschenText);
+  const werkzeug = h('div', { class: 'werkzeugschild' });
+  const szeneBox = h('div', { class: 'szene' }, canvas, hinweisZeile, werkzeug, tasche);
+  const segmente = Array.from({ length: 12 }, () => h('span', { class: 'seg' }));
+  const dText = h('span', { class: 'dtext' });
+  const detektorLeiste = h('div', { class: 'detektorleiste' }, sym(SYM.detektor), h('div', { class: 'segmente' }, segmente), dText);
+
+  const vText = h('span', { class: 'zeile1' }, 'Zum Ankauf');
+  const vKlein = h('small', {});
+  const vBalken = h('div', { class: 'lauf' });
+  const verkaufKnopf = h('button', {
+    class: 'aktion gross', onclick: () => {
+      klangWecken();
+      if (verkaufen(stand)) ui.laufGesamt = stand.laufen;
+      else klang.fehler();
+    },
+  }, sym(SYM.ankauf), h('span', { class: 'aktiontext' }, vText, vKlein), vBalken);
+
+  const hitze = h('div', { class: 'hitze' });
+  const sKlein = h('small', {}, 'halten');
+  const saugerKnopf = h('button', { class: 'aktion sauger' }, sym(SYM.sauger), h('span', { class: 'aktiontext' }, h('span', { class: 'zeile1' }, 'Saugen'), sKlein), hitze);
+  const saugStart = (ev) => {
+    ev.preventDefault();
+    klangWecken();
+    saugen(stand, true);
+    saugerKnopf.setPointerCapture?.(ev.pointerId);
+  };
+  const saugEnde = () => saugen(stand, false);
+  saugerKnopf.addEventListener('pointerdown', saugStart);
+  saugerKnopf.addEventListener('pointerup', saugEnde);
+  saugerKnopf.addEventListener('pointercancel', saugEnde);
+  saugerKnopf.addEventListener('lostpointercapture', saugEnde);
+  saugerKnopf.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  const dKlein = h('small', {});
+  const drohnenKnopf = h('button', {
+    class: 'aktion drohne', onclick: () => {
+      klangWecken();
+      const r = drohneKaufen(stand);
+      if (r.ok) { klang.kauf(); toast('Eine Drohne mehr in der Luft.'); } else klang.fehler();
+    },
+  }, sym(SYM.drohne), h('span', { class: 'aktiontext' }, h('span', { class: 'zeile1' }, 'Drohne'), dKlein));
+
+  const aktionen = h('div', { class: 'aktionen' }, verkaufKnopf, saugerKnopf, drohnenKnopf);
+  const wurzel = h('section', { class: 'bild haufenbild' }, szeneBox, detektorLeiste, aktionen);
+  el.buehne.append(wurzel);
+
+  const szene = haufenSzene(canvas);
+
+  canvas.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();
+    klangWecken();
+    const r = canvas.getBoundingClientRect();
+    const x = ev.clientX - r.left;
+    const y = ev.clientY - r.top;
+    const e = [];
+    const erg = tippen(stand, e);
+    if (!erg) { szene.text(x, y - 10, 'Unterwegs …', '#e8dcc4', 13); return; }
+    if (erg.menge > 0) {
+      szene.stich(x, y, erg.menge, erg.krit);
+      klang.stich(erg.krit);
+      if (erg.krit) summen(15);
+    } else if (erg.voll) {
+      szene.text(x, y - 10, 'Tasche voll!', '#ffb36b', 15);
+      klang.fehler();
+    }
+    ereignisse(e);
+  });
+
+  let letzterHinweis = '';
+  return {
+    glanz: () => szene.nadelGlanz(),
+    geldText: (t) => {
+      const r = canvas.getBoundingClientRect();
+      szene.text(r.width - 34, r.height * 0.84 - 110, t, '#9fe0a4', 15);
+    },
+    zeichnen(dt) {
+      const w = werte(stand);
+      const f = w.frei.has('halle') ? fabrik(stand) : null;
+      szene.zeichnen(stand, {
+        laufAnteil: stand.laufen > 0 ? 1 - stand.laufen / Math.max(ui.laufGesamt, 0.01) : null,
+        saugt: stand.sauger.an && !stand.sauger.heiss && stand.laufen <= 0,
+        saugerSichtbar: w.frei.has('sauger'),
+        hitze: stand.sauger.hitze,
+        blink: ui.blink,
+        fabrik: f,
+        torOffen: alleNadeln(stand),
+      }, dt);
+    },
+    aktualisieren() {
+      const w = werte(stand);
+      const platz = taschePlatz(w);
+      taschenFuellung.style.width = `${Math.min(100, (stand.tasche / platz) * 100)}%`;
+      setzeText(taschenText, `${halme(stand.tasche)} / ${halme(platz)}`);
+      schalte(tasche, 'voll', stand.tasche >= platz);
+      const wz = w.frei.has('gabelstapler') ? 'Heu-Gabelstapler' : w.frei.has('doppelgabel') ? 'Doppelgabel'
+        : w.frei.has('heugabel') ? 'Heugabel' : 'Schaufel';
+      setzeText(werkzeug, `${wz} · ${rate(griffMenge(w))} pro Stich`);
+      const hw = hinweis();
+      if (hw !== letzterHinweis) {
+        letzterHinweis = hw;
+        setzeText(hinweisZeile, hw);
+        schalte(hinweisZeile, 'sichtbar', !!hw);
+      }
+      // Detektor
+      const d = detektor(stand);
+      const an = Math.round(d.staerke * segmente.length);
+      segmente.forEach((sg, i) => {
+        schalte(sg, 'an', i < an);
+        schalte(sg, 'heiss', i < an && i >= segmente.length * 0.7);
+      });
+      let dt = 'still';
+      if (d.abstand == null) dt = 'keine Nadel mehr im Haufen';
+      else if (w.frei.has('kompass')) dt = `${halme(d.abstand)} Halme`;
+      else if (w.frei.has('piepser')) dt = { still: 'weit weg', kalt: 'kalt', warm: 'warm', heiss: 'heiß!' }[d.stufe];
+      else dt = { still: 'still', kalt: 'piept leise', warm: 'piept', heiss: 'piept wild!' }[d.stufe];
+      setzeText(dText, dt);
+      // Ankauf
+      const unterwegs = stand.laufen > 0;
+      setzeText(vText, unterwegs ? 'Unterwegs …' : 'Zum Ankauf');
+      setzeText(vKlein, unterwegs ? `${rate(stand.laufen)} s` : `${halme(stand.tasche)} Halme · ${geld(stand.tasche * preisRoh(w))}`);
+      vBalken.style.width = unterwegs ? `${(1 - stand.laufen / Math.max(ui.laufGesamt, 0.01)) * 100}%` : '0%';
+      verkaufKnopf.disabled = unterwegs || stand.tasche <= 0;
+      schalte(verkaufKnopf, 'drängt', !unterwegs && stand.tasche >= platz);
+      // Sauger
+      saugerKnopf.hidden = !w.frei.has('sauger');
+      hitze.style.width = `${stand.sauger.hitze * 100}%`;
+      schalte(saugerKnopf, 'heiss', stand.sauger.heiss);
+      setzeText(sKlein, stand.sauger.heiss ? 'kühlt ab' : stand.sauger.an ? `${rate(w.saugerRate)}/s` : 'gedrückt halten');
+      // Drohnen
+      drohnenKnopf.hidden = !w.frei.has('drohne');
+      const voll = stand.drohnen >= w.drohnenMax;
+      setzeText(dKlein, voll ? `${stand.drohnen}/${w.drohnenMax} voll` : geld(drohnenKosten(stand)));
+      drohnenKnopf.disabled = voll || stand.geld < drohnenKosten(stand);
+    },
+    weg() { saugen(stand, false); },
+  };
+}
+
+/* ================================================================ Halle */
+
+const GRUPPEN = [
+  ['foerderung', 'Förderung'], ['erkennung', 'Erkennung'], ['strom', 'Strom'], ['verarbeitung', 'Verarbeitung'],
+];
+
+function freischaltTech(m) {
+  return TECH.find((t) => t.effekt.some((e) => e[0] === 'frei' && e[1] === m.frei));
+}
+
+function bildHalle() {
+  const w = werte(stand);
+  const wurzel = h('section', { class: 'bild hallenbild' });
+  el.buehne.append(wurzel);
+  if (!w.frei.has('halle')) {
+    const t = TECH_NACH_ID.automatisierung;
+    wurzel.append(h('div', { class: 'leerkarte' },
+      h('div', { class: 'grosssym', html: SYM.halle }),
+      h('h2', {}, 'Noch alles Handarbeit'),
+      h('p', {}, `Förderbänder, Greifarme und Maschinen gibt es, sobald du „${t.name}“ erforscht hast.`),
+      h('p', { class: 'leise' }, `Kostet ${geld(techKosten(stand, t.id))}. Vorher: ${t.braucht.map((b) => TECH_NACH_ID[b].name).join(', ')}.`),
+      h('button', { class: 'knopf primaer', onclick: () => { ui.wahl = t.id; wechseln('forschung'); } }, 'Zur Forschung')));
+    return { aktualisieren() { if (werte(stand).frei.has('halle')) wechseln('halle'); } };
+  }
+
+  const canvas = h('canvas', { class: 'hallecanvas' });
+  const szene = halleSzene(canvas);
+  const kz = {};
+  const kennzahl = (id, name) => {
+    kz[id] = { wert: h('b', { class: 'num' }), unter: h('small', {}) };
+    return h('div', { class: `kz kz-${id}` }, h('span', {}, name), kz[id].wert, kz[id].unter);
+  };
+  const warnungen = h('div', { class: 'warnungen' });
+  wurzel.append(
+    h('div', { class: 'hallenszene' }, canvas),
+    h('div', { class: 'kennzahlen' },
+      kennzahl('einnahmen', 'Einnahmen'), kennzahl('foerderung', 'Förderung'),
+      kennzahl('band', 'Förderband'), kennzahl('strom', 'Strom'),
+      kennzahl('scanner', 'Scanner'), kennzahl('plaetze', 'Stellplätze')),
+    warnungen);
+
+  const karten = {};
+  for (const [gruppe, name] of GRUPPEN) {
+    const liste = MASCHINEN.filter((m) => m.gruppe === gruppe);
+    wurzel.append(h('h3', { class: 'gruppe' }, name));
+    for (const m of liste) {
+      const anzahlEl = h('span', { class: 'anzahl num' });
+      const status = h('p', { class: 'mstatus' });
+      const kaufen = h('button', {
+        class: 'knopf kaufen', onclick: () => {
+          klangWecken();
+          const r = maschineKaufen(stand, m.id);
+          if (r.ok) klang.kauf();
+          else {
+            klang.fehler();
+            if (r.grund === 'platz') toast('Keine Stellplätze frei. Mehr gibt es im Hofbau.', 'warn');
+          }
+        },
+      });
+      const umschalten = h('button', { class: 'knopf klein', onclick: () => { maschineUmschalten(stand, m.id); klang.kauf(); } });
+      const abbauen = h('button', {
+        class: 'knopf klein', 'aria-label': 'Eine abbauen', onclick: () => {
+          const r = maschineAbbauen(stand, m.id);
+          if (r.ok) toast(`${m.name} abgebaut, ${geld(r.erstattung)} zurück.`);
+        },
+      }, '−');
+      const t = freischaltTech(m);
+      const gesperrt = h('button', {
+        class: 'knopf klein sperre', onclick: () => { ui.wahl = t.id; wechseln('forschung'); },
+      }, `Forschung: ${t.name}`);
+      const karte = h('div', { class: 'mkarte' },
+        h('div', { class: 'msym', html: MASCHINEN_SYM[m.id] }),
+        h('div', { class: 'mtext' }, h('p', { class: 'mname' }, h('b', {}, m.name), anzahlEl), h('p', { class: 'mbeschr' }, m.text), status),
+        h('div', { class: 'mknoepfe' }, kaufen, h('div', { class: 'mklein' }, umschalten, abbauen), gesperrt));
+      karten[m.id] = { karte, anzahlEl, status, kaufen, umschalten, abbauen, gesperrt };
+      wurzel.append(karte);
+    }
+  }
+
+  let geldProSek = 0;
+  return {
+    zeichnen(dt) { szene.zeichnen(stand, fabrik(stand), dt, geldProSek); },
+    aktualisieren() {
+      const wv = werte(stand);
+      const f = fabrik(stand);
+      geldProSek = f.einnahmen;
+      setzeText(kz.einnahmen.wert, `${geld(f.einnahmen)}/s`);
+      setzeText(kz.einnahmen.unter, stand.drohnen ? `dazu Drohnen ${geld(stand.drohnen * wv.drohnenRate * preisRoh(wv))}/s` : 'am Verkaufsstand');
+      setzeText(kz.foerderung.wert, `${rate(f.fluss)}/s`);
+      setzeText(kz.foerderung.unter, f.foerderung > f.band + 0.01 ? `Arme könnten ${rate(f.foerderung)}/s` : 'Halme vom Haufen');
+      setzeText(kz.band.wert, `${rate(f.band)}/s`);
+      setzeText(kz.band.unter, f.foerderung >= f.band ? 'voll, Bandtechnik erforschen' : `${prozent(f.band ? f.fluss / f.band : 0)} ausgelastet`);
+      setzeText(kz.strom.wert, `${rate(f.erzeugt)} / ${rate(f.bedarf)}`);
+      setzeText(kz.strom.unter, f.strom < 1 ? `nur ${prozent(f.strom)} Leistung` : 'reicht');
+      setzeText(kz.scanner.wert, prozent(f.deckung));
+      setzeText(kz.scanner.unter, anzahl(stand, 'sortierer') ? `Funde sortiert ${prozent(f.sortiert)}` : 'des Heus gescannt');
+      setzeText(kz.plaetze.wert, `${plaetzeBelegt(stand)} / ${wv.plaetze}`);
+      setzeText(kz.plaetze.unter, 'belegt');
+      schalte(kz.strom.wert.parentNode, 'schlecht', f.strom < 1);
+      schalte(kz.scanner.wert.parentNode, 'schlecht', f.fluss > 0 && f.deckung < 1);
+      schalte(kz.band.wert.parentNode, 'engpass', f.foerderung >= f.band && f.fluss > 0);
+
+      const warn = [];
+      if (rest(stand) <= 0) warn.push('Der Haufen ist leer. Die Arme greifen ins Nichts.');
+      if (f.strom < 1) warn.push(`Der Strom reicht nicht: alle Maschinen laufen mit ${prozent(f.strom)}.`);
+      if (f.fluss > 0 && f.deckung < 1) warn.push(`Nur ${prozent(f.deckung)} des Heus wird gescannt. Der Rest kann Nadeln in den Ausschuss spülen.`);
+      if (f.brennstoff > 0 && f.brennstoff >= f.fluss * 0.5) warn.push('Die Generatoren verbrennen mehr als die Hälfte des Heus.');
+      setzeText(warnungen, '');
+      warnungen.replaceChildren(...warn.map((t) => h('p', {}, t)));
+
+      for (const m of MASCHINEN) {
+        const k = karten[m.id];
+        const frei = maschineFrei(stand, m.id);
+        const n = anzahl(stand, m.id);
+        schalte(k.karte, 'gesperrt', !frei);
+        k.gesperrt.hidden = frei;
+        k.kaufen.hidden = !frei;
+        k.umschalten.hidden = !frei || n === 0;
+        k.abbauen.hidden = !frei || n === 0;
+        setzeText(k.anzahlEl, n ? `×${n}` : '');
+        const preis = maschinenKosten(stand, m.id);
+        const platzFehlt = plaetzeBelegt(stand) + m.plaetze > wv.plaetze;
+        setzeText(k.kaufen, platzFehlt ? 'kein Platz' : geld(preis));
+        k.kaufen.disabled = platzFehlt || stand.geld < preis;
+        const aus = !!stand.aus[m.id];
+        setzeText(k.umschalten, aus ? 'aus' : 'an');
+        schalte(k.umschalten, 'aus', aus);
+        schalte(k.karte, 'ausgeschaltet', aus && n > 0);
+        let st = '';
+        if (frei && n) {
+          if (m.gruppe === 'strom') st = `liefert ${rate(-m.strom * n * wv.stromMul)} Strom${m.brennstoff ? `, frisst ${rate(m.brennstoff * n)} Halme/s` : ''}`;
+          else if (m.id === 'arm' || m.id === 'bagger') st = `Auslastung ${prozent(f.auslastung.arm || 0)}`;
+          else if (m.id === 'scanner') st = `prüft ${rate(n * m.rate * wv.scanDeckung * wv.maschinenTempo * f.strom)} Halme/s`;
+          else if (m.id === 'sortierer') st = `sortiert ${prozent(f.sortiert)} des Heus`;
+          else if (m.id === 'sichter') st = imAusschuss(stand) ? `sucht … ${prozent(stand.ausschuss)}` : 'wartet auf Ausschuss';
+          else if (m.produkt) {
+            const menge = f.produkte[m.produkt] || 0;
+            st = `Auslastung ${prozent(f.auslastung[m.id] || 0)} · ${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
+            if (menge && (m.produkt === 'ballen' || m.produkt === 'brei')) st += ` · ${rate(menge)}/s zum Verkauf`;
+          }
+          if (m.strom > 0) st += ` · braucht ${rate(m.strom * n * wv.verbrauch)} Strom`;
+        } else if (frei && m.produkt) {
+          st = `${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
+        }
+        setzeText(k.status, st);
+      }
+    },
+  };
+}
+
+/* ================================================================ Forschung */
+
+const SPALTE = 168;
+const ZEILE = 68;
+const KARTE_B = 148;
+const KARTE_H = 56;
+const RAND_L = 30;
+const RAND_O = 34;
+
+function schritteName(n) {
+  if (n === 0) return 'Start';
+  return n === 1 ? '1 Schritt' : `${n} Schritte`;
+}
+
+function bildForschung() {
+  const suchfeld = h('input', { class: 'suche', type: 'search', placeholder: 'Baum durchsuchen', value: ui.suche });
+  const zaehler = h('span', { class: 'num' });
+  const kopf = h('div', { class: 'forschungskopf' },
+    h('div', {}, h('p', { class: 'ober' }, 'Hof-Forschung'), h('p', { class: 'fortschritt' }, zaehler, ' Upgrades')),
+    suchfeld);
+
+  const breite = RAND_L + BAUM.breite * SPALTE + 10;
+  const hoehe = RAND_O + BAUM.hoehe * ZEILE + 20;
+  const pos = (id) => {
+    const l = BAUM.lage[id];
+    return { x: RAND_L + l.x * SPALTE, y: RAND_O + l.y * ZEILE };
+  };
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const linien = document.createElementNS(ns, 'svg');
+  linien.setAttribute('class', 'linien');
+  linien.setAttribute('width', breite);
+  linien.setAttribute('height', hoehe);
+  const linienListe = [];
+  for (const t of TECH) {
+    for (const b of t.braucht) {
+      // Vom Start gehen sehr viele Linien aus; die Spalte „1 Schritt“ sagt dasselbe.
+      if (b === 'scheune') continue;
+      const a = pos(b);
+      const z = pos(t.id);
+      const x1 = a.x + KARTE_B;
+      const y1 = a.y + KARTE_H / 2;
+      const x2 = z.x;
+      const y2 = z.y + KARTE_H / 2;
+      const mx = (x1 + x2) / 2;
+      const p = document.createElementNS(ns, 'path');
+      p.setAttribute('d', `M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`);
+      const fremd = TECH_NACH_ID[b].ast !== t.ast && b !== 'scheune';
+      p.setAttribute('class', fremd ? 'fremd' : '');
+      linien.append(p);
+      linienListe.push({ p, von: b, nach: t.id });
+    }
+  }
+
+  const baender = BAUM.aeste.map((a) => {
+    const ast = AST_NACH_ID[a.ast];
+    return h('div', {
+      class: 'band', style: {
+        top: `${RAND_O + a.von * ZEILE - 6}px`, height: `${(a.bis - a.von + 1) * ZEILE}px`, '--astfarbe': ast.farbe,
+      },
+    }, h('span', {}, ast.name));
+  });
+
+  const spaltenKopf = h('div', { class: 'spaltenkopf', style: { width: `${breite}px` } },
+    Array.from({ length: BAUM.breite }, (_, i) => h('span', { style: { left: `${RAND_L + i * SPALTE}px` } }, schritteName(i))));
+
+  const karten = {};
+  for (const t of TECH) {
+    const p = pos(t.id);
+    const ast = t.ast ? AST_NACH_ID[t.ast] : { name: 'Lagerhalle', farbe: '#e8dcc4' };
+    const preis = h('span', { class: 'preis num' });
+    const stufe = h('span', { class: 'stufe num' });
+    const karte = h('button', {
+      class: 'karte', style: { left: `${p.x}px`, top: `${p.y}px`, '--astfarbe': ast.farbe },
+      onclick: () => { klangWecken(); ui.wahl = t.id; blattZeigen(); },
+    }, h('span', { class: 'astname' }, ast.name), h('b', {}, t.name), h('span', { class: 'kartenfuss' }, preis, stufe));
+    karten[t.id] = { karte, preis, stufe };
+  }
+
+  const brett = h('div', { class: 'brett', style: { width: `${breite}px`, height: `${hoehe}px` } },
+    baender, linien, Object.values(karten).map((k) => k.karte));
+  const scroller = h('div', { class: 'baum' }, spaltenKopf, brett);
+  const blatt = h('div', { class: 'blatt' });
+  const wurzel = h('section', { class: 'bild forschungsbild' }, kopf, scroller, blatt);
+  el.buehne.append(wurzel);
+
+  const zuKarte = (id, sanft = true) => {
+    const p = pos(id);
+    scroller.scrollTo({
+      left: Math.max(0, p.x - scroller.clientWidth / 2 + KARTE_B / 2),
+      top: Math.max(0, p.y - scroller.clientHeight / 2 + KARTE_H / 2),
+      behavior: sanft ? 'smooth' : 'auto',
+    });
+  };
+
+  requestAnimationFrame(() => {
+    if (ui.wahl) zuKarte(ui.wahl, false);
+    else if (ui.baumScroll) { scroller.scrollLeft = ui.baumScroll.x; scroller.scrollTop = ui.baumScroll.y; }
+    else zuKarte('scheune', false);
+  });
+  scroller.addEventListener('scroll', () => { ui.baumScroll = { x: scroller.scrollLeft, y: scroller.scrollTop }; }, { passive: true });
+
+  const passt = (t, q) => !q || t.name.toLowerCase().includes(q) || t.text.toLowerCase().includes(q)
+    || (t.ast && AST_NACH_ID[t.ast].name.toLowerCase().includes(q));
+  suchfeld.addEventListener('input', () => {
+    ui.suche = suchfeld.value.trim().toLowerCase();
+    anwendenSuche();
+    const erste = TECH.find((t) => ui.suche && passt(t, ui.suche));
+    if (erste) zuKarte(erste.id);
+  });
+  const anwendenSuche = () => {
+    for (const t of TECH) schalte(karten[t.id].karte, 'blass', !!ui.suche && !passt(t, ui.suche));
+  };
+  anwendenSuche();
+
+  function blattZeigen() {
+    const id = ui.wahl;
+    if (!id) { blatt.classList.remove('offen'); blatt.innerHTML = ''; return; }
+    const t = TECH_NACH_ID[id];
+    const ast = t.ast ? AST_NACH_ID[t.ast] : { name: 'Lagerhalle', farbe: '#e8dcc4' };
+    for (const [k, v] of Object.entries(karten)) schalte(v.karte, 'gewaehlt', k === id);
+    const knopf = h('button', { class: 'knopf primaer breit', onclick: () => {
+      klangWecken();
+      const r = techKaufen(stand, id);
+      if (r.ok) {
+        klang.kauf();
+        summen(8);
+        const neu = t.effekt.find((e) => e[0] === 'frei');
+        if (neu && techStufe(stand, id) === 1) toast(`${t.name} freigeschaltet.`, 'gut');
+        if (id === 'automatisierung') toast('Die Halle ist offen. Schau unter „Halle“.', 'gut');
+      } else klang.fehler();
+      blattAktualisieren();
+    } });
+    const stufeEl = h('span', { class: 'num' });
+    const vor = h('ul', { class: 'voraus' });
+    blatt.replaceChildren(
+      h('div', { class: 'blattkopf', style: { '--astfarbe': ast.farbe } },
+        h('div', {}, h('p', { class: 'astname' }, ast.name), h('h3', {}, t.name)),
+        h('button', { class: 'rund', 'aria-label': 'Schließen', onclick: () => { ui.wahl = null; blattZeigen(); anwendenZustand(); } }, sym(SYM.zu))),
+      h('p', { class: 'blatttext' }, t.text),
+      h('p', { class: 'blattstufe' }, 'Stufe ', stufeEl),
+      vor,
+      knopf);
+    blatt.classList.add('offen');
+    function blattAktualisieren() {
+      const st = techStatus(stand, id);
+      setzeText(stufeEl, `${techStufe(stand, id)} / ${t.stufen}`);
+      vor.replaceChildren(...t.braucht.filter((b) => b !== 'scheune').map((b) => h('li', {
+        class: techStufe(stand, b) ? 'erfuellt' : 'fehlt',
+        onclick: () => { ui.wahl = b; blattZeigen(); zuKarte(b); },
+      }, sym(techStufe(stand, b) ? SYM.haken : SYM.schloss), `braucht ${TECH_NACH_ID[b].name}`)));
+      if (st === 'max') { setzeText(knopf, t.stufen > 1 ? 'Voll ausgebaut' : 'Erforscht'); knopf.disabled = true; }
+      else if (st === 'gesperrt') { setzeText(knopf, `Gesperrt · ${geld(techKosten(stand, id))}`); knopf.disabled = true; }
+      else {
+        setzeText(knopf, `${techStufe(stand, id) ? 'Ausbauen' : 'Erforschen'} · ${geld(techKosten(stand, id))}`);
+        knopf.disabled = st !== 'kaufbar';
+      }
+    }
+    blattAktualisieren();
+    blatt.aktualisieren = blattAktualisieren;
+  }
+
+  function anwendenZustand() {
+    setzeText(zaehler, `${techGekauft(stand)} / ${TECH_STUFEN_GESAMT}`);
+    for (const t of TECH) {
+      const k = karten[t.id];
+      const st = techStatus(stand, t.id);
+      for (const z of ['max', 'kaufbar', 'teuer', 'gesperrt']) schalte(k.karte, z, st === z);
+      schalte(k.karte, 'begonnen', techStufe(stand, t.id) > 0);
+      setzeText(k.preis, st === 'max' ? (t.id === 'scheune' ? '' : 'fertig') : geld(techKosten(stand, t.id)));
+      setzeText(k.stufe, t.id === 'scheune' ? '' : `${techStufe(stand, t.id)}/${t.stufen}`);
+    }
+    for (const l of linienListe) l.p.classList.toggle('offen', techStufe(stand, l.von) > 0);
+    if (blatt.aktualisieren && ui.wahl) blatt.aktualisieren();
+  }
+
+  anwendenZustand();
+  if (ui.wahl) blattZeigen();
+  return { aktualisieren: anwendenZustand };
+}
+
+/* ================================================================ Funde */
+
+function bildFunde() {
+  const wurzel = h('section', { class: 'bild fundebild' });
+  el.buehne.append(wurzel);
+
+  const nadelKarten = NADELN.map((n) => {
+    const name = h('b', {});
+    const info = h('small', {});
+    const k = h('div', { class: 'nadelkarte' }, h('div', { class: 'nsym', html: SYM.nadel }), name, info);
+    return { k, name, info };
+  });
+
+  const ausFortschritt = h('div', { class: 'fuellung' });
+  const ausText = h('p', {});
+  const ausKnopf = h('button', { class: 'knopf primaer breit', onclick: () => {
+    klangWecken();
+    const e = [];
+    const r = ausschussTippen(stand, e);
+    if (r) { klang.stich(false); summen(5); }
+    ereignisse(e);
+  } }, 'Im Ausschuss wühlen');
+  const ausschussKarte = h('div', { class: 'ausschusskarte' },
+    h('div', { class: 'kartenkopf' }, sym(SYM.ausschuss), h('h3', {}, 'Ausschuss')),
+    ausText, h('div', { class: 'balken' }, ausFortschritt), ausKnopf);
+
+  const kisteWert = h('b', { class: 'num' });
+  const kisteAnzahl = h('small', {});
+  const verkaufen = h('button', { class: 'knopf primaer', onclick: () => {
+    const b = fundeVerkaufen(stand);
+    if (b > 0) { klang.kasse(); toast(`Fundstücke für ${geld(b)} verkauft.`, 'gut'); } else klang.fehler();
+  } }, 'Alles verkaufen');
+  const sammelbonus = h('p', { class: 'leise' });
+
+  const album = {};
+  const albumGitter = h('div', { class: 'album' }, FUNDE.map((f) => {
+    const r = SELTEN_NACH_ID[f.stufe];
+    const zahlEl = h('small', { class: 'num' });
+    const name = h('b', {});
+    const wert = h('small', { class: 'wert num' });
+    const k = h('div', { class: 'fundkarte', style: { '--seltenfarbe': r.farbe } },
+      h('div', { class: 'fsym', html: FUND_SYM[f.id] }), name, h('span', { class: 'selten' }, r.name), zahlEl, wert);
+    album[f.id] = { k, zahlEl, name, wert };
+    return k;
+  }));
+
+  const stat = h('dl', { class: 'werte' });
+
+  wurzel.append(
+    h('h3', { class: 'gruppe' }, 'Nadeln'),
+    h('div', { class: 'nadelgitter' }, nadelKarten.map((n) => n.k)),
+    ausschussKarte,
+    h('div', { class: 'kiste' },
+      h('div', {}, h('h3', {}, 'Fundkiste'), kisteWert, kisteAnzahl, sammelbonus), verkaufen),
+    h('h3', { class: 'gruppe' }, 'Album'),
+    albumGitter,
+    h('h3', { class: 'gruppe' }, 'Statistik'),
+    stat);
+
+  return {
+    aktualisieren() {
+      const w = werte(stand);
+      stand.nadeln.forEach((n, i) => {
+        const k = nadelKarten[i];
+        schalte(k.k, 'gefunden', n.zustand === 'gefunden');
+        schalte(k.k, 'ausschuss', n.zustand === 'ausschuss');
+        setzeText(k.name, n.zustand === 'gefunden' ? NADELN[i].name : n.zustand === 'ausschuss' ? 'im Ausschuss' : `Nadel ${i + 1}`);
+        setzeText(k.info, n.zustand === 'gefunden' ? NADELN[i].bonus : n.zustand === 'ausschuss' ? 'raussuchen!' : 'noch im Haufen');
+      });
+      const aus = imAusschuss(stand);
+      ausschussKarte.hidden = !aus;
+      ausFortschritt.style.width = `${stand.ausschuss * 100}%`;
+      setzeText(ausText, `${aus === 1 ? 'Eine Nadel ist' : `${aus} Nadeln sind`} ungescannt durchs Band gerutscht. `
+        + `Etwa ${AUSSCHUSS_TIPPS} Griffe, dann hast du sie${anzahl(stand, 'sichter') ? ' — der Nadelsichter sucht mit' : ''}.`);
+      const stueck = Object.values(stand.funde).reduce((n, e) => n + e.n, 0);
+      setzeText(kisteWert, geld(fundWert(stand)));
+      setzeText(kisteAnzahl, `${zahl(stueck)} Stück in der Kiste`);
+      verkaufen.disabled = stueck === 0;
+      setzeText(sammelbonus, `Sammelbonus: ${fundArten(stand)} von ${FUNDE.length} Arten entdeckt, alles ${prozent(SAMMELBONUS * fundArten(stand))} mehr wert.`);
+      for (const f of FUNDE) {
+        const e = stand.funde[f.id];
+        const a = album[f.id];
+        const bekannt = e && e.ges > 0;
+        schalte(a.k, 'unbekannt', !bekannt);
+        setzeText(a.name, bekannt ? f.name : '???');
+        setzeText(a.zahlEl, bekannt ? `${zahl(e.n)} da · ${zahl(e.ges)} gefunden` : 'noch nie gefunden');
+        setzeText(a.wert, bekannt ? `je ${geld(fundPreis(w, f.id))}` : '');
+      }
+      const z = [
+        ['Spielzeit', dauer(stand.zeit)],
+        ['Haufen', `${stand.lauf}${stand.erledigt ? ` (${stand.erledigt} geschafft)` : ''}`],
+        ['Abgetragen', `${halme(stand.haufen.entfernt)} von ${halme(stand.haufen.gesamt)}`],
+        ['davon von Hand', halme(stand.stat.hand || 0)],
+        ['davon Drohnen', halme(stand.stat.drohne || 0)],
+        ['davon Maschinen', halme(stand.stat.maschine || 0)],
+        ['Schaufelstiche', zahl(stand.stat.tipps)],
+        ['Gänge zum Ankauf', zahl(stand.stat.gaenge)],
+        ['Fundstücke', zahl(stand.stat.funde)],
+        ['Verdient', geld(stand.verdient)],
+      ];
+      if (stat.children.length !== z.length * 2) {
+        stat.replaceChildren(...z.flatMap(([a]) => [h('dt', {}, a), h('dd', { class: 'num' })]));
+      }
+      z.forEach(([, b], i) => setzeText(stat.children[i * 2 + 1], b));
+    },
+  };
+}
+
+/* ================================================================ Menü */
+
+function menue() {
+  klangWecken();
+  const stumm = klangStumm();
+  const knoepfe = [
+    { text: stumm ? 'Ton einschalten' : 'Ton ausschalten', aktion: () => {
+      klangStumm(!stumm);
+      try { localStorage.setItem(TON_KEY, klangStumm() ? 'aus' : 'an'); } catch { /* egal */ }
+    } },
+    { text: 'Geschichte und Anleitung', aktion: einfuehrung },
+    { text: 'Spiel als Datei sichern', aktion: dateiSichern },
+  ];
+  if (alleNadeln(stand)) knoepfe.push({ text: 'Neuer Haufen', klasse: 'primaer', aktion: neuerHaufenFragen });
+  knoepfe.push({ text: 'Spielstand löschen', klasse: 'gefahr', aktion: loeschenFragen });
+  knoepfe.push({ text: 'Zurück' });
+  modal({
+    ober: `Haufen ${stand.lauf}`,
+    titel: 'Menü',
+    inhalt: h('p', { class: 'leise' }, 'Der Spielstand wird auf diesem Gerät gespeichert, alle paar Sekunden und beim Schließen. '
+      + 'Die Halle arbeitet weiter, während du weg bist.'),
+    knoepfe,
+    klasse: 'menuemodal',
+  });
+}
+
+function loeschenFragen() {
+  modal({
+    titel: 'Wirklich von vorn?',
+    absaetze: ['Geld, Forschung, Maschinen, Nadeln und Album sind danach weg. Das lässt sich nicht rückgängig machen.'],
+    knoepfe: [
+      { text: 'Abbrechen' },
+      { text: 'Löschen', klasse: 'gefahr', aktion: () => {
+        stand = neuerStand();
+        sichern();
+        ui.wahl = null;
+        ui.baumScroll = null;
+        wechseln('haufen');
+        einfuehrung();
+      } },
+    ],
+  });
+}
+
+/* ------------------------------------------------------------ Seite als Datei */
+
+function seitenQuelltext(cssId, jsId, ersatzTitel) {
+  const css = document.getElementById(cssId)?.textContent || '';
+  const js = document.getElementById(jsId)?.textContent || '';
+  if (!css || !js) return null;
+  const kopf = typeof SEITENKOPF === 'string' ? SEITENKOPF : `<meta charset="utf-8"><title>${ersatzTitel}</title>`;
+  return [
+    '<!doctype html>', '<html lang="de">', '<head>', kopf,
+    `<style id="${cssId}">`, css, '</style>', '</head>', '<body>',
+    '<div id="app"></div>',
+    `<script id="${jsId}">`, js, '<' + '/script>',
+    '</body>', '</html>', '',
+  ].join('\n');
+}
+
+async function dateiSichern() {
+  const name = 'Heuhaufen.html';
+  if (typeof OFFLINE_DATEI === 'string') {
+    const a = h('a', { href: OFFLINE_DATEI, download: name });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    return;
+  }
+  const html = seitenQuelltext('heuhaufen-css', 'heuhaufen-js', 'Heuhaufen');
+  if (!html) { toast('Im Entwicklungsmodus gibt es keine Einzeldatei. Erst bauen.', 'warn'); return; }
+  const dl = typeof window !== 'undefined' && window.claude ? window.claude.downloads : null;
+  if (dl) {
+    try {
+      await dl.save({ filename: name, data: html });
+      toast('Gespeichert.', 'gut');
+      return;
+    } catch (fehler) {
+      if (fehler && fehler.code === 'declined') return;
+    }
+  }
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  const a = h('a', { href: url, download: name });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast('Die Datei liegt in den Downloads.', 'gut');
+}
+
+/* ================================================================ Schleife */
+
+function schleife() {
+  let letzte = performance.now();
+  let letzteAnzeige = 0;
+  const schritt = (jetzt) => {
+    const dt = Math.min(0.25, Math.max(0, (jetzt - letzte) / 1000));
+    letzte = jetzt;
+    if (dt > 0) ereignisse(tick(stand, dt));
+
+    // Staubsauger-Geräusch folgt dem Zustand
+    const saugt = stand.sauger.an && !stand.sauger.heiss && stand.laufen <= 0;
+    if (saugt && !ui.saugerLaeuft) { saugerAn(); ui.saugerLaeuft = true; }
+    if (!saugt && ui.saugerLaeuft) { saugerAus(); ui.saugerLaeuft = false; }
+    if (saugt) saugerHitze(stand.sauger.hitze);
+
+    // Detektor
+    ui.blink = Math.max(0, ui.blink - dt * 6);
+    if (ui.reiter === 'haufen' && !modalOffen()) {
+      const d = detektor(stand);
+      if (d.staerke > 0 && jetzt >= ui.naechsterPiep) {
+        klang.piep(d.staerke);
+        ui.blink = 1;
+        ui.naechsterPiep = jetzt + (1300 - d.staerke * 1200);
+      } else if (d.staerke <= 0) ui.naechsterPiep = jetzt;
+    }
+
+    if (ui.bildschirm && ui.bildschirm.zeichnen) ui.bildschirm.zeichnen(dt);
+    if (jetzt - letzteAnzeige > 200) {
+      letzteAnzeige = jetzt;
+      kopfAktualisieren();
+      if (ui.bildschirm) ui.bildschirm.aktualisieren();
+    }
+    if (jetzt - ui.gespeichert > 5000) sichern();
+    requestAnimationFrame(schritt);
+  };
+  requestAnimationFrame(schritt);
+}
+
+function start() {
+  try { klangStumm(localStorage.getItem(TON_KEY) === 'aus'); } catch { /* egal */ }
+  stand = einlesen();
+  const neu = !stand;
+  if (neu) stand = neuerStand();
+  geruest();
+  wechseln('haufen');
+  if (neu) einfuehrung();
+  else abwesenheitsbericht(offlineNachholen(stand));
+  sichern();
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { saugen(stand, false); sichern(); } else {
+      abwesenheitsbericht(offlineNachholen(stand));
+      sichern();
+    }
+  });
+  window.addEventListener('pagehide', sichern);
+  schleife();
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+}
+
+})();
+</script>
+</body>
+</html>

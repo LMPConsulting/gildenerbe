@@ -1,10 +1,10 @@
-// Baut alle elf Reisespiele als Webfassung in einen Ordner und schreibt die
+// Baut alle zwölf Reisespiele als Webfassung in einen Ordner und schreibt die
 // Startseite dazu. Aufruf:
 //
 //   node scripts/webseite.mjs <zielordner>
 //
 // Ergebnis:
-//   <ziel>/index.html          Startseite mit den elf Kacheln
+//   <ziel>/index.html          Startseite mit den zwölf Kacheln
 //   <ziel>/stil.css            Stil der Startseite
 //   <ziel>/<spiel>/index.html  das Spiel (Stil und Skript als eigene Dateien)
 //   <ziel>/<spiel>/Spiel.html  dieselbe Fassung als eine Datei zum Mitnehmen
@@ -186,6 +186,20 @@ const SPIELE = [
     icon: '<path d="M20 46 V32 a12 12 0 0 1 24 0 v14 z" fill="none" stroke-width="5" stroke-linejoin="round"/>'
       + '<circle cx="11" cy="16" r="5" stroke="none"/><circle cx="53" cy="16" r="5" stroke="none" opacity="0.55"/>',
   },
+  {
+    ordner: 'heuhaufen',
+    titel: 'Heuhaufen',
+    zeile: 'Sechs Millionen Halme, sechs Nadeln',
+    text: 'Von Hand schaufeln, Heu verkaufen, dann Förderbänder, Greifarme und Scanner bauen, '
+      + 'bis der Haufen sich selbst abträgt. Über 300 Upgrades im Forschungsbaum.',
+    dauer: 'ein paar Abende',
+    fassungen: 'Lagerhalle · Neuer Haufen danach, jedes Mal größer',
+    zwei: 'Allein, läuft offline weiter',
+    zweiOhne: 'Allein, läuft offline weiter',
+    farbe: '#e8b64c',
+    icon: '<path d="M6 54 Q14 24 32 18 Q50 24 58 54 Z" stroke="none"/>'
+      + '<path d="M38 6 L30 40" fill="none" stroke-width="4" stroke-linecap="round" opacity="0.55"/>',
+  },
 ];
 
 mkdirSync(ziel, { recursive: true });
@@ -221,7 +235,7 @@ const symbolUrl = 'data:image/svg+xml,' + encodeURIComponent(SYMBOL);
 const manifestUrl = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify({
   name: 'Spiele', short_name: 'Spiele', start_url: '.', display: 'standalone',
   background_color: '#11151c', theme_color: '#11151c',
-  description: 'Elf Reisespiele für zwei Handys.',
+  description: 'Zwölf Reisespiele, elf davon für zwei Handys.',
   icons: [{ src: symbolUrl, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
 }));
 
@@ -246,7 +260,7 @@ const startseite = `<!doctype html>
 <meta name="theme-color" content="#11151c">
 <meta name="color-scheme" content="dark">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Elf Reisespiele für zwei Handys — Qwixx, Dreikampf, Cabo, Sky Team, Galgenmännchen, Ärger, Seeschlacht, Hütchenjagd, Wiener Runde, Sperrsteine und Mauern.">
+<meta name="description" content="Zwölf Reisespiele — Qwixx, Dreikampf, Cabo, Sky Team, Galgenmännchen, Ärger, Seeschlacht, Hütchenjagd, Wiener Runde, Sperrsteine und Mauern für zwei, dazu Heuhaufen für allein.">
 <title>Spiele</title>
 <link rel="icon" href="${symbolUrl}">
 <link rel="apple-touch-icon" href="${symbolUrl}">
@@ -260,10 +274,10 @@ const startseite = `<!doctype html>
     <p class="ober">Für zwei</p>
     <h1>Spiele</h1>
     <p class="unter">${ohneServer
-      ? `Elf Spiele für zwei. Jedes läuft an <strong>einem Handy</strong>, das ihr euch
+      ? `Elf Spiele für zwei und eins für allein. Jedes läuft an <strong>einem Handy</strong>, das ihr euch
          hin und her gebt — oder auf <strong>zwei Handys gleichzeitig</strong>, gekoppelt per
          QR-Code. Dafür müssen beide Geräte im <strong>selben WLAN</strong> sein.`
-      : `Elf Spiele, die ihr zu zweit spielen könnt — jedes auf einem Handy zum
+      : `Elf Spiele, die ihr zu zweit spielen könnt, und eins für allein — jedes auf einem Handy zum
          Weiterreichen oder auf <strong>zwei Handys gleichzeitig</strong>. Dafür öffnet einer
          einen Raum und gibt den fünfstelligen Code weiter; ihr müsst <strong>nicht</strong>
          im selben WLAN sein.`}</p>
@@ -276,7 +290,7 @@ const startseite = `<!doctype html>
     <h3>Vor dem Flug: einmal installieren</h3>
     <p><strong>Auf beiden Handys</strong> im Chrome-Menü (⋮) auf
       <em>Zum Startbildschirm hinzufügen</em> tippen. Danach liegt „Spiele“ wie eine App
-      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle elf Spiele
+      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle zwölf Spiele
       sind dann auf dem Gerät gespeichert.</p>
     <p><span class="offlineampel" id="offlineampel">wird gespeichert …</span></p>
     <p>Zu zweit ohne Internet: beide Handys ins <strong>selbe WLAN</strong>, dann im Spiel

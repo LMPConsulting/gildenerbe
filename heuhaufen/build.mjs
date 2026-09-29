@@ -1,0 +1,139 @@
+// Baut aus heuhaufen/src/* eine einzige, in sich geschlossene HTML-Datei.
+// Kein CDN, keine externen Dateien: läuft per Doppelklick (file://) und offline.
+//
+//   node heuhaufen/build.mjs            -> heuhaufen/index.html
+//   node heuhaufen/build.mjs --fragment out.html   (Rumpf ohne <html>/<head>, für Artifacts)
+//   node heuhaufen/build.mjs --web <ordner>        (Fassung für die Spielesammlung)
+
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const read = (p) => readFileSync(join(here, p), 'utf8');
+
+const MODULE = ['src/daten.js', 'src/engine.js', 'src/format.js', 'src/klang.js',
+  'src/symbole.js', 'src/szene.js', 'src/ui.js'];
+
+// Alle Module landen in einem gemeinsamen Scope — gleichnamige Deklarationen in
+// zwei Dateien wären dort ein SyntaxError. Lieber hier auffallen als im Browser.
+function kollisionenPruefen(namen) {
+  const gesehen = new Map();
+  for (const [datei, roh] of namen) {
+    const re = /^(?:export )?(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/gm;
+    for (const treffer of roh.matchAll(re)) {
+      const id = treffer[1];
+      if (gesehen.has(id)) {
+        throw new Error(`"${id}" ist in ${gesehen.get(id)} und ${datei} deklariert — bitte umbenennen.`);
+      }
+      gesehen.set(id, datei);
+    }
+  }
+}
+
+kollisionenPruefen(MODULE.map((d) => [d, read(d)]));
+
+const teile = MODULE.map((datei) => {
+  const roh = read(datei);
+  const ohneImporte = roh.replace(/^import\b[^;]*;\n/gm, '');
+  if (/^\s*import\b/m.test(ohneImporte)) throw new Error(`Import in ${datei} nicht erkannt`);
+  return ohneImporte.replace(/^export /gm, '');
+});
+
+const rumpf = `(function () {\n'use strict';\n${teile.join('\n')}\n})();`;
+const css = read('src/style.css');
+
+// Ein Heuhaufen mit einer Nadel darin, wie auf der Packung.
+const ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
+  + `<rect width="64" height="64" rx="14" fill="#17120d"/>`
+  + `<path d="M6 52 Q14 22 32 16 Q50 22 58 52 Z" fill="#e8b64c"/>`
+  + `<g stroke="#a8792a" stroke-width="2" stroke-linecap="round">`
+  + `<path d="M20 44l3-7M30 40l1-8M40 45l3-8M25 30l2-5M37 31l2-5"/></g>`
+  + `<path d="M36 8 L28 40" stroke="#dfe6ec" stroke-width="2.5" stroke-linecap="round"/>`
+  + `<circle cx="36.5" cy="7" r="4" fill="#e24b3b"/></svg>`;
+const iconUrl = 'data:image/svg+xml,' + encodeURIComponent(ICON);
+
+const manifest = {
+  name: 'Heuhaufen', short_name: 'Heuhaufen', start_url: '.', display: 'standalone',
+  orientation: 'portrait', background_color: '#17120d', theme_color: '#17120d',
+  description: 'Sechs Millionen Halme, sechs Nadeln. Schaufeln, verkaufen, automatisieren. Komplett offline.',
+  icons: [{ src: iconUrl, sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+};
+const manifestUrl = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
+
+// Ein Kopf für beide Zwecke: die gebaute Seite und die Kopie, die sich das
+// Spiel im Browser selbst herunterlädt.
+const kopf = `<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#17120d">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Heuhaufen – finde sechs Nadeln in sechs Millionen Halmen. Schaufeln, verkaufen, Förderbänder und Maschinen bauen. Komplett offline.">
+<title>Heuhaufen</title>
+<link rel="icon" href="${iconUrl}">
+<link rel="apple-touch-icon" href="${iconUrl}">
+<link rel="manifest" href="${manifestUrl}">`;
+
+const script = `const SEITENKOPF = ${JSON.stringify(kopf)};\n${rumpf}`;
+
+const body = `<div id="app"></div>\n<script id="heuhaufen-js">\n${script}\n</script>`;
+
+const page = `<!doctype html>
+<html lang="de">
+<head>
+${kopf}
+<style id="heuhaufen-css">
+${css}
+</style>
+</head>
+<body>
+${body}
+</body>
+</html>
+`;
+
+
+// --- Fassung für die Webseite ------------------------------------------------
+// Auf lmp-docmatch.de gilt eine strenge Content-Security-Policy ohne
+// 'unsafe-inline'. Darum wandern Stil und Skript in eigene Dateien; die
+// Einzeldatei zum Mitnehmen wird gleich mit danebengelegt.
+const webFlagge = process.argv.indexOf('--web');
+if (webFlagge !== -1) {
+  const ziel = resolve(process.argv[webFlagge + 1] || 'web');
+  mkdirSync(ziel, { recursive: true });
+  const mitnahme = 'Heuhaufen.html';
+  // Ohne Durchreiche (z.B. auf einer reinen Dateiablage wie GitHub Pages) gibt
+  // es keinen Raumcode — die Spiele blenden die Knöpfe dann selbst aus.
+  const ohneServer = process.argv.includes('--ohne-server');
+  const webScript = [
+    `const SEITENKOPF = ${JSON.stringify(kopf)};`,
+    ohneServer ? 'const SPIELE_BASIS = null;' : "const SPIELE_BASIS = '..';",
+    `const OFFLINE_DATEI = ${JSON.stringify(mitnahme)};`,
+    rumpf,
+  ].join('\n');
+  writeFileSync(join(ziel, 'spiel.js'), webScript);
+  writeFileSync(join(ziel, 'stil.css'), css);
+  writeFileSync(join(ziel, 'index.html'), [
+    '<!doctype html>', '<html lang="de">', '<head>', kopf,
+    '<link rel="stylesheet" href="stil.css">',
+    '<script src="spiel.js" defer></' + 'script>',
+    '<script src="../sw-reg.js" defer></' + 'script>',
+    '</head>', '<body>', '<div id="app"></div>', '</body>', '</html>', '',
+  ].join('\n'));
+  writeFileSync(join(ziel, mitnahme), page);
+  console.log(`Webfassung: ${ziel} (index.html + spiel.js + stil.css + ${mitnahme})`);
+  process.exit(0);
+}
+
+const fragmentFlag = process.argv.indexOf('--fragment');
+if (fragmentFlag !== -1) {
+  const out = resolve(process.argv[fragmentFlag + 1] || 'heuhaufen-fragment.html');
+  writeFileSync(out, `<title>Heuhaufen</title>\n<style id="heuhaufen-css">\n${css}\n</style>\n${body}\n`);
+  console.log(`Fragment geschrieben: ${out}`);
+} else {
+  const out = join(here, 'index.html');
+  writeFileSync(out, page);
+  console.log(`Gebaut: ${out} (${(page.length / 1024).toFixed(1)} kB, eine Datei, keine Abhängigkeiten)`);
+}
