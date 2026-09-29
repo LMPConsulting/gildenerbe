@@ -5,7 +5,7 @@
 import {
   GRUND, LADUNGEN, LADUNG_WACHSTUM, LADUNG_PREIS, LADUNG_PREIS_FAKTOR, KREDIT_AUFSCHLAG,
   KREDIT_AUFSCHLAG_GUT, KREDIT_TILGUNG, NADEL_BEREICHE, NADELN, WERKZEUGE, TECH, MASCHINEN, VERARBEITUNG_REIHE, ZWISCHEN,
-  PRODUKTE, AUFTRAEGE, AUFTRAG_PAUSE, MISSIONEN,
+  PRODUKTE, AUFTRAEGE, AUFTRAG_PAUSE, MISSIONEN, KUNDEN,
 } from './daten.js';
 
 export const STAND_VERSION = 2;
@@ -100,7 +100,7 @@ export function neuerStand(seed = Date.now()) {
     nadelnGesamt: 0,
     sauger: { an: false, hitze: 0, heiss: false },
     radar: { rest: 0, abstand: null, zeit: null },
-    auftrag: { nr: 0, geliefert: 0, pause: 0 },
+    auftrag: { nr: 0, skip: 0, geliefert: 0, pause: 0 },
     mission: 0,
     stat: {
       tipps: 0, hand: 0, drohne: 0, maschine: 0, gaenge: 0, verkauft: 0, gefegt: 0,
@@ -684,21 +684,28 @@ export function fabrik(s) {
 /* ------------------------------------------------------------ Aufträge */
 
 /** Der Auftrag mit Nummer nr; nach der festen Liste wachsen sie weiter. */
-export function auftrag(nr) {
+export function auftrag(nr, skip = 0) {
   if (nr < AUFTRAEGE.length) return AUFTRAEGE[nr];
   const reihe = ['ballen', 'silage', 'papier', 'brikett', 'pellet', 'brei'];
-  const will = reihe[(nr - AUFTRAEGE.length) % reihe.length];
+  const will = reihe[(nr + skip - AUFTRAEGE.length) % reihe.length];
   const wachstum = Math.pow(1.35, nr - AUFTRAEGE.length + 1);
   const menge = Math.round((600 * wachstum * 20) / PRODUKTE[will].halme);
-  return { will, menge, lohn: Math.round(menge * PRODUKTE[will].wert * 3) };
+  const titel = KUNDEN[(nr + skip) % KUNDEN.length];
+  return { titel, will, menge, lohn: Math.round(menge * PRODUKTE[will].wert * 1.5) };
 }
 
-export const auftragLohn = (s, a) => a.lohn * werte(s).auftragLohn;
+/** Der Lohn zieht mit den Preisen mit, damit ein Auftrag nie weniger bringt als der Stand. */
+export const auftragLohn = (s, a) => {
+  const w = werte(s);
+  return a.lohn * w.auftragLohn * (produktPreis(w, a.will) / PRODUKTE[a.will].wert);
+};
 
 /** Den laufenden Auftrag ablehnen; nach der Pause kommt der nächste. Geliefertes ist verloren. */
 export function auftragAblehnen(s) {
   if (!werte(s).frei.has('auftraege') || s.auftrag.pause > 0) return false;
-  s.auftrag.nr++;
+  // Ablehnen überspringt die Ware, lässt die Aufträge aber nicht wachsen.
+  if (s.auftrag.nr < AUFTRAEGE.length) s.auftrag.nr++;
+  else s.auftrag.skip = (s.auftrag.skip || 0) + 1;
   s.auftrag.geliefert = 0;
   s.auftrag.pause = AUFTRAG_PAUSE;
   return true;
@@ -898,7 +905,7 @@ export function tick(s, dt, { offline = false } = {}) {
       // Laster: nimmt die gewünschte Ware, bevor sie am Stand verkauft wird.
       if (w.frei.has('auftraege') && s.auftrag.pause <= 0) {
         const a = s.auftrag;
-        const au = auftrag(a.nr);
+        const au = auftrag(a.nr, a.skip);
         const verfuegbar = (au.will === 'roh' ? f.roh : (f.produkte[au.will] || 0)) * anteil;
         const nimmt = Math.min(verfuegbar, au.menge - a.geliefert);
         if (nimmt > 0) {
@@ -1029,7 +1036,7 @@ export function laden(text) {
   if (!istObjekt(s.stat.werkzeug)) s.stat.werkzeug = {};
   for (const k of ['tipps', 'hand', 'drohne', 'maschine', 'gaenge', 'verkauft', 'gefegt', 'abgetragen',
     'auftraege', 'besterVerkauf', 'maxGeld']) s.stat[k] = zahlOder(s.stat[k], 0);
-  for (const k of ['nr', 'geliefert', 'pause']) s.auftrag[k] = Math.max(0, zahlOder(s.auftrag[k], 0));
+  for (const k of ['nr', 'skip', 'geliefert', 'pause']) s.auftrag[k] = Math.max(0, zahlOder(s.auftrag[k], 0));
   s.auftrag.nr = Math.floor(s.auftrag.nr);
   s.mission = Math.max(0, Math.floor(s.mission));
   s.ladung = Math.max(1, Math.floor(s.ladung));

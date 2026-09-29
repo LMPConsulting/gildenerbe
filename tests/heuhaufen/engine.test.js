@@ -6,7 +6,7 @@ import {
 import {
   neuerStand, werte, stich, verkaufen, tick, techKaufen, techKosten, techStatus, techStufe,
   techLage, TECH_NACH_ID, TECH_SCHRITTE, TECH_STUFEN_GESAMT, abtragen, nadelnGefunden, alleNadeln,
-  maschineKaufen, maschinenKosten, maschineAbbauen, maschineUmschalten, fabrik, produktPreis, preisRoh,
+  maschineKaufen, maschinenKosten, maschineAbbauen, maschineUmschalten, fabrik, produktPreis, preisRoh, auftragLohn,
   speichern, laden, offlineNachholen, detektor, drohneKaufen, drohnenKosten, saugen, rest, stichMenge,
   taschePlatz, zufall, GRUNDSTROM, werkzeugWaehlen, werkzeugFrei, missionStand, auftrag, auftragAblehnen,
   ladungBestellen, ladungPreis, ladungGroesse, NADEL_RUTSCH, saugerBlockiert, artenGefunden,
@@ -425,7 +425,7 @@ describe('Aufträge und Missionen', () => {
     expect(au.will).toBe('roh');
     let bezahlt = null;
     for (let i = 0; i < 400 && !bezahlt; i++) bezahlt = tick(s, 1).find((e) => e.typ === 'auftrag');
-    expect(bezahlt.lohn).toBeCloseTo(au.lohn);
+    expect(bezahlt.lohn).toBeCloseTo(auftragLohn(s, au));
     expect(s.auftrag.nr).toBe(1);
     expect(s.auftrag.pause).toBe(AUFTRAG_PAUSE);
   });
@@ -438,6 +438,29 @@ describe('Aufträge und Missionen', () => {
     const spaet = auftrag(AUFTRAEGE.length + 3);
     expect(spaet.menge).toBeGreaterThan(0);
     expect(spaet.lohn).toBeGreaterThan(spaet.menge * PRODUKTE[spaet.will].wert);
+  });
+
+  it('zahlt für Aufträge mehr als der Stand, auch mit teuren Preis-Upgrades', () => {
+    const s = neuerStand(3);
+    freischalten(s, 'auftraege', 'stand', 'markt');
+    s.tech.markt = 5; s.rev++;
+    const w = werte(s);
+    for (let nr = 0; nr < AUFTRAEGE.length + 6; nr++) {
+      const au = auftrag(nr);
+      expect(auftragLohn(s, au), `Auftrag ${nr}`).toBeGreaterThan(au.menge * produktPreis(w, au.will));
+    }
+  });
+
+  it('lässt erfundene Aufträge beim Ablehnen nicht wachsen', () => {
+    const s = neuerStand(3);
+    freischalten(s, 'auftraege');
+    s.auftrag.nr = AUFTRAEGE.length + 2;
+    const vorher = auftrag(s.auftrag.nr, s.auftrag.skip);
+    auftragAblehnen(s);
+    const nachher = auftrag(s.auftrag.nr, s.auftrag.skip);
+    expect(s.auftrag.nr).toBe(AUFTRAEGE.length + 2);
+    expect(nachher.will).not.toBe(vorher.will);
+    expect(nachher.menge * PRODUKTE[nachher.will].halme).toBeCloseTo(vorher.menge * PRODUKTE[vorher.will].halme, -2);
   });
 
   it('arbeitet das Missionsbuch der Reihe nach ab und verschenkt Maschinen', () => {

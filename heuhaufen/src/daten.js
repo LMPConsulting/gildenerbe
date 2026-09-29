@@ -25,7 +25,7 @@ export const GRUND = {
   saugerRate: 40,
   saugerHitze: 6,
   drohnenMax: 0,
-  drohnenRate: 2,
+  drohnenRate: 4,
   detektor: 3000,      // Reichweite in Halmen
   radarCD: 60,         // Sekunden zwischen zwei Radarpings
   preisRoh: 0.0222,    // was der Stand pro Halm zahlt
@@ -54,12 +54,12 @@ export const GRUND = {
 
 /* ------------------------------------------------------------ Ladungen */
 
-/** Halme je Ladung. Danach wächst jede weitere um 20 %. */
-export const LADUNGEN = [6_000_000, 9_000_000, 13_000_000];
-export const LADUNG_WACHSTUM = 1.2;
+/** Halme je Ladung. Danach wächst jede weitere um 40 %. */
+export const LADUNGEN = [6_000_000, 10_000_000, 16_000_000, 26_000_000];
+export const LADUNG_WACHSTUM = 1.4;
 /** Preis der nächsten Ladung: Grundpreis mal Faktor je schon bestellter Ladung. */
-export const LADUNG_PREIS = 40_000;
-export const LADUNG_PREIS_FAKTOR = 3;
+export const LADUNG_PREIS = 90_000;
+export const LADUNG_PREIS_FAKTOR = 2.5;
 /** Wer auf Rechnung bestellt, zahlt so viel mehr (mit „Heu auf Rechnung“ weniger), und so viel
  *  jeder Einnahme geht an die Schulden. Auf Rechnung geht immer, damit niemand mit leerem Haufen
  *  und leerer Kasse feststeckt. */
@@ -69,7 +69,7 @@ export const KREDIT_TILGUNG = 0.5;
 
 /** Wo die sechs Nadeln einer Ladung stecken können, als Anteil des Haufens von oben. */
 export const NADEL_BEREICHE = [
-  [0.003, 0.01], [0.02, 0.06], [0.08, 0.2], [0.25, 0.45], [0.5, 0.75], [0.8, 0.99],
+  [0.0015, 0.004], [0.02, 0.06], [0.08, 0.2], [0.25, 0.45], [0.5, 0.75], [0.8, 0.99],
 ];
 
 /** 24 Nadelarten, sechs je Ladung. Die Boni sind absichtlich lächerlich. */
@@ -231,7 +231,7 @@ export const TECH = [
   k('rohrwerfer', 'linien', 'Rohrwerfer-Pläne', 1, 260, 1, ['weiche'], [['frei', 'rohrwerfer']],
     'Schießt Knäuel durch ein Rohr zur zweiten Linie. Jeder Werfer ist eine Strecke mehr.'),
   // Strom
-  k('elektrizitaet', 'strom', 'Elektrizität', 1, 900, 1, ['foerderband'], [['frei', 'generator']],
+  k('elektrizitaet', 'strom', 'Elektrizität', 1, 500, 1, ['foerderband'], [['frei', 'generator']],
     'Ein Heu-Generator. Er frisst Halme vom Band und macht daraus Strom.'),
   k('kessel', 'strom', 'Größerer Kessel', 6, 80, 1.8, ['elektrizitaet'], [['generatorMul', '*', 1.2]],
     'Generatoren liefern 20 % mehr.', 'Generator-Upgrades'),
@@ -316,7 +316,7 @@ export const TECH = [
     'Aufbauen wird 10 % billiger.'),
   k('ordnung', 'auto', 'Ordnung muss sein', 3, 81000, 3, ['greifarm'], [['maschinenTempo', '*', 1.1]],
     'Alle Maschinen 10 % schneller.'),
-  k('drohne', 'auto', 'Heudrohne', 1, 70, 1, ['scheune'], [['frei', 'drohne'], ['drohnenMax', '+', 3]],
+  k('drohne', 'auto', 'Heudrohne', 1, 25, 1, ['scheune'], [['frei', 'drohne'], ['drohnenMax', '+', 3]],
     'Kleine Drohnen fliegen Heu zum Stand. Bis zu drei.'),
   k('schwarm', 'auto', 'Drohnenschwarm', 5, 330, 2, ['drohne'], [['drohnenMax', '+', 2]],
     'Zwei Drohnen mehr.', 'Drohnen-Upgrades'),
@@ -344,7 +344,7 @@ export const TECH = [
     'Der Metalldetektor schlägt 60 % früher an.', 'Detektor-Upgrades'),
   k('piepser', 'suche', 'Lauter Piepser', 1, 25, 1, ['scheune'], [['frei', 'piepser']],
     'Der Detektor sagt dir ungefähr, wie weit es noch ist.'),
-  k('scanner', 'suche', 'Scanner-Pläne', 1, 2000, 1, ['piepser', 'foerderband'], [['frei', 'scanner']],
+  k('scanner', 'suche', 'Scanner-Pläne', 1, 900, 1, ['piepser', 'foerderband'], [['frei', 'scanner']],
     'Durchleuchtet das Heu auf dem Band. Ohne Scanner fallen Nadeln zurück in den Haufen.'),
   k('scanner2', 'suche', 'Breitbandscanner', 5, 8100, 2.2, ['scanner'], [['scanDeckung', '*', 1.5]],
     'Jeder Scanner schafft 50 % mehr Heu.', 'Scanner-Upgrades'),
@@ -362,8 +362,8 @@ export const TECH = [
     'Mit dem Stand lässt sich reden. +8 % auf loses Heu.'),
   k('auftraege', 'verkauf', 'Auftragsbuch', 1, 1300, 1, ['feilschen', 'foerderband'], [['frei', 'auftraege']],
     'Ein Laster holt Waren ab und zahlt mehr als der Stand.'),
-  k('laster', 'verkauf', 'Größerer Laster', 5, 5400, 2.2, ['auftraege'], [['auftragLohn', '*', 1.2]],
-    'Aufträge bringen 20 % mehr.', 'Auftrags-Upgrades'),
+  k('laster', 'verkauf', 'Größerer Laster', 5, 5400, 2.2, ['auftraege'], [['auftragLohn', '*', 1.1]],
+    'Aufträge bringen 10 % mehr.', 'Auftrags-Upgrades'),
   k('stand', 'verkauf', 'Verkaufsstand ausbauen', 1, 2300, 1, ['feilschen'], [['preisAlle', '*', 1.1]],
     'Ein richtiger Tresen mit Registrierkasse. Alles 10 % mehr wert.'),
   k('markt', 'verkauf', 'Wochenmarkt', 5, 9900, 2.2, ['stand'], [['preisAlle', '*', 1.1]],
@@ -434,11 +434,11 @@ export const MASCHINEN = [
   { id: 'wickler', name: 'Wickler', gruppe: 'verarbeitung', frei: 'wickler', kosten: 28000, faktor: 1.15,
     strom: 5, plaetze: 1, rate: 2, rezept: { ballen: 1 }, produkt: 'silage', text: 'Wickelt 2 Ballen pro Sekunde in Folie.' },
   { id: 'pulper', name: 'Pulper', gruppe: 'verarbeitung', frei: 'pulper', kosten: 17000, faktor: 1.15,
-    strom: 8, wasser: 1.5, plaetze: 1, rate: 3, rezept: { halme: 10 }, produkt: 'brei', text: 'Weicht 30 Halme pro Sekunde in Wasser zu Brei auf.' },
+    strom: 8, wasser: 4, plaetze: 1, rate: 3, rezept: { halme: 10 }, produkt: 'brei', text: 'Weicht 30 Halme pro Sekunde in Wasser zu Brei auf.' },
   { id: 'papier', name: 'Papiermaschine', gruppe: 'verarbeitung', frei: 'papier', kosten: 50000, faktor: 1.16,
-    strom: 10, wasser: 1, plaetze: 2, rate: 1.5, rezept: { brei: 2 }, produkt: 'papier', text: 'Macht aus 3 Brei pro Sekunde Heupapier.' },
+    strom: 10, wasser: 3, plaetze: 2, rate: 1.5, rezept: { brei: 2 }, produkt: 'papier', text: 'Macht aus 3 Brei pro Sekunde Heupapier.' },
   { id: 'brikett', name: 'Ziegelpresse', gruppe: 'verarbeitung', frei: 'brikett', kosten: 170000, faktor: 1.17,
-    strom: 14, plaetze: 2, rate: 1, rezept: { ballen: 1, brei: 2 }, produkt: 'brikett', text: 'Ein Ballen und zwei Brei werden zu einem Öko-Ziegel.' },
+    strom: 14, plaetze: 2, rate: 2, rezept: { ballen: 1, brei: 2 }, produkt: 'brikett', text: 'Ein Ballen und zwei Brei werden zu einem Öko-Ziegel.' },
 ];
 
 /** In dieser Reihenfolge greifen die Verarbeiter aufs Band zu: erst die Halm-
@@ -456,7 +456,7 @@ export const PRODUKTE = {
   pellet: { name: 'Pellets', wert: 0.244, halme: 5 },
   brei: { name: 'Heubrei', wert: 0.71, halme: 10 },
   silage: { name: 'Wickelballen', wert: 2.0, halme: 20 },
-  papier: { name: 'Heupapier', wert: 2.0, halme: 20 },
+  papier: { name: 'Heupapier', wert: 3.0, halme: 20 },
   brikett: { name: 'Öko-Ziegel', wert: 5.33, halme: 40 },
 };
 
@@ -500,27 +500,27 @@ export const MISSIONEN = [
   { text: 'Kauf die Heugabel', art: 'tech', ziel: 'heugabel', geld: 3 },
   { text: 'Halte den Detektor an den Haufen', art: 'werkzeug', ziel: 'detektor', geld: 2 },
   { text: 'Verdiene 30 $', art: 'verdient', ziel: 30, geld: 5 },
-  { text: 'Feg verschüttetes Heu zusammen', art: 'gefegt', ziel: 50, geld: 5 },
+  { text: 'Feg verschüttetes Heu zusammen', art: 'gefegt', ziel: 50, geld: 10 },
+  { text: 'Finde die erste Nadel', art: 'nadeln', ziel: 1, geld: 120 },
   { text: 'Kauf die Förderband-Pläne', art: 'tech', ziel: 'foerderband', geschenk: 'rechen' },
-  { text: 'Stell einen zweiten Kolbenrechen auf', art: 'maschine', ziel: ['rechen', 2], geld: 30 },
+  { text: 'Stell einen zweiten Kolbenrechen auf', art: 'maschine', ziel: ['rechen', 2], geld: 150 },
   { text: 'Kauf Elektrizität', art: 'tech', ziel: 'elektrizitaet', geschenkTech: 'strommast' },
-  { text: 'Finde die erste Nadel', art: 'nadeln', ziel: 1, geld: 150 },
-  { text: 'Bau ein Silo', art: 'maschine', ziel: ['silo', 1], geld: 60 },
+  { text: 'Bau einen Scanner', art: 'maschine', ziel: ['scanner', 1], geld: 600 },
+  { text: 'Bau ein Silo', art: 'maschine', ziel: ['silo', 1], geld: 800 },
   { text: 'Kauf die Plattform-Pläne', art: 'tech', ziel: 'plattform', geschenkTech: 'schrank' },
-  { text: 'Bau einen Greifarm', art: 'maschine', ziel: ['arm', 1], geld: 200 },
-  { text: 'Bau einen Scanner', art: 'maschine', ziel: ['scanner', 1], geld: 250 },
-  { text: 'Erfülle einen Auftrag', art: 'auftraege', ziel: 1, geld: 300 },
-  { text: 'Presse 100 Pressballen', art: 'produziert', ziel: ['ballen', 100], geld: 500 },
-  { text: 'Trag eine Million Halme ab', art: 'abgetragen', ziel: 1_000_000, geld: 1500 },
-  { text: 'Finde drei Nadeln', art: 'nadeln', ziel: 3, geld: 2500 },
-  { text: 'Bohr einen Brunnen', art: 'maschine', ziel: ['brunnen', 1], geld: 2000 },
-  { text: 'Trag den Haufen zur Hälfte ab', art: 'haelfte', ziel: 0.5, geld: 8000 },
-  { text: 'Stell 20 Greifarme auf', art: 'maschine', ziel: ['arm', 20], geld: 10000 },
-  { text: 'Mach 50 Bögen Heupapier', art: 'produziert', ziel: ['papier', 50], geld: 12000 },
-  { text: 'Finde alle sechs Nadeln', art: 'nadeln', ziel: 6, geld: 20000 },
-  { text: 'Bestell eine neue Ladung', art: 'ladungen', ziel: 2, geld: 10000 },
-  { text: 'Presse 100 Öko-Ziegel', art: 'produziert', ziel: ['brikett', 100], geld: 40000 },
-  { text: 'Finde zwölf Nadeln', art: 'nadeln', ziel: 12, geld: 80000 },
-  { text: 'Erforsche 200 Stufen', art: 'forschung', ziel: 200, geld: 100000 },
-  { text: 'Finde alle 24 Nadelarten', art: 'arten', ziel: 24, geld: 1_000_000 },
+  { text: 'Bau einen Greifarm', art: 'maschine', ziel: ['arm', 1], geld: 3000 },
+  { text: 'Erfülle einen Auftrag', art: 'auftraege', ziel: 1, geld: 3000 },
+  { text: 'Presse 100 Pressballen', art: 'produziert', ziel: ['ballen', 100], geld: 4000 },
+  { text: 'Trag eine Million Halme ab', art: 'abgetragen', ziel: 1_000_000, geld: 5000 },
+  { text: 'Finde drei Nadeln', art: 'nadeln', ziel: 3, geld: 6000 },
+  { text: 'Bohr einen Brunnen', art: 'maschine', ziel: ['brunnen', 1], geld: 8000 },
+  { text: 'Trag den Haufen zur Hälfte ab', art: 'haelfte', ziel: 0.5, geld: 15000 },
+  { text: 'Stell 20 Greifarme auf', art: 'maschine', ziel: ['arm', 20], geld: 25000 },
+  { text: 'Finde alle sechs Nadeln', art: 'nadeln', ziel: 6, geld: 30000 },
+  { text: 'Bestell eine neue Ladung', art: 'ladungen', ziel: 2, geld: 30000 },
+  { text: 'Mach 50 Bögen Heupapier', art: 'produziert', ziel: ['papier', 50], geld: 60000 },
+  { text: 'Presse 100 Öko-Ziegel', art: 'produziert', ziel: ['brikett', 100], geld: 200000 },
+  { text: 'Finde zwölf Nadeln', art: 'nadeln', ziel: 12, geld: 250000 },
+  { text: 'Erforsche 200 Stufen', art: 'forschung', ziel: 200, geld: 250000 },
+  { text: 'Finde alle 24 Nadelarten', art: 'arten', ziel: 24, geld: 2_000_000 },
 ];

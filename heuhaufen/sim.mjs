@@ -143,7 +143,7 @@ export function simuliere({ seed = 1, maxStunden = 30, tippsProSekunde = 3, dt =
       if (!alleNadeln(s)) einkaufen(s);
       // Aufträge über Waren, die man nicht herstellt, lehnt er ab.
       if (w.frei.has('auftraege') && s.auftrag.pause <= 0) {
-        const au = auftrag(s.auftrag.nr);
+        const au = auftrag(s.auftrag.nr, s.auftrag.skip);
         const f = fabrik(s);
         if ((au.will === 'roh' ? f.roh : (f.produkte[au.will] || 0)) <= 0) auftragAblehnen(s);
       }

@@ -659,13 +659,14 @@ function bildHalle() {
 
   // Auftrag
   const aTitel = h('b', {});
+  const aKunde = h('p', { class: 'ober' }, 'Auftrag');
   const aInfo = h('small', {});
   const aBalken = h('div', { class: 'fuellung' });
   const aAblehnen = h('button', { class: 'knopf klein', onclick: () => {
     if (auftragAblehnen(stand)) { klang.klick(); toast('Auftrag abgelehnt. Der nächste kommt gleich.'); }
   } }, 'Ablehnen');
   const auftragKarte = h('div', { class: 'auftragkarte' },
-    h('div', { class: 'kartenkopf' }, sym(SYM.laster), h('div', {}, h('p', { class: 'ober' }, 'Auftrag'), aTitel)),
+    h('div', { class: 'kartenkopf' }, sym(SYM.laster), h('div', {}, aKunde, aTitel)),
     aInfo, h('div', { class: 'balken dünn' }, aBalken), h('div', { class: 'auftragknoepfe' }, aAblehnen));
 
   wurzel.append(
@@ -776,8 +777,9 @@ function bildHalle() {
       // Auftrag
       auftragKarte.hidden = !wv.frei.has('auftraege');
       if (!auftragKarte.hidden) {
-        const au = auftrag(stand.auftrag.nr);
+        const au = auftrag(stand.auftrag.nr, stand.auftrag.skip);
         const name = PRODUKTE[au.will].name;
+        setzeText(aKunde, stand.auftrag.pause > 0 || !au.titel ? 'Auftrag' : `Auftrag · ${au.titel}`);
         if (stand.auftrag.pause > 0) {
           setzeText(aTitel, 'Der Laster ist unterwegs');
           setzeText(aInfo, `Nächster Auftrag in ${dauer(stand.auftrag.pause)}.`);

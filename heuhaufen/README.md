@@ -45,7 +45,7 @@ Läuft das Spiel in zwei Fenstern, ruht das ältere, statt den Stand zu übersch
 | Suche | Ohne Scanner werden Nadeln mit dem Heu verkauft und fallen zurück in den Haufen. Faustregel: ein Scanner für zwei Arme. Der Nadelradar meldet die Entfernung. |
 | Verarbeitung | Silo (Knäuel), Kompressor (Ballen), Pelletpresse, Pulper und Papiermaschine (brauchen Wasser aus Brunnen), Wickler, Ziegelpresse. |
 | Aufträge | Ein Laster will eine bestimmte Ware und zahlt mehr als der Stand. Unpassende Aufträge lassen sich ablehnen. |
-| Ladungen | Sind alle sechs Nadeln gefunden, gehen die Tore auf. Die nächste Ladung (9, dann 13 Millionen Halme) kostet Geld oder kommt auf Rechnung; die Hälfte jeder Einnahme tilgt dann die Schulden. Maschinen und Forschung bleiben. |
+| Ladungen | Sind alle sechs Nadeln gefunden, gehen die Tore auf. Die nächste Ladung (10, 16, dann 26 Millionen Halme) kostet Geld oder kommt auf Rechnung; die Hälfte jeder Einnahme tilgt dann die Schulden. Maschinen und Forschung bleiben. |
 
 Das **Missionsbuch** steht oben im Bild und zeigt immer den nächsten Schritt, mit
 Belohnung in Geld oder einer geschenkten Maschine.
@@ -80,10 +80,11 @@ sonst das Billigste mit Nutzen und lehnt Aufträge ab, die die Halle nicht bedie
 |---|---|
 | Heugabel | 1 min |
 | Förderband | 10 min |
-| erste Nadel | 13 min |
-| halbe Ladung | 83 min |
-| Ladung 1 geschafft | 107 min |
-| alle 24 Nadelarten (vier Ladungen) | etwa 5¼ h |
+| erste Nadel | 7 min |
+| halbe Ladung | 78 min |
+| Ladung 1 geschafft | 98 min |
+| Ladung 2 (10 Mio. Halme) | knapp eine Stunde |
+| alle 24 Nadelarten (vier Ladungen) | etwa 4¾ h |
 
 Am Ende tragen Maschinen gut zwei Drittel ab, die Hand weniger als ein Drittel.
 `tests/heuhaufen/balance.test.js` hält das fest, dazu einen langsamen Spieler mit einem
