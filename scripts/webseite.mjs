@@ -190,10 +190,10 @@ const SPIELE = [
     ordner: 'heuhaufen',
     titel: 'Heuhaufen',
     zeile: 'Sechs Millionen Halme, sechs Nadeln',
-    text: 'Von Hand schaufeln, Heu verkaufen, dann Förderbänder, Greifarme und Scanner bauen, '
-      + 'bis der Haufen sich selbst abträgt. Über 300 Upgrades im Forschungsbaum.',
+    text: 'Von Hand stechen, Heu verkaufen, dann Förderbänder, orange Greifarme und Scanner bauen, '
+      + 'bis der Haufen sich selbst abträgt. 401 Stufen im Forschungsbaum, 24 Nadelarten.',
     dauer: 'ein paar Abende',
-    fassungen: 'Lagerhalle · Neuer Haufen danach, jedes Mal größer',
+    fassungen: 'Ladung um Ladung · Aufträge · Missionsbuch',
     zwei: 'Allein, läuft offline weiter',
     zweiOhne: 'Allein, läuft offline weiter',
     farbe: '#e8b64c',

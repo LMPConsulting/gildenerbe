@@ -87,6 +87,10 @@ export const klang = {
     if (!bereit()) return;
     ton(1400 + staerke * 900, 0.045, { typ: 'square', laut: 0.05 + staerke * 0.05 });
   },
+  klick() {
+    if (!bereit()) return;
+    ton(520, 0.04, { typ: 'triangle', laut: 0.1 });
+  },
   kauf() {
     if (!bereit()) return;
     ton(660, 0.06, { typ: 'triangle', laut: 0.14 });

@@ -1,18 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import {
-  GRUND, HAUFEN_GROESSE, NADEL_BEREICHE, NADELN, TECH, AESTE, MASCHINEN, FUNDE, PRODUKTE,
-  AUSSCHUSS_TIPPS, GESCHICHTE,
+  GRUND, LADUNGEN, NADEL_BEREICHE, NADELN, TECH, AESTE, MASCHINEN, PRODUKTE, GESCHICHTE, WERKZEUGE,
+  MISSIONEN, AUFTRAEGE, AUFTRAG_PAUSE, KREDIT_AUFSCHLAG,
 } from '../../heuhaufen/src/daten.js';
 import {
-  neuerStand, werte, tippen, verkaufen, tick, techKaufen, techKosten, techStatus, techStufe,
-  techLage, TECH_NACH_ID, TECH_SCHRITTE, TECH_STUFEN_GESAMT, abtragen, ausschussTippen, imAusschuss,
-  nadelnGefunden, alleNadeln, maschineKaufen, maschinenKosten, maschineAbbauen, maschineUmschalten,
-  fabrik, produktPreis, preisRoh, speichern, laden, offlineNachholen, neuerHaufen, detektor,
-  drohneKaufen, drohnenKosten, saugen, fundeVerkaufen, rest, griffMenge, taschePlatz, zufall,
-  GRUNDSTROM,
+  neuerStand, werte, stich, verkaufen, tick, techKaufen, techKosten, techStatus, techStufe,
+  techLage, TECH_NACH_ID, TECH_SCHRITTE, TECH_STUFEN_GESAMT, abtragen, nadelnGefunden, alleNadeln,
+  maschineKaufen, maschinenKosten, maschineAbbauen, maschineUmschalten, fabrik, produktPreis, preisRoh,
+  speichern, laden, offlineNachholen, detektor, drohneKaufen, drohnenKosten, saugen, rest, stichMenge,
+  taschePlatz, zufall, GRUNDSTROM, werkzeugWaehlen, werkzeugFrei, missionStand, auftrag, auftragAblehnen,
+  ladungBestellen, ladungPreis, ladungGroesse, NADEL_RUTSCH, saugerBlockiert, artenGefunden,
 } from '../../heuhaufen/src/engine.js';
+import { zahl, geld, dauer, prozent, halme } from '../../heuhaufen/src/format.js';
 
-/** Schaltet Techknoten samt Voraussetzungen frei, ohne zu bezahlen. */
+/** Schaltet Forschung samt Voraussetzungen frei, ohne zu bezahlen. */
 function freischalten(s, ...ids) {
   const setzen = (id) => {
     for (const b of TECH_NACH_ID[id].braucht) if (!s.tech[b]) setzen(b);
@@ -23,50 +24,77 @@ function freischalten(s, ...ids) {
 }
 
 describe('Daten', () => {
-  it('hat über 300 Upgrade-Stufen, wie das Vorbild', () => {
-    expect(TECH_STUFEN_GESAMT).toBeGreaterThanOrEqual(300);
+  it('hat über 350 Stufen im Forschungsbaum, wie das Vorbild', () => {
+    expect(TECH_STUFEN_GESAMT).toBeGreaterThanOrEqual(351);
   });
 
   it('kennt jede Voraussetzung und hat keine doppelten ids', () => {
     const ids = new Set();
     for (const t of TECH) {
-      expect(ids.has(t.id)).toBe(false);
+      expect(ids.has(t.id), t.id).toBe(false);
       ids.add(t.id);
       for (const b of t.braucht) expect(TECH_NACH_ID[b], `${t.id} braucht ${b}`).toBeDefined();
-      if (t.id !== 'scheune') expect(AESTE.some((a) => a.id === t.ast)).toBe(true);
+      if (t.id !== 'scheune') expect(AESTE.some((a) => a.id === t.ast), t.id).toBe(true);
     }
   });
 
-  it('kann jede Maschine irgendwo im Techtree freischalten', () => {
+  it('hat zehn Äste wie das Vorbild', () => {
+    expect(AESTE.map((a) => a.name)).toEqual([
+      'Handarbeit', 'Hofbau', 'Heulinien', 'Strom', 'Verarbeitung', 'Automatisierung', 'Wasser', 'Suche', 'Verkauf', 'Fitness',
+    ]);
+  });
+
+  it('lässt Upgrade-Gruppen ohne Nachfolger und mit gleichen Voraussetzungen', () => {
+    for (const t of TECH.filter((x) => x.gruppe)) {
+      expect(TECH.some((x) => x.braucht.includes(t.id)), `${t.id} hat Nachfolger`).toBe(false);
+      const geschwister = TECH.filter((x) => x.gruppe === t.gruppe && x.ast === t.ast);
+      for (const g of geschwister) expect(g.braucht, `${t.id} / ${g.id}`).toEqual(t.braucht);
+    }
+  });
+
+  it('kann jede Maschine und jedes Werkzeug freischalten', () => {
     const frei = new Set(TECH.flatMap((t) => t.effekt.filter((e) => e[0] === 'frei').map((e) => e[1])));
     for (const m of MASCHINEN) expect(frei.has(m.frei), m.id).toBe(true);
+    for (const w of WERKZEUGE) if (w.frei) expect(frei.has(w.frei), w.id).toBe(true);
   });
 
-  it('hat für jedes Produkt einen Preis und für jede Nadel eine Geschichte', () => {
-    for (const m of MASCHINEN) if (m.produkt) expect(PRODUKTE[m.produkt]).toBeDefined();
-    expect(GESCHICHTE.nadeln).toHaveLength(NADELN.length);
-    expect(NADEL_BEREICHE).toHaveLength(NADELN.length);
+  it('hat 24 Nadelarten, eine Geschichte je Nadel der ersten Ladung und passende Produkte', () => {
+    expect(NADELN).toHaveLength(24);
+    expect(GESCHICHTE.nadeln).toHaveLength(NADEL_BEREICHE.length);
+    for (const m of MASCHINEN) if (m.produkt) expect(PRODUKTE[m.produkt], m.id).toBeDefined();
+    for (const a of AUFTRAEGE) expect(PRODUKTE[a.will], a.will).toBeDefined();
   });
 
-  it('macht jede Verarbeitungsstufe pro Halm wertvoller als rohes Heu', () => {
+  it('macht jede Verarbeitungsstufe pro Halm wertvoller als loses Heu', () => {
     const w = werte(neuerStand(1));
-    const proHalm = { ballen: 20, pellet: 5, brei: 10, silage: 20, papier: 20, ziegel: 40 };
-    for (const [p, halme] of Object.entries(proHalm)) {
-      expect(produktPreis(w, p) / halme, p).toBeGreaterThan(preisRoh(w));
+    for (const [p, d] of Object.entries(PRODUKTE)) {
+      if (p === 'roh') continue;
+      expect(produktPreis(w, p) / d.halme, p).toBeGreaterThan(preisRoh(w));
+    }
+    // Der Wickler darf keine Falle sein: Wickelballen sind mehr wert als der Ballen, aus dem sie werden.
+    expect(produktPreis(w, 'silage')).toBeGreaterThan(produktPreis(w, 'ballen') * 1.5);
+  });
+
+  it('verlangt in jeder Mission etwas, das es gibt', () => {
+    for (const m of MISSIONEN) {
+      if (m.art === 'tech') expect(TECH_NACH_ID[m.ziel], m.text).toBeDefined();
+      if (m.art === 'maschine') expect(MASCHINEN.some((x) => x.id === m.ziel[0]), m.text).toBe(true);
+      if (m.art === 'produziert') expect(PRODUKTE[m.ziel[0]], m.text).toBeDefined();
+      if (m.art === 'werkzeug') expect(WERKZEUGE.some((x) => x.id === m.ziel), m.text).toBe(true);
     }
   });
 });
 
 describe('Neuer Stand', () => {
-  it('beginnt mit sechs Millionen Halmen und sechs versteckten Nadeln', () => {
+  it('beginnt mit rund sechs Millionen Halmen und sechs versteckten Nadeln der ersten Arten', () => {
     const s = neuerStand(42);
-    expect(s.haufen.gesamt).toBe(HAUFEN_GROESSE);
-    expect(rest(s)).toBe(HAUFEN_GROESSE);
-    expect(s.nadeln).toHaveLength(6);
+    expect(s.haufen.gesamt).toBe(LADUNGEN[0]);
+    expect(rest(s)).toBe(6_000_000);
+    expect(s.nadeln.map((n) => n.art)).toEqual([0, 1, 2, 3, 4, 5]);
     s.nadeln.forEach((n, i) => {
       const [von, bis] = NADEL_BEREICHE[i];
-      expect(n.tiefe).toBeGreaterThanOrEqual(Math.floor(HAUFEN_GROESSE * von));
-      expect(n.tiefe).toBeLessThanOrEqual(Math.ceil(HAUFEN_GROESSE * bis));
+      expect(n.tiefe).toBeGreaterThanOrEqual(Math.floor(s.haufen.gesamt * von));
+      expect(n.tiefe).toBeLessThanOrEqual(Math.ceil(s.haufen.gesamt * bis));
       expect(n.zustand).toBe('versteckt');
     });
   });
@@ -86,136 +114,195 @@ describe('Neuer Stand', () => {
   });
 });
 
-describe('Schaufeln und Verkaufen', () => {
-  it('nimmt pro Stich den Griff vom Haufen und legt ihn in die Tasche', () => {
+describe('Werkzeuge und Tragen', () => {
+  it('sticht mit dem Spaten den Griff heraus, legt ihn in die Tasche und verschüttet etwas', () => {
     const s = neuerStand(1);
-    const r = tippen(s);
+    const r = stich(s);
     expect(r.menge).toBe(GRUND.griff);
     expect(s.tasche).toBe(GRUND.griff);
-    expect(rest(s)).toBe(HAUFEN_GROESSE - GRUND.griff);
+    expect(s.boden).toBeCloseTo(GRUND.griff * GRUND.verschuetten);
+    expect(rest(s)).toBeCloseTo(6_000_000 - GRUND.griff * (1 + GRUND.verschuetten));
   });
 
-  it('hört auf, wenn die Tasche voll ist', () => {
+  it('holt mit der Heugabel mehr heraus und mit der Sandschaufel weniger, die aber ohne Puste', () => {
     const s = neuerStand(1);
-    for (let i = 0; i < 100; i++) tippen(s);
+    freischalten(s, 'heugabel', 'sandschaufel', 'eimer', 'schubkarre');
+    expect(werkzeugWaehlen(s, 'heugabel')).toBe(true);
+    expect(stich(s).menge).toBeCloseTo(GRUND.griff * GRUND.heugabel);
+    werkzeugWaehlen(s, 'sandschaufel');
+    const vorher = s.ausdauer;
+    expect(stich(s).menge).toBeCloseTo(GRUND.griff * GRUND.sandschaufel);
+    expect(s.ausdauer).toBe(vorher);
+  });
+
+  it('lässt gesperrte Werkzeuge nicht wählen', () => {
+    const s = neuerStand(1);
+    expect(werkzeugFrei(s, 'heugabel')).toBe(false);
+    expect(werkzeugWaehlen(s, 'heugabel')).toBe(false);
+    expect(s.werkzeug).toBe('spaten');
+    expect(werkzeugWaehlen(s, 'detektor')).toBe(true);
+    expect(stich(s).detektor).toBe(true);
+  });
+
+  it('wird ohne Ausdauer müde und erholt sich', () => {
+    const s = neuerStand(1);
+    freischalten(s, 'foerderband');
+    s.ausdauer = 0;
+    const r = stich(s);
+    expect(r.muede).toBe(true);
+    expect(r.menge).toBeCloseTo(GRUND.griff * GRUND.erschoepft);
+    tick(s, 100);
+    expect(s.ausdauer).toBe(GRUND.ausdauer);
+  });
+
+  it('fegt verschüttetes Heu mit dem Besen zurück', () => {
+    const s = neuerStand(1);
+    freischalten(s, 'besen', 'foerderband');
+    for (let i = 0; i < 50; i++) stich(s);
+    const boden = s.boden;
+    expect(boden).toBeGreaterThan(0);
+    werkzeugWaehlen(s, 'besen');
+    const r = stich(s);
+    expect(r.gefegt).toBe(true);
+    expect(s.boden).toBeCloseTo(Math.max(0, boden - GRUND.besen));
+    expect(s.stat.gefegt).toBeCloseTo(Math.min(boden, GRUND.besen));
+  });
+
+  it('hört auf, wenn die Tasche voll ist, und bezahlt erst am Stand', () => {
+    const s = neuerStand(1);
+    for (let i = 0; i < 100; i++) stich(s);
     expect(s.tasche).toBe(GRUND.tasche);
-    expect(tippen(s).voll).toBe(true);
-  });
-
-  it('bezahlt erst, wenn man am Ankauf angekommen ist', () => {
-    const s = neuerStand(1);
-    for (let i = 0; i < 5; i++) tippen(s);
+    expect(stich(s).voll).toBe(true);
     expect(verkaufen(s)).toBe(true);
-    expect(tippen(s)).toBeNull(); // unterwegs
+    expect(stich(s)).toBeNull();
+    s.mission = MISSIONEN.length; // sonst zahlen Missionen Kleinigkeiten dazwischen
     tick(s, GRUND.laufzeit / 2);
     expect(s.geld).toBe(0);
     const e = tick(s, GRUND.laufzeit);
     expect(e.some((x) => x.typ === 'verkauft')).toBe(true);
-    expect(s.geld).toBeCloseTo(10 * GRUND.preisRoh);
+    expect(s.geld).toBeGreaterThanOrEqual(GRUND.tasche * GRUND.preisRoh);
     expect(s.tasche).toBe(0);
   });
 
-  it('geht nicht mit leerer Tasche los', () => {
-    expect(verkaufen(neuerStand(1))).toBe(false);
+  it('verkauft mit Förderband sofort, ohne Tasche', () => {
+    const s = neuerStand(1);
+    freischalten(s, 'foerderband');
+    for (let i = 0; i < 20; i++) stich(s);
+    expect(s.tasche).toBe(0);
+    expect(s.geld).toBeCloseTo(20 * GRUND.griff * GRUND.preisRoh, 6);
   });
 
-  it('saugt mit dem Staubsauger, bis er überhitzt, und kühlt dann ab', () => {
+  it('saugt mit dem Hofsauger, überhitzt, kühlt ab — und heizt nicht, wenn er nichts zu tun hat', () => {
     const s = neuerStand(1);
-    freischalten(s, 'sauger');
-    s.tech.schuppen = 4; s.tech.tasche2 = 5; s.rev++;
+    freischalten(s, 'sauger', 'foerderband');
+    werkzeugWaehlen(s, 'sauger');
     saugen(s, true);
     let ueberhitzt = false;
     for (let t = 0; t < GRUND.saugerHitze + 1; t += 0.1) {
       if (tick(s, 0.1).some((e) => e.typ === 'ueberhitzt')) ueberhitzt = true;
     }
     expect(ueberhitzt).toBe(true);
-    expect(s.sauger.heiss).toBe(true);
-    expect(s.tasche).toBeGreaterThan(GRUND.saugerRate * (GRUND.saugerHitze - 0.5));
-    saugen(s, true);
-    expect(s.sauger.an).toBe(false); // zu heiß
+    expect(saugerBlockiert(s)).toBe('heiss');
     for (let t = 0; t < GRUND.saugerHitze; t += 0.1) tick(s, 0.1);
     expect(s.sauger.heiss).toBe(false);
+    s.haufen.entfernt = s.haufen.gesamt;
+    saugen(s, true);
+    tick(s, 1);
+    expect(s.sauger.hitze).toBe(0);
   });
 });
 
-describe('Techtree', () => {
-  it('kostet, was dransteht, und wird mit jeder Stufe teurer', () => {
+describe('Forschung', () => {
+  it('kostet, was dransteht, und wird mit jeder Stufe teurer — ohne Rundungsrauschen', () => {
     const s = neuerStand(1);
-    s.geld = 100;
-    const vorher = techKosten(s, 'griff1');
-    expect(techKaufen(s, 'griff1').ok).toBe(true);
-    expect(s.geld).toBeCloseTo(100 - vorher);
-    expect(techKosten(s, 'griff1')).toBeGreaterThan(vorher);
-    expect(griffMenge(werte(s))).toBe(GRUND.griff + 1);
+    s.geld = 1000;
+    const vorher = techKosten(s, 'kraft');
+    expect(techKaufen(s, 'kraft').ok).toBe(true);
+    expect(s.geld).toBeCloseTo(1000 - vorher);
+    expect(techKosten(s, 'kraft')).toBe(1.7);
+    expect(stichMenge(werte(s), 'spaten')).toBe(GRUND.griff + 1);
+    for (const t of TECH) {
+      for (let n = 0; n < t.stufen; n++) {
+        const ideal = t.kosten * Math.pow(t.faktor, n);
+        const s2 = neuerStand(1);
+        s2.tech[t.id] = n;
+        const k = techKosten(s2, t.id);
+        expect(k - ideal, `${t.id} Stufe ${n}`).toBeLessThan(ideal < 100 ? 0.1 + 1e-9 : 1);
+        expect(k).toBeGreaterThanOrEqual(ideal - 1e-6);
+      }
+    }
   });
 
-  it('verlangt die Voraussetzungen', () => {
+  it('verlangt die Voraussetzungen und endet bei der letzten Stufe', () => {
     const s = neuerStand(1);
     s.geld = 1e9;
-    expect(techStatus(s, 'griff2')).toBe('gesperrt');
-    expect(techKaufen(s, 'griff2').ok).toBe(false);
-    techKaufen(s, 'griff1');
-    expect(techKaufen(s, 'griff2').ok).toBe(true);
+    expect(techStatus(s, 'mulde')).toBe('gesperrt');
+    expect(techKaufen(s, 'mulde').ok).toBe(false);
+    for (let i = 0; i < 10; i++) techKaufen(s, 'kraft');
+    expect(techStufe(s, 'kraft')).toBe(TECH_NACH_ID.kraft.stufen);
+    expect(techStatus(s, 'kraft')).toBe('max');
+    expect(techKaufen(s, 'gibtsnicht').ok).toBe(false);
   });
 
-  it('endet bei der letzten Stufe', () => {
-    const s = neuerStand(1);
-    s.geld = 1e9;
-    for (let i = 0; i < 10; i++) techKaufen(s, 'griff1');
-    expect(techStufe(s, 'griff1')).toBe(TECH_NACH_ID.griff1.stufen);
-    expect(techStatus(s, 'griff1')).toBe('max');
-  });
-
-  it('verrechnet Werkzeuge mit dem Griff', () => {
-    const s = neuerStand(1);
-    freischalten(s, 'heugabel');
-    expect(griffMenge(werte(s))).toBeCloseTo(GRUND.griff * 1.5);
-    s.tech.eimer = 1; s.rev++;
-    expect(taschePlatz(werte(s))).toBe(GRUND.tasche + 25);
-  });
-
-  it('legt alle Karten überschneidungsfrei nach Schritten vom Start', () => {
-    const { lage } = techLage(AESTE);
-    const belegt = new Set();
+  it('legt Karten und Gruppen überschneidungsfrei nach Schritten vom Start', () => {
+    const { lage, gruppen } = techLage(AESTE);
+    const kaesten = [];
     for (const t of TECH) {
       const l = lage[t.id];
       expect(l, t.id).toBeDefined();
-      expect(l.x).toBe(TECH_SCHRITTE[t.id]);
-      const key = `${l.x}:${l.y}`;
-      expect(belegt.has(key), `${t.id} liegt auf ${key}`).toBe(false);
-      belegt.add(key);
-      for (const b of t.braucht) expect(lage[b].x).toBeLessThan(l.x);
+      if (!t.gruppe) expect(l.x).toBe(TECH_SCHRITTE[t.id]);
+      for (const b of t.braucht) expect(lage[b].x, `${b} → ${t.id}`).toBeLessThan(l.x);
+      kaesten.push({ id: t.id, x: l.x, y: l.y, h: l.h });
+    }
+    for (const g of gruppen) kaesten.push({ id: `Gruppe ${g.name}`, x: g.x, y: g.y, h: 0.36 });
+    for (let i = 0; i < kaesten.length; i++) {
+      for (let j = i + 1; j < kaesten.length; j++) {
+        const a = kaesten[i];
+        const b = kaesten[j];
+        if (a.x !== b.x) continue;
+        const ueber = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+        expect(ueber, `${a.id} und ${b.id}`).toBeLessThan(0.01);
+      }
     }
   });
 });
 
 describe('Nadeln', () => {
-  it('findet eine Nadel sofort, wenn man sie mit der Hand erwischt', () => {
+  it('findet eine Nadel sofort, wenn man sie mit der Hand erwischt, und merkt sich die Art', () => {
     const s = neuerStand(5);
     const e = [];
     abtragen(s, s.nadeln[0].tiefe, 'hand', e);
-    expect(e.some((x) => x.typ === 'nadel' && x.i === 0)).toBe(true);
-    expect(nadelnGefunden(s)).toBe(1);
+    const n = e.find((x) => x.typ === 'nadel');
+    expect(n).toMatchObject({ i: 0, art: 0, nr: 1, alle: false, neu: true });
+    expect(artenGefunden(s)).toBe(1);
+    expect(werte(s).griff).toBeCloseTo(GRUND.griff * 1.01);
   });
 
-  it('verliert sie ohne Scanner in den Ausschuss und findet sie dort nach genug Griffen', () => {
+  it('zählt bei mehreren Nadeln in einem Rutsch richtig hoch', () => {
     const s = neuerStand(5);
     const e = [];
-    abtragen(s, s.nadeln[0].tiefe, 'maschine', e, 0);
-    expect(imAusschuss(s)).toBe(1);
-    expect(nadelnGefunden(s)).toBe(0);
-    for (let i = 0; i < AUSSCHUSS_TIPPS - 1; i++) ausschussTippen(s);
-    expect(nadelnGefunden(s)).toBe(0);
-    ausschussTippen(s);
-    expect(nadelnGefunden(s)).toBe(1);
-    expect(imAusschuss(s)).toBe(0);
+    abtragen(s, s.haufen.gesamt, 'hand', e);
+    const nr = e.filter((x) => x.typ === 'nadel').map((x) => x.nr);
+    expect(nr).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(e.filter((x) => x.typ === 'nadel' && x.alle)).toHaveLength(1);
   });
 
-  it('gibt jeder gefundenen Nadel ihren winzigen Bonus', () => {
+  it('lässt ungescannte Nadeln zurück in den Haufen fallen, aber nicht bis ganz nach unten', () => {
     const s = neuerStand(5);
-    const vorher = werte(s).griff;
-    abtragen(s, s.nadeln[0].tiefe, 'hand');
-    expect(werte(s).griff).toBeCloseTo(vorher * 1.01);
+    const e = [];
+    const alt = s.nadeln[0].tiefe;
+    abtragen(s, alt, 'maschine', e, 0);
+    expect(e.some((x) => x.typ === 'zurueck')).toBe(true);
+    expect(nadelnGefunden(s)).toBe(0);
+    expect(s.nadeln[0].tiefe).toBeGreaterThan(s.haufen.entfernt);
+    expect(s.nadeln[0].tiefe).toBeLessThanOrEqual(s.haufen.entfernt + s.haufen.gesamt * NADEL_RUTSCH + 1);
+  });
+
+  it('findet am Ende jede Nadel, auch ohne Scanner', () => {
+    const s = neuerStand(9);
+    for (let i = 0; i < 1000 && !alleNadeln(s); i++) abtragen(s, s.haufen.gesamt / 200, 'maschine', [], 0);
+    expect(alleNadeln(s)).toBe(true);
+    expect(rest(s)).toBeLessThanOrEqual(1);
   });
 
   it('piepst lauter, je näher die nächste Nadel ist', () => {
@@ -229,31 +316,18 @@ describe('Nadeln', () => {
     expect(detektor(s).stufe).toBe('warm');
     abtragen(s, GRUND.detektor * 0.45, 'hand');
     expect(detektor(s).stufe).toBe('heiss');
-    expect(detektor(s).abstand).toBeCloseTo(GRUND.detektor * 0.05);
-  });
-
-  it('findet Fundstücke und verkauft sie', () => {
-    const s = neuerStand(9);
-    const e = [];
-    abtragen(s, 200000, 'hand', e);
-    const funde = e.filter((x) => x.typ === 'fund');
-    expect(funde.length).toBeGreaterThan(20);
-    for (const f of funde) expect(FUNDE.some((x) => x.id === f.id)).toBe(true);
-    const betrag = fundeVerkaufen(s);
-    expect(betrag).toBeGreaterThan(0);
-    expect(fundeVerkaufen(s)).toBe(0);
   });
 });
 
 describe('Halle', () => {
   const halle = () => {
     const s = neuerStand(11);
-    freischalten(s, 'automatisierung');
+    freischalten(s, 'greifarm', 'kolbenrechen', 'elektrizitaet');
     s.geld = 1e9;
     return s;
   };
 
-  it('kauft Greifarme, bis die Stellplätze voll sind', () => {
+  it('kauft Greifarme, bis die Stellplätze voll sind, und baut wieder ab', () => {
     const s = halle();
     const erster = maschinenKosten(s, 'arm');
     expect(maschineKaufen(s, 'arm').ok).toBe(true);
@@ -271,34 +345,36 @@ describe('Halle', () => {
     const f = fabrik(s);
     expect(f.bedarf).toBe(20);
     expect(f.strom).toBeCloseTo(GRUNDSTROM / 20);
-    expect(f.foerderung).toBeCloseTo(10 * 8 * f.strom);
+  });
+
+  it('rechnet Strom und Brennstoff im Gleichgewicht: die Generatoren liefern, was sie verbrennen', () => {
+    const s = halle();
+    freischalten(s, 'presse');
+    s.tech.lange_halle = 8; s.tech.schuppen = 6; s.rev++;
+    for (let i = 0; i < 5; i++) maschineKaufen(s, 'arm');
+    for (let i = 0; i < 15; i++) maschineKaufen(s, 'generator');
+    for (let i = 0; i < 40; i++) maschineKaufen(s, 'presse');
+    const f = fabrik(s);
+    const w = werte(s);
+    const erwartet = 5 + 15 * 15 * w.generatorMul * w.stromMul * Math.min(1, f.fluss / f.brennBedarf);
+    expect(f.erzeugt).toBeCloseTo(erwartet, 3);
+    expect(f.strom).toBeCloseTo(Math.min(1, f.erzeugt / f.bedarf), 6);
   });
 
   it('lässt nicht mehr durch, als das Band trägt', () => {
     const s = halle();
-    freischalten(s, 'stromnetz');
-    for (let i = 0; i < 15; i++) maschineKaufen(s, 'arm');
-    for (let i = 0; i < 5; i++) maschineKaufen(s, 'generator');
+    for (let i = 0; i < 6; i++) maschineKaufen(s, 'arm');
+    for (let i = 0; i < 3; i++) maschineKaufen(s, 'generator');
     const f = fabrik(s);
     expect(f.strom).toBe(1);
     expect(f.foerderung).toBeGreaterThan(GRUND.band);
     expect(f.fluss).toBe(GRUND.band);
-    expect(f.brennstoff).toBe(10); // fünf Generatoren essen mit
-  });
-
-  it('verliert ohne Scanner Nadeln, mit genug Scannern keine', () => {
-    const s = halle();
-    freischalten(s, 'scanner');
-    maschineKaufen(s, 'arm');
-    expect(fabrik(s).deckung).toBe(0);
-    maschineKaufen(s, 'scanner');
-    expect(fabrik(s).deckung).toBe(1);
   });
 
   it('verdient mit Pressballen mehr als mit losem Heu', () => {
     const s = halle();
-    freischalten(s, 'presse', 'stromnetz');
-    for (let i = 0; i < 5; i++) maschineKaufen(s, 'arm');
+    freischalten(s, 'presse');
+    for (let i = 0; i < 2; i++) maschineKaufen(s, 'arm');
     for (let i = 0; i < 3; i++) maschineKaufen(s, 'generator');
     const ohne = fabrik(s).einnahmen;
     maschineKaufen(s, 'presse');
@@ -309,6 +385,17 @@ describe('Halle', () => {
     expect(fabrik(s).einnahmen).toBeCloseTo(ohne);
   });
 
+  it('braucht Wasser für den Pulper', () => {
+    const s = halle();
+    freischalten(s, 'pulper');
+    for (let i = 0; i < 3; i++) maschineKaufen(s, 'arm');
+    for (let i = 0; i < 4; i++) maschineKaufen(s, 'generator');
+    maschineKaufen(s, 'pulper');
+    expect(fabrik(s).produkte.brei || 0).toBe(0);
+    maschineKaufen(s, 'brunnen');
+    expect(fabrik(s).produkte.brei).toBeGreaterThan(0);
+  });
+
   it('zahlt pro Sekunde, was die Halle verspricht', () => {
     const s = halle();
     for (let i = 0; i < 2; i++) maschineKaufen(s, 'arm');
@@ -316,7 +403,6 @@ describe('Halle', () => {
     const f = fabrik(s);
     tick(s, 10);
     expect(s.geld).toBeCloseTo(f.einnahmen * 10, 5);
-    expect(s.haufen.entfernt).toBeCloseTo(f.fluss * 10, 5);
   });
 
   it('lässt Drohnen nur bis zur Obergrenze kaufen', () => {
@@ -326,66 +412,188 @@ describe('Halle', () => {
     freischalten(s, 'drohne');
     for (let i = 0; i < 3; i++) expect(drohneKaufen(s).ok).toBe(true);
     expect(drohneKaufen(s).grund).toBe('voll');
-    expect(drohnenKosten(s)).toBeGreaterThan(250);
+    expect(drohnenKosten(s)).toBeGreaterThan(55);
   });
 });
 
-describe('Speichern, Abwesenheit, neuer Haufen', () => {
+describe('Aufträge und Missionen', () => {
+  it('beliefert den Laster zuerst und zahlt den Lohn', () => {
+    const s = neuerStand(3);
+    freischalten(s, 'auftraege', 'kolbenrechen');
+    s.maschinen.rechen = 4;
+    const au = auftrag(0);
+    expect(au.will).toBe('roh');
+    let bezahlt = null;
+    for (let i = 0; i < 400 && !bezahlt; i++) bezahlt = tick(s, 1).find((e) => e.typ === 'auftrag');
+    expect(bezahlt.lohn).toBeCloseTo(au.lohn);
+    expect(s.auftrag.nr).toBe(1);
+    expect(s.auftrag.pause).toBe(AUFTRAG_PAUSE);
+  });
+
+  it('lässt Aufträge ablehnen und erfindet nach der Liste neue', () => {
+    const s = neuerStand(3);
+    freischalten(s, 'auftraege');
+    expect(auftragAblehnen(s)).toBe(true);
+    expect(auftragAblehnen(s)).toBe(false); // Pause
+    const spaet = auftrag(AUFTRAEGE.length + 3);
+    expect(spaet.menge).toBeGreaterThan(0);
+    expect(spaet.lohn).toBeGreaterThan(spaet.menge * PRODUKTE[spaet.will].wert);
+  });
+
+  it('arbeitet das Missionsbuch der Reihe nach ab und verschenkt Maschinen', () => {
+    const s = neuerStand(3);
+    expect(missionStand(s).m.text).toBe(MISSIONEN[0].text);
+    stich(s);
+    const e = tick(s, 0.1);
+    expect(e.some((x) => x.typ === 'mission')).toBe(true);
+    expect(s.mission).toBe(1);
+    s.mission = MISSIONEN.findIndex((m) => m.geschenk === 'rechen');
+    freischalten(s, 'foerderband');
+    tick(s, 0.1);
+    expect(s.maschinen.rechen).toBe(1);
+  });
+});
+
+describe('Ladungen und Schulden', () => {
+  const fertig = () => {
+    const s = neuerStand(4);
+    abtragen(s, s.haufen.gesamt * 0.995, 'hand');
+    expect(alleNadeln(s)).toBe(true);
+    return s;
+  };
+
+  it('bestellt die nächste Ladung erst, wenn alle Nadeln gefunden sind', () => {
+    const s = neuerStand(4);
+    s.geld = 1e9;
+    expect(ladungBestellen(s).ok).toBe(false);
+    const f = fertig();
+    f.geld = ladungPreis(f);
+    freischalten(f, 'greifarm');
+    f.maschinen.arm = 3;
+    expect(ladungBestellen(f).ok).toBe(true);
+    expect(f.ladung).toBe(2);
+    expect(f.haufen.gesamt).toBe(ladungGroesse(2));
+    expect(f.nadeln.map((n) => n.art)).toEqual([6, 7, 8, 9, 10, 11]);
+    expect(f.maschinen.arm).toBe(3);
+    expect(f.geld).toBe(0);
+  });
+
+  it('bestellt auf Rechnung auch ohne Geld und tilgt aus den Einnahmen', () => {
+    const s = fertig();
+    s.geld = 1000;
+    expect(ladungBestellen(s).ok).toBe(false);
+    expect(ladungBestellen(s, { aufRechnung: true }).ok).toBe(true);
+    const schulden = s.schulden;
+    expect(schulden).toBeCloseTo((ladungPreis({ ladung: 1 }) - 1000) * KREDIT_AUFSCHLAG);
+    freischalten(s, 'foerderband');
+    s.ausdauer = 1e9;
+    for (let i = 0; i < 100; i++) stich(s);
+    expect(s.schulden).toBeLessThan(schulden);
+    expect(s.geld).toBeGreaterThan(0);
+  });
+
+  it('hat nach 24 Arten weiter gemischte Nadeln', () => {
+    const s = neuerStand(4);
+    for (let l = 1; l <= 5; l++) {
+      abtragen(s, s.haufen.gesamt, 'hand');
+      ladungBestellen(s, { aufRechnung: true });
+    }
+    expect(s.ladung).toBe(6);
+    expect(new Set(s.nadeln.map((n) => n.art)).size).toBe(6);
+    expect(artenGefunden(s)).toBe(24);
+  });
+});
+
+describe('Speichern und Abwesenheit', () => {
   it('überlebt Speichern und Laden', () => {
     const s = neuerStand(3);
     s.geld = 123.5;
     freischalten(s, 'heugabel');
-    for (let i = 0; i < 4; i++) tippen(s);
+    werkzeugWaehlen(s, 'heugabel');
+    for (let i = 0; i < 3; i++) stich(s);
     const zurueck = laden(speichern(s));
     expect(zurueck.geld).toBe(123.5);
     expect(zurueck.tasche).toBe(s.tasche);
+    expect(zurueck.werkzeug).toBe('heugabel');
     expect(zurueck.nadeln).toEqual(s.nadeln);
-    expect(griffMenge(werte(zurueck))).toBe(griffMenge(werte(s)));
+    expect(stichMenge(werte(zurueck), 'heugabel')).toBe(stichMenge(werte(s), 'heugabel'));
   });
 
-  it('weist Unsinn zurück', () => {
+  it('weist kaputte Stände zurück und repariert Kleinigkeiten', () => {
     expect(laden('kein json')).toBeNull();
     expect(laden('{"version": 99}')).toBeNull();
     expect(laden('null')).toBeNull();
+    const s = JSON.parse(speichern(neuerStand(3)));
+    expect(laden(JSON.stringify({ ...s, haufen: null }))).toBeNull();
+    expect(laden(JSON.stringify({ ...s, nadeln: [null, 1, 2, 3, 4, 5] }))).toBeNull();
+    const repariert = laden(JSON.stringify({
+      ...s, geld: '12', tech: [], stat: null, sauger: { an: true, hitze: 0.2 }, maschinen: { weg: 3, arm: 2 },
+      arten: { 99: 1, 0: 1 }, werkzeug: 'hammer',
+    }));
+    expect(repariert.geld).toBe(0);
+    expect(repariert.tech.scheune).toBe(1);
+    expect(repariert.sauger.an).toBe(false);
+    expect(repariert.maschinen).toEqual({ arm: 2 });
+    expect(repariert.arten).toEqual({ 0: 1 });
+    expect(repariert.werkzeug).toBe('spaten');
+    expect(() => { werte(repariert); tick(repariert, 1); techStatus(repariert, 'kraft'); }).not.toThrow();
   });
 
-  it('lässt die Halle während der Abwesenheit mit halber Kraft weiterlaufen', () => {
+  it('lässt den Laufweg bei kurzer Abwesenheit weiterlaufen statt ihn zu überspringen', () => {
     const s = neuerStand(3);
-    freischalten(s, 'automatisierung');
-    s.geld = 1e6;
-    maschineKaufen(s, 'arm');
+    s.tasche = 20;
+    verkaufen(s);
+    s.zuletzt = 1000;
+    offlineNachholen(s, 1100);
+    expect(s.laufen).toBeCloseTo(GRUND.laufzeit - 0.1);
+    expect(s.geld).toBe(0);
+    offlineNachholen(s, 10000);
+    expect(s.laufen).toBe(0);
+    expect(s.geld).toBeGreaterThan(0);
+  });
+
+  it('lässt die Halle während der Abwesenheit mit halber Kraft weiterlaufen, begrenzt auf die Nachtschicht', () => {
+    const s = neuerStand(3);
+    freischalten(s, 'kolbenrechen');
+    s.maschinen.rechen = 2;
     s.geld = 0;
     const f = fabrik(s);
     s.zuletzt = 0;
     const bericht = offlineNachholen(s, 3600 * 1000);
     expect(bericht.sekunden).toBe(3600);
     expect(bericht.geld).toBeCloseTo(f.einnahmen * 3600 * GRUND.offlineEff, 3);
-  });
-
-  it('begrenzt die Abwesenheit auf die Nachtschicht', () => {
-    const s = neuerStand(3);
-    freischalten(s, 'automatisierung');
     s.zuletzt = 0;
     expect(offlineNachholen(s, 48 * 3600 * 1000).sekunden).toBe(GRUND.offlineStunden * 3600);
   });
 
-  it('erzählt nichts, wenn nichts läuft', () => {
+  it('zählt keine Zeit, wenn die Uhr zurückgestellt wurde, und erzählt nichts, wenn nichts läuft', () => {
     const s = neuerStand(3);
+    s.zuletzt = 5000;
+    expect(offlineNachholen(s, 1000)).toBeNull();
     s.zuletzt = 0;
     expect(offlineNachholen(s, 3600 * 1000)).toBeNull();
   });
 
-  it('beginnt nach sechs Nadeln einen größeren Haufen mit Bonus und behält das Album', () => {
-    const s = neuerStand(4);
-    expect(neuerHaufen(s)).toBeNull();
-    abtragen(s, s.haufen.gesamt, 'hand');
-    expect(alleNadeln(s)).toBe(true);
-    const neu = neuerHaufen(s);
-    expect(neu.haufen.gesamt).toBe(HAUFEN_GROESSE * 1.5);
-    expect(neu.erledigt).toBe(1);
-    expect(neu.geld).toBe(0);
-    expect(nadelnGefunden(neu)).toBe(0);
-    expect(Object.keys(neu.funde).length).toBe(Object.keys(s.funde).length);
-    expect(werte(neu).preisAlle).toBeGreaterThan(werte(neuerStand(4)).preisAlle);
+  it('bleibt bei unsinnigen Zeitschritten stabil', () => {
+    const s = neuerStand(3);
+    for (const dt of [0, -1, NaN, Infinity]) tick(s, dt);
+    expect(s.zeit).toBe(0);
+    tick(s, 1e7);
+    expect(Number.isFinite(s.geld)).toBe(true);
+  });
+});
+
+describe('Zahlen', () => {
+  it('schreibt deutsch, kürzt große Zahlen und bricht nicht zwischen Zahl und Einheit um', () => {
+    expect(zahl(1234567)).toBe('1,23 Mio.');
+    expect(zahl(9.999e6)).toBe('10,0 Mio.');
+    expect(zahl(999.9e6)).toBe('1,00 Mrd.');
+    expect(zahl(-0.4)).toBe('0');
+    expect(zahl(1e300).length).toBeLessThan(14);
+    expect(geld(2.5)).toBe('2,50 $');
+    expect(geld(-0)).toBe('0,00 $');
+    expect(dauer(NaN)).toBe('0 s');
+    expect(prozent(NaN)).toBe('0 %');
+    expect(halme(5999999.7)).toBe('5.999.999');
   });
 });

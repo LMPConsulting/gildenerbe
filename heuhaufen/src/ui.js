@@ -1,43 +1,47 @@
-// Die Oberfläche: vier Reiter (Haufen, Halle, Forschung, Funde), ein Menü und
+// Die Oberfläche: vier Reiter (Haufen, Halle, Forschung, Nadeln), ein Menü und
 // ein paar Einblendungen. Die Engine rechnet, hier wird nur gezeichnet,
 // angetippt und gespeichert.
 
 import {
-  AESTE, TECH, MASCHINEN, FUNDE, SELTENHEIT, NADELN, GESCHICHTE, PRODUKTE, SAMMELBONUS,
-  AUSSCHUSS_TIPPS,
+  AESTE, TECH, MASCHINEN, NADELN, GESCHICHTE, PRODUKTE, WERKZEUGE, MISSIONEN,
 } from './daten.js';
 import {
-  neuerStand, werte, tick, tippen, verkaufen, saugen, techKaufen, techKosten, techStatus, techStufe,
-  techOffen, techLage, techGekauft, TECH_NACH_ID, TECH_STUFEN_GESAMT, MASCHINE_NACH_ID, FUND_NACH_ID,
+  neuerStand, werte, tick, stich, verkaufen, saugen, saugerBlockiert, techKaufen, techKosten,
+  techStatus, techStufe, techLage, techGekauft, TECH_NACH_ID, TECH_STUFEN_GESAMT, BAUM_MASS,
   maschineFrei, maschinenKosten, maschineKaufen, maschineAbbauen, maschineUmschalten, plaetzeBelegt,
-  anzahl, fabrik, drohneKaufen, drohnenKosten, ausschussTippen, imAusschuss, nadelnGefunden,
-  alleNadeln, fundeVerkaufen, fundWert, fundPreis, fundArten, detektor, rest, griffMenge, taschePlatz,
-  preisRoh, produktPreis, speichern, laden, offlineNachholen, neuerHaufen,
+  platzFrei, anzahl, fabrik, drohneKaufen, drohnenKosten, nadelnGefunden, alleNadeln, artenGefunden,
+  detektor, rest, stichMenge, taschePlatz, preisRoh, produktPreis, hatBand, speichern, laden,
+  offlineNachholen, werkzeugWaehlen, werkzeugFrei, missionStand, auftrag, auftragLohn,
+  auftragAblehnen, ladungMoeglich, ladungBestellen, ladungPreis, ladungGroesse, kreditAufschlag,
+  NADELN_JE_LADUNG,
 } from './engine.js';
-import { zahl, halme, geld, rate, prozent, dauer } from './format.js';
+import { zahl, halme, geld, rate, prozent, prozentAb, dauer } from './format.js';
 import { klang, klangWecken, klangStumm, saugerAn, saugerAus, saugerHitze } from './klang.js';
-import { SYM, MASCHINEN_SYM, FUND_SYM } from './symbole.js';
+import { SYM, WERKZEUG_SYM, MASCHINEN_SYM } from './symbole.js';
 import { haufenSzene, halleSzene } from './szene.js';
 
-const SPEICHER_KEY = 'heuhaufen-stand-v1';
+const SPEICHER_KEY = 'heuhaufen-stand-v2';
 const TON_KEY = 'heuhaufen-ton';
 const AST_NACH_ID = Object.fromEntries(AESTE.map((a) => [a.id, a]));
-const SELTEN_NACH_ID = Object.fromEntries(SELTENHEIT.map((r, i) => [r.id, { ...r, rang: i }]));
 const BAUM = techLage(AESTE);
+const GRUPPEN_FARBE = {
+  foerderung: '#e8783a', suche: '#b58be8', strom: '#e8c547', wasser: '#5aa7e0', verarbeitung: '#5fc4b0',
+};
 
 let stand = null;
 const ui = {
   reiter: 'haufen',
-  wahl: null,          // Techknoten im Detailblatt
+  wahl: null,
   suche: '',
-  laufGesamt: 1,
+  zoom: false,
   naechsterPiep: 0,
   blink: 0,
   baumScroll: null,
-  bildschirm: null,    // { aktualisieren, zeichnen, weg }
+  bildschirm: null,
   gespeichert: 0,
   saugerLaeuft: false,
-  endeOffen: false,
+  endeGezeigt: 0,
+  passiv: false,
 };
 
 /* ------------------------------------------------------------ Helfer */
@@ -49,8 +53,12 @@ function h(tag, attrs = {}, ...kinder) {
     if (k === 'class') e.className = v;
     else if (k === 'html') e.innerHTML = v;
     else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
-    else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
-    else e.setAttribute(k, v === true ? '' : v);
+    else if (k === 'style' && typeof v === 'object') {
+      for (const [p, x] of Object.entries(v)) {
+        if (p.startsWith('--')) e.style.setProperty(p, x);
+        else e.style[p] = x;
+      }
+    } else e.setAttribute(k, v === true ? '' : v);
   }
   for (const kind of kinder.flat()) {
     if (kind == null || kind === false) continue;
@@ -70,13 +78,21 @@ function schalte(e, klasse, an) {
 }
 
 function summen(ms) {
-  try { if (navigator.vibrate) navigator.vibrate(ms); } catch { /* egal */ }
+  try {
+    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
+    if (navigator.vibrate) navigator.vibrate(ms);
+  } catch { /* egal */ }
 }
+
+const preisSchild = (w) => {
+  const p = preisRoh(w);
+  return p < 1 ? `${p.toFixed(4).replace('.', ',')} $` : geld(p);
+};
 
 /* ------------------------------------------------------------ Speichern */
 
 function sichern() {
-  if (!stand) return;
+  if (!stand || ui.passiv) return;
   try { localStorage.setItem(SPEICHER_KEY, speichern(stand)); } catch { /* privater Modus */ }
   ui.gespeichert = performance.now();
 }
@@ -84,10 +100,11 @@ function sichern() {
 function einlesen() {
   try {
     const roh = localStorage.getItem(SPEICHER_KEY);
-    return roh ? laden(roh) : null;
-  } catch {
-    return null;
-  }
+    if (roh) return laden(roh);
+  } catch { /* kein Speicher */ }
+  // Eine mitgenommene Datei bringt ihren Spielstand selbst mit.
+  if (typeof HEUHAUFEN_MITGEBRACHT === 'string') return laden(HEUHAUFEN_MITGEBRACHT);
+  return null;
 }
 
 /* ------------------------------------------------------------ Gerüst */
@@ -98,18 +115,22 @@ function geruest() {
   const app = document.getElementById('app');
   app.innerHTML = '';
   el.geld = h('span', { class: 'num' });
+  el.schulden = h('small', { class: 'schulden num' });
   el.halme = h('span', { class: 'num' });
-  el.nadeln = h('div', { class: 'nadelreihe' }, NADELN.map(() => h('span', { class: 'nadelmarke', html: SYM.nadel })));
+  el.ladung = h('small', {});
+  el.nadeln = h('div', { class: 'nadelreihe', 'aria-label': 'Nadeln dieser Ladung' },
+    Array.from({ length: NADELN_JE_LADUNG }, () => h('span', { class: 'nadelmarke', html: SYM.nadel })));
+  el.nadelZahl = h('span', { class: 'nadelzahl num' });
   el.kopf = h('header', { class: 'kopf' },
-    h('div', { class: 'kasse' }, sym(SYM.geld), el.geld),
-    h('div', { class: 'zaehler' }, el.halme, h('small', {}, 'Halme übrig')),
-    el.nadeln,
+    h('div', { class: 'kasse' }, sym(SYM.geld), h('div', { class: 'kassetext' }, el.geld, el.schulden)),
+    h('div', { class: 'zaehler' }, el.halme, el.ladung),
+    h('div', { class: 'nadelblock' }, el.nadeln, el.nadelZahl),
     h('button', { class: 'rund', 'aria-label': 'Menü', onclick: menue }, sym(SYM.menue)));
   el.buehne = h('main', { class: 'buehne' });
   el.reiter = {};
   const reiter = [
     ['haufen', 'Haufen', SYM.haufen], ['halle', 'Halle', SYM.halle],
-    ['forschung', 'Forschung', SYM.forschung], ['funde', 'Funde', SYM.funde],
+    ['forschung', 'Forschung', SYM.forschung], ['nadeln', 'Nadeln', SYM.nadeln],
   ];
   el.nav = h('nav', { class: 'reiter' }, reiter.map(([id, name, s]) => {
     const marke = h('span', { class: 'marke' });
@@ -127,249 +148,267 @@ function wechseln(id) {
   if (ui.bildschirm && ui.bildschirm.weg) ui.bildschirm.weg();
   ui.reiter = id;
   el.buehne.innerHTML = '';
-  ui.bildschirm = { haufen: bildHaufen, halle: bildHalle, forschung: bildForschung, funde: bildFunde }[id]();
-  for (const [k, r] of Object.entries(el.reiter)) schalte(r.knopf, 'aktiv', k === id);
+  ui.bildschirm = { haufen: bildHaufen, halle: bildHalle, forschung: bildForschung, nadeln: bildNadeln }[id]();
+  for (const [k, r] of Object.entries(el.reiter)) {
+    schalte(r.knopf, 'aktiv', k === id);
+    if (k === id) r.knopf.setAttribute('aria-current', 'page'); else r.knopf.removeAttribute('aria-current');
+  }
   kopfAktualisieren();
 }
 
 function kopfAktualisieren() {
   setzeText(el.geld, geld(stand.geld));
+  setzeText(el.schulden, stand.schulden > 0 ? `Schulden ${geld(stand.schulden)}` : '');
   setzeText(el.halme, halme(rest(stand)));
+  setzeText(el.ladung, `Halme · Ladung ${stand.ladung}`);
   stand.nadeln.forEach((n, i) => {
     const m = el.nadeln.children[i];
     schalte(m, 'gefunden', n.zustand === 'gefunden');
-    schalte(m, 'ausschuss', n.zustand === 'ausschuss');
+    schalte(m, 'gold', n.zustand === 'gefunden' && i === NADELN_JE_LADUNG - 1);
   });
+  setzeText(el.nadelZahl, `${nadelnGefunden(stand)}/${NADELN_JE_LADUNG}`);
   const kaufbar = TECH.filter((t) => techStatus(stand, t.id) === 'kaufbar').length;
   setzeText(el.reiter.forschung.marke, kaufbar ? String(kaufbar) : '');
   schalte(el.reiter.forschung.marke, 'sichtbar', kaufbar > 0);
-  const aus = imAusschuss(stand);
-  setzeText(el.reiter.funde.marke, aus ? '!' : '');
-  schalte(el.reiter.funde.marke, 'sichtbar', aus > 0);
-  schalte(el.reiter.halle.knopf, 'zu', !werte(stand).frei.has('halle'));
+  const neuLadung = ladungMoeglich(stand);
+  setzeText(el.reiter.nadeln.marke, neuLadung ? '!' : '');
+  schalte(el.reiter.nadeln.marke, 'sichtbar', neuLadung);
+  schalte(el.reiter.halle.knopf, 'zu', !hatBand(werte(stand)));
 }
 
 /* ------------------------------------------------------------ Einblendungen */
 
 function toast(text, art = '') {
+  for (const t of el.toasts.children) {
+    if (t.textContent === text && !t.classList.contains('weg')) return;
+  }
   const t = h('div', { class: `toast ${art}` }, text);
   el.toasts.append(t);
-  while (el.toasts.children.length > 3) el.toasts.firstChild.remove();
+  while (el.toasts.children.length > 2) el.toasts.firstChild.remove();
   setTimeout(() => t.classList.add('weg'), 2600);
   setTimeout(() => t.remove(), 3000);
 }
 
 const warteschlange = [];
+const modalOffen = () => el.modal.classList.contains('offen');
+
+function modalSchliessen() {
+  el.modal.innerHTML = '';
+  el.modal.classList.remove('offen');
+}
+
+function naechstesModal() {
+  if (!modalOffen() && warteschlange.length) modal(warteschlange.shift());
+}
 
 /** Zeigt eine Einblendung; ist schon eine offen, wartet die neue dahinter. */
 function modal(optionen) {
   if (modalOffen()) { warteschlange.push(optionen); return; }
   const { titel, ober, absaetze = [], inhalt = null, knoepfe = [], klasse = '' } = optionen;
   el.modal.innerHTML = '';
-  const zu = () => {
-    el.modal.innerHTML = '';
-    el.modal.classList.remove('offen');
-    if (warteschlange.length) modal(warteschlange.shift());
-  };
-  const karte = h('div', { class: `modal ${klasse}`, role: 'dialog', 'aria-modal': 'true' },
+  const titelId = `modal-${Math.random().toString(36).slice(2, 8)}`;
+  const knopfListe = knoepfe.map((k) => h('button', {
+    class: `knopf ${k.klasse || ''}`,
+    onclick: () => {
+      klangWecken();
+      modalSchliessen();
+      if (k.aktion) k.aktion();
+      naechstesModal();
+    },
+  }, k.text));
+  const karte = h('div', { class: `modal ${klasse}`, role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titelId },
     ober ? h('p', { class: 'ober' }, ober) : null,
-    titel ? h('h2', {}, titel) : null,
+    titel ? h('h2', { id: titelId }, titel) : null,
     absaetze.map((p) => h('p', {}, p)),
     inhalt,
-    h('div', { class: 'modalknoepfe' }, knoepfe.map((k) => h('button', {
-      class: `knopf ${k.klasse || ''}`,
-      onclick: () => { klangWecken(); if (!k.bleiben) zu(); if (k.aktion) k.aktion(); },
-    }, k.text))));
+    h('div', { class: 'modalknoepfe' }, knopfListe));
   el.modal.append(h('div', { class: 'schleier' }), karte);
   el.modal.classList.add('offen');
-  return zu;
+  const erster = knopfListe.find((b) => b.classList.contains('primaer')) || knopfListe[0];
+  if (erster) setTimeout(() => erster.focus({ preventScroll: true }), 30);
 }
-
-const modalOffen = () => el.modal.classList.contains('offen');
 
 function einfuehrung() {
   modal({
-    ober: 'Rund 6.000.000 Halme',
+    klasse: 'intromodal',
+    ober: `Rund ${halme(ladungGroesse(1))} Halme`,
     titel: 'Find die Nadel',
     absaetze: GESCHICHTE.anfang,
     inhalt: h('ul', { class: 'anleitung' },
-      h('li', {}, 'Tippe auf den Haufen, um Heu zu schaufeln.'),
-      h('li', {}, 'Ist die Tasche voll, bring sie zum Ankauf.'),
-      h('li', {}, 'Mit dem Geld kaufst du in der Forschung bessere Werkzeuge, später Förderbänder und Maschinen.'),
-      h('li', {}, 'Der Metalldetektor piept, wenn eine Nadel nah ist.')),
+      h('li', {}, 'Tippe auf den Haufen, um Heu zu stechen. Unten wählst du das Werkzeug.'),
+      h('li', {}, 'Volle Tasche zum Stand bringen. Mit dem Förderband geht das später von allein.'),
+      h('li', {}, 'In der Forschung gibt es bessere Werkzeuge, dann Bänder, Arme und Maschinen.'),
+      h('li', {}, 'Oben im Bild steht immer eine Mission. Sie zeigt dir den nächsten Schritt.')),
     knoepfe: [{ text: 'Los geht’s', klasse: 'primaer' }],
   });
 }
 
-function nadelGefunden(i) {
+function nadelGefunden(e, sofort = false) {
   klang.nadel();
   summen([30, 60, 30]);
   if (ui.reiter === 'haufen' && ui.bildschirm.glanz) ui.bildschirm.glanz();
-  const n = NADELN[i];
-  const zahlGefunden = nadelnGefunden(stand);
-  modal({
-    klasse: 'nadelmodal',
-    ober: `Nadel ${zahlGefunden} von ${NADELN.length}`,
-    titel: n.name,
+  const art = NADELN[e.art];
+  const ersteLadung = e.ladung === 1;
+  const text = ersteLadung ? GESCHICHTE.nadeln[e.nr - 1]
+    : `Nadel ${e.nr} von ${NADELN_JE_LADUNG} aus Ladung ${e.ladung}.${e.neu ? ' Diese Art hattest du noch nicht.' : ''}`;
+  const zeigen = () => modal({
+    klasse: `nadelmodal${e.nr === NADELN_JE_LADUNG ? ' gold' : ''}`,
+    ober: `Nadel ${e.nr} von ${NADELN_JE_LADUNG}${ersteLadung ? '' : ` · Ladung ${e.ladung}`}`,
+    titel: art.name,
     inhalt: h('div', {},
       h('div', { class: 'nadelgross', html: SYM.nadel }),
-      h('p', { class: 'geschichte' }, GESCHICHTE.nadeln[i]),
-      h('p', { class: 'bonus' }, `Bonus: ${n.bonus}`)),
+      h('p', { class: 'geschichte' }, text),
+      h('p', { class: 'bonus' }, e.neu ? `Neu in der Sammlung: ${art.bonus}` : `Schon in der Sammlung (${art.bonus})`)),
     knoepfe: [{
-      text: alleNadeln(stand) ? 'Hinaus' : 'Weitersuchen',
+      text: e.alle ? 'Weiter' : 'Weitersuchen',
       klasse: 'primaer',
-      aktion: () => { if (alleNadeln(stand)) ende(); },
+      aktion: () => { if (e.alle) ladungFertig(e.ladung); },
     }],
   });
+  // Erst den Moment im Bild zeigen, dann die Karte.
+  if (sofort) zeigen(); else setTimeout(zeigen, 900);
   sichern();
 }
 
-function ende() {
-  const zeit = (stand.zeitGesamt || 0) + stand.zeit;
+function ladungFertig(nr) {
+  if (ui.endeGezeigt >= nr) return;
+  ui.endeGezeigt = nr;
+  const erste = nr === 1;
   modal({
     klasse: 'endemodal',
-    ober: stand.erledigt ? `Haufen ${stand.lauf}` : 'Geschafft',
-    titel: 'Alle sechs Nadeln',
-    absaetze: [GESCHICHTE.ende],
+    ober: erste ? 'Die Tore sind offen' : `Ladung ${nr} geschafft`,
+    titel: erste ? 'Alle sechs Nadeln' : 'Sechs Nadeln mehr',
+    absaetze: [erste ? 'Die Halle gehört dir. Draußen wartet der Lieferant mit der nächsten Ladung, '
+      + 'und in der Sammlung sind noch 18 Nadelarten offen.' : GESCHICHTE.ladung],
     inhalt: h('dl', { class: 'werte' },
-      h('dt', {}, 'Spielzeit'), h('dd', {}, dauer(stand.zeit)),
-      h('dt', {}, 'Halme abgetragen'), h('dd', {}, halme(stand.haufen.entfernt)),
-      h('dt', {}, 'Schaufelstiche'), h('dd', {}, zahl(stand.stat.tipps)),
-      h('dt', {}, 'Upgrades'), h('dd', {}, `${techGekauft(stand)} von ${TECH_STUFEN_GESAMT}`),
-      h('dt', {}, 'Fundstücke'), h('dd', {}, `${fundArten(stand)} von ${FUNDE.length} Arten`),
-      zeit !== stand.zeit ? [h('dt', {}, 'Alle Haufen'), h('dd', {}, dauer(zeit))] : null),
+      h('dt', {}, 'Spielzeit'), h('dd', {}, dauer(stand.aktiv)),
+      h('dt', {}, 'Halme abgetragen'), h('dd', {}, halme(stand.stat.abgetragen)),
+      h('dt', {}, 'Nadelarten'), h('dd', {}, `${artenGefunden(stand)} von ${NADELN.length}`),
+      h('dt', {}, 'Forschung'), h('dd', {}, `${techGekauft(stand)} von ${TECH_STUFEN_GESAMT} Stufen`)),
     knoepfe: [
-      { text: 'Hier bleiben', klasse: '' },
-      { text: 'Neuer Haufen', klasse: 'primaer', aktion: neuerHaufenFragen },
+      { text: 'Später' },
+      { text: 'Zur nächsten Ladung', klasse: 'primaer', aktion: () => wechseln('nadeln') },
     ],
   });
 }
 
-function neuerHaufenFragen() {
-  const groesse = Math.round(stand.haufen.gesamt * 1.5);
+function bestellenFragen() {
+  const preis = ladungPreis(stand);
+  const genug = stand.geld >= preis;
+  const aufschlag = kreditAufschlag(stand);
   modal({
-    titel: 'Neuer Haufen',
+    ober: `Ladung ${stand.ladung + 1}`,
+    titel: 'Neue Ladung bestellen',
     absaetze: [
-      `Die nächste Halle hat ${halme(groesse)} Halme und sechs neue Nadeln. Geld, Forschung und Maschinen `
-        + 'bleiben hier. Dein Fundalbum kommt mit.',
-      `Dafür bringt alles ${prozent(0.5 * (stand.erledigt + 1))} mehr ein und jeder Stich wird `
-        + `${prozent(0.25 * (stand.erledigt + 1))} kräftiger.`,
+      `${halme(ladungGroesse(stand.ladung + 1))} Halme mit sechs neuen Nadeln. Forschung und Maschinen bleiben. `
+        + (rest(stand) > 0 ? `Die ${halme(rest(stand))} Halme, die noch liegen, nimmt der Laster mit.` : ''),
+      genug ? `Kostet ${geld(preis)}.`
+        : `Kostet ${geld(preis)}, du hast ${geld(stand.geld)}. Auf Rechnung wird der Rest mit `
+          + `${prozent(aufschlag - 1)} Aufschlag zu Schulden; die Hälfte jeder Einnahme geht dann an die Tilgung.`,
     ],
     knoepfe: [
       { text: 'Noch nicht' },
-      {
-        text: 'Aufbrechen', klasse: 'primaer', aktion: () => {
-          const neu = neuerHaufen(stand);
-          if (!neu) return;
-          stand = neu;
-          sichern();
-          wechseln('haufen');
-          toast(`Haufen ${stand.lauf}: ${halme(stand.haufen.gesamt)} Halme.`, 'gut');
-        },
-      },
+      genug
+        ? { text: `Bestellen · ${geld(preis)}`, klasse: 'primaer', aktion: () => bestellen(false) }
+        : { text: 'Auf Rechnung bestellen', klasse: 'primaer', aktion: () => bestellen(true) },
     ],
   });
+}
+
+function bestellen(aufRechnung) {
+  const r = ladungBestellen(stand, { aufRechnung });
+  if (!r.ok) { klang.fehler(); return; }
+  klang.kasse();
+  sichern();
+  toast(`Ladung ${stand.ladung}: ${halme(stand.haufen.gesamt)} Halme.`, 'gut');
+  wechseln('haufen');
 }
 
 function abwesenheitsbericht(b) {
   if (!b) return;
-  const zeilen = [
-    `Die Halle hat ${halme(b.halme)} Halme abgetragen und ${geld(b.geld)} verdient.`,
-  ];
-  if (b.funde) zeilen.push(`Dabei sind ${zahl(b.funde)} Fundstücke in der Kiste gelandet.`);
+  const wer = b.drohnenAllein ? 'Die Drohnen haben' : 'Halle und Drohnen haben';
+  const zeilen = [`${wer} ${halme(b.halme)} Halme abgetragen und ${geld(b.verdient)} verdient.`];
+  if (b.verdient > b.geld + 0.01) zeilen.push(`Davon gingen ${geld(b.verdient - b.geld)} an die Schulden.`);
+  if (b.auftraege) zeilen.push(b.auftraege === 1 ? 'Ein Auftrag wurde geliefert.' : `${b.auftraege} Aufträge wurden geliefert.`);
   if (b.nadeln) zeilen.push(b.nadeln === 1 ? 'Und eine Nadel wurde gefunden.' : `Und ${b.nadeln} Nadeln wurden gefunden.`);
-  if (b.ausschuss) zeilen.push('Eine Nadel ist dabei in den Ausschuss gerutscht. Unter Funde kannst du sie heraussuchen.');
   if (b.abwesend > b.sekunden + 60) {
     zeilen.push(`Gezählt wurden ${dauer(b.sekunden)} von ${dauer(b.abwesend)}. Mehr schafft die Nachtschicht noch nicht.`);
   }
   modal({ ober: `Du warst ${dauer(b.abwesend)} weg`, titel: 'Während du weg warst', absaetze: zeilen, knoepfe: [{ text: 'Gut', klasse: 'primaer' }] });
-  for (const e of b.ereignisse) if (e.typ === 'nadel') nadelGefunden(e.i);
+  for (const e of b.ereignisse) if (e.typ === 'nadel') nadelGefunden(e, true);
 }
 
 /* ------------------------------------------------------------ Ereignisse */
 
 function ereignisse(liste) {
   for (const e of liste) {
-    if (e.typ === 'nadel') nadelGefunden(e.i);
-    else if (e.typ === 'ausschuss') {
+    if (e.typ === 'nadel') nadelGefunden(e);
+    else if (e.typ === 'zurueck') {
       klang.fehler();
-      toast('Eine Nadel ist ungescannt durchs Band gerutscht und liegt jetzt im Ausschuss.', 'warn');
-    } else if (e.typ === 'fund') {
-      const f = FUND_NACH_ID[e.id];
-      const r = SELTEN_NACH_ID[f.stufe];
-      if (e.neu || r.rang >= 2) {
-        klang.fund(r.rang);
-        toast(`${e.neu ? 'Neu im Album: ' : ''}${f.name} (${r.name})`, `fund r${r.rang}`);
-      }
+      toast('Eine Nadel ist ungescannt verkauft worden und zurück in den Haufen gefallen.', 'warn');
     } else if (e.typ === 'verkauft') {
       klang.kasse();
-      if (ui.reiter === 'haufen' && ui.bildschirm.geldText) ui.bildschirm.geldText(`+${geld(e.betrag)}`);
+      if (ui.reiter === 'haufen' && ui.bildschirm.standText) ui.bildschirm.standText(`+${geld(e.betrag)}`);
     } else if (e.typ === 'ueberhitzt') {
       klang.heiss();
       toast('Der Sauger ist überhitzt und muss abkühlen.', 'warn');
+    } else if (e.typ === 'mission') {
+      klang.fund(2);
+      toast(`Mission erfüllt: ${e.text}${e.belohnung ? ` · ${e.belohnung}` : ''}`, 'gut');
+    } else if (e.typ === 'auftrag') {
+      klang.kasse();
+      toast(`Auftrag geliefert: ${zahl(e.auftrag.menge)} ${PRODUKTE[e.auftrag.will].name} · +${geld(e.lohn)}`, 'gut');
+    } else if (e.typ === 'radar') {
+      if (ui.reiter === 'haufen' && ui.bildschirm.radar) ui.bildschirm.radar();
     }
   }
-}
-
-/* ------------------------------------------------------------ Hinweis */
-
-function hinweis() {
-  const w = werte(stand);
-  const d = detektor(stand);
-  if (imAusschuss(stand)) return 'Eine Nadel liegt im Ausschuss. Unter „Funde“ kannst du sie heraussuchen.';
-  if (stand.stat.tipps < 3) return 'Tippe auf den Haufen, um Heu zu schaufeln.';
-  if (stand.tasche >= taschePlatz(w) && stand.stat.gaenge < 3) return 'Die Tasche ist voll. Bring das Heu zum Ankauf.';
-  if (techGekauft(stand) === 0 && stand.geld >= 3) return 'Du hast Geld. In der Forschung gibt es die ersten Upgrades.';
-  if (d.stufe === 'heiss') return 'Der Detektor schlägt aus. Die Nadel ist ganz nah.';
-  if (w.frei.has('halle') && !anzahl(stand, 'arm')) return 'Die Halle ist offen. Dort steht der erste Greifarm zum Kauf.';
-  if (w.frei.has('halle') && fabrik(stand).strom < 1) return 'In der Halle fehlt Strom. Die Maschinen laufen langsamer.';
-  if (w.frei.has('halle') && anzahl(stand, 'arm') && fabrik(stand).deckung < 1) {
-    return w.frei.has('scanner') ? 'Nicht alles Heu auf dem Band wird gescannt. Mehr Scanner kaufen.' : 'Ohne Scanner können Nadeln durchs Band rutschen. Scanner gibt es in der Forschung.';
-  }
-  if (!w.frei.has('halle') && techStufe(stand, 'drohne') && stand.geld > 1000) return 'Nächstes Ziel: Automatisierung in der Forschung.';
-  return '';
 }
 
 /* ================================================================ Haufen */
 
 function bildHaufen() {
-  const canvas = h('canvas', { class: 'haufencanvas', 'aria-label': 'Der Heuhaufen. Tippen zum Schaufeln.' });
+  const canvas = h('canvas', { class: 'haufencanvas', 'aria-label': 'Der Heuhaufen. Tippen zum Stechen.' });
+  const missionText = h('span', { class: 'missiontext' });
+  const missionLohn = h('span', { class: 'missionlohn' });
+  const missionBalken = h('div', { class: 'fuellung' });
+  const mission = h('div', { class: 'mission' }, sym(SYM.mission), h('div', { class: 'missionkern' },
+    h('div', { class: 'missionzeile' }, missionText, missionLohn), h('div', { class: 'missionbalken' }, missionBalken)));
   const hinweisZeile = h('div', { class: 'hinweis' });
   const taschenFuellung = h('div', { class: 'fuellung' });
   const taschenText = h('span', {});
-  const tasche = h('div', { class: 'taschebalken' }, taschenFuellung, sym(SYM.tasche), taschenText);
-  const werkzeug = h('div', { class: 'werkzeugschild' });
-  const szeneBox = h('div', { class: 'szene' }, canvas, hinweisZeile, werkzeug, tasche);
+  const tasche = h('div', { class: 'balken tasche' }, taschenFuellung, sym(SYM.tasche), taschenText);
+  const ausdauerFuellung = h('div', { class: 'fuellung' });
+  const ausdauer = h('div', { class: 'balken ausdauer', title: 'Ausdauer' }, ausdauerFuellung, sym(SYM.ausdauer));
+  const werkzeugSchild = h('div', { class: 'werkzeugschild' });
+  const unten = h('div', { class: 'szeneunten' }, h('div', { class: 'balkenreihe' }, tasche, ausdauer), werkzeugSchild);
+  const szeneBox = h('div', { class: 'szene' }, canvas, h('div', { class: 'szeneoben' }, mission, hinweisZeile), unten);
+
   const segmente = Array.from({ length: 12 }, () => h('span', { class: 'seg' }));
   const dText = h('span', { class: 'dtext' });
-  const detektorLeiste = h('div', { class: 'detektorleiste' }, sym(SYM.detektor), h('div', { class: 'segmente' }, segmente), dText);
+  const detektorLeiste = h('div', { class: 'detektorleiste' }, sym(SYM.lupe), h('div', { class: 'segmente' }, segmente), dText);
 
-  const vText = h('span', { class: 'zeile1' }, 'Zum Ankauf');
+  const werkzeugKnoepfe = {};
+  const leiste = h('div', { class: 'werkzeugleiste', role: 'toolbar', 'aria-label': 'Werkzeuge' }, WERKZEUGE.map((wz) => {
+    const b = h('button', {
+      class: 'wz', 'aria-label': wz.name, title: wz.text,
+      onclick: () => {
+        klangWecken();
+        if (werkzeugWaehlen(stand, wz.id)) { klang.klick(); letzteAktualisierung(); }
+      },
+    }, sym(WERKZEUG_SYM[wz.id]), h('span', {}, wz.name));
+    werkzeugKnoepfe[wz.id] = b;
+    return b;
+  }));
+
+  const vText = h('span', { class: 'zeile1' }, 'Zum Stand');
   const vKlein = h('small', {});
   const vBalken = h('div', { class: 'lauf' });
   const verkaufKnopf = h('button', {
     class: 'aktion gross', onclick: () => {
       klangWecken();
-      if (verkaufen(stand)) ui.laufGesamt = stand.laufen;
-      else klang.fehler();
+      if (!verkaufen(stand)) klang.fehler();
     },
   }, sym(SYM.ankauf), h('span', { class: 'aktiontext' }, vText, vKlein), vBalken);
-
-  const hitze = h('div', { class: 'hitze' });
-  const sKlein = h('small', {}, 'halten');
-  const saugerKnopf = h('button', { class: 'aktion sauger' }, sym(SYM.sauger), h('span', { class: 'aktiontext' }, h('span', { class: 'zeile1' }, 'Saugen'), sKlein), hitze);
-  const saugStart = (ev) => {
-    ev.preventDefault();
-    klangWecken();
-    saugen(stand, true);
-    saugerKnopf.setPointerCapture?.(ev.pointerId);
-  };
-  const saugEnde = () => saugen(stand, false);
-  saugerKnopf.addEventListener('pointerdown', saugStart);
-  saugerKnopf.addEventListener('pointerup', saugEnde);
-  saugerKnopf.addEventListener('pointercancel', saugEnde);
-  saugerKnopf.addEventListener('lostpointercapture', saugEnde);
-  saugerKnopf.addEventListener('contextmenu', (e) => e.preventDefault());
 
   const dKlein = h('small', {});
   const drohnenKnopf = h('button', {
@@ -380,98 +419,160 @@ function bildHaufen() {
     },
   }, sym(SYM.drohne), h('span', { class: 'aktiontext' }, h('span', { class: 'zeile1' }, 'Drohne'), dKlein));
 
-  const aktionen = h('div', { class: 'aktionen' }, verkaufKnopf, saugerKnopf, drohnenKnopf);
-  const wurzel = h('section', { class: 'bild haufenbild' }, szeneBox, detektorLeiste, aktionen);
+  const ladungKnopf = h('button', { class: 'aktion ladungknopf', onclick: () => { klangWecken(); bestellenFragen(); } },
+    sym(SYM.ladung), h('span', { class: 'aktiontext' }, h('span', { class: 'zeile1' }, 'Neue Ladung'), h('small', {}, 'bestellen')));
+
+  const aktionen = h('div', { class: 'aktionen' }, verkaufKnopf, ladungKnopf, drohnenKnopf);
+  const seite = h('div', { class: 'haufenseite' }, detektorLeiste, leiste, aktionen);
+  const wurzel = h('section', { class: 'bild haufenbild' }, szeneBox, seite);
   el.buehne.append(wurzel);
 
   const szene = haufenSzene(canvas);
 
+  const punkt = (ev) => {
+    const r = canvas.getBoundingClientRect();
+    return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+  };
   canvas.addEventListener('pointerdown', (ev) => {
     ev.preventDefault();
     klangWecken();
-    const r = canvas.getBoundingClientRect();
-    const x = ev.clientX - r.left;
-    const y = ev.clientY - r.top;
+    const { x, y } = punkt(ev);
+    if (stand.werkzeug === 'sauger') {
+      saugen(stand, true);
+      canvas.setPointerCapture?.(ev.pointerId);
+      const grund = saugerBlockiert(stand);
+      if (grund) szene.text(x, y - 10, { heiss: 'Zu heiß!', unterwegs: 'Unterwegs …', leer: 'Der Haufen ist leer', voll: 'Tasche voll!' }[grund], '#ffb36b', 14);
+      return;
+    }
     const e = [];
-    const erg = tippen(stand, e);
-    if (!erg) { szene.text(x, y - 10, 'Unterwegs …', '#e8dcc4', 13); return; }
-    if (erg.menge > 0) {
-      szene.stich(x, y, erg.menge, erg.krit);
+    const erg = stich(stand, e);
+    if (!erg) { szene.text(x, y - 10, 'Unterwegs …', '#fff4dc', 13); return; }
+    if (erg.detektor) {
+      const d = detektor(stand);
+      klang.piep(Math.max(0.1, d.staerke));
+      ui.blink = 1;
+      szene.text(x, y - 10, d.abstand == null ? 'Keine Nadel mehr' : { still: 'Nichts …', kalt: 'Leises Piepen', warm: 'Es piept!', heiss: 'Ganz nah!' }[d.stufe], '#d6f5ff', 14);
+    } else if (erg.menge > 0) {
+      szene.stich(x, y, erg.menge, erg.krit, hatBand(werte(stand)));
       klang.stich(erg.krit);
       if (erg.krit) summen(15);
-    } else if (erg.voll) {
-      szene.text(x, y - 10, 'Tasche voll!', '#ffb36b', 15);
-      klang.fehler();
-    }
+      if (erg.muede) szene.text(x, y + 14, 'Aus der Puste', '#ffb36b', 12);
+    } else if (erg.leer) szene.text(x, y - 10, 'Der Haufen ist leer', '#ffb36b', 14);
+    else if (erg.nichts) szene.text(x, y - 10, 'Nichts zu fegen', '#fff4dc', 13);
+    else if (erg.voll) { szene.text(x, y - 10, 'Tasche voll!', '#ffb36b', 15); klang.fehler(); }
     ereignisse(e);
   });
+  const saugEnde = () => saugen(stand, false);
+  canvas.addEventListener('pointerup', saugEnde);
+  canvas.addEventListener('pointercancel', saugEnde);
+  canvas.addEventListener('lostpointercapture', saugEnde);
+  canvas.addEventListener('contextmenu', (ev) => ev.preventDefault());
 
   let letzterHinweis = '';
+  function letzteAktualisierung() {
+    const w = werte(stand);
+    for (const wz of WERKZEUGE) {
+      const b = werkzeugKnoepfe[wz.id];
+      b.hidden = !werkzeugFrei(stand, wz.id);
+      schalte(b, 'gewaehlt', stand.werkzeug === wz.id);
+      b.setAttribute('aria-pressed', String(stand.werkzeug === wz.id));
+    }
+    // Mission
+    const ms = missionStand(stand);
+    mission.hidden = !ms;
+    if (ms) {
+      setzeText(missionText, ms.m.text);
+      const lohn = ms.m.geschenk ? 'Geschenk' : ms.m.geld ? `+${geld(ms.m.geld)}` : '';
+      const fortschritt = ms.ziel > 1 && ms.ziel !== 0.5 ? ` · ${zahl(ms.ist)}/${zahl(ms.ziel)}` : ms.m.art === 'haelfte' ? ` · ${prozentAb(ms.ist)}` : '';
+      setzeText(missionLohn, `${lohn}${fortschritt}`);
+      missionBalken.style.width = `${Math.min(100, (ms.ist / ms.ziel) * 100)}%`;
+    }
+    // Hinweis nur für das, was keine Mission sagt
+    let hw = '';
+    if (ladungMoeglich(stand)) hw = 'Alle Nadeln dieser Ladung gefunden. Unter „Nadeln“ bestellst du die nächste.';
+    else if (rest(stand) <= 0) hw = 'Der Haufen ist leer.';
+    else if (!hatBand(w) && stand.tasche >= taschePlatz(w)) hw = 'Die Tasche ist voll. Bring das Heu zum Stand.';
+    else if (hatBand(w) && fabrik(stand).fluss > 0 && fabrik(stand).deckung < 0.95) {
+      hw = w.frei.has('scanner') ? 'Nicht alles Heu auf dem Band wird gescannt. Nadeln können zurückfallen.'
+        : 'Ohne Scanner fallen Nadeln, die Maschinen erwischen, zurück in den Haufen.';
+    }
+    if (hw !== letzterHinweis) {
+      letzterHinweis = hw;
+      setzeText(hinweisZeile, hw);
+      schalte(hinweisZeile, 'sichtbar', !!hw);
+    }
+    // Tasche und Ausdauer
+    const band = hatBand(w);
+    const platz = taschePlatz(w);
+    tasche.hidden = band && stand.tasche <= 0;
+    taschenFuellung.style.width = `${Math.min(100, (stand.tasche / platz) * 100)}%`;
+    setzeText(taschenText, `${halme(stand.tasche)} / ${halme(platz)}`);
+    schalte(tasche, 'voll', stand.tasche >= platz);
+    ausdauerFuellung.style.width = `${Math.min(100, (stand.ausdauer / w.ausdauer) * 100)}%`;
+    schalte(ausdauer, 'leer', stand.ausdauer < w.ausdauerKosten);
+    const wzName = WERKZEUGE.find((x) => x.id === stand.werkzeug).name;
+    let info = '';
+    if (['spaten', 'heugabel', 'sandschaufel'].includes(stand.werkzeug)) info = `${rate(stichMenge(w, stand.werkzeug))} pro Stich`;
+    else if (stand.werkzeug === 'besen') info = `${halme(stand.boden)} am Boden`;
+    else if (stand.werkzeug === 'sauger') {
+      const grund = saugerBlockiert(stand);
+      info = grund ? { heiss: 'kühlt ab', unterwegs: 'unterwegs', leer: 'Haufen leer', voll: 'Tasche voll' }[grund] : `${rate(w.saugerRate)}/s, gedrückt halten`;
+    } else info = 'auf den Haufen tippen';
+    setzeText(werkzeugSchild, `${wzName} · ${info}${band ? ' · aufs Band' : ''}`);
+    // Detektor
+    const d = detektor(stand);
+    const inHand = stand.werkzeug === 'detektor';
+    schalte(detektorLeiste, 'aus', !inHand && !stand.maschinen.radar);
+    const an = inHand ? Math.round(d.staerke * segmente.length) : 0;
+    segmente.forEach((sg, i) => {
+      schalte(sg, 'an', i < an);
+      schalte(sg, 'heiss', i < an && i >= segmente.length * 0.7);
+    });
+    let dt = '';
+    if (d.abstand == null) dt = 'keine Nadel mehr im Haufen';
+    else if (inHand && w.frei.has('piepser')) dt = { still: 'weit weg', kalt: 'kalt', warm: 'warm', heiss: 'heiß!' }[d.stufe];
+    else if (inHand) dt = { still: 'still', kalt: 'piept leise', warm: 'piept', heiss: 'piept wild!' }[d.stufe];
+    else dt = 'Detektor in die Hand nehmen';
+    if (stand.maschinen.radar && stand.radar.abstand != null) {
+      const vor = stand.zeit - stand.radar.zeit;
+      dt = `Radar: ${halme(stand.radar.abstand)} Halme (vor ${dauer(vor)})${inHand ? ` · ${dt}` : ''}`;
+    }
+    setzeText(dText, dt);
+    // Stand
+    const unterwegs = stand.laufen > 0;
+    verkaufKnopf.hidden = band && stand.tasche <= 0 && !unterwegs;
+    setzeText(vText, unterwegs ? 'Unterwegs …' : 'Zum Stand');
+    setzeText(vKlein, unterwegs ? `${rate(stand.laufen)} s` : `${halme(stand.tasche)} Halme · ${geld(stand.tasche * preisRoh(w))}`);
+    vBalken.style.width = unterwegs ? `${Math.max(0, Math.min(1, 1 - stand.laufen / Math.max(stand.laufVoll, 0.01))) * 100}%` : '0%';
+    verkaufKnopf.disabled = unterwegs || stand.tasche <= 0;
+    schalte(verkaufKnopf, 'draengt', !unterwegs && stand.tasche >= platz);
+    ladungKnopf.hidden = !ladungMoeglich(stand);
+    drohnenKnopf.hidden = !w.frei.has('drohne');
+    const voll = stand.drohnen >= w.drohnenMax;
+    setzeText(dKlein, voll ? `${stand.drohnen}/${w.drohnenMax} voll` : geld(drohnenKosten(stand)));
+    drohnenKnopf.disabled = voll || stand.geld < drohnenKosten(stand);
+  }
+
   return {
     glanz: () => szene.nadelGlanz(),
-    geldText: (t) => {
-      const r = canvas.getBoundingClientRect();
-      szene.text(r.width - 34, r.height * 0.84 - 110, t, '#9fe0a4', 15);
-    },
+    radar: () => szene.radarPing(),
+    standText: (t) => szene.standText(t),
     zeichnen(dt) {
       const w = werte(stand);
-      const f = w.frei.has('halle') ? fabrik(stand) : null;
+      const f = hatBand(w) ? fabrik(stand) : null;
       szene.zeichnen(stand, {
-        laufAnteil: stand.laufen > 0 ? 1 - stand.laufen / Math.max(ui.laufGesamt, 0.01) : null,
-        saugt: stand.sauger.an && !stand.sauger.heiss && stand.laufen <= 0,
-        saugerSichtbar: w.frei.has('sauger'),
+        laufAnteil: stand.laufen > 0 ? 1 - stand.laufen / Math.max(stand.laufVoll, 0.01) : null,
+        saugt: stand.sauger.an && !saugerBlockiert(stand),
+        saugerAktiv: stand.werkzeug === 'sauger',
         hitze: stand.sauger.hitze,
-        blink: ui.blink,
         fabrik: f,
-        torOffen: alleNadeln(stand),
+        torOffen: stand.ladung > 1 || alleNadeln(stand),
+        boden: stand.boden,
+        uhr: stand.aktiv,
+        preisText: preisSchild(w),
       }, dt);
     },
-    aktualisieren() {
-      const w = werte(stand);
-      const platz = taschePlatz(w);
-      taschenFuellung.style.width = `${Math.min(100, (stand.tasche / platz) * 100)}%`;
-      setzeText(taschenText, `${halme(stand.tasche)} / ${halme(platz)}`);
-      schalte(tasche, 'voll', stand.tasche >= platz);
-      const wz = w.frei.has('gabelstapler') ? 'Heu-Gabelstapler' : w.frei.has('doppelgabel') ? 'Doppelgabel'
-        : w.frei.has('heugabel') ? 'Heugabel' : 'Schaufel';
-      setzeText(werkzeug, `${wz} · ${rate(griffMenge(w))} pro Stich`);
-      const hw = hinweis();
-      if (hw !== letzterHinweis) {
-        letzterHinweis = hw;
-        setzeText(hinweisZeile, hw);
-        schalte(hinweisZeile, 'sichtbar', !!hw);
-      }
-      // Detektor
-      const d = detektor(stand);
-      const an = Math.round(d.staerke * segmente.length);
-      segmente.forEach((sg, i) => {
-        schalte(sg, 'an', i < an);
-        schalte(sg, 'heiss', i < an && i >= segmente.length * 0.7);
-      });
-      let dt = 'still';
-      if (d.abstand == null) dt = 'keine Nadel mehr im Haufen';
-      else if (w.frei.has('kompass')) dt = `${halme(d.abstand)} Halme`;
-      else if (w.frei.has('piepser')) dt = { still: 'weit weg', kalt: 'kalt', warm: 'warm', heiss: 'heiß!' }[d.stufe];
-      else dt = { still: 'still', kalt: 'piept leise', warm: 'piept', heiss: 'piept wild!' }[d.stufe];
-      setzeText(dText, dt);
-      // Ankauf
-      const unterwegs = stand.laufen > 0;
-      setzeText(vText, unterwegs ? 'Unterwegs …' : 'Zum Ankauf');
-      setzeText(vKlein, unterwegs ? `${rate(stand.laufen)} s` : `${halme(stand.tasche)} Halme · ${geld(stand.tasche * preisRoh(w))}`);
-      vBalken.style.width = unterwegs ? `${(1 - stand.laufen / Math.max(ui.laufGesamt, 0.01)) * 100}%` : '0%';
-      verkaufKnopf.disabled = unterwegs || stand.tasche <= 0;
-      schalte(verkaufKnopf, 'drängt', !unterwegs && stand.tasche >= platz);
-      // Sauger
-      saugerKnopf.hidden = !w.frei.has('sauger');
-      hitze.style.width = `${stand.sauger.hitze * 100}%`;
-      schalte(saugerKnopf, 'heiss', stand.sauger.heiss);
-      setzeText(sKlein, stand.sauger.heiss ? 'kühlt ab' : stand.sauger.an ? `${rate(w.saugerRate)}/s` : 'gedrückt halten');
-      // Drohnen
-      drohnenKnopf.hidden = !w.frei.has('drohne');
-      const voll = stand.drohnen >= w.drohnenMax;
-      setzeText(dKlein, voll ? `${stand.drohnen}/${w.drohnenMax} voll` : geld(drohnenKosten(stand)));
-      drohnenKnopf.disabled = voll || stand.geld < drohnenKosten(stand);
-    },
+    aktualisieren: letzteAktualisierung,
     weg() { saugen(stand, false); },
   };
 }
@@ -479,7 +580,7 @@ function bildHaufen() {
 /* ================================================================ Halle */
 
 const GRUPPEN = [
-  ['foerderung', 'Förderung'], ['erkennung', 'Erkennung'], ['strom', 'Strom'], ['verarbeitung', 'Verarbeitung'],
+  ['foerderung', 'Förderung'], ['suche', 'Suche'], ['strom', 'Strom'], ['wasser', 'Wasser'], ['verarbeitung', 'Verarbeitung'],
 ];
 
 function freischaltTech(m) {
@@ -487,18 +588,18 @@ function freischaltTech(m) {
 }
 
 function bildHalle() {
-  const w = werte(stand);
+  const w0 = werte(stand);
   const wurzel = h('section', { class: 'bild hallenbild' });
   el.buehne.append(wurzel);
-  if (!w.frei.has('halle')) {
-    const t = TECH_NACH_ID.automatisierung;
+  if (!hatBand(w0)) {
+    const t = TECH_NACH_ID.foerderband;
     wurzel.append(h('div', { class: 'leerkarte' },
       h('div', { class: 'grosssym', html: SYM.halle }),
       h('h2', {}, 'Noch alles Handarbeit'),
-      h('p', {}, `Förderbänder, Greifarme und Maschinen gibt es, sobald du „${t.name}“ erforscht hast.`),
-      h('p', { class: 'leise' }, `Kostet ${geld(techKosten(stand, t.id))}. Vorher: ${t.braucht.map((b) => TECH_NACH_ID[b].name).join(', ')}.`),
+      h('p', {}, `Förderbänder, Rechen, Arme und Maschinen gibt es, sobald du die „${t.name}“ erforscht hast.`),
+      h('p', { class: 'leise' }, `Kostet ${geld(techKosten(stand, t.id))}.`),
       h('button', { class: 'knopf primaer', onclick: () => { ui.wahl = t.id; wechseln('forschung'); } }, 'Zur Forschung')));
-    return { aktualisieren() { if (werte(stand).frei.has('halle')) wechseln('halle'); } };
+    return { aktualisieren() { if (hatBand(werte(stand))) wechseln('halle'); } };
   }
 
   const canvas = h('canvas', { class: 'hallecanvas' });
@@ -506,21 +607,36 @@ function bildHalle() {
   const kz = {};
   const kennzahl = (id, name) => {
     kz[id] = { wert: h('b', { class: 'num' }), unter: h('small', {}) };
-    return h('div', { class: `kz kz-${id}` }, h('span', {}, name), kz[id].wert, kz[id].unter);
+    kz[id].box = h('div', { class: `kz kz-${id}` }, h('span', {}, name), kz[id].wert, kz[id].unter);
+    return kz[id].box;
   };
   const warnungen = h('div', { class: 'warnungen' });
+
+  // Auftrag
+  const aTitel = h('b', {});
+  const aInfo = h('small', {});
+  const aBalken = h('div', { class: 'fuellung' });
+  const aAblehnen = h('button', { class: 'knopf klein', onclick: () => {
+    if (auftragAblehnen(stand)) { klang.klick(); toast('Auftrag abgelehnt. Der nächste kommt gleich.'); }
+  } }, 'Ablehnen');
+  const auftragKarte = h('div', { class: 'auftragkarte' },
+    h('div', { class: 'kartenkopf' }, sym(SYM.laster), h('div', {}, h('p', { class: 'ober' }, 'Auftrag'), aTitel)),
+    aInfo, h('div', { class: 'balken dünn' }, aBalken), h('div', { class: 'auftragknoepfe' }, aAblehnen));
+
   wurzel.append(
     h('div', { class: 'hallenszene' }, canvas),
     h('div', { class: 'kennzahlen' },
       kennzahl('einnahmen', 'Einnahmen'), kennzahl('foerderung', 'Förderung'),
       kennzahl('band', 'Förderband'), kennzahl('strom', 'Strom'),
-      kennzahl('scanner', 'Scanner'), kennzahl('plaetze', 'Stellplätze')),
-    warnungen);
+      kennzahl('wasser', 'Wasser'), kennzahl('scanner', 'Scanner'),
+      kennzahl('plaetze', 'Stellplätze')),
+    warnungen, auftragKarte);
 
   const karten = {};
   for (const [gruppe, name] of GRUPPEN) {
     const liste = MASCHINEN.filter((m) => m.gruppe === gruppe);
-    wurzel.append(h('h3', { class: 'gruppe' }, name));
+    const kopf = h('h3', { class: 'gruppe' }, name);
+    wurzel.append(kopf);
     for (const m of liste) {
       const anzahlEl = h('span', { class: 'anzahl num' });
       const status = h('p', { class: 'mstatus' });
@@ -531,13 +647,24 @@ function bildHalle() {
           if (r.ok) klang.kauf();
           else {
             klang.fehler();
-            if (r.grund === 'platz') toast('Keine Stellplätze frei. Mehr gibt es im Hofbau.', 'warn');
+            if (r.grund === 'platz') toast('Keine Stellplätze frei. Mehr gibt es unter Hofbau in der Forschung.', 'warn');
           }
         },
       });
-      const umschalten = h('button', { class: 'knopf klein', onclick: () => { maschineUmschalten(stand, m.id); klang.kauf(); } });
+      const umschalten = h('button', {
+        class: 'knopf klein', onclick: () => { maschineUmschalten(stand, m.id); klang.klick(); },
+      });
+      let sicher = 0;
       const abbauen = h('button', {
-        class: 'knopf klein', 'aria-label': 'Eine abbauen', onclick: () => {
+        class: 'knopf klein', 'aria-label': `${m.name} abbauen`, onclick: () => {
+          if (performance.now() - sicher > 2500) {
+            sicher = performance.now();
+            setzeText(abbauen, 'sicher?');
+            setTimeout(() => setzeText(abbauen, '−'), 2500);
+            return;
+          }
+          sicher = 0;
+          setzeText(abbauen, '−');
           const r = maschineAbbauen(stand, m.id);
           if (r.ok) toast(`${m.name} abgebaut, ${geld(r.erstattung)} zurück.`);
         },
@@ -546,50 +673,92 @@ function bildHalle() {
       const gesperrt = h('button', {
         class: 'knopf klein sperre', onclick: () => { ui.wahl = t.id; wechseln('forschung'); },
       }, `Forschung: ${t.name}`);
-      const karte = h('div', { class: 'mkarte' },
+      const karte = h('div', { class: 'mkarte', style: { '--gruppenfarbe': GRUPPEN_FARBE[gruppe] } },
         h('div', { class: 'msym', html: MASCHINEN_SYM[m.id] }),
         h('div', { class: 'mtext' }, h('p', { class: 'mname' }, h('b', {}, m.name), anzahlEl), h('p', { class: 'mbeschr' }, m.text), status),
         h('div', { class: 'mknoepfe' }, kaufen, h('div', { class: 'mklein' }, umschalten, abbauen), gesperrt));
-      karten[m.id] = { karte, anzahlEl, status, kaufen, umschalten, abbauen, gesperrt };
+      karten[m.id] = { karte, anzahlEl, status, kaufen, umschalten, abbauen, gesperrt, kopf };
       wurzel.append(karte);
     }
   }
 
   let geldProSek = 0;
   return {
-    zeichnen(dt) { szene.zeichnen(stand, fabrik(stand), dt, geldProSek); },
+    zeichnen(dt) {
+      const lasterDa = werte(stand).frei.has('auftraege') && stand.auftrag.pause <= 0;
+      szene.zeichnen(stand, fabrik(stand), dt, geldProSek, lasterDa);
+    },
     aktualisieren() {
       const wv = werte(stand);
       const f = fabrik(stand);
       geldProSek = f.einnahmen;
+      const drohnenGeld = rest(stand) > 0 ? stand.drohnen * wv.drohnenRate * preisRoh(wv) : 0;
       setzeText(kz.einnahmen.wert, `${geld(f.einnahmen)}/s`);
-      setzeText(kz.einnahmen.unter, stand.drohnen ? `dazu Drohnen ${geld(stand.drohnen * wv.drohnenRate * preisRoh(wv))}/s` : 'am Verkaufsstand');
+      setzeText(kz.einnahmen.unter, stand.drohnen ? `dazu Drohnen ${geld(drohnenGeld)}/s` : 'am Verkaufsstand');
       setzeText(kz.foerderung.wert, `${rate(f.fluss)}/s`);
-      setzeText(kz.foerderung.unter, f.foerderung > f.band + 0.01 ? `Arme könnten ${rate(f.foerderung)}/s` : 'Halme vom Haufen');
+      setzeText(kz.foerderung.unter, f.foerderung > f.band + 0.01 ? `Arme und Rechen könnten ${rate(f.foerderung)}/s` : 'Halme vom Haufen');
       setzeText(kz.band.wert, `${rate(f.band)}/s`);
-      setzeText(kz.band.unter, f.foerderung >= f.band ? 'voll, Bandtechnik erforschen' : `${prozent(f.band ? f.fluss / f.band : 0)} ausgelastet`);
+      setzeText(kz.band.unter, f.moeglich > 0 && f.foerderung >= f.band ? 'voll: Bandmotor erforschen' : `${prozent(f.band ? f.fluss / f.band : 0)} ausgelastet`);
       setzeText(kz.strom.wert, `${rate(f.erzeugt)} / ${rate(f.bedarf)}`);
-      setzeText(kz.strom.unter, f.strom < 1 ? `nur ${prozent(f.strom)} Leistung` : 'reicht');
-      setzeText(kz.scanner.wert, prozent(f.deckung));
-      setzeText(kz.scanner.unter, anzahl(stand, 'sortierer') ? `Funde sortiert ${prozent(f.sortiert)}` : 'des Heus gescannt');
+      setzeText(kz.strom.unter, f.strom < 1 ? `nur ${prozentAb(f.strom)} Leistung` : 'reicht');
+      kz.wasser.box.hidden = !wv.frei.has('brunnen');
+      setzeText(kz.wasser.wert, `${rate(f.wasser)} / ${rate(f.wasserBedarf)}`);
+      setzeText(kz.wasser.unter, f.wasserAnteil < 1 ? `nur ${prozentAb(f.wasserAnteil)} für die Pulper` : 'reicht');
+      setzeText(kz.scanner.wert, prozentAb(f.deckung));
+      setzeText(kz.scanner.unter, 'des Heus gescannt');
       setzeText(kz.plaetze.wert, `${plaetzeBelegt(stand)} / ${wv.plaetze}`);
-      setzeText(kz.plaetze.unter, 'belegt');
-      schalte(kz.strom.wert.parentNode, 'schlecht', f.strom < 1);
-      schalte(kz.scanner.wert.parentNode, 'schlecht', f.fluss > 0 && f.deckung < 1);
-      schalte(kz.band.wert.parentNode, 'engpass', f.foerderung >= f.band && f.fluss > 0);
+      setzeText(kz.plaetze.unter, plaetzeBelegt(stand) >= wv.plaetze ? 'voll: Hofbau erforschen' : 'belegt');
+      schalte(kz.strom.box, 'schlecht', f.strom < 1 && f.bedarf > 0);
+      schalte(kz.wasser.box, 'schlecht', f.wasserAnteil < 1);
+      schalte(kz.scanner.box, 'schlecht', f.fluss > 0 && f.deckung < 1);
+      schalte(kz.band.box, 'engpass', f.moeglich > 0 && f.foerderung >= f.band && f.fluss > 0);
 
       const warn = [];
-      if (rest(stand) <= 0) warn.push('Der Haufen ist leer. Die Arme greifen ins Nichts.');
-      if (f.strom < 1) warn.push(`Der Strom reicht nicht: alle Maschinen laufen mit ${prozent(f.strom)}.`);
-      if (f.fluss > 0 && f.deckung < 1) warn.push(`Nur ${prozent(f.deckung)} des Heus wird gescannt. Der Rest kann Nadeln in den Ausschuss spülen.`);
-      if (f.brennstoff > 0 && f.brennstoff >= f.fluss * 0.5) warn.push('Die Generatoren verbrennen mehr als die Hälfte des Heus.');
-      setzeText(warnungen, '');
-      warnungen.replaceChildren(...warn.map((t) => h('p', {}, t)));
+      if (rest(stand) <= 0) warn.push('Der Haufen ist leer. Unter „Nadeln“ gibt es die nächste Ladung.');
+      else if (f.strom < 1 && f.bedarf > 0) {
+        warn.push(f.brennBedarf > 0 && f.fluss < f.brennBedarf
+          ? 'Die Generatoren bekommen zu wenig Heu vom Band. Mehr Rechen oder Arme, oder weniger Maschinen.'
+          : `Der Strom reicht nicht: alle Maschinen laufen mit ${prozentAb(f.strom)}.`);
+      }
+      if (f.fluss > 0 && f.deckung < 1) warn.push(`Nur ${prozentAb(f.deckung)} des Heus wird gescannt. Übersehene Nadeln fallen zurück in den Haufen.`);
+      if (f.wasserAnteil < 1) warn.push('Das Wasser reicht nicht für alle Pulper und Papiermaschinen.');
+      const warnText = warn.join('|');
+      if (warnungen.dataset.text !== warnText) {
+        warnungen.dataset.text = warnText;
+        warnungen.replaceChildren(...warn.map((t) => h('p', {}, t)));
+      }
 
+      // Auftrag
+      auftragKarte.hidden = !wv.frei.has('auftraege');
+      if (!auftragKarte.hidden) {
+        const au = auftrag(stand.auftrag.nr);
+        const name = PRODUKTE[au.will].name;
+        if (stand.auftrag.pause > 0) {
+          setzeText(aTitel, 'Der Laster ist unterwegs');
+          setzeText(aInfo, `Nächster Auftrag in ${dauer(stand.auftrag.pause)}.`);
+          aBalken.style.width = '0%';
+          aAblehnen.hidden = true;
+        } else {
+          const rateP = au.will === 'roh' ? f.roh : (f.produkte[au.will] || 0);
+          setzeText(aTitel, `${zahl(au.menge)} ${name} · ${geld(auftragLohn(stand, au))}`);
+          setzeText(aInfo, rateP > 0
+            ? `${zahl(stand.auftrag.geliefert)} von ${zahl(au.menge)} geladen · ${rate(rateP)}/s`
+            : `Die Halle macht gerade keine ${name}. Ablehnen, oder die passende Maschine bauen.`);
+          aBalken.style.width = `${Math.min(100, (stand.auftrag.geliefert / au.menge) * 100)}%`;
+          aAblehnen.hidden = false;
+        }
+      }
+
+      const gruppeSichtbar = {};
       for (const m of MASCHINEN) {
         const k = karten[m.id];
         const frei = maschineFrei(stand, m.id);
         const n = anzahl(stand, m.id);
+        const t = freischaltTech(m);
+        // Gesperrtes erst zeigen, wenn es erreichbar ist: die Voraussetzungen der Forschung sind erfüllt.
+        const inSicht = frei || (t && t.braucht.every((b) => techStufe(stand, b) > 0));
+        k.karte.hidden = !inSicht;
+        if (inSicht) gruppeSichtbar[m.gruppe] = true;
         schalte(k.karte, 'gesperrt', !frei);
         k.gesperrt.hidden = frei;
         k.kaufen.hidden = !frei;
@@ -597,62 +766,86 @@ function bildHalle() {
         k.abbauen.hidden = !frei || n === 0;
         setzeText(k.anzahlEl, n ? `×${n}` : '');
         const preis = maschinenKosten(stand, m.id);
-        const platzFehlt = plaetzeBelegt(stand) + m.plaetze > wv.plaetze;
+        const platzFehlt = !platzFrei(stand, m.id);
         setzeText(k.kaufen, platzFehlt ? 'kein Platz' : geld(preis));
-        k.kaufen.disabled = platzFehlt || stand.geld < preis;
+        k.kaufen.disabled = !platzFehlt && stand.geld < preis;
+        schalte(k.kaufen, 'ohneplatz', platzFehlt);
         const aus = !!stand.aus[m.id];
-        setzeText(k.umschalten, aus ? 'aus' : 'an');
+        setzeText(k.umschalten, aus ? 'aus' : 'läuft');
+        k.umschalten.setAttribute('aria-pressed', String(!aus));
+        k.umschalten.setAttribute('aria-label', `${m.name} ${aus ? 'einschalten' : 'ausschalten'}`);
         schalte(k.umschalten, 'aus', aus);
         schalte(k.karte, 'ausgeschaltet', aus && n > 0);
         let st = '';
         if (frei && n) {
-          if (m.gruppe === 'strom') st = `liefert ${rate(-m.strom * n * wv.stromMul)} Strom${m.brennstoff ? `, frisst ${rate(m.brennstoff * n)} Halme/s` : ''}`;
-          else if (m.id === 'arm' || m.id === 'bagger') st = `Auslastung ${prozent(f.auslastung.arm || 0)}`;
+          if (m.gruppe === 'strom') {
+            const l = f.leistung[m.id] || 0;
+            st = aus ? 'ausgeschaltet' : `liefert ${rate(l)} Strom${m.brennstoff ? `, frisst ${rate(m.brennstoff * n * wv.brennstoff)} Halme/s` : ''}`;
+          } else if (m.id === 'arm' || m.id === 'rechen') st = `Auslastung ${prozent(f.auslastung.arm || 0)}`;
+          else if (m.id === 'rohrwerfer') st = `Band +${prozent(n * m.rate * wv.werfer)}`;
           else if (m.id === 'scanner') st = `prüft ${rate(n * m.rate * wv.scanDeckung * wv.maschinenTempo * f.strom)} Halme/s`;
-          else if (m.id === 'sortierer') st = `sortiert ${prozent(f.sortiert)} des Heus`;
-          else if (m.id === 'sichter') st = imAusschuss(stand) ? `sucht … ${prozent(stand.ausschuss)}` : 'wartet auf Ausschuss';
+          else if (m.id === 'radar') st = `pingt alle ${dauer(wv.radarCD / n)}`;
+          else if (m.id === 'brunnen') st = `pumpt ${rate(f.wasser)} Wasser/s`;
           else if (m.produkt) {
-            const menge = f.produkte[m.produkt] || 0;
-            st = `Auslastung ${prozent(f.auslastung[m.id] || 0)} · ${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
-            if (menge && (m.produkt === 'ballen' || m.produkt === 'brei')) st += ` · ${rate(menge)}/s zum Verkauf`;
+            const aus2 = f.auslastung[m.id] || 0;
+            st = `Auslastung ${prozent(aus2)} · ${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
+            if (aus2 < 0.05 && !aus) st += ' · bekommt nichts vom Band';
           }
-          if (m.strom > 0) st += ` · braucht ${rate(m.strom * n * wv.verbrauch)} Strom`;
-        } else if (frei && m.produkt) {
-          st = `${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
-        }
+          if (m.strom > 0 && !aus) st += ` · braucht ${rate(m.strom * n * wv.verbrauch)} Strom`;
+        } else if (frei && m.produkt) st = `${PRODUKTE[m.produkt].name} je ${geld(produktPreis(wv, m.produkt))}`;
         setzeText(k.status, st);
       }
+      for (const m of MASCHINEN) karten[m.id].kopf.hidden = !gruppeSichtbar[m.gruppe];
     },
   };
 }
 
 /* ================================================================ Forschung */
 
-const SPALTE = 168;
-const ZEILE = 68;
-const KARTE_B = 148;
-const KARTE_H = 56;
-const RAND_L = 30;
-const RAND_O = 34;
+const SPALTE = 176;
+const ZEILE = 74;
+const KARTE_B = 156;
+const RAND_L = 34;
+const RAND_O = 36;
 
-function schritteName(n) {
-  if (n === 0) return 'Start';
-  return n === 1 ? '1 Schritt' : `${n} Schritte`;
-}
+const schritteName = (n) => (n === 0 ? 'Start' : n === 1 ? '1 Schritt' : `${n} Schritte`);
 
 function bildForschung() {
-  const suchfeld = h('input', { class: 'suche', type: 'search', placeholder: 'Baum durchsuchen', value: ui.suche });
+  const suchfeld = h('input', { class: 'suche', type: 'search', id: 'baum-suche', placeholder: 'Baum durchsuchen', 'aria-label': 'Forschung durchsuchen', value: ui.suche });
   const zaehler = h('span', { class: 'num' });
+  const treffer = h('span', { class: 'treffer' });
+  const zoomKnopf = h('button', { class: 'rund', 'aria-label': 'Übersicht umschalten', onclick: () => {
+    ui.zoom = !ui.zoom;
+    schalte(scroller, 'uebersicht', ui.zoom);
+    zoomKnopf.innerHTML = '';
+    zoomKnopf.append(sym(ui.zoom ? SYM.zoomEin : SYM.zoomAus));
+  } }, sym(ui.zoom ? SYM.zoomEin : SYM.zoomAus));
   const kopf = h('div', { class: 'forschungskopf' },
-    h('div', {}, h('p', { class: 'ober' }, 'Hof-Forschung'), h('p', { class: 'fortschritt' }, zaehler, ' Upgrades')),
-    suchfeld);
+    h('div', { class: 'fkopflinks' }, h('p', { class: 'ober' }, 'Hof-Forschung'), h('p', { class: 'fortschritt' }, zaehler, ' Stufen')),
+    h('div', { class: 'suchbox' }, suchfeld, treffer), zoomKnopf);
+
+  const chips = {};
+  const chipReihe = h('div', { class: 'astchips' }, AESTE.map((a) => {
+    const n = h('span', { class: 'num' });
+    const c = h('button', {
+      class: 'astchip', style: { '--astfarbe': a.farbe },
+      onclick: () => {
+        const b = BAUM.aeste.find((x) => x.ast === a.id);
+        scroller.scrollTo({ top: Math.max(0, (RAND_O + b.von * ZEILE - 30) * (ui.zoom ? 0.55 : 1)), behavior: 'smooth' });
+      },
+    }, a.name, n);
+    chips[a.id] = { c, n };
+    return c;
+  }));
 
   const breite = RAND_L + BAUM.breite * SPALTE + 10;
-  const hoehe = RAND_O + BAUM.hoehe * ZEILE + 20;
+  const hoehe = RAND_O + BAUM.hoehe * ZEILE + 30;
   const pos = (id) => {
     const l = BAUM.lage[id];
-    return { x: RAND_L + l.x * SPALTE, y: RAND_O + l.y * ZEILE };
+    return { x: RAND_L + l.x * SPALTE, y: RAND_O + l.y * ZEILE, h: l.h * ZEILE };
   };
+  const gruppeVon = {};
+  for (const gr of BAUM.gruppen) for (const id of gr.ids) gruppeVon[id] = gr;
 
   const ns = 'http://www.w3.org/2000/svg';
   const linien = document.createElementNS(ns, 'svg');
@@ -660,23 +853,27 @@ function bildForschung() {
   linien.setAttribute('width', breite);
   linien.setAttribute('height', hoehe);
   const linienListe = [];
+  const gezogen = new Set();
   for (const t of TECH) {
     for (const b of t.braucht) {
-      // Vom Start gehen sehr viele Linien aus; die Spalte „1 Schritt“ sagt dasselbe.
       if (b === 'scheune') continue;
+      // Zu einer Gruppe führt nur eine Linie, zu ihrer Überschrift.
+      const gr = gruppeVon[t.id];
+      const zielKey = gr ? `g:${gr.name}:${gr.y}:${b}` : `${t.id}:${b}`;
+      if (gezogen.has(zielKey)) continue;
+      gezogen.add(zielKey);
       const a = pos(b);
-      const z = pos(t.id);
       const x1 = a.x + KARTE_B;
-      const y1 = a.y + KARTE_H / 2;
-      const x2 = z.x;
-      const y2 = z.y + KARTE_H / 2;
+      const y1 = a.y + a.h / 2;
+      const x2 = gr ? RAND_L + gr.x * SPALTE : pos(t.id).x;
+      const y2 = gr ? RAND_O + gr.y * ZEILE + (BAUM_MASS.kopf * ZEILE) / 2 : pos(t.id).y + pos(t.id).h / 2;
       const mx = (x1 + x2) / 2;
       const p = document.createElementNS(ns, 'path');
       p.setAttribute('d', `M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`);
-      const fremd = TECH_NACH_ID[b].ast !== t.ast && b !== 'scheune';
-      p.setAttribute('class', fremd ? 'fremd' : '');
+      const fremd = TECH_NACH_ID[b].ast !== t.ast;
+      if (fremd) p.setAttribute('class', 'fremd');
       linien.append(p);
-      linienListe.push({ p, von: b, nach: t.id });
+      linienListe.push({ p, von: b });
     }
   }
 
@@ -684,42 +881,53 @@ function bildForschung() {
     const ast = AST_NACH_ID[a.ast];
     return h('div', {
       class: 'band', style: {
-        top: `${RAND_O + a.von * ZEILE - 6}px`, height: `${(a.bis - a.von + 1) * ZEILE}px`, '--astfarbe': ast.farbe,
+        top: `${RAND_O + a.von * ZEILE - 8}px`, height: `${(a.bis - a.von) * ZEILE + 16}px`, '--astfarbe': ast.farbe,
       },
-    }, h('span', {}, ast.name));
+    }, h('span', { class: 'bandname' }, ast.name));
   });
 
   const spaltenKopf = h('div', { class: 'spaltenkopf', style: { width: `${breite}px` } },
     Array.from({ length: BAUM.breite }, (_, i) => h('span', { style: { left: `${RAND_L + i * SPALTE}px` } }, schritteName(i))));
 
   const karten = {};
+  const gruppenKoepfe = BAUM.gruppen.map((gr) => h('div', {
+    class: 'gruppenkopf', style: {
+      left: `${RAND_L + gr.x * SPALTE}px`, top: `${RAND_O + gr.y * ZEILE}px`, width: `${KARTE_B}px`,
+      height: `${BAUM_MASS.kopf * ZEILE}px`, '--astfarbe': AST_NACH_ID[gr.ast].farbe,
+    },
+  }, gr.name));
   for (const t of TECH) {
     const p = pos(t.id);
     const ast = t.ast ? AST_NACH_ID[t.ast] : { name: 'Lagerhalle', farbe: '#e8dcc4' };
     const preis = h('span', { class: 'preis num' });
     const stufe = h('span', { class: 'stufe num' });
+    const kompakt = !!t.gruppe;
     const karte = h('button', {
-      class: 'karte', style: { left: `${p.x}px`, top: `${p.y}px`, '--astfarbe': ast.farbe },
-      onclick: () => { klangWecken(); ui.wahl = t.id; blattZeigen(); },
-    }, h('span', { class: 'astname' }, ast.name), h('b', {}, t.name), h('span', { class: 'kartenfuss' }, preis, stufe));
+      class: kompakt ? 'karte kompakt' : 'karte',
+      style: { left: `${p.x}px`, top: `${p.y}px`, width: `${KARTE_B}px`, height: `${p.h - (kompakt ? 2 : 0)}px`, '--astfarbe': ast.farbe },
+      onclick: () => { klangWecken(); ui.wahl = t.id; blattZeigen(); zuKarte(t.id); },
+    }, kompakt ? [h('b', {}, t.name), preis, stufe]
+      : [h('span', { class: 'astname' }, ast.name), h('b', {}, t.name), h('span', { class: 'kartenfuss' }, preis, stufe)]);
     karten[t.id] = { karte, preis, stufe };
   }
 
   const brett = h('div', { class: 'brett', style: { width: `${breite}px`, height: `${hoehe}px` } },
-    baender, linien, Object.values(karten).map((k) => k.karte));
-  const scroller = h('div', { class: 'baum' }, spaltenKopf, brett);
-  const blatt = h('div', { class: 'blatt' });
-  const wurzel = h('section', { class: 'bild forschungsbild' }, kopf, scroller, blatt);
+    baender, linien, gruppenKoepfe, Object.values(karten).map((k) => k.karte));
+  const scroller = h('div', { class: `baum${ui.zoom ? ' uebersicht' : ''}` }, h('div', { class: 'brettrahmen' }, spaltenKopf, brett));
+  const blatt = h('div', { class: 'blatt', role: 'region', 'aria-label': 'Forschungsdetails' });
+  const wurzel = h('section', { class: 'bild forschungsbild' }, kopf, chipReihe, scroller, blatt);
   el.buehne.append(wurzel);
 
-  const zuKarte = (id, sanft = true) => {
+  function zuKarte(id, sanft = true) {
     const p = pos(id);
+    const f = ui.zoom ? 0.55 : 1;
+    const sichtbar = scroller.clientHeight - (blatt.classList.contains('offen') ? blatt.offsetHeight + 16 : 0);
     scroller.scrollTo({
-      left: Math.max(0, p.x - scroller.clientWidth / 2 + KARTE_B / 2),
-      top: Math.max(0, p.y - scroller.clientHeight / 2 + KARTE_H / 2),
+      left: Math.max(0, (p.x - scroller.clientWidth / 2 + KARTE_B / 2) * f),
+      top: Math.max(0, p.y * f - Math.max(40, sichtbar / 2 - 30)),
       behavior: sanft ? 'smooth' : 'auto',
     });
-  };
+  }
 
   requestAnimationFrame(() => {
     if (ui.wahl) zuKarte(ui.wahl, false);
@@ -729,33 +937,43 @@ function bildForschung() {
   scroller.addEventListener('scroll', () => { ui.baumScroll = { x: scroller.scrollLeft, y: scroller.scrollTop }; }, { passive: true });
 
   const passt = (t, q) => !q || t.name.toLowerCase().includes(q) || t.text.toLowerCase().includes(q)
-    || (t.ast && AST_NACH_ID[t.ast].name.toLowerCase().includes(q));
+    || (t.ast && AST_NACH_ID[t.ast].name.toLowerCase().includes(q)) || (t.gruppe || '').toLowerCase().includes(q);
+  const anwendenSuche = () => {
+    const q = ui.suche.trim().toLowerCase();
+    let n = 0;
+    for (const t of TECH) {
+      const ja = !q || passt(t, q);
+      if (q && ja) n++;
+      schalte(karten[t.id].karte, 'blass', !!q && !ja);
+    }
+    setzeText(treffer, q ? (n ? `${n} Treffer` : 'keine Treffer') : '');
+    return q;
+  };
   suchfeld.addEventListener('input', () => {
-    ui.suche = suchfeld.value.trim().toLowerCase();
-    anwendenSuche();
-    const erste = TECH.find((t) => ui.suche && passt(t, ui.suche));
+    ui.suche = suchfeld.value;
+    const q = anwendenSuche();
+    const erste = q && TECH.find((t) => passt(t, q));
     if (erste) zuKarte(erste.id);
   });
-  const anwendenSuche = () => {
-    for (const t of TECH) schalte(karten[t.id].karte, 'blass', !!ui.suche && !passt(t, ui.suche));
-  };
   anwendenSuche();
 
   function blattZeigen() {
     const id = ui.wahl;
-    if (!id) { blatt.classList.remove('offen'); blatt.innerHTML = ''; return; }
+    for (const [k, v] of Object.entries(karten)) schalte(v.karte, 'gewaehlt', k === id);
+    if (!id) { blatt.classList.remove('offen'); blatt.innerHTML = ''; blatt.aktualisieren = null; return; }
     const t = TECH_NACH_ID[id];
     const ast = t.ast ? AST_NACH_ID[t.ast] : { name: 'Lagerhalle', farbe: '#e8dcc4' };
-    for (const [k, v] of Object.entries(karten)) schalte(v.karte, 'gewaehlt', k === id);
     const knopf = h('button', { class: 'knopf primaer breit', onclick: () => {
       klangWecken();
       const r = techKaufen(stand, id);
       if (r.ok) {
         klang.kauf();
         summen(8);
-        const neu = t.effekt.find((e) => e[0] === 'frei');
-        if (neu && techStufe(stand, id) === 1) toast(`${t.name} freigeschaltet.`, 'gut');
-        if (id === 'automatisierung') toast('Die Halle ist offen. Schau unter „Halle“.', 'gut');
+        const karte = karten[id].karte;
+        karte.classList.remove('gekauft');
+        void karte.offsetWidth;
+        karte.classList.add('gekauft');
+        if (t.effekt.some((e) => e[0] === 'frei') && techStufe(stand, id) === 1) toast(`${t.name} freigeschaltet.`, 'gut');
       } else klang.fehler();
       blattAktualisieren();
     } });
@@ -763,7 +981,7 @@ function bildForschung() {
     const vor = h('ul', { class: 'voraus' });
     blatt.replaceChildren(
       h('div', { class: 'blattkopf', style: { '--astfarbe': ast.farbe } },
-        h('div', {}, h('p', { class: 'astname' }, ast.name), h('h3', {}, t.name)),
+        h('div', {}, h('p', { class: 'astname' }, t.gruppe ? `${ast.name} · ${t.gruppe}` : ast.name), h('h3', {}, t.name)),
         h('button', { class: 'rund', 'aria-label': 'Schließen', onclick: () => { ui.wahl = null; blattZeigen(); anwendenZustand(); } }, sym(SYM.zu))),
       h('p', { class: 'blatttext' }, t.text),
       h('p', { class: 'blattstufe' }, 'Stufe ', stufeEl),
@@ -772,11 +990,15 @@ function bildForschung() {
     blatt.classList.add('offen');
     function blattAktualisieren() {
       const st = techStatus(stand, id);
-      setzeText(stufeEl, `${techStufe(stand, id)} / ${t.stufen}`);
-      vor.replaceChildren(...t.braucht.filter((b) => b !== 'scheune').map((b) => h('li', {
-        class: techStufe(stand, b) ? 'erfuellt' : 'fehlt',
-        onclick: () => { ui.wahl = b; blattZeigen(); zuKarte(b); },
-      }, sym(techStufe(stand, b) ? SYM.haken : SYM.schloss), `braucht ${TECH_NACH_ID[b].name}`)));
+      setzeText(stufeEl, `${techStufe(stand, id)} von ${t.stufen}`);
+      const vorText = t.braucht.filter((b) => b !== 'scheune').map((b) => `${b}:${techStufe(stand, b) > 0}`).join(',');
+      if (vor.dataset.text !== vorText) {
+        vor.dataset.text = vorText;
+        vor.replaceChildren(...t.braucht.filter((b) => b !== 'scheune').map((b) => h('li', {}, h('button', {
+          class: techStufe(stand, b) ? 'erfuellt' : 'fehlt',
+          onclick: () => { ui.wahl = b; blattZeigen(); zuKarte(b); },
+        }, sym(techStufe(stand, b) ? SYM.haken : SYM.schloss), `braucht ${TECH_NACH_ID[b].name}`))));
+      }
       if (st === 'max') { setzeText(knopf, t.stufen > 1 ? 'Voll ausgebaut' : 'Erforscht'); knopf.disabled = true; }
       else if (st === 'gesperrt') { setzeText(knopf, `Gesperrt · ${geld(techKosten(stand, id))}`); knopf.disabled = true; }
       else {
@@ -789,14 +1011,20 @@ function bildForschung() {
   }
 
   function anwendenZustand() {
-    setzeText(zaehler, `${techGekauft(stand)} / ${TECH_STUFEN_GESAMT}`);
+    setzeText(zaehler, `${techGekauft(stand)} von ${TECH_STUFEN_GESAMT}`);
+    const bereit = {};
     for (const t of TECH) {
       const k = karten[t.id];
       const st = techStatus(stand, t.id);
+      if (st === 'kaufbar' && t.ast) bereit[t.ast] = (bereit[t.ast] || 0) + 1;
       for (const z of ['max', 'kaufbar', 'teuer', 'gesperrt']) schalte(k.karte, z, st === z);
       schalte(k.karte, 'begonnen', techStufe(stand, t.id) > 0);
-      setzeText(k.preis, st === 'max' ? (t.id === 'scheune' ? '' : 'fertig') : geld(techKosten(stand, t.id)));
+      setzeText(k.preis, t.id === 'scheune' ? '' : st === 'max' ? (t.stufen > 1 ? 'fertig' : 'erforscht') : geld(techKosten(stand, t.id)));
       setzeText(k.stufe, t.id === 'scheune' ? '' : `${techStufe(stand, t.id)}/${t.stufen}`);
+    }
+    for (const a of AESTE) {
+      setzeText(chips[a.id].n, bereit[a.id] ? String(bereit[a.id]) : '');
+      schalte(chips[a.id].c, 'bereit', !!bereit[a.id]);
     }
     for (const l of linienListe) l.p.classList.toggle('offen', techStufe(stand, l.von) > 0);
     if (blatt.aktualisieren && ui.wahl) blatt.aktualisieren();
@@ -807,108 +1035,93 @@ function bildForschung() {
   return { aktualisieren: anwendenZustand };
 }
 
-/* ================================================================ Funde */
+/* ================================================================ Nadeln */
 
-function bildFunde() {
-  const wurzel = h('section', { class: 'bild fundebild' });
+function bildNadeln() {
+  const wurzel = h('section', { class: 'bild nadelbild' });
   el.buehne.append(wurzel);
 
-  const nadelKarten = NADELN.map((n) => {
+  const lTitel = h('h3', {});
+  const lInfo = h('p', {});
+  const lBalken = h('div', { class: 'fuellung' });
+  const lKnopf = h('button', { class: 'knopf primaer breit', onclick: () => { klangWecken(); bestellenFragen(); } });
+  const ladungKarte = h('div', { class: 'ladungkarte' },
+    h('div', { class: 'kartenkopf' }, sym(SYM.ladung), lTitel), lInfo, h('div', { class: 'balken dünn' }, lBalken), lKnopf);
+
+  const nadelKarten = Array.from({ length: NADELN_JE_LADUNG }, () => {
     const name = h('b', {});
     const info = h('small', {});
     const k = h('div', { class: 'nadelkarte' }, h('div', { class: 'nsym', html: SYM.nadel }), name, info);
     return { k, name, info };
   });
 
-  const ausFortschritt = h('div', { class: 'fuellung' });
-  const ausText = h('p', {});
-  const ausKnopf = h('button', { class: 'knopf primaer breit', onclick: () => {
-    klangWecken();
-    const e = [];
-    const r = ausschussTippen(stand, e);
-    if (r) { klang.stich(false); summen(5); }
-    ereignisse(e);
-  } }, 'Im Ausschuss wühlen');
-  const ausschussKarte = h('div', { class: 'ausschusskarte' },
-    h('div', { class: 'kartenkopf' }, sym(SYM.ausschuss), h('h3', {}, 'Ausschuss')),
-    ausText, h('div', { class: 'balken' }, ausFortschritt), ausKnopf);
-
-  const kisteWert = h('b', { class: 'num' });
-  const kisteAnzahl = h('small', {});
-  const verkaufen = h('button', { class: 'knopf primaer', onclick: () => {
-    const b = fundeVerkaufen(stand);
-    if (b > 0) { klang.kasse(); toast(`Fundstücke für ${geld(b)} verkauft.`, 'gut'); } else klang.fehler();
-  } }, 'Alles verkaufen');
-  const sammelbonus = h('p', { class: 'leise' });
-
-  const album = {};
-  const albumGitter = h('div', { class: 'album' }, FUNDE.map((f) => {
-    const r = SELTEN_NACH_ID[f.stufe];
-    const zahlEl = h('small', { class: 'num' });
+  const sammlungInfo = h('p', { class: 'leise' });
+  const sammlung = NADELN.map((n, i) => {
     const name = h('b', {});
-    const wert = h('small', { class: 'wert num' });
-    const k = h('div', { class: 'fundkarte', style: { '--seltenfarbe': r.farbe } },
-      h('div', { class: 'fsym', html: FUND_SYM[f.id] }), name, h('span', { class: 'selten' }, r.name), zahlEl, wert);
-    album[f.id] = { k, zahlEl, name, wert };
-    return k;
-  }));
+    const info = h('small', {});
+    const k = h('div', { class: 'sammelkarte' }, h('div', { class: 'nsym', html: SYM.nadel }), name, info);
+    return { k, name, info, i };
+  });
 
   const stat = h('dl', { class: 'werte' });
 
   wurzel.append(
-    h('h3', { class: 'gruppe' }, 'Nadeln'),
+    ladungKarte,
+    h('h3', { class: 'gruppe' }, 'Diese Ladung'),
     h('div', { class: 'nadelgitter' }, nadelKarten.map((n) => n.k)),
-    ausschussKarte,
-    h('div', { class: 'kiste' },
-      h('div', {}, h('h3', {}, 'Fundkiste'), kisteWert, kisteAnzahl, sammelbonus), verkaufen),
-    h('h3', { class: 'gruppe' }, 'Album'),
-    albumGitter,
+    h('h3', { class: 'gruppe' }, 'Sammlung'),
+    sammlungInfo,
+    h('div', { class: 'sammlung' }, sammlung.map((s) => s.k)),
     h('h3', { class: 'gruppe' }, 'Statistik'),
     stat);
 
   return {
     aktualisieren() {
-      const w = werte(stand);
+      const fertig = ladungMoeglich(stand);
+      setzeText(lTitel, `Ladung ${stand.ladung} · ${halme(stand.haufen.gesamt)} Halme`);
+      const anteil = stand.haufen.entfernt / stand.haufen.gesamt;
+      lBalken.style.width = `${Math.min(100, anteil * 100)}%`;
+      setzeText(lInfo, fertig
+        ? `Alle sechs Nadeln gefunden. Die nächste Ladung hat ${halme(ladungGroesse(stand.ladung + 1))} Halme und kostet ${geld(ladungPreis(stand))}.`
+        : `${prozentAb(anteil)} abgetragen, ${nadelnGefunden(stand)} von ${NADELN_JE_LADUNG} Nadeln gefunden. Neue Ladungen gibt es, wenn alle sechs gefunden sind.`);
+      lKnopf.hidden = !fertig;
+      setzeText(lKnopf, stand.geld >= ladungPreis(stand) ? `Bestellen · ${geld(ladungPreis(stand))}` : 'Auf Rechnung bestellen');
       stand.nadeln.forEach((n, i) => {
         const k = nadelKarten[i];
-        schalte(k.k, 'gefunden', n.zustand === 'gefunden');
-        schalte(k.k, 'ausschuss', n.zustand === 'ausschuss');
-        setzeText(k.name, n.zustand === 'gefunden' ? NADELN[i].name : n.zustand === 'ausschuss' ? 'im Ausschuss' : `Nadel ${i + 1}`);
-        setzeText(k.info, n.zustand === 'gefunden' ? NADELN[i].bonus : n.zustand === 'ausschuss' ? 'raussuchen!' : 'noch im Haufen');
+        const gef = n.zustand === 'gefunden';
+        schalte(k.k, 'gefunden', gef);
+        schalte(k.k, 'gold', gef && i === NADELN_JE_LADUNG - 1);
+        setzeText(k.name, gef ? NADELN[n.art].name : `Nadel ${i + 1}`);
+        setzeText(k.info, gef ? NADELN[n.art].bonus : 'noch im Haufen');
       });
-      const aus = imAusschuss(stand);
-      ausschussKarte.hidden = !aus;
-      ausFortschritt.style.width = `${stand.ausschuss * 100}%`;
-      setzeText(ausText, `${aus === 1 ? 'Eine Nadel ist' : `${aus} Nadeln sind`} ungescannt durchs Band gerutscht. `
-        + `Etwa ${AUSSCHUSS_TIPPS} Griffe, dann hast du sie${anzahl(stand, 'sichter') ? ' — der Nadelsichter sucht mit' : ''}.`);
-      const stueck = Object.values(stand.funde).reduce((n, e) => n + e.n, 0);
-      setzeText(kisteWert, geld(fundWert(stand)));
-      setzeText(kisteAnzahl, `${zahl(stueck)} Stück in der Kiste`);
-      verkaufen.disabled = stueck === 0;
-      setzeText(sammelbonus, `Sammelbonus: ${fundArten(stand)} von ${FUNDE.length} Arten entdeckt, alles ${prozent(SAMMELBONUS * fundArten(stand))} mehr wert.`);
-      for (const f of FUNDE) {
-        const e = stand.funde[f.id];
-        const a = album[f.id];
-        const bekannt = e && e.ges > 0;
-        schalte(a.k, 'unbekannt', !bekannt);
-        setzeText(a.name, bekannt ? f.name : '???');
-        setzeText(a.zahlEl, bekannt ? `${zahl(e.n)} da · ${zahl(e.ges)} gefunden` : 'noch nie gefunden');
-        setzeText(a.wert, bekannt ? `je ${geld(fundPreis(w, f.id))}` : '');
+      setzeText(sammlungInfo, `${artenGefunden(stand)} von ${NADELN.length} Arten. Jede Art gibt ihren winzigen Bonus einmal, für immer.`);
+      for (const s of sammlung) {
+        const n = stand.arten[s.i] || 0;
+        schalte(s.k, 'gefunden', n > 0);
+        setzeText(s.name, n > 0 ? NADELN[s.i].name : '???');
+        setzeText(s.info, n > 0 ? `${NADELN[s.i].bonus}${n > 1 ? ` · ${n}×` : ''}` : `Ladung ${Math.floor(s.i / NADELN_JE_LADUNG) + 1}`);
       }
+      const st = stand.stat;
       const z = [
-        ['Spielzeit', dauer(stand.zeit)],
-        ['Haufen', `${stand.lauf}${stand.erledigt ? ` (${stand.erledigt} geschafft)` : ''}`],
-        ['Abgetragen', `${halme(stand.haufen.entfernt)} von ${halme(stand.haufen.gesamt)}`],
-        ['davon von Hand', halme(stand.stat.hand || 0)],
-        ['davon Drohnen', halme(stand.stat.drohne || 0)],
-        ['davon Maschinen', halme(stand.stat.maschine || 0)],
-        ['Schaufelstiche', zahl(stand.stat.tipps)],
-        ['Gänge zum Ankauf', zahl(stand.stat.gaenge)],
-        ['Fundstücke', zahl(stand.stat.funde)],
+        ['Spielzeit', dauer(stand.aktiv)],
+        ['Erste Nadel nach', st.ersteNadel == null ? '–' : dauer(st.ersteNadel)],
+        ['Erste Ladung geschafft nach', st.ersteLadung == null ? '–' : dauer(st.ersteLadung)],
+        ['Halme abgetragen', halme(st.abgetragen)],
+        ['davon von Hand', halme(st.hand)],
+        ['davon Drohnen', halme(st.drohne)],
+        ['davon Maschinen', halme(st.maschine)],
+        ['Stiche', zahl(st.tipps)],
+        ['Gänge zum Stand', zahl(st.gaenge)],
+        ['Größter Verkauf', `${halme(st.besterVerkauf)} Halme`],
+        ['Gefegt', `${halme(st.gefegt)} Halme`],
+        ['Aufträge', zahl(st.auftraege)],
+        ['Meiste Kasse', geld(st.maxGeld)],
         ['Verdient', geld(stand.verdient)],
+        ['Missionen', `${Math.min(stand.mission, MISSIONEN.length)} von ${MISSIONEN.length}`],
       ];
       if (stat.children.length !== z.length * 2) {
         stat.replaceChildren(...z.flatMap(([a]) => [h('dt', {}, a), h('dd', { class: 'num' })]));
+        z.forEach(([a], i) => setzeText(stat.children[i * 2], a));
       }
       z.forEach(([, b], i) => setzeText(stat.children[i * 2 + 1], b));
     },
@@ -926,16 +1139,15 @@ function menue() {
       try { localStorage.setItem(TON_KEY, klangStumm() ? 'aus' : 'an'); } catch { /* egal */ }
     } },
     { text: 'Geschichte und Anleitung', aktion: einfuehrung },
-    { text: 'Spiel als Datei sichern', aktion: dateiSichern },
+    { text: 'Spiel mit Spielstand herunterladen', aktion: dateiSichern },
+    { text: 'Spielstand löschen', klasse: 'gefahr', aktion: loeschenFragen },
+    { text: 'Zurück' },
   ];
-  if (alleNadeln(stand)) knoepfe.push({ text: 'Neuer Haufen', klasse: 'primaer', aktion: neuerHaufenFragen });
-  knoepfe.push({ text: 'Spielstand löschen', klasse: 'gefahr', aktion: loeschenFragen });
-  knoepfe.push({ text: 'Zurück' });
   modal({
-    ober: `Haufen ${stand.lauf}`,
+    ober: `Ladung ${stand.ladung}`,
     titel: 'Menü',
-    inhalt: h('p', { class: 'leise' }, 'Der Spielstand wird auf diesem Gerät gespeichert, alle paar Sekunden und beim Schließen. '
-      + 'Die Halle arbeitet weiter, während du weg bist.'),
+    inhalt: h('p', { class: 'leise' }, 'Der Spielstand liegt auf diesem Gerät und wird alle paar Sekunden gesichert. '
+      + 'Die Halle arbeitet weiter, während du weg bist. Die heruntergeladene Datei läuft ohne Netz und bringt deinen Stand mit.'),
     knoepfe,
     klasse: 'menuemodal',
   });
@@ -944,14 +1156,16 @@ function menue() {
 function loeschenFragen() {
   modal({
     titel: 'Wirklich von vorn?',
-    absaetze: ['Geld, Forschung, Maschinen, Nadeln und Album sind danach weg. Das lässt sich nicht rückgängig machen.'],
+    absaetze: ['Geld, Forschung, Maschinen, Nadeln und Sammlung sind danach weg. Das lässt sich nicht rückgängig machen.'],
     knoepfe: [
       { text: 'Abbrechen' },
       { text: 'Löschen', klasse: 'gefahr', aktion: () => {
+        warteschlange.length = 0;
         stand = neuerStand();
-        sichern();
         ui.wahl = null;
         ui.baumScroll = null;
+        ui.endeGezeigt = 0;
+        sichern();
         wechseln('haufen');
         einfuehrung();
       } },
@@ -961,31 +1175,33 @@ function loeschenFragen() {
 
 /* ------------------------------------------------------------ Seite als Datei */
 
-function seitenQuelltext(cssId, jsId, ersatzTitel) {
-  const css = document.getElementById(cssId)?.textContent || '';
-  const js = document.getElementById(jsId)?.textContent || '';
-  if (!css || !js) return null;
-  const kopf = typeof SEITENKOPF === 'string' ? SEITENKOPF : `<meta charset="utf-8"><title>${ersatzTitel}</title>`;
+async function seitenQuelltext() {
+  let css = document.getElementById('heuhaufen-css')?.textContent || '';
+  let js = document.getElementById('heuhaufen-js')?.textContent || '';
+  if (!css || !js) {
+    // Webfassung: Stil und Skript liegen als eigene Dateien daneben.
+    try {
+      [css, js] = await Promise.all(['stil.css', 'spiel.js'].map((d) => fetch(d).then((r) => (r.ok ? r.text() : ''))));
+    } catch { return null; }
+    if (!css || !js) return null;
+    js = js.replace(/^const SPIELE_BASIS = [^\n]*\n/m, '').replace(/^const OFFLINE_DATEI = [^\n]*\n/m, '');
+  }
+  js = js.replace(/^var HEUHAUFEN_MITGEBRACHT = [^\n]*\n/m, '');
+  const mit = `var HEUHAUFEN_MITGEBRACHT = ${JSON.stringify(speichern(stand)).replace(/</g, '\\u003c')};\n`;
+  const kopf = typeof SEITENKOPF === 'string' ? SEITENKOPF : '<meta charset="utf-8"><title>Heuhaufen</title>';
   return [
     '<!doctype html>', '<html lang="de">', '<head>', kopf,
-    `<style id="${cssId}">`, css, '</style>', '</head>', '<body>',
+    '<style id="heuhaufen-css">', css, '</style>', '</head>', '<body>',
     '<div id="app"></div>',
-    `<script id="${jsId}">`, js, '<' + '/script>',
+    '<script id="heuhaufen-js">', mit + js, '<' + '/script>',
     '</body>', '</html>', '',
   ].join('\n');
 }
 
 async function dateiSichern() {
-  const name = 'Heuhaufen.html';
-  if (typeof OFFLINE_DATEI === 'string') {
-    const a = h('a', { href: OFFLINE_DATEI, download: name });
-    document.body.append(a);
-    a.click();
-    a.remove();
-    return;
-  }
-  const html = seitenQuelltext('heuhaufen-css', 'heuhaufen-js', 'Heuhaufen');
-  if (!html) { toast('Im Entwicklungsmodus gibt es keine Einzeldatei. Erst bauen.', 'warn'); return; }
+  const name = `Heuhaufen-Ladung-${stand.ladung}.html`;
+  const html = await seitenQuelltext();
+  if (!html) { toast('Die Datei lässt sich hier nicht zusammenbauen. In der gebauten Fassung geht es.', 'warn'); return; }
   const dl = typeof window !== 'undefined' && window.claude ? window.claude.downloads : null;
   if (dl) {
     try {
@@ -1002,7 +1218,7 @@ async function dateiSichern() {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
-  toast('Die Datei liegt in den Downloads.', 'gut');
+  toast('Download gestartet. Die Datei bringt deinen Spielstand mit.', 'gut');
 }
 
 /* ================================================================ Schleife */
@@ -1011,37 +1227,63 @@ function schleife() {
   let letzte = performance.now();
   let letzteAnzeige = 0;
   const schritt = (jetzt) => {
-    const dt = Math.min(0.25, Math.max(0, (jetzt - letzte) / 1000));
-    letzte = jetzt;
-    if (dt > 0) ereignisse(tick(stand, dt));
+    try {
+      const dt = Math.min(0.25, Math.max(0, (jetzt - letzte) / 1000));
+      letzte = jetzt;
+      if (ui.passiv) return;
+      if (dt > 0) ereignisse(tick(stand, dt));
 
-    // Staubsauger-Geräusch folgt dem Zustand
-    const saugt = stand.sauger.an && !stand.sauger.heiss && stand.laufen <= 0;
-    if (saugt && !ui.saugerLaeuft) { saugerAn(); ui.saugerLaeuft = true; }
-    if (!saugt && ui.saugerLaeuft) { saugerAus(); ui.saugerLaeuft = false; }
-    if (saugt) saugerHitze(stand.sauger.hitze);
+      const saugt = stand.sauger.an && !saugerBlockiert(stand);
+      if (saugt && !ui.saugerLaeuft) { saugerAn(); ui.saugerLaeuft = true; }
+      if (!saugt && ui.saugerLaeuft) { saugerAus(); ui.saugerLaeuft = false; }
+      if (saugt) saugerHitze(stand.sauger.hitze);
 
-    // Detektor
-    ui.blink = Math.max(0, ui.blink - dt * 6);
-    if (ui.reiter === 'haufen' && !modalOffen()) {
-      const d = detektor(stand);
-      if (d.staerke > 0 && jetzt >= ui.naechsterPiep) {
-        klang.piep(d.staerke);
-        ui.blink = 1;
-        ui.naechsterPiep = jetzt + (1300 - d.staerke * 1200);
-      } else if (d.staerke <= 0) ui.naechsterPiep = jetzt;
+      // Der Detektor piept nur, wenn man ihn in der Hand hat.
+      ui.blink = Math.max(0, ui.blink - dt * 6);
+      if (ui.reiter === 'haufen' && stand.werkzeug === 'detektor' && !modalOffen()) {
+        const d = detektor(stand);
+        if (d.staerke > 0 && jetzt >= ui.naechsterPiep) {
+          klang.piep(d.staerke);
+          ui.blink = 1;
+          ui.naechsterPiep = jetzt + (1300 - d.staerke * 1200);
+        } else if (d.staerke <= 0) ui.naechsterPiep = jetzt;
+      }
+
+      if (ui.bildschirm && ui.bildschirm.zeichnen) ui.bildschirm.zeichnen(dt);
+      if (jetzt - letzteAnzeige > 200) {
+        letzteAnzeige = jetzt;
+        kopfAktualisieren();
+        if (ui.bildschirm) ui.bildschirm.aktualisieren();
+      }
+      if (jetzt - ui.gespeichert > 5000) sichern();
+    } catch (fehler) {
+      // Ein Fehler in einem Bild darf nicht das ganze Spiel anhalten.
+      if (typeof console !== 'undefined') console.error(fehler);
+    } finally {
+      requestAnimationFrame(schritt);
     }
-
-    if (ui.bildschirm && ui.bildschirm.zeichnen) ui.bildschirm.zeichnen(dt);
-    if (jetzt - letzteAnzeige > 200) {
-      letzteAnzeige = jetzt;
-      kopfAktualisieren();
-      if (ui.bildschirm) ui.bildschirm.aktualisieren();
-    }
-    if (jetzt - ui.gespeichert > 5000) sichern();
-    requestAnimationFrame(schritt);
   };
   requestAnimationFrame(schritt);
+}
+
+function anderesFenster() {
+  if (ui.passiv) return;
+  ui.passiv = true;
+  saugen(stand, false);
+  warteschlange.length = 0;
+  modalSchliessen();
+  modal({
+    titel: 'Das Spiel läuft woanders',
+    absaetze: ['In einem anderen Fenster wurde gerade weitergespielt. Damit sich die beiden nicht gegenseitig überschreiben, ruht es hier.'],
+    knoepfe: [{ text: 'Hier weiterspielen', klasse: 'primaer', aktion: () => {
+      const neu = einlesen();
+      if (neu) stand = neu;
+      ui.passiv = false;
+      offlineNachholen(stand);
+      sichern();
+      wechseln(ui.reiter);
+    } }],
+  });
 }
 
 function start() {
@@ -1049,6 +1291,7 @@ function start() {
   stand = einlesen();
   const neu = !stand;
   if (neu) stand = neuerStand();
+  ui.endeGezeigt = alleNadeln(stand) ? stand.ladung : stand.ladung - 1;
   geruest();
   wechseln('haufen');
   if (neu) einfuehrung();
@@ -1056,12 +1299,18 @@ function start() {
   sichern();
 
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { saugen(stand, false); sichern(); } else {
+    if (document.hidden) {
+      saugen(stand, false);
+      saugerAus();
+      ui.saugerLaeuft = false;
+      sichern();
+    } else if (!ui.passiv) {
       abwesenheitsbericht(offlineNachholen(stand));
       sichern();
     }
   });
   window.addEventListener('pagehide', sichern);
+  window.addEventListener('storage', (ev) => { if (ev.key === SPEICHER_KEY && ev.newValue) anderesFenster(); });
   schleife();
 }
 
