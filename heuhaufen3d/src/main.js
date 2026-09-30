@@ -10,7 +10,7 @@ import {
 } from './wirtschaft.js';
 import { TECH } from './daten.js';
 import {
-  standNeu, spielTakt, speichern, laden, ladungBestellen, SPEICHER3D_KEY, spielZufall, abwesenheit,
+  standNeu, spielTakt, speichern, laden, ladungBestellen, SPEICHER3D_KEY, spielZufall, abwesenheitBeginnen, abwesenheitWeiter,
 } from './spiel.js';
 import {
   stechen, kannStechen, fegen, saugerSchritt, bueschelGreifen, standKippen, pusteSchritt, werkzeugWaehlen,
@@ -708,6 +708,22 @@ function hauptStart() {
       } else ui.detektorZeigen(false);
 
       // Welt
+      // Abwesenheit nachholen: höchstens 10 ms je Bild, danach der Willkommensgruß
+      if (zustand.aufholen && zustand.laeuft) {
+        const job = abwesenheitWeiter(s, zustand.aufholen, 400, performance.now() + 10);
+        if (job.fertig) {
+          zustand.aufholen = null;
+          const r = job.ergebnis;
+          ereignisPuffer.push(...r.ereignisse);
+          if (!r.kurz && r.verdient > 0) {
+            ui.modal({
+              ober: `${dauer(r.abwesend)} weg`, titel: 'Willkommen zurück',
+              absaetze: [`Die Maschinen haben ${halme(r.halme)} Halme abgetragen und ${geld(r.verdient)} eingenommen.`],
+              knoepfe: [{ text: 'Weiter', klasse: 'primaer' }],
+            });
+          }
+        }
+      }
       // Zeitraffer nur für Tests (window.__heuhaufen3d.zustand.zeitraffer = 10)
       const raffer = zustand.laeuft ? Math.max(1, Math.min(40, Math.floor(zustand.zeitraffer || 1))) : 1;
       for (let i = 0; i < raffer; i++) ereignisPuffer.push(...spielTakt(s, zustand.laeuft ? dt : 0, [automatikSchritt]));
@@ -813,15 +829,9 @@ function hauptStart() {
     app.classList.remove('vorstart');
     zustand.laeuft = true;
     if (!neu) {
-      // Was die Maschinen in der Zwischenzeit geschafft haben
-      const r = abwesenheit(s, Date.now(), [automatikSchritt]);
-      if (r && !r.kurz && r.verdient > 0) {
-        ui.modal({
-          ober: `${dauer(r.abwesend)} weg`, titel: 'Willkommen zurück',
-          absaetze: [`Die Maschinen haben ${halme(r.halme)} Halme abgetragen und ${geld(r.verdient)} eingenommen.`],
-          knoepfe: [{ text: 'Weiter', klasse: 'primaer' }],
-        });
-      }
+      // Was die Maschinen in der Zwischenzeit geschafft haben: in Häppchen nachrechnen
+      zustand.aufholen = abwesenheitBeginnen(s, Date.now(), [automatikSchritt]);
+      if (zustand.aufholen && zustand.aufholen.sek >= 30) ui.toast('Die Maschinen holen nach, was in deiner Abwesenheit passiert ist …');
     }
     s.zuletzt = Date.now();
     spielerKamera(s.spieler, s3.kamera, 0);

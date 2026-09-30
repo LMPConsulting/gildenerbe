@@ -6,14 +6,15 @@
 
 import { PRODUKTE } from './daten.js';
 import { haufenHoehe } from './haufen.js';
-import { hangFuss } from './lose.js';
+import { hangFuss, loseAblegen } from './lose.js';
+import { WELT } from './daten.js';
 import { werte, preisRoh, produktPreis, verkaufen } from './wirtschaft.js';
 import { nadelFinden, nadelZurueck } from './nadeln.js';
 import { platzFrei } from './werkzeuge.js';
 import { STAND_TRICHTER, lauf } from './welt.js';
 
 export const SCHWERE = 9.81;
-export const GEGENSTAENDE_MAX = 600;
+export const GEGENSTAENDE_MAX = 900;
 
 /** Halbe Höhe (Radius) je Ware: so weit ragt ein Stück über seine Auflage. */
 export const GROESSE = {
@@ -125,6 +126,8 @@ export function gegenstaendeSchritt(s, dt, welt, ereignisse) {
     if (g.ort === 'flug') {
       flugSchritt(s, g, dt, welt, ereignisse, z);
     } else if (g.ort === 'boden' && liegenPruefen) {
+      // Liegt es auf einem Trichter, der inzwischen Platz hat? Dann hinein.
+      if (g.y > 0.3 && welt.fangen(s, g, ereignisse)) continue;
       // Wird unter einem liegenden Stück gegraben, sinkt es nach.
       const unten = welt.boden(g.x, g.z, g.y + 0.05);
       if (g.y > unten + 0.05) {
@@ -148,7 +151,10 @@ function flugSchritt(s, g, dt, welt, ereignisse, zufall) {
     let nz = g.z + g.vz * h;
     const gr = welt.grenzen;
     if (nx < gr.xMin + 0.2 || nx > gr.xMax - 0.2) { g.vx *= -0.3; nx = Math.max(gr.xMin + 0.2, Math.min(gr.xMax - 0.2, nx)); }
-    if (nz < gr.zMin - 6 || nz > gr.zMax - 0.2) { g.vz *= -0.3; nz = Math.max(gr.zMin - 6, Math.min(gr.zMax - 0.2, nz)); }
+    // Durch die Vorderwand geht es nur durchs Tor (zur Ladefläche des Lasters)
+    const imTor = Math.abs(nx - WELT.torX) < WELT.torBreite / 2 - 0.25 && ny < WELT.torHoehe;
+    const zMin = imTor || g.z < gr.zMin ? gr.zMin - 6 : gr.zMin + 0.2;
+    if (nz < zMin || nz > gr.zMax - 0.2) { g.vz *= -0.3; nz = Math.max(zMin, Math.min(gr.zMax - 0.2, nz)); }
     g.x = nx; g.z = nz;
     g.flug = (g.flug || 0) + h;
     g.dreh = (g.dreh || 0) + h * 5;
@@ -182,15 +188,17 @@ function landen(s, g, unten, welt, zufall) {
   }
 }
 
-/** Zu viele Stücke: die ältesten liegenden Bündel werden zu losen Halmen. */
+/** Zu viele Stücke: die ältesten liegenden Bündel werden zu losen Halmen (zusammengelegt, gedeckelt). */
 function aufraeumen(s) {
   const zuViel = s.gegenstaende.length - GEGENSTAENDE_MAX;
+  const z = s.zufallFn || Math.random;
   let weg = 0;
   for (let i = 0; i < s.gegenstaende.length && weg < zuViel; i++) {
     const g = s.gegenstaende[i];
     if (g.ort !== 'boden' || g.art !== 'roh' || g.nadel >= 0) continue;
-    s.lose.push({ x: g.x, z: g.z, m: g.halme, a: 0 });
+    loseAblegen(s, null, g.x, g.z, g.halme, z, { rollen: false, streuen: 0 });
     s.gegenstaende.splice(i, 1);
+    g.ort = 'weg'; // Drohnen, die es schon angepeilt haben, lassen es liegen
     i--;
     weg++;
   }

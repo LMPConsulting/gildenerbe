@@ -2652,7 +2652,7 @@ function pusteSchritt(s, dt, rennt) {
 
 
 const SCHWERE = 9.81;
-const GEGENSTAENDE_MAX = 600;
+const GEGENSTAENDE_MAX = 900;
 
 /** Halbe Höhe (Radius) je Ware: so weit ragt ein Stück über seine Auflage. */
 const GROESSE = {
@@ -2764,6 +2764,8 @@ function gegenstaendeSchritt(s, dt, welt, ereignisse) {
     if (g.ort === 'flug') {
       flugSchritt(s, g, dt, welt, ereignisse, z);
     } else if (g.ort === 'boden' && liegenPruefen) {
+      // Liegt es auf einem Trichter, der inzwischen Platz hat? Dann hinein.
+      if (g.y > 0.3 && welt.fangen(s, g, ereignisse)) continue;
       // Wird unter einem liegenden Stück gegraben, sinkt es nach.
       const unten = welt.boden(g.x, g.z, g.y + 0.05);
       if (g.y > unten + 0.05) {
@@ -2787,7 +2789,10 @@ function flugSchritt(s, g, dt, welt, ereignisse, zufall) {
     let nz = g.z + g.vz * h;
     const gr = welt.grenzen;
     if (nx < gr.xMin + 0.2 || nx > gr.xMax - 0.2) { g.vx *= -0.3; nx = Math.max(gr.xMin + 0.2, Math.min(gr.xMax - 0.2, nx)); }
-    if (nz < gr.zMin - 6 || nz > gr.zMax - 0.2) { g.vz *= -0.3; nz = Math.max(gr.zMin - 6, Math.min(gr.zMax - 0.2, nz)); }
+    // Durch die Vorderwand geht es nur durchs Tor (zur Ladefläche des Lasters)
+    const imTor = Math.abs(nx - WELT.torX) < WELT.torBreite / 2 - 0.25 && ny < WELT.torHoehe;
+    const zMin = imTor || g.z < gr.zMin ? gr.zMin - 6 : gr.zMin + 0.2;
+    if (nz < zMin || nz > gr.zMax - 0.2) { g.vz *= -0.3; nz = Math.max(zMin, Math.min(gr.zMax - 0.2, nz)); }
     g.x = nx; g.z = nz;
     g.flug = (g.flug || 0) + h;
     g.dreh = (g.dreh || 0) + h * 5;
@@ -2821,15 +2826,17 @@ function landen(s, g, unten, welt, zufall) {
   }
 }
 
-/** Zu viele Stücke: die ältesten liegenden Bündel werden zu losen Halmen. */
+/** Zu viele Stücke: die ältesten liegenden Bündel werden zu losen Halmen (zusammengelegt, gedeckelt). */
 function aufraeumen(s) {
   const zuViel = s.gegenstaende.length - GEGENSTAENDE_MAX;
+  const z = s.zufallFn || Math.random;
   let weg = 0;
   for (let i = 0; i < s.gegenstaende.length && weg < zuViel; i++) {
     const g = s.gegenstaende[i];
     if (g.ort !== 'boden' || g.art !== 'roh' || g.nadel >= 0) continue;
-    s.lose.push({ x: g.x, z: g.z, m: g.halme, a: 0 });
+    loseAblegen(s, null, g.x, g.z, g.halme, z, { rollen: false, streuen: 0 });
     s.gegenstaende.splice(i, 1);
+    g.ort = 'weg'; // Drohnen, die es schon angepeilt haben, lassen es liegen
     i--;
     weg++;
   }
@@ -3078,7 +3085,7 @@ function baenderSchritt(s, dt, netz, ereignisse) {
   for (const band of netz.baender) {
     const l = lauf(band);
     const items = l.items;
-    if (!items.length) continue;
+    if (!items.length) { l.voll = false; continue; }
     items.sort((a, b) => b.t - a.t);
     const L = bandLaenge(band);
     let vorne = null;
@@ -3170,68 +3177,96 @@ class Haufenliste {
 const RICHTUNGEN = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
 /**
- * Sperrraster für die Wegfindung: 1 = belegt. frei: Punkte [[x, z, r]], um die
- * herum nichts gesperrt wird (Anfang, Ende). ohne: Bau-IDs, die nicht stören.
+ * Sperrraster für die Wegfindung: 0 frei, 1 belegt (Bauten, Bänder, Haufen,
+ * Stationen), 2 Hallenwand. Zwischengespeichert, bis sich Bauten ändern oder
+ * zwei Sekunden Spielzeit vergehen (der Haufen schrumpft langsam).
  */
-function sperrRaster(s, { frei = [], ohne = [] } = {}) {
-  const gr = hallenGrenzen(werte(s).hallenFelder);
+function sperrRasterRoh(s, ohne) {
+  const L = lauf(s);
+  const felder = werte(s).hallenFelder;
+  const schluessel = `${L.bauVersion || 0}|${felder}|${ohne.join(',')}|${Math.floor(s.zeit / 2)}`;
+  if (L.sperrRaster && L.sperrRaster.schluessel === schluessel) return L.sperrRaster;
+  const gr = hallenGrenzen(felder);
   const x0 = gr.xMin; const z0 = gr.zMin;
   const nx = Math.floor((gr.xMax - gr.xMin) / RASTER);
   const nz = Math.floor((gr.zMax - gr.zMin) / RASTER);
   const sperre = new Uint8Array(nx * nz);
-  const mitte = (i, k) => [x0 + (i + 0.5) * RASTER, z0 + (k + 0.5) * RASTER];
-  const istFrei = (x, z) => frei.some(([fx, fz, r]) => Math.hypot(x - fx, z - fz) < r);
-  const kasten = (k, rand) => {
-    const i0 = Math.max(0, Math.floor((k.x0 - rand - x0) / RASTER));
-    const i1 = Math.min(nx - 1, Math.floor((k.x1 + rand - x0) / RASTER));
-    const k0 = Math.max(0, Math.floor((k.z0 - rand - z0) / RASTER));
-    const k1 = Math.min(nz - 1, Math.floor((k.z1 + rand - z0) / RASTER));
+  const H = RASTER / 2;
+  for (let i = 0; i < nx; i++) {
+    const cx = x0 + i * RASTER + H;
+    for (let k = 0; k < nz; k++) {
+      const cz = z0 + k * RASTER + H;
+      if (cx < gr.xMin + 0.4 || cx > gr.xMax - 0.4 || cz < gr.zMin + 0.4 || cz > gr.zMax - 0.4) sperre[i * nz + k] = 2;
+      else if (s.hf && haufenHoehe(s.hf, cx, cz) > 0.1) sperre[i * nz + k] = 1;
+    }
+  }
+  const kasten = (kx0, kx1, kz0, kz1, rand) => {
+    const i0 = Math.max(0, Math.floor((kx0 - rand - x0) / RASTER));
+    const i1 = Math.min(nx - 1, Math.floor((kx1 + rand - x0) / RASTER));
+    const k0 = Math.max(0, Math.floor((kz0 - rand - z0) / RASTER));
+    const k1 = Math.min(nz - 1, Math.floor((kz1 + rand - z0) / RASTER));
     for (let i = i0; i <= i1; i++) {
+      const cx = x0 + i * RASTER + H;
+      if (cx < kx0 - rand || cx > kx1 + rand) continue;
       for (let kk = k0; kk <= k1; kk++) {
-        const [cx, cz] = mitte(i, kk);
-        if (cx < k.x0 - rand || cx > k.x1 + rand || cz < k.z0 - rand || cz > k.z1 + rand) continue;
-        if (!istFrei(cx, cz)) sperre[i * nz + kk] = 1;
+        const cz = z0 + kk * RASTER + H;
+        if (cz < kz0 - rand || cz > kz1 + rand) continue;
+        if (sperre[i * nz + kk] === 0) sperre[i * nz + kk] = 1;
       }
     }
   };
-  // Hallenwände
-  for (let i = 0; i < nx; i++) for (let k = 0; k < nz; k++) {
-    const [cx, cz] = mitte(i, k);
-    if (cx < gr.xMin + 0.4 || cx > gr.xMax - 0.4 || cz < gr.zMin + 0.4 || cz > gr.zMax - 0.4) sperre[i * nz + k] = 1;
-    else if (s.hf && haufenHoehe(s.hf, cx, cz) > 0.1 && !istFrei(cx, cz)) sperre[i * nz + k] = 1;
-  }
-  for (const k of festeHindernisse()) kasten(k, 0.3);
+  const strecke = (ax, az, bx, bz, abst) => {
+    const i0 = Math.max(0, Math.floor((Math.min(ax, bx) - abst - x0) / RASTER));
+    const i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx) + abst - x0) / RASTER));
+    const k0 = Math.max(0, Math.floor((Math.min(az, bz) - abst - z0) / RASTER));
+    const k1 = Math.min(nz - 1, Math.floor((Math.max(az, bz) + abst - z0) / RASTER));
+    const dx = bx - ax; const dz = bz - az;
+    const l2 = dx * dx + dz * dz;
+    for (let i = i0; i <= i1; i++) {
+      const cx = x0 + i * RASTER + H;
+      for (let kk = k0; kk <= k1; kk++) {
+        const cz = z0 + kk * RASTER + H;
+        let u = l2 > 0 ? ((cx - ax) * dx + (cz - az) * dz) / l2 : 0;
+        u = u < 0 ? 0 : u > 1 ? 1 : u;
+        const qx = ax + dx * u - cx; const qz = az + dz * u - cz;
+        if (qx * qx + qz * qz < abst * abst && sperre[i * nz + kk] === 0) sperre[i * nz + kk] = 1;
+      }
+    }
+  };
+  for (const k of festeHindernisse()) kasten(k.x0, k.x1, k.z0, k.z1, 0.3);
   for (const b of s.bauten) {
     if (ohne.includes(b.id)) continue;
     if (b.typ === 'band') {
-      const { segs } = bandGeometrie(b);
-      for (const g of segs) {
-        const k = { x0: Math.min(g.ax, g.bx), x1: Math.max(g.ax, g.bx), z0: Math.min(g.az, g.bz), z1: Math.max(g.az, g.bz) };
-        const i0 = Math.max(0, Math.floor((k.x0 - 0.6 - x0) / RASTER));
-        const i1 = Math.min(nx - 1, Math.floor((k.x1 + 0.6 - x0) / RASTER));
-        const k0 = Math.max(0, Math.floor((k.z0 - 0.6 - z0) / RASTER));
-        const k1 = Math.min(nz - 1, Math.floor((k.z1 + 0.6 - z0) / RASTER));
-        for (let i = i0; i <= i1; i++) for (let kk = k0; kk <= k1; kk++) {
-          const [cx, cz] = mitte(i, kk);
-          if (streckenAbstand(cx, cz, g.ax, g.az, g.bx, g.bz).d < 0.52 && !istFrei(cx, cz)) sperre[i * nz + kk] = 1;
-        }
-      }
+      for (const g of bandGeometrie(b).segs) strecke(g.ax, g.az, g.bx, g.bz, 0.52);
       continue;
     }
-    if (['plattform', 'dach', 'leitung', 'klappe'].includes(b.typ)) continue;
-    if (b.a && b.b) {
-      // Linienbau (Wand, Geländer)
-      const lx0 = Math.min(b.a[0], b.b[0]); const lx1 = Math.max(b.a[0], b.b[0]);
-      const lz0 = Math.min(b.a[1], b.b[1]); const lz1 = Math.max(b.a[1], b.b[1]);
-      for (let i = 0; i < nx; i++) for (let kk = 0; kk < nz; kk++) {
-        const [cx, cz] = mitte(i, kk);
-        if (cx < lx0 - 0.6 || cx > lx1 + 0.6 || cz < lz0 - 0.6 || cz > lz1 + 0.6) continue;
-        if (streckenAbstand(cx, cz, b.a[0], b.a[1], b.b[0], b.b[1]).d < 0.45) sperre[i * nz + kk] = 1;
-      }
-      continue;
-    }
-    kasten(fussabdruck(b.typ, b.x, b.z, b.rot || 0), 0.28);
+    if (b.typ === 'plattform' || b.typ === 'dach' || b.typ === 'leitung' || b.typ === 'klappe') continue;
+    if (b.a && b.b) { strecke(b.a[0], b.a[1], b.b[0], b.b[1], 0.45); continue; }
+    const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
+    kasten(k.x0, k.x1, k.z0, k.z1, 0.28);
   }
+  L.sperrRaster = { schluessel, sperre, nx, nz, x0, z0 };
+  return L.sperrRaster;
+}
+
+/** Sperrraster mit freien Kreisen um Anfang und Ende (Wände bleiben gesperrt). */
+function sperrRaster(s, { frei = [], ohne = [] } = {}) {
+  const roh = sperrRasterRoh(s, ohne);
+  const { nx, nz, x0, z0 } = roh;
+  const sperre = roh.sperre.slice();
+  for (const [fx, fz, r] of frei) {
+    const i0 = Math.max(0, Math.floor((fx - r - x0) / RASTER));
+    const i1 = Math.min(nx - 1, Math.floor((fx + r - x0) / RASTER));
+    const k0 = Math.max(0, Math.floor((fz - r - z0) / RASTER));
+    const k1 = Math.min(nz - 1, Math.floor((fz + r - z0) / RASTER));
+    for (let i = i0; i <= i1; i++) {
+      for (let k = k0; k <= k1; k++) {
+        const cx = x0 + (i + 0.5) * RASTER - fx; const cz = z0 + (k + 0.5) * RASTER - fz;
+        if (cx * cx + cz * cz < r * r && sperre[i * nz + k] === 1) sperre[i * nz + k] = 0;
+      }
+    }
+  }
+  const mitte = (i, k) => [x0 + (i + 0.5) * RASTER, z0 + (k + 0.5) * RASTER];
   return { sperre, nx, nz, x0, z0, mitte };
 }
 
@@ -3240,14 +3275,14 @@ function sperrRaster(s, { frei = [], ohne = [] } = {}) {
  * Anschlüssen die Richtung, in die das Band dort laufen muss. gerade: ohne
  * Raster, direkt (Einrasten aus). Liefert { punkte, laenge } oder { fehler }.
  */
-function bandWeg(s, von, nach, { ohne = [], gerade = false } = {}) {
+function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 } = {}) {
   const frei = [[von.x, von.z, 0.75], [nach.x, nach.z, 0.75]];
   const raster = sperrRaster(s, { frei, ohne });
   const { sperre, nx, nz, x0, z0, mitte } = raster;
   const zelle = (x, z) => [Math.floor((x - x0) / RASTER), Math.floor((z - z0) / RASTER)];
   const gesperrt = (x, z) => {
     const [i, k] = zelle(x, z);
-    return i < 0 || k < 0 || i >= nx || k >= nz || sperre[i * nz + k] === 1;
+    return i < 0 || k < 0 || i >= nx || k >= nz || sperre[i * nz + k] !== 0;
   };
   const hoehe = (punkte) => {
     // Höhe gleichmäßig von von.y nach nach.y über die Länge
@@ -3306,7 +3341,7 @@ function bandWeg(s, von, nach, { ohne = [], gerade = false } = {}) {
     : -1;
   let ende = -1;
   let schritte = 0;
-  while (!offen.leer && schritte++ < 60000) {
+  while (!offen.leer && schritte++ < maxSchritte) {
     const st = offen.raus();
     const d = st & 3;
     const c = st >> 2;
@@ -3585,6 +3620,13 @@ function ausgangFrei(s, netz, bau, port, art) {
   return n < 8;
 }
 
+/** Liegt an der Landestelle schon so viel, dass nichts mehr dazu soll? */
+function landestelleVoll(s, x, z) {
+  let n = 0;
+  for (const g of s.gegenstaende) if (g.ort === 'boden' && Math.abs(g.x - x) < 1.3 && Math.abs(g.z - z) < 1.3 && ++n >= 8) return true;
+  return false;
+}
+
 /** Gibt einen Eintrag am Ausgang ab (vorher ausgangFrei prüfen). */
 function ausgeben(s, netz, bau, port, rec, ereignisse) {
   const p = ausgangPunkt(bau, port);
@@ -3616,7 +3658,16 @@ function annehmenMoeglich(s, bau, art, port = -1) {
   switch (bau.typ) {
     case 'generator': return !!BRENNBAR[art] && (bau.brenn || 0) < BRENN_MAX;
     case 'scanner': return port !== -1 && (bau.schlange || []).length < 3;
-    case 'weiche': case 'vereiniger': return port !== -1 && !bau.puffer && !bau.aus;
+    case 'weiche': return port !== -1 && !bau.puffer && !bau.aus;
+    case 'vereiniger': {
+      if (port === -1 || bau.puffer || bau.aus) return false;
+      // abwechselnd: kommt dieselbe Seite zweimal und wartet die andere, ist die andere dran
+      if (port >= 0 && port === bau.letzte) {
+        const anderer = (lauf(bau).einBand || [])[1 - port];
+        if (anderer && lauf(anderer).voll) return false;
+      }
+      return true;
+    }
     case 'rohrwerfer': return (bau.schlange || []).length < 4;
     case 'heutreppe': case 'heulift': return port === 0 && !(bau.innen || []).some((r) => r.t < 0.55);
     default: {
@@ -3629,11 +3680,6 @@ function annehmenMoeglich(s, bau, art, port = -1) {
 /** Die Maschine nimmt das Stück (vom Band am Eingang port oder von oben). true, wenn angenommen. */
 function annehmen(s, netz, bau, g, port = -1, ereignisse = []) {
   if (!annehmenMoeglich(s, bau, g.art, port)) return false;
-  // Vereiniger: kommt dieselbe Seite zweimal und wartet die andere, ist die andere dran.
-  if (bau.typ === 'vereiniger' && port >= 0 && port === bau.letzte) {
-    const anderer = (lauf(bau).einBand || [])[1 - port];
-    if (anderer && lauf(anderer).voll) return false;
-  }
   switch (bau.typ) {
     case 'generator': {
       bau.brenn = (bau.brenn || 0) + gegenstandHalme(g) * BRENNBAR[g.art];
@@ -3822,6 +3868,8 @@ function armGreifen(s, netz, bau, job, ereignisse) {
   if (job.quelle === 'band') {
     const g = s.gegenstaende.find((x) => x.id === job.gid);
     if (!g || g.ort !== 'band') return null;
+    // Schon aus der Reichweite gefahren? Dann greift der Arm ins Leere.
+    if (Math.hypot(g.x - bau.x, g.z - bau.z) > BAU_BY_ID[bau.typ].reichweite + 0.3) return null;
     g.ort = 'arm';
     g.band = null;
     return g;
@@ -3880,6 +3928,11 @@ function armSchritt(s, netz, bau, dt, ereignisse, mitHaufen) {
   const takt = d.takt / (w.armTempo * tempo(s, bau) * a);
   const vorher = l.phase;
   l.phase += dt / takt;
+  if (job.quelle === 'band' && !job.g && l.phase < 0.4) {
+    // Der Greifer fährt dem Stück auf dem Band nach, statt es an sich zu reißen
+    const ziel = s.gegenstaende.find((x) => x.id === job.gid);
+    if (ziel && ziel.ort === 'band') job.von = [ziel.x, ziel.y, ziel.z];
+  }
   if (vorher < 0.4 && l.phase >= 0.4) {
     job.g = armGreifen(s, netz, bau, job, ereignisse);
     if (!job.g) { l.job = null; l.phase = 0; return; }
@@ -3980,12 +4033,15 @@ function weicheSchritt(s, netz, bau, dt, ereignisse) {
   if (!p) { l.status = 'bereit'; return; }
   l.status = 'laeuft';
   p.zeit += dt;
-  if (p.zeit < 0.25) return;
+  if (p.zeit < 0.3 / werte(s).band) return;
   const modus = bau.modus || 'wechsel';
   const seite = bau.seite || 0;
   const reihe = modus === 'links' ? [0] : modus === 'rechts' ? [1]
     : modus === 'vorrangLinks' ? [0, 1] : modus === 'vorrangRechts' ? [1, 0] : [seite, 1 - seite];
+  const angeschlossen = (port) => !!(l.aus || [])[port];
   for (const port of reihe) {
+    // Ein Ausgang ohne Band wirft nur ab, wenn gar keiner angeschlossen ist
+    if (!angeschlossen(port) && angeschlossen(1 - port) && modus === 'wechsel') continue;
     if (!ausgangFrei(s, netz, bau, port, p.art)) continue;
     bau.puffer = null;
     ausgeben(s, netz, bau, port, p, ereignisse);
@@ -4001,7 +4057,7 @@ function vereinigerSchritt(s, netz, bau, dt, ereignisse) {
   if (bau.aus) { l.status = 'aus'; return; }
   if (!p) { l.status = 'bereit'; return; }
   p.zeit += dt;
-  if (p.zeit < 0.25) { l.status = 'laeuft'; return; }
+  if (p.zeit < 0.3 / werte(s).band) { l.status = 'laeuft'; return; }
   if (!ausgangFrei(s, netz, bau, 0, p.art)) { l.status = 'stau'; return; }
   l.status = 'laeuft';
   bau.puffer = null;
@@ -4018,11 +4074,12 @@ function verarbeiterSchritt(s, netz, bau, dt, ereignisse) {
   while (bau.fertig.length) {
     const f = bau.fertig[0];
     if (d.wurf) {
-      bau.fertig.shift();
       const weite = clamp(bau.weite ?? 3, d.wurf[0], d.wurf[1]);
+      const [zx, zz] = lokalZuWelt(bau, d.b / 2 + weite, 0);
+      if (landestelleVoll(s, zx, zz)) break;
+      bau.fertig.shift();
       const [sx, sz] = lokalZuWelt(bau, d.b * 0.35, 0);
       const sy = (bau.y || 0) + d.h * 0.8;
-      const [zx, zz] = lokalZuWelt(bau, d.b / 2 + weite, 0);
       const g = gegenstandNeu(s, f.art, f.halme, sx, sy, sz);
       if (f.nadel >= 0) nadelMitgeben(s, g, s.nadeln[f.nadel]);
       werfenNach(g, sx, sy, sz, zx, (bau.y || 0) + BAND_Y + 0.04, zz, 0.5 + weite * 0.07);
@@ -4062,15 +4119,16 @@ function rohrwerferSchritt(s, netz, bau, dt, ereignisse) {
   if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
   l.status = bau.schlange.length ? 'laeuft' : 'bereit';
   if (!bau.schlange.length) return;
-  bau.takt = (bau.takt || 0) + dt * a * 2.5 * tempo(s, bau);
+  bau.takt = Math.min(1, (bau.takt || 0) + dt * a * 2.5 * tempo(s, bau));
   if (bau.takt < 1) return;
-  bau.takt = 0;
-  const f = bau.schlange.shift();
   const winkel = (bau.rot || 0) + (bau.winkel || 0);
   const weite = clamp(bau.weite ?? 8, 2, 20);
   const sy = (bau.y || 0) + d.h + 0.1;
   const zx = bau.x + Math.cos(winkel) * weite;
   const zz = bau.z - Math.sin(winkel) * weite;
+  if (landestelleVoll(s, zx, zz)) { l.status = 'stau'; return; }
+  bau.takt = 0;
+  const f = bau.schlange.shift();
   const g = gegenstandNeu(s, f.art, f.halme, bau.x, sy, bau.z);
   if (f.nadel >= 0) nadelMitgeben(s, g, s.nadeln[f.nadel]);
   werfenNach(g, bau.x, sy, bau.z, zx, BAND_Y + 0.04, zz, 0.7 + weite * 0.05);
@@ -4160,11 +4218,17 @@ function maschineLeeren(s, bau, ereignisse) {
     }
   }
   const z = s.zufallFn || Math.random;
-  for (const r of recs.slice(0, 24)) {
+  recs.forEach((r, i) => {
+    if (i >= 60) {
+      // Was nicht mehr als Stück herausfällt, landet als loses Heu daneben
+      loseAblegen(s, null, bau.x + (z() - 0.5), bau.z + (z() - 0.5), r.halme || 1, z, { rollen: false, streuen: 0.6 });
+      if (r.nadel >= 0 && s.nadeln[r.nadel]) nadelZurueck(s, s.hf, s.nadeln[r.nadel], z, ereignisse);
+      return;
+    }
     const g = gegenstandNeu(s, r.art, r.halme, bau.x + (z() - 0.5) * 0.8, (bau.y || 0) + 0.8, bau.z + (z() - 0.5) * 0.8);
     if (r.nadel >= 0) nadelMitgeben(s, g, s.nadeln[r.nadel]);
     werfenMit(g, g.x, g.y, g.z, (z() - 0.5) * 2, 1.5, (z() - 0.5) * 2);
-  }
+  });
   for (const nr of [...(bau.nadeln || [])]) {
     const n = s.nadeln[nr];
     if (n && n.zustand !== 'gefunden') nadelZurueck(s, s.hf, n, z, ereignisse);
@@ -4485,9 +4549,10 @@ function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
     if (b.typ === 'band') { if (bandImWeg(b, typ, x, z, rot, y)) return aus('band'); continue; }
     const bd = BAU_BY_ID[b.typ];
     if (bd.linie && b.a && b.b) {
-      if (b.typ === 'leitung') continue;
-      for (let t = 0; t <= 1; t += 0.1) {
-        const px = b.a[0] + (b.b[0] - b.a[0]) * t; const pz = b.a[1] + (b.b[1] - b.a[1]) * t;
+      if (b.typ === 'leitung' || Math.abs((b.y || 0) - y) > 1.5) continue;
+      const n = Math.max(1, Math.ceil(Math.hypot(b.b[0] - b.a[0], b.b[1] - b.a[1]) / 0.2));
+      for (let i = 0; i <= n; i++) {
+        const px = b.a[0] + ((b.b[0] - b.a[0]) * i) / n; const pz = b.a[1] + ((b.b[1] - b.a[1]) * i) / n;
         if (imFussabdruck({ typ, x, z, rot }, px, pz, 0.05)) return aus('belegt');
       }
       continue;
@@ -4538,6 +4603,17 @@ function bandAnker(s, x, z, ende, { radius = 1.0, y = 0 } = {}) {
       nimm(Math.hypot(p.x - x, p.z - z), { x: p.x, y: p.y, z: p.z, richtung, art: p.art, bau: b, port: p.i });
     }
   }
+  if (!ende) {
+    // Ein neues Band kann dort anfangen, wo ein anderes aufhört: es geht nahtlos weiter
+    for (const b of s.bauten) {
+      if (b.typ !== 'band') continue;
+      const p = b.punkte;
+      const e = p[p.length - 1];
+      const v = p[p.length - 2];
+      const l = Math.hypot(e[0] - v[0], e[2] - v[2]) || 1;
+      nimm(Math.hypot(e[0] - x, e[2] - z) + 0.05, { x: e[0], y: e[1], z: e[2], richtung: [(e[0] - v[0]) / l, (e[2] - v[2]) / l], art: 'bandende', band: b });
+    }
+  }
   if (ende) {
     nimm(Math.hypot(STAND_TRICHTER.x - x, STAND_TRICHTER.z - z) * 0.8,
       { x: STAND_TRICHTER.x + 0.2, y: BAND_Y, z: STAND_TRICHTER.z, richtung: [-1, 0], art: 'stand' });
@@ -4560,10 +4636,12 @@ function bandAnker(s, x, z, ende, { radius = 1.0, y = 0 } = {}) {
  */
 function bandPlanen(s, von, nach, { gerade = false } = {}) {
   if (!bauFrei(s, 'band')) return { ok: false, grund: 'gesperrt' };
+  // Ein Ende mitten im Heu: gar nicht erst suchen (sonst durchsucht A* die ganze Halle)
+  for (const a of [von, nach]) if (a.art === 'frei' && a.y < 1 && s.hf && haufenHoehe(s.hf, a.x, a.z) > 0.15) return { ok: false, grund: 'haufen' };
   const ohne = [];
   if (von.bau) ohne.push(von.bau.id);
   if (nach.bau) ohne.push(nach.bau.id);
-  const weg = bandWeg(s, von, nach, { ohne, gerade });
+  const weg = bandWeg(s, von, nach, { ohne, gerade, maxSchritte: 20000 });
   if (weg.fehler) return { ok: false, grund: weg.fehler };
   const kosten = bauKosten(s, 'band', weg.laenge);
   const r = { ok: s.geld >= kosten, punkte: weg.punkte, laenge: weg.laenge, kosten };
@@ -4595,6 +4673,27 @@ function liniePlanen(s, typ, a, b, y = 0) {
   const gr = hallenGrenzen(werte(s).hallenFelder);
   for (const p of [a, b]) if (p[0] < gr.xMin || p[0] > gr.xMax || p[1] < gr.zMin || p[1] > gr.zMax) return { ok: false, grund: 'wand' };
   if (y > 0.1 && (!plattformBei(s, a[0], a[1], y) || !plattformBei(s, b[0], b[1], y))) return { ok: false, grund: 'kante' };
+  if (typ !== 'leitung') {
+    // Wände und Geländer gehen nicht durch Maschinen, Bänder, Stationen oder den Haufen
+    const hinder = festeHindernisse();
+    const n = Math.max(1, Math.ceil(laenge / 0.25));
+    for (let i = 0; i <= n; i++) {
+      const px = a[0] + ((b[0] - a[0]) * i) / n; const pz = a[1] + ((b[1] - a[1]) * i) / n;
+      if (y < 0.1 && s.hf && haufenHoehe(s.hf, px, pz) > 0.15) return { ok: false, grund: 'haufen' };
+      if (hinder.some((k) => px > k.x0 - 0.1 && px < k.x1 + 0.1 && pz > k.z0 - 0.1 && pz < k.z1 + 0.1)) return { ok: false, grund: 'belegt' };
+      if (Math.hypot(px - STAND_TRICHTER.x, pz - STAND_TRICHTER.z) < 0.8 || Math.hypot(px - LADERAMPE.x, pz - LADERAMPE.z) < 1) return { ok: false, grund: 'belegt' };
+      for (const bb of s.bauten) {
+        if (Math.abs((bb.y || 0) - y) > 1.5 && bb.typ !== 'band') continue;
+        if (bb.typ === 'band') {
+          const nb = bandNaechster(bb, px, pz);
+          if (nb.d < 0.45 && Math.abs(nb.y - (y + BAND_Y)) < 1.2) return { ok: false, grund: 'band' };
+          continue;
+        }
+        if (bb.a || bb.typ === 'plattform' || bb.typ === 'dach' || bb.typ === 'klappe') continue;
+        if (imFussabdruck(bb, px, pz, BAU_BY_ID[typ].b / 2)) return { ok: false, grund: 'belegt' };
+      }
+    }
+  }
   const kosten = bauKosten(s, typ, laenge);
   return { ok: s.geld >= kosten, grund: s.geld >= kosten ? undefined : 'geld', laenge, kosten };
 }
@@ -5260,8 +5359,8 @@ function spielTakt(s, dt, systeme = []) {
   if (!(dt > 0)) return ereignisse;
   s.zeit += dt;
   const hf = s.hf;
-  // Heu rutscht nach, Nadeln können dabei frei werden
-  haufenSetzen(hf, 2);
+  // Heu rutscht nach, Nadeln können dabei frei werden (größere Schritte, mehr Durchgänge)
+  haufenSetzen(hf, Math.max(2, Math.min(12, Math.round(dt * 120))));
   nadelPruefZeit += dt;
   if (nadelPruefZeit > 0.25) {
     nadelPruefZeit = 0;
@@ -5323,19 +5422,35 @@ function laden(text) {
   s.bauten = s.bauten.filter((b) => istObjekt(b) && BAU_NACH_ID[b.typ] && Number.isFinite(b.x) && Number.isFinite(b.z)
     && (b.typ !== 'band' || (Array.isArray(b.punkte) && b.punkte.length >= 2 && b.punkte.every((p) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite))))
     && (!BAU_NACH_ID[b.typ].linie || b.typ === 'band' || (Array.isArray(b.a) && Array.isArray(b.b))));
+  const eintragOk = (r) => istObjekt(r) && PRODUKTE[r.art] && Number.isFinite(r.halme) && r.halme > 0 && Number.isInteger(r.nadel);
   for (const b of s.bauten) {
     // fehlende Felder (ältere Stände) mit dem Grundzustand auffüllen
     const grund = bauZustand(b.typ);
     for (const [k, v] of Object.entries(grund)) if (!(k in b) || typeof b[k] !== typeof v || Array.isArray(v) !== Array.isArray(b[k])) b[k] = v;
     b.rot = zahlOder(b.rot, 0);
     b.y = zahlOder(b.y, 0);
+    // Einträge in Maschinen: kaputte fallen weg, ungültige Nadelverweise werden gelöst
+    for (const k of ['schlange', 'fertig', 'innen']) {
+      if (Array.isArray(b[k])) b[k] = b[k].filter(eintragOk).map((r) => ({ ...r, nadel: s.nadeln[r.nadel] ? r.nadel : -1, t: zahlOder(r.t, 0), fort: zahlOder(r.fort, 0) }));
+    }
+    if (b.puffer != null) b.puffer = eintragOk(b.puffer) ? { ...b.puffer, zeit: zahlOder(b.puffer.zeit, 0) } : null;
+    if (Array.isArray(b.nadeln)) b.nadeln = b.nadeln.filter((nr) => Number.isInteger(nr) && s.nadeln[nr]);
+    if (istObjekt(b.lager)) for (const [z, m] of Object.entries(b.lager)) if (!Number.isFinite(m) || m < 0) delete b.lager[z];
+    for (const k of ['brenn', 'takt', 'fort', 'rest', 'weite', 'winkel', 'hell']) if (k in b) b[k] = zahlOder(b[k], grund[k] ?? 0);
   }
   const ORTE = ['boden', 'flug', 'band', 'hand'];
   s.gegenstaende = s.gegenstaende.filter((g) => istObjekt(g) && Number.isFinite(g.x) && Number.isFinite(g.y) && Number.isFinite(g.z)
-    && PRODUKTE[g.art] && (g.art !== 'roh' || g.halme > 0)).slice(0, 600);
+    && PRODUKTE[g.art] && (g.art !== 'roh' || g.halme > 0));
+  if (s.gegenstaende.length > 2000) {
+    // Zu viele: liegendes loses Heu ohne Nadel wird zu Büscheln, alles andere bleibt
+    const wichtig = (g) => g.ort === 'band' || g.ort === 'hand' || g.nadel >= 0 || g.art !== 'roh';
+    const behalten = s.gegenstaende.filter(wichtig).slice(0, 2000);
+    for (const g of s.gegenstaende) if (!wichtig(g)) s.lose.push({ x: g.x, z: g.z, m: g.halme, a: 0 });
+    s.gegenstaende = behalten;
+  }
   for (const g of s.gegenstaende) {
     if (!ORTE.includes(g.ort)) g.ort = 'flug';
-    if (g.ort === 'band' && !s.bauten.some((b) => b.id === g.band && b.typ === 'band')) g.ort = 'flug';
+    if (g.ort === 'band' && (!s.bauten.some((b) => b.id === g.band && b.typ === 'band') || !Number.isFinite(g.t))) g.ort = 'flug';
     if (g.ort === 'hand' && s.spieler.haelt !== g.id) g.ort = 'flug';
     for (const k of ['vx', 'vy', 'vz']) g[k] = zahlOder(g[k], 0);
     if (!Number.isInteger(g.nadel) || !s.nadeln[g.nadel]) g.nadel = -1;
@@ -5383,32 +5498,54 @@ function laden(text) {
 }
 
 /**
- * Offline nachholen: die ersten drei Minuten rechnet die Automatik genau nach
+ * Offline nachholen: die ersten zwei Minuten rechnet die Automatik genau nach
  * (Bänder, Maschinen, Laster), den Rest bis zur erforschten Grenze schätzt sie
- * aus den Einnahmen dieser Minuten, mal dem Offline-Anteil.
+ * aus den Verkäufen dieser Minuten, mal dem Offline-Anteil. In Häppchen, damit
+ * das Handy beim Start nicht einfriert: beginnen, dann jedes Bild weiter.
  */
-function abwesenheit(s, jetzt = Date.now(), systeme = []) {
+function abwesenheitBeginnen(s, jetzt = Date.now(), systeme = []) {
   const weg = Math.max(0, (jetzt - (Number.isFinite(s.zuletzt) ? s.zuletzt : jetzt)) / 1000);
   s.zuletzt = jetzt;
   const w = werte(s);
   const sek = Math.min(weg, w.offlineStunden * 3600);
   if (!systeme.length || sek < 10 || !s.bauten.length) return null;
-  const geldVor = s.geld;
-  const verdientVor = s.verdient;
-  const halmeVor = s.stat.abgetragen;
-  const genau = Math.min(sek, 180);
-  const ereignisse = [];
-  const dt = 0.1;
-  for (let t = 0; t < genau; t += dt) {
-    for (const e of spielTakt(s, dt, systeme)) if (e.typ === 'mission' || e.typ === 'nadel' || e.typ === 'auftrag' || e.typ === 'scannerNadel') ereignisse.push(e);
-  }
-  const rate = (s.verdient - verdientVor) / genau;
-  const rest = Math.max(0, sek - genau) * w.offlineEff;
-  if (rate > 0 && rest > 0) einnahme(s, rate * rest);
   return {
-    kurz: sek < 30, sekunden: sek, abwesend: weg, ereignisse,
-    geld: s.geld - geldVor, verdient: s.verdient - verdientVor, halme: s.stat.abgetragen - halmeVor,
+    sek, weg, genau: Math.min(sek, 120), dt: 0.25, t: 0, verkaeufe: 0, ereignisse: [], systeme, fertig: false, ergebnis: null,
+    geldVor: s.geld, verdientVor: s.verdient, halmeVor: s.stat.abgetragen,
   };
+}
+
+/** Rechnet höchstens `schritte` Schritte (oder bis `bisMs` performance.now() erreicht) weiter. */
+function abwesenheitWeiter(s, job, schritte = 1000, bisMs = Infinity) {
+  const jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  for (let i = 0; i < schritte && job.t < job.genau; i++) {
+    for (const e of spielTakt(s, job.dt, job.systeme)) {
+      if (e.typ === 'verkauft') job.verkaeufe += e.betrag || 0;
+      else if (e.typ === 'mission' || e.typ === 'nadel' || e.typ === 'auftrag' || e.typ === 'scannerNadel') job.ereignisse.push(e);
+    }
+    job.t += job.dt;
+    if (jetzt() > bisMs) break;
+  }
+  if (job.t >= job.genau && !job.fertig) {
+    job.fertig = true;
+    // Hochgerechnet werden nur laufende Verkäufe, keine einmaligen Belohnungen
+    const rate = job.verkaeufe / job.genau;
+    const rest = Math.max(0, job.sek - job.genau) * werte(s).offlineEff;
+    if (rate > 0 && rest > 0) einnahme(s, rate * rest);
+    job.ergebnis = {
+      kurz: job.sek < 30, sekunden: job.sek, abwesend: job.weg, ereignisse: job.ereignisse,
+      geld: s.geld - job.geldVor, verdient: s.verdient - job.verdientVor, halme: s.stat.abgetragen - job.halmeVor,
+    };
+  }
+  return job;
+}
+
+/** Alles auf einmal (für Tests und Werkzeuge). */
+function abwesenheit(s, jetzt = Date.now(), systeme = []) {
+  const job = abwesenheitBeginnen(s, jetzt, systeme);
+  if (!job) return null;
+  while (!job.fertig) abwesenheitWeiter(s, job);
+  return job.ergebnis;
 }
 
 // ---- src/klang.js
@@ -12782,6 +12919,22 @@ function hauptStart() {
       } else ui.detektorZeigen(false);
 
       // Welt
+      // Abwesenheit nachholen: höchstens 10 ms je Bild, danach der Willkommensgruß
+      if (zustand.aufholen && zustand.laeuft) {
+        const job = abwesenheitWeiter(s, zustand.aufholen, 400, performance.now() + 10);
+        if (job.fertig) {
+          zustand.aufholen = null;
+          const r = job.ergebnis;
+          ereignisPuffer.push(...r.ereignisse);
+          if (!r.kurz && r.verdient > 0) {
+            ui.modal({
+              ober: `${dauer(r.abwesend)} weg`, titel: 'Willkommen zurück',
+              absaetze: [`Die Maschinen haben ${halme(r.halme)} Halme abgetragen und ${geld(r.verdient)} eingenommen.`],
+              knoepfe: [{ text: 'Weiter', klasse: 'primaer' }],
+            });
+          }
+        }
+      }
       // Zeitraffer nur für Tests (window.__heuhaufen3d.zustand.zeitraffer = 10)
       const raffer = zustand.laeuft ? Math.max(1, Math.min(40, Math.floor(zustand.zeitraffer || 1))) : 1;
       for (let i = 0; i < raffer; i++) ereignisPuffer.push(...spielTakt(s, zustand.laeuft ? dt : 0, [automatikSchritt]));
@@ -12887,15 +13040,9 @@ function hauptStart() {
     app.classList.remove('vorstart');
     zustand.laeuft = true;
     if (!neu) {
-      // Was die Maschinen in der Zwischenzeit geschafft haben
-      const r = abwesenheit(s, Date.now(), [automatikSchritt]);
-      if (r && !r.kurz && r.verdient > 0) {
-        ui.modal({
-          ober: `${dauer(r.abwesend)} weg`, titel: 'Willkommen zurück',
-          absaetze: [`Die Maschinen haben ${halme(r.halme)} Halme abgetragen und ${geld(r.verdient)} eingenommen.`],
-          knoepfe: [{ text: 'Weiter', klasse: 'primaer' }],
-        });
-      }
+      // Was die Maschinen in der Zwischenzeit geschafft haben: in Häppchen nachrechnen
+      zustand.aufholen = abwesenheitBeginnen(s, Date.now(), [automatikSchritt]);
+      if (zustand.aufholen && zustand.aufholen.sek >= 30) ui.toast('Die Maschinen holen nach, was in deiner Abwesenheit passiert ist …');
     }
     s.zuletzt = Date.now();
     spielerKamera(s.spieler, s3.kamera, 0);

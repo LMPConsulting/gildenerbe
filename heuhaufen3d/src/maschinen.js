@@ -9,6 +9,7 @@ import { PRODUKTE } from './daten.js';
 import { haufenHoehe, haufenAbtragen } from './haufen.js';
 import { werte } from './wirtschaft.js';
 import { nadelnFreilegen, nadelZurueck, nadelFinden } from './nadeln.js';
+import { loseAblegen } from './lose.js';
 import {
   GROESSE, gegenstandNeu, gegenstandWeg, gegenstandVerkaufen, gegenstandHalme, nadelMitgeben, nadelIn,
   werfenNach, werfenMit,
@@ -94,6 +95,13 @@ export function ausgangFrei(s, netz, bau, port, art) {
   return n < 8;
 }
 
+/** Liegt an der Landestelle schon so viel, dass nichts mehr dazu soll? */
+function landestelleVoll(s, x, z) {
+  let n = 0;
+  for (const g of s.gegenstaende) if (g.ort === 'boden' && Math.abs(g.x - x) < 1.3 && Math.abs(g.z - z) < 1.3 && ++n >= 8) return true;
+  return false;
+}
+
 /** Gibt einen Eintrag am Ausgang ab (vorher ausgangFrei prüfen). */
 export function ausgeben(s, netz, bau, port, rec, ereignisse) {
   const p = ausgangPunkt(bau, port);
@@ -125,7 +133,16 @@ export function annehmenMoeglich(s, bau, art, port = -1) {
   switch (bau.typ) {
     case 'generator': return !!BRENNBAR[art] && (bau.brenn || 0) < BRENN_MAX;
     case 'scanner': return port !== -1 && (bau.schlange || []).length < 3;
-    case 'weiche': case 'vereiniger': return port !== -1 && !bau.puffer && !bau.aus;
+    case 'weiche': return port !== -1 && !bau.puffer && !bau.aus;
+    case 'vereiniger': {
+      if (port === -1 || bau.puffer || bau.aus) return false;
+      // abwechselnd: kommt dieselbe Seite zweimal und wartet die andere, ist die andere dran
+      if (port >= 0 && port === bau.letzte) {
+        const anderer = (lauf(bau).einBand || [])[1 - port];
+        if (anderer && lauf(anderer).voll) return false;
+      }
+      return true;
+    }
     case 'rohrwerfer': return (bau.schlange || []).length < 4;
     case 'heutreppe': case 'heulift': return port === 0 && !(bau.innen || []).some((r) => r.t < 0.55);
     default: {
@@ -138,11 +155,6 @@ export function annehmenMoeglich(s, bau, art, port = -1) {
 /** Die Maschine nimmt das Stück (vom Band am Eingang port oder von oben). true, wenn angenommen. */
 export function annehmen(s, netz, bau, g, port = -1, ereignisse = []) {
   if (!annehmenMoeglich(s, bau, g.art, port)) return false;
-  // Vereiniger: kommt dieselbe Seite zweimal und wartet die andere, ist die andere dran.
-  if (bau.typ === 'vereiniger' && port >= 0 && port === bau.letzte) {
-    const anderer = (lauf(bau).einBand || [])[1 - port];
-    if (anderer && lauf(anderer).voll) return false;
-  }
   switch (bau.typ) {
     case 'generator': {
       bau.brenn = (bau.brenn || 0) + gegenstandHalme(g) * BRENNBAR[g.art];
@@ -331,6 +343,8 @@ function armGreifen(s, netz, bau, job, ereignisse) {
   if (job.quelle === 'band') {
     const g = s.gegenstaende.find((x) => x.id === job.gid);
     if (!g || g.ort !== 'band') return null;
+    // Schon aus der Reichweite gefahren? Dann greift der Arm ins Leere.
+    if (Math.hypot(g.x - bau.x, g.z - bau.z) > BAU_BY_ID[bau.typ].reichweite + 0.3) return null;
     g.ort = 'arm';
     g.band = null;
     return g;
@@ -389,6 +403,11 @@ function armSchritt(s, netz, bau, dt, ereignisse, mitHaufen) {
   const takt = d.takt / (w.armTempo * tempo(s, bau) * a);
   const vorher = l.phase;
   l.phase += dt / takt;
+  if (job.quelle === 'band' && !job.g && l.phase < 0.4) {
+    // Der Greifer fährt dem Stück auf dem Band nach, statt es an sich zu reißen
+    const ziel = s.gegenstaende.find((x) => x.id === job.gid);
+    if (ziel && ziel.ort === 'band') job.von = [ziel.x, ziel.y, ziel.z];
+  }
   if (vorher < 0.4 && l.phase >= 0.4) {
     job.g = armGreifen(s, netz, bau, job, ereignisse);
     if (!job.g) { l.job = null; l.phase = 0; return; }
@@ -489,12 +508,15 @@ function weicheSchritt(s, netz, bau, dt, ereignisse) {
   if (!p) { l.status = 'bereit'; return; }
   l.status = 'laeuft';
   p.zeit += dt;
-  if (p.zeit < 0.25) return;
+  if (p.zeit < 0.3 / werte(s).band) return;
   const modus = bau.modus || 'wechsel';
   const seite = bau.seite || 0;
   const reihe = modus === 'links' ? [0] : modus === 'rechts' ? [1]
     : modus === 'vorrangLinks' ? [0, 1] : modus === 'vorrangRechts' ? [1, 0] : [seite, 1 - seite];
+  const angeschlossen = (port) => !!(l.aus || [])[port];
   for (const port of reihe) {
+    // Ein Ausgang ohne Band wirft nur ab, wenn gar keiner angeschlossen ist
+    if (!angeschlossen(port) && angeschlossen(1 - port) && modus === 'wechsel') continue;
     if (!ausgangFrei(s, netz, bau, port, p.art)) continue;
     bau.puffer = null;
     ausgeben(s, netz, bau, port, p, ereignisse);
@@ -510,7 +532,7 @@ function vereinigerSchritt(s, netz, bau, dt, ereignisse) {
   if (bau.aus) { l.status = 'aus'; return; }
   if (!p) { l.status = 'bereit'; return; }
   p.zeit += dt;
-  if (p.zeit < 0.25) { l.status = 'laeuft'; return; }
+  if (p.zeit < 0.3 / werte(s).band) { l.status = 'laeuft'; return; }
   if (!ausgangFrei(s, netz, bau, 0, p.art)) { l.status = 'stau'; return; }
   l.status = 'laeuft';
   bau.puffer = null;
@@ -527,11 +549,12 @@ function verarbeiterSchritt(s, netz, bau, dt, ereignisse) {
   while (bau.fertig.length) {
     const f = bau.fertig[0];
     if (d.wurf) {
-      bau.fertig.shift();
       const weite = clamp(bau.weite ?? 3, d.wurf[0], d.wurf[1]);
+      const [zx, zz] = lokalZuWelt(bau, d.b / 2 + weite, 0);
+      if (landestelleVoll(s, zx, zz)) break;
+      bau.fertig.shift();
       const [sx, sz] = lokalZuWelt(bau, d.b * 0.35, 0);
       const sy = (bau.y || 0) + d.h * 0.8;
-      const [zx, zz] = lokalZuWelt(bau, d.b / 2 + weite, 0);
       const g = gegenstandNeu(s, f.art, f.halme, sx, sy, sz);
       if (f.nadel >= 0) nadelMitgeben(s, g, s.nadeln[f.nadel]);
       werfenNach(g, sx, sy, sz, zx, (bau.y || 0) + BAND_Y + 0.04, zz, 0.5 + weite * 0.07);
@@ -571,15 +594,16 @@ function rohrwerferSchritt(s, netz, bau, dt, ereignisse) {
   if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
   l.status = bau.schlange.length ? 'laeuft' : 'bereit';
   if (!bau.schlange.length) return;
-  bau.takt = (bau.takt || 0) + dt * a * 2.5 * tempo(s, bau);
+  bau.takt = Math.min(1, (bau.takt || 0) + dt * a * 2.5 * tempo(s, bau));
   if (bau.takt < 1) return;
-  bau.takt = 0;
-  const f = bau.schlange.shift();
   const winkel = (bau.rot || 0) + (bau.winkel || 0);
   const weite = clamp(bau.weite ?? 8, 2, 20);
   const sy = (bau.y || 0) + d.h + 0.1;
   const zx = bau.x + Math.cos(winkel) * weite;
   const zz = bau.z - Math.sin(winkel) * weite;
+  if (landestelleVoll(s, zx, zz)) { l.status = 'stau'; return; }
+  bau.takt = 0;
+  const f = bau.schlange.shift();
   const g = gegenstandNeu(s, f.art, f.halme, bau.x, sy, bau.z);
   if (f.nadel >= 0) nadelMitgeben(s, g, s.nadeln[f.nadel]);
   werfenNach(g, bau.x, sy, bau.z, zx, BAND_Y + 0.04, zz, 0.7 + weite * 0.05);
@@ -669,11 +693,17 @@ export function maschineLeeren(s, bau, ereignisse) {
     }
   }
   const z = s.zufallFn || Math.random;
-  for (const r of recs.slice(0, 24)) {
+  recs.forEach((r, i) => {
+    if (i >= 60) {
+      // Was nicht mehr als Stück herausfällt, landet als loses Heu daneben
+      loseAblegen(s, null, bau.x + (z() - 0.5), bau.z + (z() - 0.5), r.halme || 1, z, { rollen: false, streuen: 0.6 });
+      if (r.nadel >= 0 && s.nadeln[r.nadel]) nadelZurueck(s, s.hf, s.nadeln[r.nadel], z, ereignisse);
+      return;
+    }
     const g = gegenstandNeu(s, r.art, r.halme, bau.x + (z() - 0.5) * 0.8, (bau.y || 0) + 0.8, bau.z + (z() - 0.5) * 0.8);
     if (r.nadel >= 0) nadelMitgeben(s, g, s.nadeln[r.nadel]);
     werfenMit(g, g.x, g.y, g.z, (z() - 0.5) * 2, 1.5, (z() - 0.5) * 2);
-  }
+  });
   for (const nr of [...(bau.nadeln || [])]) {
     const n = s.nadeln[nr];
     if (n && n.zustand !== 'gefunden') nadelZurueck(s, s.hf, n, z, ereignisse);

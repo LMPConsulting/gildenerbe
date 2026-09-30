@@ -168,7 +168,7 @@ export function baenderSchritt(s, dt, netz, ereignisse) {
   for (const band of netz.baender) {
     const l = lauf(band);
     const items = l.items;
-    if (!items.length) continue;
+    if (!items.length) { l.voll = false; continue; }
     items.sort((a, b) => b.t - a.t);
     const L = bandLaenge(band);
     let vorne = null;
@@ -260,68 +260,96 @@ class Haufenliste {
 const RICHTUNGEN = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
 /**
- * Sperrraster für die Wegfindung: 1 = belegt. frei: Punkte [[x, z, r]], um die
- * herum nichts gesperrt wird (Anfang, Ende). ohne: Bau-IDs, die nicht stören.
+ * Sperrraster für die Wegfindung: 0 frei, 1 belegt (Bauten, Bänder, Haufen,
+ * Stationen), 2 Hallenwand. Zwischengespeichert, bis sich Bauten ändern oder
+ * zwei Sekunden Spielzeit vergehen (der Haufen schrumpft langsam).
  */
-export function sperrRaster(s, { frei = [], ohne = [] } = {}) {
-  const gr = hallenGrenzen(werte(s).hallenFelder);
+function sperrRasterRoh(s, ohne) {
+  const L = lauf(s);
+  const felder = werte(s).hallenFelder;
+  const schluessel = `${L.bauVersion || 0}|${felder}|${ohne.join(',')}|${Math.floor(s.zeit / 2)}`;
+  if (L.sperrRaster && L.sperrRaster.schluessel === schluessel) return L.sperrRaster;
+  const gr = hallenGrenzen(felder);
   const x0 = gr.xMin; const z0 = gr.zMin;
   const nx = Math.floor((gr.xMax - gr.xMin) / RASTER);
   const nz = Math.floor((gr.zMax - gr.zMin) / RASTER);
   const sperre = new Uint8Array(nx * nz);
-  const mitte = (i, k) => [x0 + (i + 0.5) * RASTER, z0 + (k + 0.5) * RASTER];
-  const istFrei = (x, z) => frei.some(([fx, fz, r]) => Math.hypot(x - fx, z - fz) < r);
-  const kasten = (k, rand) => {
-    const i0 = Math.max(0, Math.floor((k.x0 - rand - x0) / RASTER));
-    const i1 = Math.min(nx - 1, Math.floor((k.x1 + rand - x0) / RASTER));
-    const k0 = Math.max(0, Math.floor((k.z0 - rand - z0) / RASTER));
-    const k1 = Math.min(nz - 1, Math.floor((k.z1 + rand - z0) / RASTER));
+  const H = RASTER / 2;
+  for (let i = 0; i < nx; i++) {
+    const cx = x0 + i * RASTER + H;
+    for (let k = 0; k < nz; k++) {
+      const cz = z0 + k * RASTER + H;
+      if (cx < gr.xMin + 0.4 || cx > gr.xMax - 0.4 || cz < gr.zMin + 0.4 || cz > gr.zMax - 0.4) sperre[i * nz + k] = 2;
+      else if (s.hf && haufenHoehe(s.hf, cx, cz) > 0.1) sperre[i * nz + k] = 1;
+    }
+  }
+  const kasten = (kx0, kx1, kz0, kz1, rand) => {
+    const i0 = Math.max(0, Math.floor((kx0 - rand - x0) / RASTER));
+    const i1 = Math.min(nx - 1, Math.floor((kx1 + rand - x0) / RASTER));
+    const k0 = Math.max(0, Math.floor((kz0 - rand - z0) / RASTER));
+    const k1 = Math.min(nz - 1, Math.floor((kz1 + rand - z0) / RASTER));
     for (let i = i0; i <= i1; i++) {
+      const cx = x0 + i * RASTER + H;
+      if (cx < kx0 - rand || cx > kx1 + rand) continue;
       for (let kk = k0; kk <= k1; kk++) {
-        const [cx, cz] = mitte(i, kk);
-        if (cx < k.x0 - rand || cx > k.x1 + rand || cz < k.z0 - rand || cz > k.z1 + rand) continue;
-        if (!istFrei(cx, cz)) sperre[i * nz + kk] = 1;
+        const cz = z0 + kk * RASTER + H;
+        if (cz < kz0 - rand || cz > kz1 + rand) continue;
+        if (sperre[i * nz + kk] === 0) sperre[i * nz + kk] = 1;
       }
     }
   };
-  // Hallenwände
-  for (let i = 0; i < nx; i++) for (let k = 0; k < nz; k++) {
-    const [cx, cz] = mitte(i, k);
-    if (cx < gr.xMin + 0.4 || cx > gr.xMax - 0.4 || cz < gr.zMin + 0.4 || cz > gr.zMax - 0.4) sperre[i * nz + k] = 1;
-    else if (s.hf && haufenHoehe(s.hf, cx, cz) > 0.1 && !istFrei(cx, cz)) sperre[i * nz + k] = 1;
-  }
-  for (const k of festeHindernisse()) kasten(k, 0.3);
+  const strecke = (ax, az, bx, bz, abst) => {
+    const i0 = Math.max(0, Math.floor((Math.min(ax, bx) - abst - x0) / RASTER));
+    const i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx) + abst - x0) / RASTER));
+    const k0 = Math.max(0, Math.floor((Math.min(az, bz) - abst - z0) / RASTER));
+    const k1 = Math.min(nz - 1, Math.floor((Math.max(az, bz) + abst - z0) / RASTER));
+    const dx = bx - ax; const dz = bz - az;
+    const l2 = dx * dx + dz * dz;
+    for (let i = i0; i <= i1; i++) {
+      const cx = x0 + i * RASTER + H;
+      for (let kk = k0; kk <= k1; kk++) {
+        const cz = z0 + kk * RASTER + H;
+        let u = l2 > 0 ? ((cx - ax) * dx + (cz - az) * dz) / l2 : 0;
+        u = u < 0 ? 0 : u > 1 ? 1 : u;
+        const qx = ax + dx * u - cx; const qz = az + dz * u - cz;
+        if (qx * qx + qz * qz < abst * abst && sperre[i * nz + kk] === 0) sperre[i * nz + kk] = 1;
+      }
+    }
+  };
+  for (const k of festeHindernisse()) kasten(k.x0, k.x1, k.z0, k.z1, 0.3);
   for (const b of s.bauten) {
     if (ohne.includes(b.id)) continue;
     if (b.typ === 'band') {
-      const { segs } = bandGeometrie(b);
-      for (const g of segs) {
-        const k = { x0: Math.min(g.ax, g.bx), x1: Math.max(g.ax, g.bx), z0: Math.min(g.az, g.bz), z1: Math.max(g.az, g.bz) };
-        const i0 = Math.max(0, Math.floor((k.x0 - 0.6 - x0) / RASTER));
-        const i1 = Math.min(nx - 1, Math.floor((k.x1 + 0.6 - x0) / RASTER));
-        const k0 = Math.max(0, Math.floor((k.z0 - 0.6 - z0) / RASTER));
-        const k1 = Math.min(nz - 1, Math.floor((k.z1 + 0.6 - z0) / RASTER));
-        for (let i = i0; i <= i1; i++) for (let kk = k0; kk <= k1; kk++) {
-          const [cx, cz] = mitte(i, kk);
-          if (streckenAbstand(cx, cz, g.ax, g.az, g.bx, g.bz).d < 0.52 && !istFrei(cx, cz)) sperre[i * nz + kk] = 1;
-        }
-      }
+      for (const g of bandGeometrie(b).segs) strecke(g.ax, g.az, g.bx, g.bz, 0.52);
       continue;
     }
-    if (['plattform', 'dach', 'leitung', 'klappe'].includes(b.typ)) continue;
-    if (b.a && b.b) {
-      // Linienbau (Wand, Geländer)
-      const lx0 = Math.min(b.a[0], b.b[0]); const lx1 = Math.max(b.a[0], b.b[0]);
-      const lz0 = Math.min(b.a[1], b.b[1]); const lz1 = Math.max(b.a[1], b.b[1]);
-      for (let i = 0; i < nx; i++) for (let kk = 0; kk < nz; kk++) {
-        const [cx, cz] = mitte(i, kk);
-        if (cx < lx0 - 0.6 || cx > lx1 + 0.6 || cz < lz0 - 0.6 || cz > lz1 + 0.6) continue;
-        if (streckenAbstand(cx, cz, b.a[0], b.a[1], b.b[0], b.b[1]).d < 0.45) sperre[i * nz + kk] = 1;
-      }
-      continue;
-    }
-    kasten(fussabdruck(b.typ, b.x, b.z, b.rot || 0), 0.28);
+    if (b.typ === 'plattform' || b.typ === 'dach' || b.typ === 'leitung' || b.typ === 'klappe') continue;
+    if (b.a && b.b) { strecke(b.a[0], b.a[1], b.b[0], b.b[1], 0.45); continue; }
+    const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
+    kasten(k.x0, k.x1, k.z0, k.z1, 0.28);
   }
+  L.sperrRaster = { schluessel, sperre, nx, nz, x0, z0 };
+  return L.sperrRaster;
+}
+
+/** Sperrraster mit freien Kreisen um Anfang und Ende (Wände bleiben gesperrt). */
+export function sperrRaster(s, { frei = [], ohne = [] } = {}) {
+  const roh = sperrRasterRoh(s, ohne);
+  const { nx, nz, x0, z0 } = roh;
+  const sperre = roh.sperre.slice();
+  for (const [fx, fz, r] of frei) {
+    const i0 = Math.max(0, Math.floor((fx - r - x0) / RASTER));
+    const i1 = Math.min(nx - 1, Math.floor((fx + r - x0) / RASTER));
+    const k0 = Math.max(0, Math.floor((fz - r - z0) / RASTER));
+    const k1 = Math.min(nz - 1, Math.floor((fz + r - z0) / RASTER));
+    for (let i = i0; i <= i1; i++) {
+      for (let k = k0; k <= k1; k++) {
+        const cx = x0 + (i + 0.5) * RASTER - fx; const cz = z0 + (k + 0.5) * RASTER - fz;
+        if (cx * cx + cz * cz < r * r && sperre[i * nz + k] === 1) sperre[i * nz + k] = 0;
+      }
+    }
+  }
+  const mitte = (i, k) => [x0 + (i + 0.5) * RASTER, z0 + (k + 0.5) * RASTER];
   return { sperre, nx, nz, x0, z0, mitte };
 }
 
@@ -330,14 +358,14 @@ export function sperrRaster(s, { frei = [], ohne = [] } = {}) {
  * Anschlüssen die Richtung, in die das Band dort laufen muss. gerade: ohne
  * Raster, direkt (Einrasten aus). Liefert { punkte, laenge } oder { fehler }.
  */
-export function bandWeg(s, von, nach, { ohne = [], gerade = false } = {}) {
+export function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 } = {}) {
   const frei = [[von.x, von.z, 0.75], [nach.x, nach.z, 0.75]];
   const raster = sperrRaster(s, { frei, ohne });
   const { sperre, nx, nz, x0, z0, mitte } = raster;
   const zelle = (x, z) => [Math.floor((x - x0) / RASTER), Math.floor((z - z0) / RASTER)];
   const gesperrt = (x, z) => {
     const [i, k] = zelle(x, z);
-    return i < 0 || k < 0 || i >= nx || k >= nz || sperre[i * nz + k] === 1;
+    return i < 0 || k < 0 || i >= nx || k >= nz || sperre[i * nz + k] !== 0;
   };
   const hoehe = (punkte) => {
     // Höhe gleichmäßig von von.y nach nach.y über die Länge
@@ -396,7 +424,7 @@ export function bandWeg(s, von, nach, { ohne = [], gerade = false } = {}) {
     : -1;
   let ende = -1;
   let schritte = 0;
-  while (!offen.leer && schritte++ < 60000) {
+  while (!offen.leer && schritte++ < maxSchritte) {
     const st = offen.raus();
     const d = st & 3;
     const c = st >> 2;

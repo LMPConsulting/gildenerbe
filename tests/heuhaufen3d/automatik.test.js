@@ -6,7 +6,7 @@ import { standNeu, spielTakt, speichern, laden, abwesenheit } from '../../heuhau
 import { STAND_TRICHTER, lauf } from '../../heuhaufen3d/src/welt.js';
 import { gegenstandNeu, nadelMitgeben, gegenstandNehmen, heuWerfen } from '../../heuhaufen3d/src/gegenstaende.js';
 import { bandEinlegen, bandLaenge, bandWeg, bandPunkt } from '../../heuhaufen3d/src/baender.js';
-import { bauPruefen, bauSetzen, bandAnker, bandPlanen, bandSetzen, bauAbbauen, bautenUmgebung } from '../../heuhaufen3d/src/bauen.js';
+import { bauPruefen, bauSetzen, bandAnker, bandPlanen, bandSetzen, bauAbbauen, bautenUmgebung, liniePlanen } from '../../heuhaufen3d/src/bauen.js';
 import { annehmen, scannerLeeren, MASCHINE } from '../../heuhaufen3d/src/maschinen.js';
 import { netzHolen, automatikSchritt } from '../../heuhaufen3d/src/automatik.js';
 import { netzSchalten, netzVon } from '../../heuhaufen3d/src/versorgung.js';
@@ -402,5 +402,59 @@ describe('Plattformen', () => {
     // Stücke landen oben auf dem Deck
     const u = bautenUmgebung(s);
     expect(u.flaechen.some((f) => f.plattform === pl.bau.id && Math.abs(f.h - 2.2) < 1e-6)).toBe(true);
+  });
+});
+
+describe('Befunde aus der Code-Prüfung', () => {
+  it('ein leer gewordenes Band blockiert den Vereiniger nicht mehr', () => {
+    const s = hof();
+    s.tech.vereiniger = 1;
+    s.rev++;
+    const v = bauSetzen(s, 'vereiniger', -8, 9, 0).bau;
+    const a = band(s, [-13, 8.65], [-8.6, 8.65]);
+    const b = band(s, [-13, 10.2], [-8.6, 9.35]);
+    band(s, [-7.4, 9], [STAND_TRICHTER.x + 0.5, STAND_TRICHTER.z]);
+    netzHolen(s);
+    // B war voll, dann holt jemand sein einziges Stück weg
+    const g = gegenstandNeu(s, 'roh', 10, 0, 0, 0);
+    bandEinlegen(b, g, bandLaenge(b));
+    lauf(b).voll = true;
+    v.letzte = 0;
+    g.ort = 'weg';
+    s.gegenstaende.splice(s.gegenstaende.indexOf(g), 1);
+    for (let i = 0; i < 5; i++) bandEinlegen(a, gegenstandNeu(s, 'roh', 10, 0, 0, 0), i * 0.5);
+    laufen(s, 40);
+    expect(s.gegenstaende.filter((x) => x.ort === 'band').length).toBe(0);
+    expect(s.stat.verkauft).toBe(50);
+  });
+
+  it('Wände gehen nicht durch Maschinen, Bänder oder den Haufen', () => {
+    const s = hof();
+    s.tech.plattform = 1;
+    s.tech.waende = 1;
+    s.rev++;
+    bauSetzen(s, 'silo', -10, 8, 0);
+    band(s, [-14, -10], [-4, -10]);
+    expect(liniePlanen(s, 'wand', [-12, 8], [-8, 8]).grund).toBe('belegt');
+    expect(liniePlanen(s, 'wand', [-9, -12], [-9, -8]).grund).toBe('band');
+    expect(liniePlanen(s, 'wand', [WELT.haufenX - 3, WELT.haufenZ], [WELT.haufenX + 3, WELT.haufenZ]).grund).toBe('haufen');
+    expect(liniePlanen(s, 'wand', [-15, 10.5], [-12, 10.5]).ok).toBe(true);
+  });
+
+  it('die Abwesenheit rechnet keine einmaligen Belohnungen hoch', () => {
+    const s = hof();
+    const x = rechenPlatz(s);
+    const r = bauSetzen(s, 'rechen', x, WELT.haufenZ, 0);
+    band(s, [x - 0.5 - r.bau.weite, WELT.haufenZ], [STAND_TRICHTER.x + 0.5, STAND_TRICHTER.z]);
+    bauSetzen(s, 'mast', -11, 4, 0);
+    bauSetzen(s, 'mast', x - 1, 3.4, 0);
+    // eine Mission, die gleich in der genauen Phase fertig wird
+    s.mission = 24; // "Trag eine Million Halme ab" braucht lange, darum vorher eine schnelle wählen
+    const vorher = s.verdient;
+    s.zuletzt = Date.now() - 2 * 3600 * 1000;
+    const erg = abwesenheit(s, Date.now(), [automatikSchritt]);
+    const verkaufRate = erg.halme * werte(s).preisRoh / 120;
+    // Hochrechnung höchstens aus Verkäufen: nicht mehr als Rate × Zeit plus die genaue Phase
+    expect(s.verdient - vorher).toBeLessThan(verkaufRate * 2 * 3600 * 1.2 + 50000);
   });
 });

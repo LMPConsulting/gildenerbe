@@ -93,9 +93,10 @@ export function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
     if (b.typ === 'band') { if (bandImWeg(b, typ, x, z, rot, y)) return aus('band'); continue; }
     const bd = BAU_BY_ID[b.typ];
     if (bd.linie && b.a && b.b) {
-      if (b.typ === 'leitung') continue;
-      for (let t = 0; t <= 1; t += 0.1) {
-        const px = b.a[0] + (b.b[0] - b.a[0]) * t; const pz = b.a[1] + (b.b[1] - b.a[1]) * t;
+      if (b.typ === 'leitung' || Math.abs((b.y || 0) - y) > 1.5) continue;
+      const n = Math.max(1, Math.ceil(Math.hypot(b.b[0] - b.a[0], b.b[1] - b.a[1]) / 0.2));
+      for (let i = 0; i <= n; i++) {
+        const px = b.a[0] + ((b.b[0] - b.a[0]) * i) / n; const pz = b.a[1] + ((b.b[1] - b.a[1]) * i) / n;
         if (imFussabdruck({ typ, x, z, rot }, px, pz, 0.05)) return aus('belegt');
       }
       continue;
@@ -146,6 +147,17 @@ export function bandAnker(s, x, z, ende, { radius = 1.0, y = 0 } = {}) {
       nimm(Math.hypot(p.x - x, p.z - z), { x: p.x, y: p.y, z: p.z, richtung, art: p.art, bau: b, port: p.i });
     }
   }
+  if (!ende) {
+    // Ein neues Band kann dort anfangen, wo ein anderes aufhört: es geht nahtlos weiter
+    for (const b of s.bauten) {
+      if (b.typ !== 'band') continue;
+      const p = b.punkte;
+      const e = p[p.length - 1];
+      const v = p[p.length - 2];
+      const l = Math.hypot(e[0] - v[0], e[2] - v[2]) || 1;
+      nimm(Math.hypot(e[0] - x, e[2] - z) + 0.05, { x: e[0], y: e[1], z: e[2], richtung: [(e[0] - v[0]) / l, (e[2] - v[2]) / l], art: 'bandende', band: b });
+    }
+  }
   if (ende) {
     nimm(Math.hypot(STAND_TRICHTER.x - x, STAND_TRICHTER.z - z) * 0.8,
       { x: STAND_TRICHTER.x + 0.2, y: BAND_Y, z: STAND_TRICHTER.z, richtung: [-1, 0], art: 'stand' });
@@ -168,10 +180,12 @@ export function bandAnker(s, x, z, ende, { radius = 1.0, y = 0 } = {}) {
  */
 export function bandPlanen(s, von, nach, { gerade = false } = {}) {
   if (!bauFrei(s, 'band')) return { ok: false, grund: 'gesperrt' };
+  // Ein Ende mitten im Heu: gar nicht erst suchen (sonst durchsucht A* die ganze Halle)
+  for (const a of [von, nach]) if (a.art === 'frei' && a.y < 1 && s.hf && haufenHoehe(s.hf, a.x, a.z) > 0.15) return { ok: false, grund: 'haufen' };
   const ohne = [];
   if (von.bau) ohne.push(von.bau.id);
   if (nach.bau) ohne.push(nach.bau.id);
-  const weg = bandWeg(s, von, nach, { ohne, gerade });
+  const weg = bandWeg(s, von, nach, { ohne, gerade, maxSchritte: 20000 });
   if (weg.fehler) return { ok: false, grund: weg.fehler };
   const kosten = bauKosten(s, 'band', weg.laenge);
   const r = { ok: s.geld >= kosten, punkte: weg.punkte, laenge: weg.laenge, kosten };
@@ -203,6 +217,27 @@ export function liniePlanen(s, typ, a, b, y = 0) {
   const gr = hallenGrenzen(werte(s).hallenFelder);
   for (const p of [a, b]) if (p[0] < gr.xMin || p[0] > gr.xMax || p[1] < gr.zMin || p[1] > gr.zMax) return { ok: false, grund: 'wand' };
   if (y > 0.1 && (!plattformBei(s, a[0], a[1], y) || !plattformBei(s, b[0], b[1], y))) return { ok: false, grund: 'kante' };
+  if (typ !== 'leitung') {
+    // Wände und Geländer gehen nicht durch Maschinen, Bänder, Stationen oder den Haufen
+    const hinder = festeHindernisse();
+    const n = Math.max(1, Math.ceil(laenge / 0.25));
+    for (let i = 0; i <= n; i++) {
+      const px = a[0] + ((b[0] - a[0]) * i) / n; const pz = a[1] + ((b[1] - a[1]) * i) / n;
+      if (y < 0.1 && s.hf && haufenHoehe(s.hf, px, pz) > 0.15) return { ok: false, grund: 'haufen' };
+      if (hinder.some((k) => px > k.x0 - 0.1 && px < k.x1 + 0.1 && pz > k.z0 - 0.1 && pz < k.z1 + 0.1)) return { ok: false, grund: 'belegt' };
+      if (Math.hypot(px - STAND_TRICHTER.x, pz - STAND_TRICHTER.z) < 0.8 || Math.hypot(px - LADERAMPE.x, pz - LADERAMPE.z) < 1) return { ok: false, grund: 'belegt' };
+      for (const bb of s.bauten) {
+        if (Math.abs((bb.y || 0) - y) > 1.5 && bb.typ !== 'band') continue;
+        if (bb.typ === 'band') {
+          const nb = bandNaechster(bb, px, pz);
+          if (nb.d < 0.45 && Math.abs(nb.y - (y + BAND_Y)) < 1.2) return { ok: false, grund: 'band' };
+          continue;
+        }
+        if (bb.a || bb.typ === 'plattform' || bb.typ === 'dach' || bb.typ === 'klappe') continue;
+        if (imFussabdruck(bb, px, pz, BAU_BY_ID[typ].b / 2)) return { ok: false, grund: 'belegt' };
+      }
+    }
+  }
   const kosten = bauKosten(s, typ, laenge);
   return { ok: s.geld >= kosten, grund: s.geld >= kosten ? undefined : 'geld', laenge, kosten };
 }

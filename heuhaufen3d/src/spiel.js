@@ -100,8 +100,8 @@ export function spielTakt(s, dt, systeme = []) {
   if (!(dt > 0)) return ereignisse;
   s.zeit += dt;
   const hf = s.hf;
-  // Heu rutscht nach, Nadeln können dabei frei werden
-  haufenSetzen(hf, 2);
+  // Heu rutscht nach, Nadeln können dabei frei werden (größere Schritte, mehr Durchgänge)
+  haufenSetzen(hf, Math.max(2, Math.min(12, Math.round(dt * 120))));
   nadelPruefZeit += dt;
   if (nadelPruefZeit > 0.25) {
     nadelPruefZeit = 0;
@@ -163,19 +163,35 @@ export function laden(text) {
   s.bauten = s.bauten.filter((b) => istObjekt(b) && BAU_NACH_ID[b.typ] && Number.isFinite(b.x) && Number.isFinite(b.z)
     && (b.typ !== 'band' || (Array.isArray(b.punkte) && b.punkte.length >= 2 && b.punkte.every((p) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite))))
     && (!BAU_NACH_ID[b.typ].linie || b.typ === 'band' || (Array.isArray(b.a) && Array.isArray(b.b))));
+  const eintragOk = (r) => istObjekt(r) && PRODUKTE[r.art] && Number.isFinite(r.halme) && r.halme > 0 && Number.isInteger(r.nadel);
   for (const b of s.bauten) {
     // fehlende Felder (ältere Stände) mit dem Grundzustand auffüllen
     const grund = bauZustand(b.typ);
     for (const [k, v] of Object.entries(grund)) if (!(k in b) || typeof b[k] !== typeof v || Array.isArray(v) !== Array.isArray(b[k])) b[k] = v;
     b.rot = zahlOder(b.rot, 0);
     b.y = zahlOder(b.y, 0);
+    // Einträge in Maschinen: kaputte fallen weg, ungültige Nadelverweise werden gelöst
+    for (const k of ['schlange', 'fertig', 'innen']) {
+      if (Array.isArray(b[k])) b[k] = b[k].filter(eintragOk).map((r) => ({ ...r, nadel: s.nadeln[r.nadel] ? r.nadel : -1, t: zahlOder(r.t, 0), fort: zahlOder(r.fort, 0) }));
+    }
+    if (b.puffer != null) b.puffer = eintragOk(b.puffer) ? { ...b.puffer, zeit: zahlOder(b.puffer.zeit, 0) } : null;
+    if (Array.isArray(b.nadeln)) b.nadeln = b.nadeln.filter((nr) => Number.isInteger(nr) && s.nadeln[nr]);
+    if (istObjekt(b.lager)) for (const [z, m] of Object.entries(b.lager)) if (!Number.isFinite(m) || m < 0) delete b.lager[z];
+    for (const k of ['brenn', 'takt', 'fort', 'rest', 'weite', 'winkel', 'hell']) if (k in b) b[k] = zahlOder(b[k], grund[k] ?? 0);
   }
   const ORTE = ['boden', 'flug', 'band', 'hand'];
   s.gegenstaende = s.gegenstaende.filter((g) => istObjekt(g) && Number.isFinite(g.x) && Number.isFinite(g.y) && Number.isFinite(g.z)
-    && PRODUKTE[g.art] && (g.art !== 'roh' || g.halme > 0)).slice(0, 600);
+    && PRODUKTE[g.art] && (g.art !== 'roh' || g.halme > 0));
+  if (s.gegenstaende.length > 2000) {
+    // Zu viele: liegendes loses Heu ohne Nadel wird zu Büscheln, alles andere bleibt
+    const wichtig = (g) => g.ort === 'band' || g.ort === 'hand' || g.nadel >= 0 || g.art !== 'roh';
+    const behalten = s.gegenstaende.filter(wichtig).slice(0, 2000);
+    for (const g of s.gegenstaende) if (!wichtig(g)) s.lose.push({ x: g.x, z: g.z, m: g.halme, a: 0 });
+    s.gegenstaende = behalten;
+  }
   for (const g of s.gegenstaende) {
     if (!ORTE.includes(g.ort)) g.ort = 'flug';
-    if (g.ort === 'band' && !s.bauten.some((b) => b.id === g.band && b.typ === 'band')) g.ort = 'flug';
+    if (g.ort === 'band' && (!s.bauten.some((b) => b.id === g.band && b.typ === 'band') || !Number.isFinite(g.t))) g.ort = 'flug';
     if (g.ort === 'hand' && s.spieler.haelt !== g.id) g.ort = 'flug';
     for (const k of ['vx', 'vy', 'vz']) g[k] = zahlOder(g[k], 0);
     if (!Number.isInteger(g.nadel) || !s.nadeln[g.nadel]) g.nadel = -1;
@@ -223,30 +239,52 @@ export function laden(text) {
 }
 
 /**
- * Offline nachholen: die ersten drei Minuten rechnet die Automatik genau nach
+ * Offline nachholen: die ersten zwei Minuten rechnet die Automatik genau nach
  * (Bänder, Maschinen, Laster), den Rest bis zur erforschten Grenze schätzt sie
- * aus den Einnahmen dieser Minuten, mal dem Offline-Anteil.
+ * aus den Verkäufen dieser Minuten, mal dem Offline-Anteil. In Häppchen, damit
+ * das Handy beim Start nicht einfriert: beginnen, dann jedes Bild weiter.
  */
-export function abwesenheit(s, jetzt = Date.now(), systeme = []) {
+export function abwesenheitBeginnen(s, jetzt = Date.now(), systeme = []) {
   const weg = Math.max(0, (jetzt - (Number.isFinite(s.zuletzt) ? s.zuletzt : jetzt)) / 1000);
   s.zuletzt = jetzt;
   const w = werte(s);
   const sek = Math.min(weg, w.offlineStunden * 3600);
   if (!systeme.length || sek < 10 || !s.bauten.length) return null;
-  const geldVor = s.geld;
-  const verdientVor = s.verdient;
-  const halmeVor = s.stat.abgetragen;
-  const genau = Math.min(sek, 180);
-  const ereignisse = [];
-  const dt = 0.1;
-  for (let t = 0; t < genau; t += dt) {
-    for (const e of spielTakt(s, dt, systeme)) if (e.typ === 'mission' || e.typ === 'nadel' || e.typ === 'auftrag' || e.typ === 'scannerNadel') ereignisse.push(e);
-  }
-  const rate = (s.verdient - verdientVor) / genau;
-  const rest = Math.max(0, sek - genau) * w.offlineEff;
-  if (rate > 0 && rest > 0) einnahme(s, rate * rest);
   return {
-    kurz: sek < 30, sekunden: sek, abwesend: weg, ereignisse,
-    geld: s.geld - geldVor, verdient: s.verdient - verdientVor, halme: s.stat.abgetragen - halmeVor,
+    sek, weg, genau: Math.min(sek, 120), dt: 0.25, t: 0, verkaeufe: 0, ereignisse: [], systeme, fertig: false, ergebnis: null,
+    geldVor: s.geld, verdientVor: s.verdient, halmeVor: s.stat.abgetragen,
   };
+}
+
+/** Rechnet höchstens `schritte` Schritte (oder bis `bisMs` performance.now() erreicht) weiter. */
+export function abwesenheitWeiter(s, job, schritte = 1000, bisMs = Infinity) {
+  const jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  for (let i = 0; i < schritte && job.t < job.genau; i++) {
+    for (const e of spielTakt(s, job.dt, job.systeme)) {
+      if (e.typ === 'verkauft') job.verkaeufe += e.betrag || 0;
+      else if (e.typ === 'mission' || e.typ === 'nadel' || e.typ === 'auftrag' || e.typ === 'scannerNadel') job.ereignisse.push(e);
+    }
+    job.t += job.dt;
+    if (jetzt() > bisMs) break;
+  }
+  if (job.t >= job.genau && !job.fertig) {
+    job.fertig = true;
+    // Hochgerechnet werden nur laufende Verkäufe, keine einmaligen Belohnungen
+    const rate = job.verkaeufe / job.genau;
+    const rest = Math.max(0, job.sek - job.genau) * werte(s).offlineEff;
+    if (rate > 0 && rest > 0) einnahme(s, rate * rest);
+    job.ergebnis = {
+      kurz: job.sek < 30, sekunden: job.sek, abwesend: job.weg, ereignisse: job.ereignisse,
+      geld: s.geld - job.geldVor, verdient: s.verdient - job.verdientVor, halme: s.stat.abgetragen - job.halmeVor,
+    };
+  }
+  return job;
+}
+
+/** Alles auf einmal (für Tests und Werkzeuge). */
+export function abwesenheit(s, jetzt = Date.now(), systeme = []) {
+  const job = abwesenheitBeginnen(s, jetzt, systeme);
+  if (!job) return null;
+  while (!job.fertig) abwesenheitWeiter(s, job);
+  return job.ergebnis;
 }
