@@ -17,8 +17,10 @@ import { zufallNeu } from '../../heuhaufen3d/src/zufall.js';
 const reich = (s, geld = 1e9) => { s.geld = geld; return s; };
 
 describe('Daten', () => {
-  it('hat den Forschungsbaum der 2D-Fassung mit über 370 Stufen in zehn Ästen', () => {
-    expect(TECH_STUFEN_GESAMT).toBeGreaterThan(370);
+  it('hat wie das Vorbild 351 Forschungsstufen in zehn Ästen (Hofbau 17, Heulinien 17, Strom 23, Verarbeitung 101)', () => {
+    expect(TECH_STUFEN_GESAMT).toBe(351);
+    const ast = (a) => TECH.filter((t) => t.ast === a).reduce((n, t) => n + t.stufen, 0);
+    expect([ast('hofbau'), ast('linien'), ast('strom'), ast('verarbeitung')]).toEqual([17, 17, 23, 101]);
     expect(new Set(TECH.filter((t) => t.ast).map((t) => t.ast)).size).toBe(10);
     for (const t of TECH) for (const b of t.braucht) expect(TECH_NACH_ID[b], `${t.id} braucht ${b}`).toBeDefined();
   });
@@ -91,13 +93,13 @@ describe('Werkzeuge und Verkauf', () => {
     expect(s.spieler.last).toBe(0);
     expect(s.stat.verkauft).toBe(r.menge);
   });
-  it('füllt die Arme nicht über 30 Halme, der Eimer fasst 100', () => {
+  it('füllt die Arme nicht über 30 Halme, der Eimer fasst gut 100', () => {
     const s = standNeu(5);
     s.spieler.last = 30;
     expect(platzFrei(s)).toBe(0);
     reich(s);
     techKaufen(s, 'eimer');
-    expect(platzFrei(s)).toBe(70);
+    expect(platzFrei(s)).toBe(72);
   });
   it('kostet mit dem Spaten Puste, mit der Kinderschaufel nicht', () => {
     const s = reich(standNeu(5));

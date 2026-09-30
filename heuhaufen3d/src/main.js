@@ -111,6 +111,7 @@ function hauptStart() {
       else if (k === 'n') nadelnAuf();
       else if (k === 'escape') { if (zustand.tafel) zustand.tafel.schliessen(); else if (bm.aktiv()) bm.abbrechen(); }
       else if (k === 'q' && bm.aktiv()) bm.drehen();
+      else if (k === 'q') ablegen();
       else if (k === 'f' && bm.aktiv()) bm.einrasten();
       // C und V schieben den Geist näher und weiter weg wie im Vorbild; sonst duckt C
       else if (k === 'c' && bm.art() === 'band') bm.tiefer();
@@ -175,6 +176,20 @@ function hauptStart() {
     if (werkzeugWaehlen(s, id)) klang.klick();
   }
 
+  /** Q / ABLEGEN wie im Vorbild: was man hält, vor die Füße legen (Heu im Behälter als ein Bündel). */
+  function ablegen() {
+    if (!zustand.laeuft || blockiert() || bm.aktiv()) return;
+    const sp = s.spieler;
+    const [dx, , dz] = blickRichtung(sp);
+    const l = Math.hypot(dx, dz) || 1;
+    const von = [sp.x + (dx / l) * 0.55, sp.y + 1.1, sp.z + (dz / l) * 0.55];
+    const richtung = [dx / l, 0, dz / l];
+    if (gehaltenesStueck(s)) stueckWerfen(s, von, richtung, 0.8);
+    else if (sp.last >= 1) heuWerfen(s, von, richtung, sp.last, 0.8);
+    else { ui.toast('Nichts zum Ablegen.'); return; }
+    klang.klick();
+  }
+
   /* ------------------------------------------------ Tafeln und Menüs */
   const blockiert = () => ui.modalOffen() || !!zustand.tafel || !zustand.laeuft;
 
@@ -198,6 +213,7 @@ function hauptStart() {
     if (zustand.tafel || !zustand.laeuft) return;
     if (bm.aktiv()) { bm.abbrechen(); if (bm.aktiv()) bm.abbrechen(); return; }
     st.zeigerFreigeben();
+    s.stat.katalog = (s.stat.katalog || 0) + 1;
     baukatalogZeigen(ui, s, {
       waehlen: (typ) => { klang.klick(); bm.starten(typ); },
       abbauen: () => { klang.klick(); bm.abbauStarten(); },
@@ -928,6 +944,7 @@ function hauptStart() {
         ui.missionZeigen(missionStand(s), s.mission);
         ui.leisteSetzen(werkzeugeInLeiste(s), s.spieler.werkzeug, [
           { id: 'bauen', taste: 'B', kurz: 'BAUEN', name: 'Baukatalog', aktion: bauenAuf },
+          { id: 'ablegen', taste: 'Q', kurz: 'ABLEGEN', name: 'Ablegen', aktion: ablegen },
         ]);
         const platz = taschePlatz(w);
         ui.behaelterZeigen(behaelter(s), s.spieler.last, platz);
@@ -1009,7 +1026,16 @@ function hauptStart() {
   }
 
   window.addEventListener('resize', () => s3.groesseAnpassen());
-  document.addEventListener('visibilitychange', () => { if (document.hidden && zustand.laeuft) speichernJetzt(); });
+  // Beim Wegschalten speichern; beim Zurückkommen (App-Wechsel ohne Neuladen) die Pause nachholen
+  function zurueck() {
+    if (!zustand.laeuft || zustand.aufholen) return;
+    zustand.aufholen = abwesenheitBeginnen(s, Date.now(), [automatikSchritt]);
+    if (zustand.aufholen && zustand.aufholen.sek >= 30) ui.toast('Die Maschinen holen nach, was in deiner Abwesenheit passiert ist …');
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (zustand.laeuft) speichernJetzt(); } else zurueck();
+  });
+  window.addEventListener('pageshow', (ev) => { if (ev.persisted) zurueck(); });
   // Beim Schließen nur speichern, wenn der letzte Stand älter als eine Sekunde ist
   window.addEventListener('pagehide', () => { if (zustand.laeuft && performance.now() - zustand.zuletztGespeichert > 1000) speichernJetzt(); });
   requestAnimationFrame(schleife);

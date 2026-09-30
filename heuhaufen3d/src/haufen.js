@@ -152,6 +152,21 @@ export function haufenAbtragen(hf, x, z, halme, radius = 0.6) {
 }
 
 /**
+ * Gleichmäßig abtragen: alle Säulen im selben Verhältnis niedriger, bis `halme` weg
+ * sind (für geschätzte Abwesenheit, wenn die Greifstellen nicht genug hergeben).
+ * Liefert, was genommen wurde.
+ */
+export function haufenSchrumpfen(hf, halme) {
+  const vorher = haufenRest(hf);
+  if (halme <= 0 || vorher <= 0) return 0;
+  const f = Math.max(0, 1 - halme / vorher);
+  for (let k = 0; k < hf.h.length; k++) if (hf.h[k] > 0) hf.h[k] *= f;
+  schmutzMelden(hf, 0, 0, hf.n - 1, hf.n - 1);
+  hf.aenderung++;
+  return vorher - haufenRest(hf);
+}
+
+/**
  * Rutschen lassen: wo zwei Nachbarsäulen steiler als der Schüttwinkel
  * zueinander stehen, wandert Heu nach unten. Arbeitet nur im geänderten
  * Bereich und wächst mit ihm. Liefert true, solange noch etwas rutscht.

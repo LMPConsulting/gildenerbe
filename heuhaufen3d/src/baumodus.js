@@ -42,10 +42,32 @@ export function baumodusBauen(ctx) {
     ctx.hud.verstecken();
   };
 
-  /** Wohin der Blick trifft: Oberkante einer Plattform, sonst der Boden (oder ein Punkt vor dir). [x, z, y] */
-  function blickPunkt(k, blick, weite) {
+  /** Oberkante einer Plattform unter (x, z), die tiefer als die Kamera liegt, sonst 0. */
+  function auflageUnter(x, z, kameraY) {
+    const hp = BAU_BY_ID.plattform.h;
+    let y = 0;
+    for (const b of stand().bauten) {
+      if (b.typ !== 'plattform') continue;
+      const oben = (b.y || 0) + hp;
+      if (oben < kameraY - 0.05 && oben > y && imFussabdruck(b, x, z, 0)) y = oben;
+    }
+    return y;
+  }
+
+  /**
+   * Wohin der Geist kommt: Oberkante einer Plattform, sonst der Boden, wo der Blick
+   * trifft (oder ein Punkt vor dir). Mit festem Abstand (nach Näher/Weiter, wie Rad
+   * und C/V im Vorbild) steht er so weit vor dir in Blickrichtung. [x, z, y]
+   */
+  function blickPunkt(k, blick, weite, fest = null) {
     const [dx, dy, dz] = blick;
     const flach = Math.hypot(dx, dz) || 1;
+    if (fest != null) {
+      const gr0 = hallenGrenzen(werte(stand()).hallenFelder);
+      const fx = Math.max(gr0.xMin + 0.2, Math.min(gr0.xMax - 0.2, k.x + (dx / flach) * fest));
+      const fz = Math.max(gr0.zMin + 0.2, Math.min(gr0.zMax - 0.2, k.z + (dz / flach) * fest));
+      return [fx, fz, auflageUnter(fx, fz, k.y)];
+    }
     if (dy < -0.02) {
       let beste = null;
       const hp = BAU_BY_ID.plattform.h;
@@ -144,6 +166,12 @@ export function baumodusBauen(ctx) {
   }
   const kommaMeter = (m) => `${String(Math.round(m * 10) / 10).replace('.', ',')} m`;
 
+  function abstandGezaehlt() {
+    const st = stand().stat;
+    st.geistAbstand = (st.geistAbstand || 0) + 1;
+    ctx.klang.klick();
+  }
+
   const api = {
     aktiv: () => !!modus,
     /** Ist die gerade gezeigte Stelle gültig? (Der große Knopf wird sonst matt.) */
@@ -184,9 +212,10 @@ export function baumodusBauen(ctx) {
       beenden();
     },
 
-    drehen() { if (modus && modus.art === 'bau') { modus.dreh += Math.PI / 4; ctx.klang.klick(); } },
-    naeher() { if (modus) modus.weite = Math.max(WEITE_MIN, modus.weite - 1); },
-    weiter() { if (modus) modus.weite = Math.min(WEITE_MAX, modus.weite + 1); },
+    drehen() { if (modus && modus.art === 'bau') { modus.dreh += Math.PI / 4; stand().stat.gedreht = (stand().stat.gedreht || 0) + 1; ctx.klang.klick(); } },
+    // Ab dem ersten Druck steht der Geist in festem Abstand vor dir (zählt für die Mission)
+    naeher() { if (modus && modus.art === 'bau') { modus.fest = Math.max(WEITE_MIN, (modus.fest ?? modus.abstandJetzt ?? 5) - 1); abstandGezaehlt(); } },
+    weiter() { if (modus && modus.art === 'bau') { modus.fest = Math.min(WEITE_MAX, (modus.fest ?? modus.abstandJetzt ?? 5) + 1); abstandGezaehlt(); } },
     /** Freie Bandenden anheben oder absenken (0 bis 3 m in halben Metern), für Rampen und Kreuzungen. */
     hoeher() { if (modus && modus.art === 'band' && modus.hub < HUB_MAX) { modus.hub = Math.min(HUB_MAX, modus.hub + 0.5); modus.plan = null; ctx.klang.klick(); } },
     tiefer() { if (modus && modus.art === 'band' && modus.hub > 0) { modus.hub = Math.max(0, modus.hub - 0.5); modus.plan = null; ctx.klang.klick(); } },
@@ -260,8 +289,9 @@ export function baumodusBauen(ctx) {
         });
         return true;
       }
-      const [px, pz, py] = blickPunkt(k, blick, modus.weite);
+      const [px, pz, py] = blickPunkt(k, blick, modus.weite, modus.art === 'bau' ? modus.fest ?? null : null);
       if (modus.art === 'bau') {
+        modus.abstandJetzt = Math.round(Math.hypot(px - k.x, pz - k.z));
         const d = BAU_BY_ID[modus.typ];
         const x = rastern(px);
         const z = rastern(pz);
@@ -288,7 +318,7 @@ export function baumodusBauen(ctx) {
         const extra = mast && mast.text ? ` · ${mast.text}` : '';
         ctx.hud.zeigen({
           titel: d.name, zeile: `${kostenText(s, modus.typ)}${kw}${extra}`, grund, ok: p.ok,
-          schritt: 'setzen', einrasten: null, drehen: true, abstand: false,
+          schritt: 'setzen', einrasten: null, drehen: true, abstand: true,
         });
         return true;
       }

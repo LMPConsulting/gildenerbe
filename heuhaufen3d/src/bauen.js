@@ -215,6 +215,8 @@ export function bandSetzen(s, plan) {
   const p0 = plan.punkte[0];
   const bau = { id: s.naechsteId++, typ: 'band', x: p0[0], z: p0[2], y: p0[1] - BAND_Y, rot: 0, punkte: plan.punkte, bezahlt: kosten };
   s.bauten.push(bau);
+  // ein angehobenes Bandende (ohne Plattform darunter) zählt für die Mission
+  if (plan.punkte.some((p) => p[1] - BAND_Y > 0.4 && !plattformBei(s, p[0], p[2], p[1] - BAND_Y))) s.stat.hochBand = (s.stat.hochBand || 0) + 1;
   bauGeaendert(s);
   return { ok: true, bau };
 }
@@ -305,6 +307,7 @@ export function bauAbbauen(s, bau, ereignisse = []) {
   }
   s.bauten.splice(i, 1);
   bauGeaendert(s);
+  s.stat.abgebaut = (s.stat.abgebaut || 0) + 1;
   return { ok: true, erstattung, geschenk: !!bau.geschenk };
 }
 

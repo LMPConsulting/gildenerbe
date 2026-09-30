@@ -624,3 +624,21 @@ describe('Zyklus 2: Generator und Netzschalter', () => {
     expect(lauf(sc).status).toBe('netzAus');
   });
 });
+
+describe('Zyklus 2: Missionsbuch mit 45 Schritten', () => {
+  it('rechnet alte Nummern um und zählt die Lernschritte im Baumodus', async () => {
+    const { MISSIONEN } = await import('../../heuhaufen3d/src/daten.js');
+    const { missionStand } = await import('../../heuhaufen3d/src/wirtschaft.js');
+    expect(MISSIONEN.length).toBe(45);
+    const s = hof();
+    s.mission = 10; // alt: „Leg ein Band vom Haufen zum Stand“
+    const roh = JSON.parse(speichern(s));
+    delete roh.missionFassung;
+    const t = laden(JSON.stringify(roh));
+    expect(MISSIONEN[t.mission].text).toBe('Leg ein Band vom Haufen zum Stand');
+    t.mission = MISSIONEN.findIndex((m) => m.art === 'zaehler' && m.ziel[0] === 'geistAbstand');
+    expect(missionStand(t).erfuellt).toBe(false);
+    t.stat.geistAbstand = 2;
+    expect(missionStand(t).erfuellt).toBe(true);
+  });
+});

@@ -129,6 +129,7 @@ export function stromSchritt(s, netz) {
 
 /** Tippen am Mast: das ganze Netz ein- oder ausschalten. Liefert den neuen Zustand (true = an). */
 export function netzSchalten(s, netz, mast) {
+  if (s.stat) s.stat.netzGeschaltet = (s.stat.netzGeschaltet || 0) + 1;
   const n = netz.strom.find((x) => x.masten.includes(mast));
   if (!n) { mast.aus = !mast.aus; return !mast.aus; }
   const jetztAus = !n.masten.some((m) => m.aus);

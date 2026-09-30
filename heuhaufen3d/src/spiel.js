@@ -2,10 +2,10 @@
 // Systeme an, bestellt neue Ladungen, speichert und lädt. Reine Logik; die
 // Oberfläche ruft spielTakt() jedes Bild auf und liest die Ereignisse.
 
-import { WELT, GRUND, MISSIONEN, NADELN, PRODUKTE } from './daten.js';
+import { WELT, GRUND, MISSIONEN, MISSIONEN_FASSUNG, MISSIONEN_ALT, NADELN, PRODUKTE } from './daten.js';
 import { zufallNeu } from './zufall.js';
 import {
-  haufenNeu, haufenSetzen, haufenRest, haufenPacken, haufenEntpacken, haufenAbtragen, haufenHoehe,
+  haufenNeu, haufenSetzen, haufenRest, haufenPacken, haufenEntpacken, haufenAbtragen, haufenHoehe, haufenSchrumpfen,
 } from './haufen.js';
 import {
   werte, missionenPruefen, ladungMasse, ladungBezahlen, ladungMoeglich, ladungPreis, einnahme, TECH_NACH_ID, BAU_NACH_ID,
@@ -27,6 +27,8 @@ function statNeu() {
     tipps: 0, verkauft: 0, gefegt: 0, abgetragen: 0, hand: 0, maschine: 0, drohne: 0, gaenge: 0,
     auftraege: 0, besterVerkauf: 0, besterVerkaufHalme: 0, maxGeld: 0, werkzeug: {}, produziert: {},
     umgesehen: 0, gelaufen: 0, ersteNadel: null, ersteLadung: null, rechenMitStrom: 0, nadelnZurueck: 0,
+    // Lernschritte im Baumodus (Missionen)
+    katalog: 0, geistAbstand: 0, gedreht: 0, abgebaut: 0, netzGeschaltet: 0, hochBand: 0,
   };
 }
 
@@ -71,6 +73,7 @@ export function standNeu(seed = (Date.now() % 2147483647) || 7) {
     naechsteId: 2,
     mission: 0,
     missionErledigt: [],
+    missionFassung: MISSIONEN_FASSUNG,
     auftrag: { nr: 0, skip: 0, geliefert: 0, pause: 0 },
     laster: lasterNeu(),
     stat: statNeu(),
@@ -286,6 +289,13 @@ export function laden(text) {
   s.stat = { ...statNeu(), ...(istObjekt(s.stat) ? s.stat : {}) };
   if (!istObjekt(s.stat.werkzeug)) s.stat.werkzeug = {};
   if (!istObjekt(s.stat.produziert)) s.stat.produziert = {};
+  // Ältere Stände zählten ein kürzeres Missionsbuch: Nummern umrechnen
+  if (roh.missionFassung !== MISSIONEN_FASSUNG) {
+    const um = (i) => (Number.isInteger(i) && i >= 0 && i < MISSIONEN_ALT.length ? MISSIONEN_ALT[i] : i);
+    s.mission = um(Math.floor(zahlOder(s.mission, 0)));
+    s.missionErledigt = (s.missionErledigt || []).map(um);
+    s.missionFassung = MISSIONEN_FASSUNG;
+  }
   s.mission = Math.max(0, Math.min(MISSIONEN.length, Math.floor(s.mission)));
   s.missionErledigt = (s.missionErledigt || []).filter((i) => Number.isInteger(i) && i > s.mission && i < MISSIONEN.length);
   s.ladung = Math.max(1, Math.floor(s.ladung));
@@ -336,8 +346,10 @@ export function abwesenheitWeiter(s, job, schritte = 1000, bisMs = Infinity) {
     if (halmeRate > 0) rest = Math.min(rest, s.haufenRest / halmeRate);
     else rest = 0;
     if (rate > 0 && rest > 0) {
-      einnahme(s, rate * rest);
-      offlineAbtragen(s, halmeRate * rest, job.ereignisse);
+      // Erst abtragen, dann nur bezahlen, was wirklich aus dem Haufen kam
+      const soll = halmeRate * rest;
+      const genommen = offlineAbtragen(s, soll, job.ereignisse);
+      einnahme(s, rate * rest * Math.min(1, genommen / Math.max(1, soll)));
     }
     job.ergebnis = {
       kurz: job.sek < 30, sekunden: job.sek, abwesend: job.weg, ereignisse: job.ereignisse,
@@ -350,7 +362,7 @@ export function abwesenheitWeiter(s, job, schritte = 1000, bisMs = Infinity) {
 /** Heu, das die Maschinen in der geschätzten Zeit weggenommen hätten, an ihren Greifstellen abtragen. */
 function offlineAbtragen(s, menge, ereignisse) {
   const hf = s.hf;
-  if (!hf || menge < 1) return;
+  if (!hf || menge < 1) return 0;
   const stellen = [];
   for (const b of s.bauten) {
     if (b.typ === 'rechen' && lauf(b).kamm) stellen.push(lauf(b).kamm);
@@ -378,11 +390,14 @@ function offlineAbtragen(s, menge, ereignisse) {
     genommen += haufenAbtragen(hf, x, z, Math.min(menge - genommen, 4000), 1.0);
     if (i % 8 === 7) haufenSetzen(hf, 6);
   }
+  // Geben die Greifstellen nicht genug her, schrumpft der ganze Haufen um den Rest
+  if (genommen < menge - 1) genommen += haufenSchrumpfen(hf, menge - genommen);
   haufenSetzen(hf, 12);
   s.stat.abgetragen += genommen;
   s.stat.maschine += genommen;
   nadelnFreilegen(s, hf, null, ereignisse);
   s.haufenRest = haufenRest(hf);
+  return genommen;
 }
 
 /** Alles auf einmal (für Tests und Werkzeuge). */

@@ -380,6 +380,7 @@ export function missionStand(s) {
     case 'verdient': ist = s.verdient; break;
     case 'gefegt': ist = st.gefegt; break;
     case 'gebaut': ist = bauAnzahl(s, m.ziel[0]); ziel = m.ziel[1]; break;
+    case 'zaehler': ist = st[m.ziel[0]] || 0; ziel = m.ziel[1]; break;
     case 'strom': ist = st.rechenMitStrom ? 1 : 0; break;
     case 'nadeln': ist = s.nadelnGesamt; break;
     case 'auftraege': ist = st.auftraege; break;
