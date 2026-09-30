@@ -7,7 +7,7 @@
 import { werte } from './wirtschaft.js';
 import { BAU_BY_ID, STAND_TRICHTER, LADERAMPE, lauf, fussabdruck, imFussabdruck, gitterEintragen, hallenGrenzen } from './welt.js';
 import { bandGeometrie, bandNaechster, anschlussListe, baenderSchritt, bandFangen, bandEinlegen, platzAuf } from './baender.js';
-import { MASCHINE, annehmen, maschineFangen } from './maschinen.js';
+import { MASCHINE, annehmen, maschineFangen, nimmtNie } from './maschinen.js';
 import { stromNetzBauen, stromSchritt, wasserNetzBauen, wasserSchritt } from './versorgung.js';
 import { gegenstaendeSchritt, gegenstandVerkaufen, imStandTrichter } from './gegenstaende.js';
 import { lasterSchritt, lasterAnnehmen, lasterFangen } from './laster.js';
@@ -101,6 +101,7 @@ export function netzBauen(s, alt = null) {
   stromNetzBauen(s, netz);
   wasserNetzBauen(s, netz);
   netz.abgeben = abgeben;
+  netz.nimmtNie = nimmtNie;
   const gr = hallenGrenzen(werte(s).hallenFelder);
   netz.welt = {
     grenzen: gr,

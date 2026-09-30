@@ -5,7 +5,7 @@
 import { WELT, GRUND, MISSIONEN, NADELN, PRODUKTE } from './daten.js';
 import { zufallNeu } from './zufall.js';
 import {
-  haufenNeu, haufenSetzen, haufenRest, haufenPacken, haufenEntpacken,
+  haufenNeu, haufenSetzen, haufenRest, haufenPacken, haufenEntpacken, haufenAbtragen, haufenHoehe,
 } from './haufen.js';
 import {
   werte, missionenPruefen, ladungMasse, ladungBezahlen, einnahme, TECH_NACH_ID, BAU_NACH_ID,
@@ -14,6 +14,7 @@ import { nadelnVerteilen, nadelnFreilegen, loseNadelnSetzen } from './nadeln.js'
 import { spielerNeu } from './spieler.js';
 import { WERKZEUG_NACH_ID } from './werkzeuge.js';
 import { lasterNeu } from './laster.js';
+import { lauf } from './welt.js';
 import { bauZustand } from './maschinen.js';
 
 export const STAND3D_VERSION = 1;
@@ -269,16 +270,61 @@ export function abwesenheitWeiter(s, job, schritte = 1000, bisMs = Infinity) {
   }
   if (job.t >= job.genau && !job.fertig) {
     job.fertig = true;
-    // Hochgerechnet werden nur laufende Verkäufe, keine einmaligen Belohnungen
+    // Hochgerechnet werden nur laufende Verkäufe, keine einmaligen Belohnungen, und nur so
+    // lange, wie der Haufen reicht. Das Heu dafür verschwindet an den Greifstellen.
     const rate = job.verkaeufe / job.genau;
-    const rest = Math.max(0, job.sek - job.genau) * werte(s).offlineEff;
-    if (rate > 0 && rest > 0) einnahme(s, rate * rest);
+    const halmeRate = (s.stat.abgetragen - job.halmeVor) / job.genau;
+    let rest = Math.max(0, job.sek - job.genau) * werte(s).offlineEff;
+    if (halmeRate > 0) rest = Math.min(rest, s.haufenRest / halmeRate);
+    else rest = 0;
+    if (rate > 0 && rest > 0) {
+      einnahme(s, rate * rest);
+      offlineAbtragen(s, halmeRate * rest, job.ereignisse);
+    }
     job.ergebnis = {
       kurz: job.sek < 30, sekunden: job.sek, abwesend: job.weg, ereignisse: job.ereignisse,
       geld: s.geld - job.geldVor, verdient: s.verdient - job.verdientVor, halme: s.stat.abgetragen - job.halmeVor,
     };
   }
   return job;
+}
+
+/** Heu, das die Maschinen in der geschätzten Zeit weggenommen hätten, an ihren Greifstellen abtragen. */
+function offlineAbtragen(s, menge, ereignisse) {
+  const hf = s.hf;
+  if (!hf || menge < 1) return;
+  const stellen = [];
+  for (const b of s.bauten) {
+    if (b.typ === 'rechen' && lauf(b).kamm) stellen.push(lauf(b).kamm);
+    else if (b.typ === 'arm') {
+      const dx = hf.mitteX - b.x; const dz = hf.mitteZ - b.z; const d = Math.hypot(dx, dz) || 1;
+      const r = Math.min(2.2, d);
+      stellen.push([b.x + (dx / d) * r, b.z + (dz / d) * r]);
+    }
+  }
+  if (!stellen.length) for (let i = 0; i < 12; i++) {
+    const w = (i / 12) * Math.PI * 2;
+    stellen.push([hf.mitteX + Math.cos(w) * hf.radius * 0.8, hf.mitteZ + Math.sin(w) * hf.radius * 0.8]);
+  }
+  let genommen = 0;
+  let leer = 0;
+  for (let i = 0; genommen < menge && i < 4000 && leer < stellen.length * 3; i++) {
+    const [x, z] = stellen[i % stellen.length];
+    // Hat die Stelle kein Heu mehr, rückt sie ein Stück zur Mitte (wie der Kamm nachfasst)
+    if (haufenHoehe(hf, x, z) < 0.05) {
+      const st = stellen[i % stellen.length];
+      st[0] += (hf.mitteX - st[0]) * 0.1; st[1] += (hf.mitteZ - st[1]) * 0.1;
+      leer++;
+      continue;
+    }
+    genommen += haufenAbtragen(hf, x, z, Math.min(menge - genommen, 4000), 1.0);
+    if (i % 8 === 7) haufenSetzen(hf, 6);
+  }
+  haufenSetzen(hf, 12);
+  s.stat.abgetragen += genommen;
+  s.stat.maschine += genommen;
+  nadelnFreilegen(s, hf, null, ereignisse);
+  s.haufenRest = haufenRest(hf);
 }
 
 /** Alles auf einmal (für Tests und Werkzeuge). */

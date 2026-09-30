@@ -179,7 +179,14 @@ export function baenderSchritt(s, dt, netz, ereignisse) {
       if (!vorne && nt >= L) {
         const ziel = l.ziel;
         if (ziel && netz.abgeben(s, band, ziel, g, ereignisse)) continue;
-        if (!ziel) {
+        // Will die Maschine am Ende diese Ware nie (Ballen vor dem Silo), fällt sie nach 2 s herunter
+        let abwerfen = !ziel;
+        if (ziel && ziel.art === 'bau' && netz.nimmtNie && netz.nimmtNie(ziel.bau, g.art)) {
+          g.warte = (g.warte || 0) + dt;
+          if (g.warte > 2) abwerfen = true;
+        }
+        if (abwerfen) {
+          delete g.warte;
           // Nimmt niemand an: das Stück fällt vorn herunter.
           const p = bandPunkt(band, L);
           werfenMit(g, p.x + p.dx * 0.15, p.y + 0.02, p.z + p.dz * 0.15, p.dx * v, 0.4, p.dz * v);

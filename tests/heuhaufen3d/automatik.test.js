@@ -360,12 +360,16 @@ describe('Abwesenheit', () => {
     bauSetzen(s, 'mast', -11, 4, 0);
     bauSetzen(s, 'mast', x - 1, 3.4, 0);
     s.zuletzt = Date.now() - 3600 * 1000;
+    const restVor = s.haufenRest;
     const erg = abwesenheit(s, Date.now(), [automatikSchritt]);
     expect(erg.kurz).toBe(false);
-    expect(erg.halme).toBeGreaterThan(600);
-    // drei Minuten genau, dazu 57 Minuten zur Hälfte geschätzt: gut das Zehnfache
-    const genauGeld = erg.halme * werte(s).preisRoh;
-    expect(erg.verdient).toBeGreaterThan(genauGeld * 5);
+    // zwei Minuten genau, dazu 58 Minuten zur Hälfte geschätzt: das Heu dafür ist auch weg
+    expect(erg.halme).toBeGreaterThan(5000);
+    expect(restVor - s.haufenRest).toBeGreaterThan(erg.halme * 0.9);
+    // bezahlt wird ungefähr, was abgetragen und verkauft wurde
+    const erwartet = erg.halme * werte(s).preisRoh;
+    expect(erg.verdient).toBeGreaterThan(erwartet * 0.6);
+    expect(erg.verdient).toBeLessThan(erwartet * 1.3);
     expect(abwesenheit(s, Date.now(), [automatikSchritt])).toBeNull();
   });
 });

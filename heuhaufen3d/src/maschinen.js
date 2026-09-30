@@ -152,6 +152,15 @@ export function annehmenMoeglich(s, bau, art, port = -1) {
   }
 }
 
+/** Nimmt die Maschine diese Ware grundsätzlich nie (nicht nur gerade nicht)? */
+export function nimmtNie(bau, art) {
+  const d = BAU_BY_ID[bau.typ];
+  if (!d) return true;
+  if (bau.typ === 'generator') return !BRENNBAR[art];
+  if (d.rezept) return !zutatFuer(bau.typ, art);
+  return false;
+}
+
 /** Die Maschine nimmt das Stück (vom Band am Eingang port oder von oben). true, wenn angenommen. */
 export function annehmen(s, netz, bau, g, port = -1, ereignisse = []) {
   if (!annehmenMoeglich(s, bau, g.art, port)) return false;
@@ -205,12 +214,18 @@ function rechenSchritt(s, netz, bau, dt, ereignisse) {
   const d = BAU_BY_ID.rechen;
   const l = lauf(bau);
   const w = werte(s);
-  const [fx, fz] = lokalZuWelt(bau, d.b / 2 + 0.45, 0);
+  // Der Kamm greift so weit nach vorn, bis er Heu findet (0,95 bis 2,2 m): so folgt
+  // der Rechen dem Haufen, der vor ihm zurückweicht.
+  let fx = 0; let fz = 0; let h = 0;
+  for (let vor = d.b / 2 + 0.45; vor <= 2.2 + 1e-6; vor += 0.25) {
+    [fx, fz] = lokalZuWelt(bau, vor, 0);
+    h = s.hf ? haufenHoehe(s.hf, fx, fz) : 0;
+    if (h >= 0.06) break;
+  }
   l.kamm = [fx, fz];
   const a = anteil(bau);
   if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
   s.stat.rechenMitStrom = 1;
-  const h = s.hf ? haufenHoehe(s.hf, fx, fz) : 0;
   if (h < 0.06) { l.status = 'leer'; return; }
   l.status = 'laeuft';
   bau.takt = (bau.takt || 0) + (dt * a * w.rechenTempo * tempo(s, bau)) / d.takt;
@@ -418,7 +433,7 @@ function armSchritt(s, netz, bau, dt, ereignisse, mitHaufen) {
     job.g.x = p[0]; job.g.y = p[1] - GROESSE[job.g.art] - 0.1; job.g.z = p[2];
     if (vorher < 0.8 && l.phase >= 0.8) { armAblegen(s, netz, bau, job, ereignisse); job.g = null; }
   }
-  if (l.phase >= 1) { l.job = null; l.phase = 0; }
+  if (l.phase >= 1) { l.job = null; l.phase -= 1; }
 }
 
 /* ------------------------------------------------------------ Generator, Brunnen, Radar */

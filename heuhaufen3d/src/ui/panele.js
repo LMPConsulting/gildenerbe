@@ -78,8 +78,9 @@ export function lieferschalterZeigen(ui, s, { bestellen }) {
     absaetze: [
       GESCHICHTE.ladung,
       `Preis ${geld(preis)}. Auf Rechnung kommt ${prozent(aufschlag - 1)} Aufschlag dazu; die Hälfte jeder Einnahme tilgt dann die Schulden.`,
+      s.haufenRest > 1000 ? `Der Rest dieser Ladung (${halme(s.haufenRest)} Halme) wird dabei abgeholt. Wer ihn noch verkaufen will, wartet besser.` : null,
       'Maschinen, Bänder und Forschung bleiben stehen.',
-    ],
+    ].filter(Boolean),
     knoepfe,
   });
 }

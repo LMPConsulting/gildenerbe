@@ -342,7 +342,7 @@ export function auftrag(nr, skip = 0) {
   const wachstum = Math.pow(1.35, nr - AUFTRAEGE.length + 1);
   const menge = Math.max(1, Math.round((600 * wachstum * 20) / PRODUKTE_2D[will].halme / 4));
   const titel = KUNDEN[(nr + skip) % KUNDEN.length];
-  return { titel, will, menge, lohn: Math.round(menge * PRODUKTE[will].wert * 1.5) };
+  return { titel, will, menge, lohn: Math.round(menge * PRODUKTE[will].wert * 2.5) };
 }
 
 /** Der Lohn zieht mit den Preisen mit, damit ein Auftrag nie weniger bringt als der Stand. */

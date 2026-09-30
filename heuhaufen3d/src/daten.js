@@ -68,7 +68,7 @@ export const GRUND = {
   ausdauer: 25,        // volle Puste
   ausdauerRegen: 3,    // pro Sekunde, wenn man nicht sticht oder rennt
   ausdauerKosten: 1,   // pro Stich
-  rennKosten: 3.5,     // pro Sekunde Rennen
+  rennKosten: 1.2,     // pro Sekunde Rennen (am Handy rennt man schnell aus Versehen)
   erschoepft: 0.3,     // Anteil des Griffs ohne Puste
   verschuetten: 0.12,  // so viel fällt bei jedem Stich daneben
   besen: 60,           // Halme pro Besenstrich
@@ -344,13 +344,13 @@ export const TECH = [
     'Pressen 20 % schneller.', 'Kompressor-Upgrades'),
   k('ballenqualitaet', 'verarbeitung', 'Bessere Ballenqualität', 5, 50, 1.9, ['presse'], [['preis_ballen', '*', 1.12]],
     'Ballen 12 % mehr wert.', 'Kompressor-Upgrades'),
-  k('pellet', 'verarbeitung', 'Pelletpresse-Pläne', 1, 9900, 1, ['presse'], [['frei', 'pellet']],
+  k('pellet', 'verarbeitung', 'Pelletpresse-Pläne', 1, 5000, 1, ['presse'], [['frei', 'pellet']],
     'Die Pellet-Scheibenmaschine mahlt Halme zu Pellets.'),
   k('pellet2', 'verarbeitung', 'Schnellere Scheibe', 6, 1300, 1.9, ['pellet'], [['pellet', '*', 1.2]],
     'Pelletpressen 20 % schneller.', 'Pellet-Upgrades'),
   k('pelletwert', 'verarbeitung', 'Härtere Pellets', 5, 1400, 1.9, ['pellet'], [['preis_pellet', '*', 1.12]],
     'Pellets 12 % mehr wert.', 'Pellet-Upgrades'),
-  k('wickler', 'verarbeitung', 'Wickler-Pläne', 1, 39600, 1, ['presse'], [['frei', 'wickler']],
+  k('wickler', 'verarbeitung', 'Wickler-Pläne', 1, 20000, 1, ['presse'], [['frei', 'wickler']],
     'Wickelt Ballen in Folie. Ein Wickelballen ist dreimal so viel wert wie ein Pressballen.'),
   k('wickler2', 'verarbeitung', 'Schnellerer Wickler', 6, 4500, 1.9, ['wickler'], [['wickler', '*', 1.2]],
     'Wickler 20 % schneller.', 'Wickler-Upgrades'),
@@ -456,7 +456,7 @@ export const TECH = [
     'Wer auf Rechnung bestellt, zahlt nur noch 10 % Aufschlag statt 50 %.'),
   k('nachtschicht', 'verkauf', 'Nachtschicht', 5, 3200, 2.2, ['stand'], [['offlineStunden', '+', 2]],
     'Die Halle läuft 2 Stunden länger weiter, während du weg bist.', 'Nacht-Upgrades'),
-  k('nachtwaechter', 'verkauf', 'Nachtwächter', 5, 11900, 2.2, ['stand'], [['offlineEff', '+', 0.09]],
+  k('nachtwaechter', 'verkauf', 'Nachtwächter', 5, 11900, 2.2, ['stand'], [['offlineEff', '+', 0.05]],
     'Nachts wird 9 % mehr geschafft.', 'Nacht-Upgrades'),
 
   // Fitness
@@ -519,14 +519,14 @@ export const BAUTEN = [
   bau('vereiniger', 'Bandvereiniger', 'linien', 'vereiniger', 80, 1.05, [1.2, 1.2, 0.6], {
     ein: [[-0.6, -0.35], [-0.6, 0.35]], aus: [[0.6, 0]], text: 'Zwei Bänder hinein, eines hinaus.' }),
   bau('vorrangarm', 'Vorrangarm', 'linien', 'vorrangarm', 400, 1.1, [0.7, 0.7, 1.1], {
-    kw: 1, reichweite: 1.8, text: 'Nimmt vom nächsten Band und legt aufs andere, wenn dort Platz ist.' }),
+    kw: 1, takt: 1.2, menge: 40, reichweite: 1.8, text: 'Nimmt vom nächsten Band und legt aufs andere, wenn dort Platz ist.' }),
   bau('rohrwerfer', 'Rohrwerfer', 'linien', 'rohrwerfer', 2500, 1.3, [1.0, 1.0, 1.3], {
     kw: 2, ein: [[-0.5, 0]], text: 'Schießt, was hineinfällt, im Bogen dorthin, wo du zielst.' }),
   // Automatisierung
   bau('rechen', 'Kolbenrechen', 'auto', 'rechen', 60, 1.15, [1.0, 1.4, 0.9], {
-    kw: 1, takt: 2.5, menge: 15, wurf: [1, 5], text: 'An den Haufen stellen: schiebt Heu heraus und wirft es ein Stück weit, am besten auf ein Band. Braucht Strom.' }),
+    kw: 1, takt: 2.5, menge: 25, wurf: [1, 5], text: 'An den Haufen stellen: schiebt Heu heraus und wirft es ein Stück weit, am besten auf ein Band. Braucht Strom.' }),
   bau('arm', 'Greifarm', 'auto', 'arm', 800, 1.18, [0.9, 0.9, 1.6], {
-    kw: 2, takt: 1.6, menge: 40, reichweite: 2.6, text: 'Greift Heu vom Haufen oder von einem Band und legt es aufs nächste Band in Reichweite. Braucht Strom.' }),
+    kw: 2, takt: 1.6, menge: 60, reichweite: 2.6, text: 'Greift Heu vom Haufen oder von einem Band und legt es aufs nächste Band in Reichweite. Braucht Strom.' }),
   bau('drohnenstation', 'Drohnenstation', 'auto', 'drohne', 100, 1.5, [1.2, 1.2, 0.5], {
     text: 'Hier starten und landen die Heudrohnen. Sie sammeln lose Halme und liegengebliebenes Heu ein.' }),
   // Strom
@@ -536,7 +536,7 @@ export const BAUTEN = [
     text: 'Verbindet sich mit Masten und Maschinen in Reichweite. Tippen am Mast schaltet das ganze Netz.' }),
   // Suche
   bau('scanner', 'Scanner', 'suche', 'scanner', 700, 1.15, [1.4, 1.2, 1.5], {
-    kw: 3, rate: 50, ein: [[-0.7, 0]], aus: [[0.7, 0]], text: 'Das Band läuft hindurch. Prüft 50 Halme pro Sekunde und hält gefundene Nadeln fest.' }),
+    kw: 3, rate: 100, ein: [[-0.7, 0]], aus: [[0.7, 0]], text: 'Das Band läuft hindurch. Prüft 100 Halme pro Sekunde und hält gefundene Nadeln fest.' }),
   bau('radar', 'Nadelradar', 'suche', 'radar', 4000, 1.5, [0.9, 0.9, 2.2], {
     kw: 2, text: 'Lässt in Abständen die nächste Nadel im Haufen aufleuchten.' }),
   // Verarbeitung
@@ -602,7 +602,7 @@ export const PRODUKTE_2D = {
   brei: { name: 'Heubrei', wert: 0.71, halme: 10 },
   silage: { name: 'Wickelballen', wert: 2.0, halme: 20 },
   papier: { name: 'Heupapier', wert: 3.0, halme: 20 },
-  brikett: { name: 'Öko-Ziegel', wert: 5.33, halme: 40 },
+  brikett: { name: 'Öko-Ziegel', wert: 6.5, halme: 40 },
 };
 
 
@@ -619,7 +619,7 @@ export const PRODUKTE = Object.fromEntries(Object.entries(PRODUKTE_2D).map(([id,
 export const AUFTRAEGE = [
   { titel: 'Pferdehof Lindner', will: 'roh', menge: 2000, lohn: 90 },
   { titel: 'Kleintierzucht Wagner', will: 'knaeuel', menge: 100, lohn: 40 },
-  { titel: 'Reitstall Brandt', will: 'ballen', menge: 20, lohn: 150 },
+  { titel: 'Reitstall Brandt', will: 'ballen', menge: 20, lohn: 40 },
   { titel: 'Gärtnerei Moosbach', will: 'roh', menge: 20000, lohn: 800 },
   { titel: 'Bastelladen Kunterbunt', will: 'knaeuel', menge: 800, lohn: 300 },
   { titel: 'Reitstall Brandt', will: 'ballen', menge: 150, lohn: 280 },
@@ -660,7 +660,7 @@ export const MISSIONEN = [
   { text: 'Kauf den Besen und feg verschüttetes Heu zusammen', hilfe: 'Lose Halme liegen am Fuß des Haufens.', art: 'gefegt', ziel: 50, geld: 10 },
   { text: 'Kauf die Förderband-Pläne', hilfe: 'In der Forschung unter Heulinien.', art: 'tech', ziel: 'foerderband', geschenk: 'rechen' },
   { text: 'Leg ein Band vom Haufen zum Stand', hilfe: 'Unten auf BAUEN tippen, Förderband wählen, Anfang beim Haufen und Ende am Stand setzen.', art: 'gebaut', ziel: ['band', 1], geschenk: 'mast' },
-  { text: 'Stell den Kolbenrechen an den Haufen', hilfe: 'Im Baukatalog liegt er als Geschenk bereit.', art: 'gebaut', ziel: ['rechen', 1], geld: 20 },
+  { text: 'Stell den Kolbenrechen an den Haufen', hilfe: 'Im Baukatalog liegt er als Geschenk bereit.', art: 'gebaut', ziel: ['rechen', 1], geschenk: 'mast' },
   { text: 'Bring den Rechen ans Netz', hilfe: 'Der Hausanschluss hängt an der linken Wand. Masten verlängern die Leitung.', art: 'strom', ziel: 1, geld: 40 },
   { text: 'Finde die erste Nadel', hilfe: 'Der Detektor piept, je näher sie ist. Dort graben.', art: 'nadeln', ziel: 1, geld: 120 },
   { text: 'Stell einen zweiten Kolbenrechen auf', art: 'gebaut', ziel: ['rechen', 2], geld: 150 },
@@ -676,7 +676,7 @@ export const MISSIONEN = [
   { text: 'Finde drei Nadeln', art: 'nadeln', ziel: 3, geld: 6000 },
   { text: 'Bohr einen Brunnen', art: 'gebaut', ziel: ['brunnen', 1], geld: 8000 },
   { text: 'Trag den Haufen zur Hälfte ab', art: 'haelfte', ziel: 0.5, geld: 15000 },
-  { text: 'Stell 20 Greifarme auf', art: 'gebaut', ziel: ['arm', 20], geld: 25000 },
+  { text: 'Stell zehn Greifarme auf', art: 'gebaut', ziel: ['arm', 10], geld: 25000 },
   { text: 'Finde alle sechs Nadeln', art: 'nadeln', ziel: 6, geld: 30000 },
   { text: 'Bestell eine neue Ladung', hilfe: 'Am Lieferschalter hinter dem Haufen.', art: 'ladungen', ziel: 2, geld: 30000 },
   { text: 'Mach 50 Bögen Heupapier', art: 'produziert', ziel: ['papier', 50], geld: 60000 },
