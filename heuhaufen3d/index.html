@@ -3404,7 +3404,7 @@ function sperrRasterRoh(s, ohne) {
 }
 
 /** Sperrraster mit freien Kreisen um Anfang und Ende (Wände bleiben gesperrt). */
-function sperrRaster(s, { frei = [], ohne = [] } = {}) {
+function sperrRaster(s, { frei = [], ohne = [], fest = [] } = {}) {
   const roh = sperrRasterRoh(s, ohne);
   const { nx, nz, x0, z0, oben, unten } = roh;
   const sperre = roh.sperre.slice();
@@ -3420,6 +3420,21 @@ function sperrRaster(s, { frei = [], ohne = [] } = {}) {
       }
     }
   }
+  // Die Maschinen an Anfang und Ende selbst bleiben gesperrt, auch in den freien Kreisen:
+  // ein Band läuft nie durch die Maschine, an die es anschließt
+  for (const b of fest) {
+    const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
+    const i0 = Math.max(0, Math.floor((k.x0 - x0) / RASTER));
+    const i1 = Math.min(nx - 1, Math.floor((k.x1 - x0) / RASTER));
+    const k0 = Math.max(0, Math.floor((k.z0 - z0) / RASTER));
+    const k1 = Math.min(nz - 1, Math.floor((k.z1 - z0) / RASTER));
+    for (let i = i0; i <= i1; i++) {
+      for (let kk = k0; kk <= k1; kk++) {
+        const cx = x0 + (i + 0.5) * RASTER; const cz = z0 + (kk + 0.5) * RASTER;
+        if (cx > k.x0 && cx < k.x1 && cz > k.z0 && cz < k.z1 && sperre[i * nz + kk] !== 2) sperre[i * nz + kk] = 1;
+      }
+    }
+  }
   const mitte = (i, k) => [x0 + (i + 0.5) * RASTER, z0 + (k + 0.5) * RASTER];
   return { sperre, oben, unten, nx, nz, x0, z0, mitte };
 }
@@ -3429,9 +3444,9 @@ function sperrRaster(s, { frei = [], ohne = [] } = {}) {
  * Anschlüssen die Richtung, in die das Band dort laufen muss. gerade: ohne
  * Raster, direkt (Einrasten aus). Liefert { punkte, laenge } oder { fehler }.
  */
-function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 } = {}) {
+function bandWeg(s, von, nach, { ohne = [], fest = [], gerade = false, maxSchritte = 60000 } = {}) {
   const frei = [[von.x, von.z, 0.75], [nach.x, nach.z, 0.75]];
-  const raster = sperrRaster(s, { frei, ohne });
+  const raster = sperrRaster(s, { frei, ohne, fest });
   const { sperre, oben, unten, nx, nz, x0, z0, mitte } = raster;
   const zelle = (x, z) => [Math.floor((x - x0) / RASTER), Math.floor((z - z0) / RASTER)];
   // Über oder unter einem anderen Band hindurch, wenn der Höhenunterschied reicht
@@ -3540,7 +3555,9 @@ function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 
       }
       const ns = nIdx * 4 + nd;
       const amZiel = ni === bi && nk === bk;
-      const ng = g0 + 1 + extra + (nd === d ? 0 : 1.6) + (amZiel && zielRichtung >= 0 && nd !== zielRichtung ? 1.6 : 0);
+      // In einen Anschluss nur aus seiner Richtung (sonst müsste das Band am Ende wenden)
+      if (amZiel && zielRichtung >= 0 && nd !== zielRichtung) continue;
+      const ng = g0 + 1 + extra + (nd === d ? 0 : 1.6);
       if (ng < kosten[ns]) {
         kosten[ns] = ng;
         her[ns] = st;
@@ -4858,10 +4875,15 @@ function bandPlanen(s, von, nach, { gerade = false } = {}) {
       if (nb.d < 0.45 && Math.abs(nb.y - von.y) < 0.6) return { ok: false, grund: 'band' };
     }
   }
-  const ohne = [];
-  if (von.bau) ohne.push(von.bau.id);
-  if (nach.bau) ohne.push(nach.bau.id);
-  const weg = bandWeg(s, von, nach, { ohne, gerade, maxSchritte: 20000 });
+  // Ein Anschluss nimmt nur ein Band: keine zwei Bänder übereinander am selben Ein- oder Ausgang
+  for (const b of s.bauten) {
+    if (b.typ !== 'band') continue;
+    const A = b.punkte[0]; const E = b.punkte[b.punkte.length - 1];
+    if (nach.art === 'ein' && Math.hypot(E[0] - nach.x, E[2] - nach.z) < 0.3 && Math.abs(E[1] - nach.y) < 0.45) return { ok: false, grund: 'belegt' };
+    if (von.art === 'aus' && Math.hypot(A[0] - von.x, A[2] - von.z) < 0.3 && Math.abs(A[1] - von.y) < 0.45) return { ok: false, grund: 'belegt' };
+  }
+  const fest = [von.bau, nach.bau].filter(Boolean);
+  const weg = bandWeg(s, von, nach, { fest, gerade, maxSchritte: 20000 });
   if (weg.fehler) return { ok: false, grund: weg.fehler };
   const kosten = bauKosten(s, 'band', weg.laenge);
   const r = { ok: s.geld >= kosten, punkte: weg.punkte, laenge: weg.laenge, kosten };
@@ -4938,9 +4960,22 @@ function abbauInfo(s, bau) {
   return { erstattung: bauErstattung(s, bau), geschenk: !!bau.geschenk, warnung: haeltNadel(s, bau) ? 'nadel' : null };
 }
 
+/** Steht auf dieser Plattform etwas (Bau oder Band auf Deckhöhe)? */
+function plattformTraegt(s, bau) {
+  if (bau.typ !== 'plattform') return false;
+  const oben = (bau.y || 0) + BAU_BY_ID.plattform.h;
+  return s.bauten.some((b) => {
+    if (b === bau) return false;
+    if (b.typ === 'band') return b.punkte.some((p) => Math.abs(p[1] - BAND_Y - oben) < 0.3 && imFussabdruck(bau, p[0], p[2], 0));
+    if (b.a && b.b) return Math.abs((b.y || 0) - oben) < 0.3 && (imFussabdruck(bau, b.a[0], b.a[1], 0) || imFussabdruck(bau, b.b[0], b.b[1], 0));
+    return Math.abs((b.y || 0) - oben) < 0.3 && imFussabdruck(bau, b.x, b.z, 0);
+  });
+}
+
 function bauAbbauen(s, bau, ereignisse = []) {
   const i = s.bauten.indexOf(bau);
   if (i < 0) return { ok: false };
+  if (plattformTraegt(s, bau)) return { ok: false, grund: 'traegt' };
   const erstattung = bauErstattung(s, bau);
   if (bau.geschenk) s.geschenke[bau.typ] = (s.geschenke[bau.typ] || 0) + 1;
   else s.geld += erstattung;
@@ -5070,7 +5105,7 @@ const GRUND_TEXT = {
   band: 'Ein Band ist im Weg', geld: 'Nicht genug Geld', 'kein Weg': 'Kein Weg frei', kurz: 'Zu kurz', steil: 'Zu steil',
   lang: 'Zu lang', blockiert: 'Weg versperrt', draussen: 'Außerhalb der Halle', unbekannt: 'Geht nicht',
   kante: 'Steht nicht ganz auf der Plattform', boden: 'Nur auf dem Hallenboden',
-  kreuzt: 'Zum Kreuzen höher legen',
+  kreuzt: 'Zum Kreuzen höher legen', traegt: 'Erst abbauen, was darauf steht', platz: 'Der Landeplatz ist nicht frei',
 };
 
 
@@ -5611,12 +5646,52 @@ function haufenAnlegen(s) {
   s.rev++;
 }
 
-/** Neue Ladung bezahlen und hinlegen. */
+/**
+ * Was dort steht, wo die nächste Ladung hinkommt (ihr Radius plus ein halber Meter):
+ * Bauten, deren Fußabdruck, und Bänder oder Linien, deren Verlauf in den Kreis ragt.
+ * Wie im Vorbild wird nicht über Maschinen geschüttet.
+ */
+function landeplatzImWeg(s) {
+  const r = ladungMasse(s.ladung + 1).radius + 0.5;
+  const cx = WELT.haufenX; const cz = WELT.haufenZ;
+  const drin = (x, z) => Math.hypot(x - cx, z - cz) < r;
+  const strecke = (ax, az, bx, bz) => {
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 0.25));
+    for (let i = 0; i <= n; i++) if (drin(ax + ((bx - ax) * i) / n, az + ((bz - az) * i) / n)) return true;
+    return false;
+  };
+  return s.bauten.filter((b) => {
+    if (b.start) return false;
+    if (b.typ === 'band') {
+      for (let i = 1; i < b.punkte.length; i++) if (strecke(b.punkte[i - 1][0], b.punkte[i - 1][2], b.punkte[i][0], b.punkte[i][2])) return true;
+      return false;
+    }
+    if (b.a && b.b) return strecke(b.a[0], b.a[1], b.b[0], b.b[1]);
+    const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
+    return drin(Math.max(k.x0, Math.min(cx, k.x1)), Math.max(k.z0, Math.min(cz, k.z1)));
+  });
+}
+
+/**
+ * Neue Ladung bezahlen und hinlegen. Steht etwas auf dem Landeplatz, kommt sie nicht
+ * ({ ok: false, grund: 'platz', imWeg }); mit raeumen: true wird es vorher abgebaut
+ * (mit Erstattung, Geschenke zurück in den Katalog).
+ */
 function ladungBestellen(s, optionen = {}) {
+  const imWeg = landeplatzImWeg(s);
+  if (imWeg.length) {
+    if (!optionen.raeumen) return { ok: false, grund: 'platz', imWeg };
+    // erst prüfen, ob die Ladung überhaupt ginge, dann räumen
+    if (!ladungMoeglich(s)) return { ok: false, grund: 'nadeln' };
+    if (s.geld < ladungPreis(s) && !optionen.aufRechnung) return { ok: false, grund: 'geld' };
+    const ev = [];
+    // Plattformen zuletzt, erst muss runter, was darauf steht
+    for (const b of [...imWeg].sort((a, c) => (a.typ === 'plattform') - (c.typ === 'plattform'))) bauAbbauen(s, b, ev);
+  }
   const r = ladungBezahlen(s, optionen);
   if (!r.ok) return r;
   haufenAnlegen(s);
-  return { ok: true };
+  return { ok: true, geraeumt: imWeg.length };
 }
 
 let nadelPruefZeit = 0;
@@ -12562,6 +12637,9 @@ function baumodusBauen(ctx) {
     if (r.ok) {
       ctx.klang.abbauen();
       ctx.ui.toast(r.geschenk ? `${BAU_BY_ID[bau.typ].name} liegt wieder im Katalog.` : `${BAU_BY_ID[bau.typ].name} abgebaut · +${geld(r.erstattung)}`, '');
+    } else if (r.grund) {
+      ctx.klang.fehler();
+      ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht nicht.', 'warn');
     }
     ctx.ereignisse(ev);
   }
@@ -13260,10 +13338,26 @@ function hauptStart() {
         });
       } else if (ziel.art === 'lieferschalter') {
         lieferschalterZeigen(ui, s, {
-          bestellen: (aufRechnung) => {
-            const r = ladungBestellen(s, { aufRechnung });
-            if (r.ok) { hAnsicht.neu(s.hf); ui.toast(`Ladung ${s.ladung} ist da: ${halme(s.haufenStart)} Halme.`, 'gut'); klang.kauf(); speichernJetzt(); }
-            else { ui.toast('Das reicht nicht.', 'warn'); klang.fehler(); }
+          bestellen: function bestellen(aufRechnung, raeumen = false) {
+            const r = ladungBestellen(s, { aufRechnung, raeumen });
+            if (r.ok) {
+              hAnsicht.neu(s.hf);
+              ui.toast(`Ladung ${s.ladung} ist da: ${halme(s.haufenStart)} Halme.`, 'gut');
+              if (r.geraeumt) ui.toast(`${r.geraeumt} Bauten abgebaut und erstattet.`);
+              klang.kauf(); speichernJetzt();
+            } else if (r.grund === 'platz') {
+              // Wie im Vorbild: auf Maschinen wird nicht geschüttet
+              const namen = {};
+              for (const b of r.imWeg) namen[BAU_BY_ID[b.typ].name] = (namen[BAU_BY_ID[b.typ].name] || 0) + 1;
+              ui.modal({
+                ober: 'Lieferungen', titel: 'Der Landeplatz ist nicht frei',
+                absaetze: [
+                  `Die neue Ladung wird größer als die alte. Im Weg: ${Object.entries(namen).map(([n, k]) => `${k} × ${n}`).join(', ')}.`,
+                  'Selbst abbauen und neu aufstellen, oder alles im Weg jetzt abbauen lassen (mit Erstattung, Geschenke kommen zurück in den Katalog).',
+                ],
+                knoepfe: [{ text: 'Alles abbauen und bestellen', klasse: 'primaer', aktion: () => bestellen(aufRechnung, true) }, { text: 'Selbst räumen' }],
+              });
+            } else { ui.toast('Das reicht nicht.', 'warn'); klang.fehler(); }
           },
         });
       } else if (ziel.art === 'auftragstafel') {

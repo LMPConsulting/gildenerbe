@@ -190,10 +190,15 @@ export function bandPlanen(s, von, nach, { gerade = false } = {}) {
       if (nb.d < 0.45 && Math.abs(nb.y - von.y) < 0.6) return { ok: false, grund: 'band' };
     }
   }
-  const ohne = [];
-  if (von.bau) ohne.push(von.bau.id);
-  if (nach.bau) ohne.push(nach.bau.id);
-  const weg = bandWeg(s, von, nach, { ohne, gerade, maxSchritte: 20000 });
+  // Ein Anschluss nimmt nur ein Band: keine zwei Bänder übereinander am selben Ein- oder Ausgang
+  for (const b of s.bauten) {
+    if (b.typ !== 'band') continue;
+    const A = b.punkte[0]; const E = b.punkte[b.punkte.length - 1];
+    if (nach.art === 'ein' && Math.hypot(E[0] - nach.x, E[2] - nach.z) < 0.3 && Math.abs(E[1] - nach.y) < 0.45) return { ok: false, grund: 'belegt' };
+    if (von.art === 'aus' && Math.hypot(A[0] - von.x, A[2] - von.z) < 0.3 && Math.abs(A[1] - von.y) < 0.45) return { ok: false, grund: 'belegt' };
+  }
+  const fest = [von.bau, nach.bau].filter(Boolean);
+  const weg = bandWeg(s, von, nach, { fest, gerade, maxSchritte: 20000 });
   if (weg.fehler) return { ok: false, grund: weg.fehler };
   const kosten = bauKosten(s, 'band', weg.laenge);
   const r = { ok: s.geld >= kosten, punkte: weg.punkte, laenge: weg.laenge, kosten };
@@ -270,9 +275,22 @@ export function abbauInfo(s, bau) {
   return { erstattung: bauErstattung(s, bau), geschenk: !!bau.geschenk, warnung: haeltNadel(s, bau) ? 'nadel' : null };
 }
 
+/** Steht auf dieser Plattform etwas (Bau oder Band auf Deckhöhe)? */
+export function plattformTraegt(s, bau) {
+  if (bau.typ !== 'plattform') return false;
+  const oben = (bau.y || 0) + BAU_BY_ID.plattform.h;
+  return s.bauten.some((b) => {
+    if (b === bau) return false;
+    if (b.typ === 'band') return b.punkte.some((p) => Math.abs(p[1] - BAND_Y - oben) < 0.3 && imFussabdruck(bau, p[0], p[2], 0));
+    if (b.a && b.b) return Math.abs((b.y || 0) - oben) < 0.3 && (imFussabdruck(bau, b.a[0], b.a[1], 0) || imFussabdruck(bau, b.b[0], b.b[1], 0));
+    return Math.abs((b.y || 0) - oben) < 0.3 && imFussabdruck(bau, b.x, b.z, 0);
+  });
+}
+
 export function bauAbbauen(s, bau, ereignisse = []) {
   const i = s.bauten.indexOf(bau);
   if (i < 0) return { ok: false };
+  if (plattformTraegt(s, bau)) return { ok: false, grund: 'traegt' };
   const erstattung = bauErstattung(s, bau);
   if (bau.geschenk) s.geschenke[bau.typ] = (s.geschenke[bau.typ] || 0) + 1;
   else s.geld += erstattung;
@@ -402,6 +420,6 @@ export const GRUND_TEXT = {
   band: 'Ein Band ist im Weg', geld: 'Nicht genug Geld', 'kein Weg': 'Kein Weg frei', kurz: 'Zu kurz', steil: 'Zu steil',
   lang: 'Zu lang', blockiert: 'Weg versperrt', draussen: 'Außerhalb der Halle', unbekannt: 'Geht nicht',
   kante: 'Steht nicht ganz auf der Plattform', boden: 'Nur auf dem Hallenboden',
-  kreuzt: 'Zum Kreuzen höher legen',
+  kreuzt: 'Zum Kreuzen höher legen', traegt: 'Erst abbauen, was darauf steht', platz: 'Der Landeplatz ist nicht frei',
 };
 

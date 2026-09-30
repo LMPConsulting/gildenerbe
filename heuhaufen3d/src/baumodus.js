@@ -104,6 +104,9 @@ export function baumodusBauen(ctx) {
     if (r.ok) {
       ctx.klang.abbauen();
       ctx.ui.toast(r.geschenk ? `${BAU_BY_ID[bau.typ].name} liegt wieder im Katalog.` : `${BAU_BY_ID[bau.typ].name} abgebaut · +${geld(r.erstattung)}`, '');
+    } else if (r.grund) {
+      ctx.klang.fehler();
+      ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht nicht.', 'warn');
     }
     ctx.ereignisse(ev);
   }

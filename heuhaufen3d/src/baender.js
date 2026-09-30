@@ -357,7 +357,7 @@ function sperrRasterRoh(s, ohne) {
 }
 
 /** Sperrraster mit freien Kreisen um Anfang und Ende (Wände bleiben gesperrt). */
-export function sperrRaster(s, { frei = [], ohne = [] } = {}) {
+export function sperrRaster(s, { frei = [], ohne = [], fest = [] } = {}) {
   const roh = sperrRasterRoh(s, ohne);
   const { nx, nz, x0, z0, oben, unten } = roh;
   const sperre = roh.sperre.slice();
@@ -373,6 +373,21 @@ export function sperrRaster(s, { frei = [], ohne = [] } = {}) {
       }
     }
   }
+  // Die Maschinen an Anfang und Ende selbst bleiben gesperrt, auch in den freien Kreisen:
+  // ein Band läuft nie durch die Maschine, an die es anschließt
+  for (const b of fest) {
+    const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
+    const i0 = Math.max(0, Math.floor((k.x0 - x0) / RASTER));
+    const i1 = Math.min(nx - 1, Math.floor((k.x1 - x0) / RASTER));
+    const k0 = Math.max(0, Math.floor((k.z0 - z0) / RASTER));
+    const k1 = Math.min(nz - 1, Math.floor((k.z1 - z0) / RASTER));
+    for (let i = i0; i <= i1; i++) {
+      for (let kk = k0; kk <= k1; kk++) {
+        const cx = x0 + (i + 0.5) * RASTER; const cz = z0 + (kk + 0.5) * RASTER;
+        if (cx > k.x0 && cx < k.x1 && cz > k.z0 && cz < k.z1 && sperre[i * nz + kk] !== 2) sperre[i * nz + kk] = 1;
+      }
+    }
+  }
   const mitte = (i, k) => [x0 + (i + 0.5) * RASTER, z0 + (k + 0.5) * RASTER];
   return { sperre, oben, unten, nx, nz, x0, z0, mitte };
 }
@@ -382,9 +397,9 @@ export function sperrRaster(s, { frei = [], ohne = [] } = {}) {
  * Anschlüssen die Richtung, in die das Band dort laufen muss. gerade: ohne
  * Raster, direkt (Einrasten aus). Liefert { punkte, laenge } oder { fehler }.
  */
-export function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 } = {}) {
+export function bandWeg(s, von, nach, { ohne = [], fest = [], gerade = false, maxSchritte = 60000 } = {}) {
   const frei = [[von.x, von.z, 0.75], [nach.x, nach.z, 0.75]];
-  const raster = sperrRaster(s, { frei, ohne });
+  const raster = sperrRaster(s, { frei, ohne, fest });
   const { sperre, oben, unten, nx, nz, x0, z0, mitte } = raster;
   const zelle = (x, z) => [Math.floor((x - x0) / RASTER), Math.floor((z - z0) / RASTER)];
   // Über oder unter einem anderen Band hindurch, wenn der Höhenunterschied reicht
@@ -493,7 +508,9 @@ export function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte =
       }
       const ns = nIdx * 4 + nd;
       const amZiel = ni === bi && nk === bk;
-      const ng = g0 + 1 + extra + (nd === d ? 0 : 1.6) + (amZiel && zielRichtung >= 0 && nd !== zielRichtung ? 1.6 : 0);
+      // In einen Anschluss nur aus seiner Richtung (sonst müsste das Band am Ende wenden)
+      if (amZiel && zielRichtung >= 0 && nd !== zielRichtung) continue;
+      const ng = g0 + 1 + extra + (nd === d ? 0 : 1.6);
       if (ng < kosten[ns]) {
         kosten[ns] = ng;
         her[ns] = st;

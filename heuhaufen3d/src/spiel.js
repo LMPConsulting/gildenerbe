@@ -8,14 +8,15 @@ import {
   haufenNeu, haufenSetzen, haufenRest, haufenPacken, haufenEntpacken, haufenAbtragen, haufenHoehe,
 } from './haufen.js';
 import {
-  werte, missionenPruefen, ladungMasse, ladungBezahlen, einnahme, TECH_NACH_ID, BAU_NACH_ID,
+  werte, missionenPruefen, ladungMasse, ladungBezahlen, ladungMoeglich, ladungPreis, einnahme, TECH_NACH_ID, BAU_NACH_ID,
 } from './wirtschaft.js';
 import { nadelnVerteilen, nadelnFreilegen, loseNadelnSetzen } from './nadeln.js';
 import { spielerNeu } from './spieler.js';
 import { WERKZEUG_NACH_ID } from './werkzeuge.js';
 import { lasterNeu } from './laster.js';
-import { lauf, STAND_TRICHTER } from './welt.js';
+import { lauf, STAND_TRICHTER, fussabdruck } from './welt.js';
 import { bandBau } from './baender.js';
+import { bauAbbauen } from './bauen.js';
 import { bauZustand } from './maschinen.js';
 
 export const STAND3D_VERSION = 1;
@@ -94,12 +95,52 @@ export function haufenAnlegen(s) {
   s.rev++;
 }
 
-/** Neue Ladung bezahlen und hinlegen. */
+/**
+ * Was dort steht, wo die nächste Ladung hinkommt (ihr Radius plus ein halber Meter):
+ * Bauten, deren Fußabdruck, und Bänder oder Linien, deren Verlauf in den Kreis ragt.
+ * Wie im Vorbild wird nicht über Maschinen geschüttet.
+ */
+export function landeplatzImWeg(s) {
+  const r = ladungMasse(s.ladung + 1).radius + 0.5;
+  const cx = WELT.haufenX; const cz = WELT.haufenZ;
+  const drin = (x, z) => Math.hypot(x - cx, z - cz) < r;
+  const strecke = (ax, az, bx, bz) => {
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 0.25));
+    for (let i = 0; i <= n; i++) if (drin(ax + ((bx - ax) * i) / n, az + ((bz - az) * i) / n)) return true;
+    return false;
+  };
+  return s.bauten.filter((b) => {
+    if (b.start) return false;
+    if (b.typ === 'band') {
+      for (let i = 1; i < b.punkte.length; i++) if (strecke(b.punkte[i - 1][0], b.punkte[i - 1][2], b.punkte[i][0], b.punkte[i][2])) return true;
+      return false;
+    }
+    if (b.a && b.b) return strecke(b.a[0], b.a[1], b.b[0], b.b[1]);
+    const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
+    return drin(Math.max(k.x0, Math.min(cx, k.x1)), Math.max(k.z0, Math.min(cz, k.z1)));
+  });
+}
+
+/**
+ * Neue Ladung bezahlen und hinlegen. Steht etwas auf dem Landeplatz, kommt sie nicht
+ * ({ ok: false, grund: 'platz', imWeg }); mit raeumen: true wird es vorher abgebaut
+ * (mit Erstattung, Geschenke zurück in den Katalog).
+ */
 export function ladungBestellen(s, optionen = {}) {
+  const imWeg = landeplatzImWeg(s);
+  if (imWeg.length) {
+    if (!optionen.raeumen) return { ok: false, grund: 'platz', imWeg };
+    // erst prüfen, ob die Ladung überhaupt ginge, dann räumen
+    if (!ladungMoeglich(s)) return { ok: false, grund: 'nadeln' };
+    if (s.geld < ladungPreis(s) && !optionen.aufRechnung) return { ok: false, grund: 'geld' };
+    const ev = [];
+    // Plattformen zuletzt, erst muss runter, was darauf steht
+    for (const b of [...imWeg].sort((a, c) => (a.typ === 'plattform') - (c.typ === 'plattform'))) bauAbbauen(s, b, ev);
+  }
   const r = ladungBezahlen(s, optionen);
   if (!r.ok) return r;
   haufenAnlegen(s);
-  return { ok: true };
+  return { ok: true, geraeumt: imWeg.length };
 }
 
 let nadelPruefZeit = 0;

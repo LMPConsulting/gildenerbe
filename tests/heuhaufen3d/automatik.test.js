@@ -542,3 +542,65 @@ describe('Startrampe', () => {
     expect(missionStand(s).ist).toBe(0);
   });
 });
+
+describe('Zyklus 2: Bänder an Maschinen', () => {
+  it('ein Band zum Eingang läuft nie durch die Maschine und wendet nicht am Ende', async () => {
+    const { anschlussListe } = await import('../../heuhaufen3d/src/baender.js');
+    const { imFussabdruck } = await import('../../heuhaufen3d/src/welt.js');
+    const s = hof();
+    const silo = bauSetzen(s, 'silo', -10, 8, 0).bau;
+    const ein = anschlussListe(silo).find((p) => p.art === 'ein');
+    for (const start of [[-6, 8], [-6, 10.5], [-14, 8]]) {
+      const plan = bandPlanen(s, bandAnker(s, start[0], start[1], false), bandAnker(s, ein.x, ein.z, true));
+      expect(plan.ok, `${start}: ${plan.grund}`).toBe(true);
+      const p = plan.punkte;
+      for (let i = 1; i < p.length; i++) {
+        for (let t = 0.05; t < 0.95; t += 0.05) {
+          const x = p[i - 1][0] + (p[i][0] - p[i - 1][0]) * t; const z = p[i - 1][2] + (p[i][2] - p[i - 1][2]) * t;
+          expect(imFussabdruck(silo, x, z, -0.05), `${start} durch das Silo bei ${x},${z}`).toBe(false);
+        }
+      }
+      const n = p.length;
+      if (n >= 3) {
+        const a = [p[n - 2][0] - p[n - 3][0], p[n - 2][2] - p[n - 3][2]]; const b = [p[n - 1][0] - p[n - 2][0], p[n - 1][2] - p[n - 2][2]];
+        expect(a[0] * b[0] + a[1] * b[1]).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+});
+
+describe('Zyklus 2: neue Ladung und Plattformen', () => {
+  it('eine neue Ladung schüttet nicht über Maschinen, räumt auf Wunsch mit Erstattung', async () => {
+    const { ladungBestellen, landeplatzImWeg } = await import('../../heuhaufen3d/src/spiel.js');
+    const s = hof();
+    const x = rechenPlatz(s);
+    bauSetzen(s, 'rechen', x, WELT.haufenZ, 0);
+    const fern = bauSetzen(s, 'silo', -12, 10, 0).bau;
+    for (const n of s.nadeln) n.zustand = 'gefunden';
+    expect(landeplatzImWeg(s).length).toBe(1);
+    const ladung = s.ladung;
+    const r = ladungBestellen(s, {});
+    expect(r.ok).toBe(false);
+    expect(r.grund).toBe('platz');
+    expect(s.ladung).toBe(ladung);
+    const geld = s.geld;
+    const r2 = ladungBestellen(s, { raeumen: true });
+    expect(r2.ok).toBe(true);
+    expect(s.ladung).toBe(ladung + 1);
+    expect(s.bauten.some((b) => b.typ === 'rechen')).toBe(false);
+    expect(s.bauten.includes(fern)).toBe(true);
+    expect(geld - s.geld).toBeGreaterThan(0); // bezahlt, aber mit Erstattung
+  });
+
+  it('eine Plattform, auf der etwas steht, lässt sich nicht abbauen', () => {
+    const s = hof();
+    s.tech.plattform = 1; s.rev++;
+    const pl = bauSetzen(s, 'plattform', -12, 9, 0).bau;
+    const oben = pl.y + BAUTEN.find((b) => b.id === 'plattform').h;
+    const r = bauSetzen(s, 'mast', -12, 9, 0, { y: oben });
+    expect(r.ok, r.grund).toBe(true);
+    expect(bauAbbauen(s, pl).ok).toBe(false);
+    expect(bauAbbauen(s, r.bau).ok).toBe(true);
+    expect(bauAbbauen(s, pl).ok).toBe(true);
+  });
+});

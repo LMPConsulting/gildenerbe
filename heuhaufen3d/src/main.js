@@ -481,10 +481,26 @@ function hauptStart() {
         });
       } else if (ziel.art === 'lieferschalter') {
         lieferschalterZeigen(ui, s, {
-          bestellen: (aufRechnung) => {
-            const r = ladungBestellen(s, { aufRechnung });
-            if (r.ok) { hAnsicht.neu(s.hf); ui.toast(`Ladung ${s.ladung} ist da: ${halme(s.haufenStart)} Halme.`, 'gut'); klang.kauf(); speichernJetzt(); }
-            else { ui.toast('Das reicht nicht.', 'warn'); klang.fehler(); }
+          bestellen: function bestellen(aufRechnung, raeumen = false) {
+            const r = ladungBestellen(s, { aufRechnung, raeumen });
+            if (r.ok) {
+              hAnsicht.neu(s.hf);
+              ui.toast(`Ladung ${s.ladung} ist da: ${halme(s.haufenStart)} Halme.`, 'gut');
+              if (r.geraeumt) ui.toast(`${r.geraeumt} Bauten abgebaut und erstattet.`);
+              klang.kauf(); speichernJetzt();
+            } else if (r.grund === 'platz') {
+              // Wie im Vorbild: auf Maschinen wird nicht geschüttet
+              const namen = {};
+              for (const b of r.imWeg) namen[BAU_BY_ID[b.typ].name] = (namen[BAU_BY_ID[b.typ].name] || 0) + 1;
+              ui.modal({
+                ober: 'Lieferungen', titel: 'Der Landeplatz ist nicht frei',
+                absaetze: [
+                  `Die neue Ladung wird größer als die alte. Im Weg: ${Object.entries(namen).map(([n, k]) => `${k} × ${n}`).join(', ')}.`,
+                  'Selbst abbauen und neu aufstellen, oder alles im Weg jetzt abbauen lassen (mit Erstattung, Geschenke kommen zurück in den Katalog).',
+                ],
+                knoepfe: [{ text: 'Alles abbauen und bestellen', klasse: 'primaer', aktion: () => bestellen(aufRechnung, true) }, { text: 'Selbst räumen' }],
+              });
+            } else { ui.toast('Das reicht nicht.', 'warn'); klang.fehler(); }
           },
         });
       } else if (ziel.art === 'auftragstafel') {
