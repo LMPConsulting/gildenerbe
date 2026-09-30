@@ -1,4 +1,4 @@
-> **Auch in diesem Repo** — zwölf eigenständige Reisespiele, unabhängig von Gildenerbe,
+> **Auch in diesem Repo** — dreizehn eigenständige Reisespiele, unabhängig von Gildenerbe,
 > jeweils als eine einzige HTML-Datei und komplett offline:
 >
 > - [`qwixx/`](qwixx/README.md) — das Würfelspiel *Qwixx*, an einem Handy oder auf zweien.
@@ -29,8 +29,11 @@
 > - [`heuhaufen/`](heuhaufen/README.md) — *Heuhaufen*: allein gegen sechs Millionen Halme.
 >   Von Hand schaufeln, verkaufen, dann Förderbänder, Greifarme und Scanner bauen, bis der
 >   Haufen sich selbst abträgt. 379 Forschungsstufen, 24 Nadelarten. Nach *Find The Needle*.
+> - [`heuhaufen3d/`](heuhaufen3d/README.md) — *Heuhaufen 3D*: dasselbe als echtes 3D-Spiel in
+>   der Ich-Perspektive. Durch die Halle laufen, graben, Förderbänder selbst verlegen,
+>   Maschinen und Strommasten aufstellen. Fürs Handy gebaut, three.js eingebettet.
 >
-> **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle zwölf plus eine Startseite.
+> **Als Webseite:** `npm run spiele:web -- <ordner>` baut alle dreizehn plus eine Startseite.
 > Mit `--ohne-server` entsteht eine Fassung für reine Dateiablagen (GitHub Pages) — dort
 > koppeln sich zwei Handys bei **allen elf Zweierspielen** per QR im selben WLAN.
 > Dabei muss auf **beiden** Geräten die Kamera freigegeben sein — auch auf dem, das nur den

@@ -8,7 +8,7 @@ import {
   haufenNeu, haufenSetzen, haufenRest, haufenPacken, haufenEntpacken,
 } from './haufen.js';
 import {
-  werte, missionenPruefen, ladungMasse, ladungBezahlen, TECH_NACH_ID, BAU_NACH_ID,
+  werte, missionenPruefen, ladungMasse, ladungBezahlen, einnahme, TECH_NACH_ID, BAU_NACH_ID,
 } from './wirtschaft.js';
 import { nadelnVerteilen, nadelnFreilegen, loseNadelnSetzen } from './nadeln.js';
 import { spielerNeu } from './spieler.js';
@@ -214,23 +214,31 @@ export function laden(text) {
   return s;
 }
 
-/** Offline nachholen: in dieser Fassung läuft ohne Spieler noch nichts von selbst. */
+/**
+ * Offline nachholen: die ersten drei Minuten rechnet die Automatik genau nach
+ * (Bänder, Maschinen, Laster), den Rest bis zur erforschten Grenze schätzt sie
+ * aus den Einnahmen dieser Minuten, mal dem Offline-Anteil.
+ */
 export function abwesenheit(s, jetzt = Date.now(), systeme = []) {
   const weg = Math.max(0, (jetzt - (Number.isFinite(s.zuletzt) ? s.zuletzt : jetzt)) / 1000);
   s.zuletzt = jetzt;
   const w = werte(s);
   const sek = Math.min(weg, w.offlineStunden * 3600);
-  if (!systeme.length || sek < 5 || !s.bauten.length) return null;
+  if (!systeme.length || sek < 10 || !s.bauten.length) return null;
   const geldVor = s.geld;
   const verdientVor = s.verdient;
   const halmeVor = s.stat.abgetragen;
-  const schritte = Math.min(900, Math.ceil(sek / 2));
-  const dt = (sek / schritte) * w.offlineEff;
+  const genau = Math.min(sek, 180);
   const ereignisse = [];
-  for (let i = 0; i < schritte; i++) ereignisse.push(...spielTakt(s, dt, systeme));
+  const dt = 0.1;
+  for (let t = 0; t < genau; t += dt) {
+    for (const e of spielTakt(s, dt, systeme)) if (e.typ === 'mission' || e.typ === 'nadel' || e.typ === 'auftrag' || e.typ === 'scannerNadel') ereignisse.push(e);
+  }
+  const rate = (s.verdient - verdientVor) / genau;
+  const rest = Math.max(0, sek - genau) * w.offlineEff;
+  if (rate > 0 && rest > 0) einnahme(s, rate * rest);
   return {
     kurz: sek < 30, sekunden: sek, abwesend: weg, ereignisse,
     geld: s.geld - geldVor, verdient: s.verdient - verdientVor, halme: s.stat.abgetragen - halmeVor,
   };
 }
-

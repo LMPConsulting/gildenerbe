@@ -10,7 +10,7 @@ import {
 } from './wirtschaft.js';
 import { TECH } from './daten.js';
 import {
-  standNeu, spielTakt, speichern, laden, ladungBestellen, SPEICHER3D_KEY, spielZufall,
+  standNeu, spielTakt, speichern, laden, ladungBestellen, SPEICHER3D_KEY, spielZufall, abwesenheit,
 } from './spiel.js';
 import {
   stechen, kannStechen, fegen, saugerSchritt, bueschelGreifen, standKippen, pusteSchritt, werkzeugWaehlen,
@@ -30,7 +30,21 @@ import { forschungOeffnen } from './ui/forschung.js';
 import {
   werkzeugstandZeigen, lieferschalterZeigen, nadelbuchZeigen, menueZeigen, nadelModal, anleitungZeigen,
 } from './ui/panele.js';
-import { geld, halme } from './format.js';
+import { geld, halme, dauer } from './format.js';
+import { automatikSchritt, netzHolen } from './automatik.js';
+import { bautenUmgebung, bauVersion, bauSetzen, bandAnker, bandPlanen, bandSetzen } from './bauen.js';
+import {
+  gegenstandNehmen, gehaltenesStueck, stueckWerfen, heuWerfen, stueckImBlick, gegenstandVerkaufen, gegenstandWert,
+} from './gegenstaende.js';
+import { scannerLeeren, annehmenMoeglich } from './maschinen.js';
+import { netzSchalten } from './versorgung.js';
+import { lasterAblehnen, lasterBereit, LASTER_BETT } from './laster.js';
+import { BAU_BY_ID, hallenGrenzen } from './welt.js';
+import { objekteBauen } from './grafik/objekte3d.js';
+import { baumodusBauen } from './baumodus.js';
+import { baukatalogZeigen, bauHudBauen } from './ui/bauen.js';
+import { maschinePanelZeigen } from './ui/maschine.js';
+import { auftragstafelZeigen } from './ui/auftrag.js';
 
 const EINSTELLUNGEN_KEY = 'heuhaufen3d-einstellungen';
 
@@ -51,14 +65,17 @@ function hauptStart() {
   const einst = einstellungenLaden();
   klangStumm(!einst.ton);
   const s3 = szeneBauen(leinwand, einst.grafik);
-  const hof = hofBauen(s3.szene, s3.qualitaet);
+  let hof = null;
 
   let s = null;
   try { s = laden(localStorage.getItem(SPEICHER3D_KEY) || ''); } catch { s = null; }
   const gespeichert = !!s;
   if (!s) s = standNeu();
+  hof = hofBauen(s3.szene, s3.qualitaet, werte(s).hallenFelder);
+  let hofFelder = werte(s).hallenFelder;
   const hAnsicht = haufenAnsichtBauen(s3.szene, s.hf, s3.qualitaet);
   const ansicht = ansichtBauen(s3.szene, s3.kamera);
+  const objekte = objekteBauen(s3.szene, s3.qualitaet);
 
   const zustand = {
     laeuft: false, // nach dem Startbild
@@ -69,6 +86,12 @@ function hauptStart() {
     hudZeit: 0,
     zielText: '',
     nadelWarte: [],
+    umgebungVersion: -1,
+    umgebungStand: null,
+    verkaufSumme: 0, // Verkäufe der Maschinen, gesammelt für eine Anzeige
+    verkaufZeit: 0,
+    kasseZeit: 0,
+    rechenZeit: 0,
   };
 
   const st = steuerungBauen(flaeche, {
@@ -82,7 +105,9 @@ function hauptStart() {
       else if (k === 'tab' || k === 'r') forschungAuf();
       else if (k === 'b') bauenAuf();
       else if (k === 'n') nadelnAuf();
-      else if (k === 'escape') { if (zustand.tafel) zustand.tafel.schliessen(); }
+      else if (k === 'escape') { if (zustand.tafel) zustand.tafel.schliessen(); else if (bm.aktiv()) bm.abbrechen(); }
+      else if (k === 'q' && bm.aktiv()) bm.drehen();
+      else if (k === 'f' && bm.aktiv()) bm.einrasten();
     },
   });
   st.zustand.empfindlichkeit = einst.empfindlichkeit;
@@ -97,6 +122,7 @@ function hauptStart() {
     menue: () => menueAuf(),
     modalAuf: () => { st.zeigerFreigeben(); },
     modalZu: () => {},
+    info: () => infoTippen(),
   });
 
   function speichernJetzt() {
@@ -131,7 +157,24 @@ function hauptStart() {
     zustand.tafel = f;
   }
   function bauenAuf() {
-    ui.toast('Der Baukatalog kommt mit den Förderband-Plänen.', '');
+    if (zustand.tafel || !zustand.laeuft) return;
+    if (bm.aktiv()) { bm.abbrechen(); if (bm.aktiv()) bm.abbrechen(); return; }
+    st.zeigerFreigeben();
+    baukatalogZeigen(ui, s, {
+      waehlen: (typ) => { klang.klick(); bm.starten(typ); },
+      abbauen: () => { klang.klick(); bm.abbauStarten(); },
+    });
+  }
+  function maschineZeigen(bau) {
+    st.zeigerFreigeben();
+    maschinePanelZeigen(ui, s, bau, {
+      netz: () => netzHolen(s),
+      schalten: (b) => { b.aus = !b.aus; klang.klick(); },
+      einstellen: (b, feld, wert) => { b[feld] = wert; },
+      abbauen: (b) => { ui.modalSchliessen(); bm.abbauDirekt(b); },
+      nadelnNehmen: (b) => { ui.modalSchliessen(); scannerLeeren(s, b, ereignisPuffer); },
+      netzSchalten: (m) => { const an = netzSchalten(s, netzHolen(s), m); klang.klick(); ui.toast(an ? 'Netz eingeschaltet.' : 'Netz ausgeschaltet.'); },
+    });
   }
   function nadelnAuf() { nadelbuchZeigen(ui, s); }
   function menueAuf() {
@@ -162,12 +205,48 @@ function hauptStart() {
 
   /* ------------------------------------------------ Ziel bestimmen */
   const strahl = new THREE.Raycaster();
-  const stationen = [
-    [hof.stand, 'stand'], [hof.werkzeugstand, 'werkzeugstand'], [hof.lieferschalter, 'lieferschalter'],
-    [hof.auftragstafel, 'auftragstafel'], [hof.hausanschluss, 'hausanschluss'], [hof.werkbank, 'werkbank'],
-  ];
-  const stationenObjekte = stationen.map(([o]) => o);
+  let stationen = [];
+  let stationenObjekte = [];
+  function stationenSetzen() {
+    stationen = [
+      [hof.stand, 'stand'], [hof.werkzeugstand, 'werkzeugstand'], [hof.lieferschalter, 'lieferschalter'],
+      [hof.auftragstafel, 'auftragstafel'], [hof.hausanschluss, 'hausanschluss'], [hof.werkbank, 'werkbank'],
+    ];
+    stationenObjekte = stationen.map(([o]) => o);
+  }
+  stationenSetzen();
+  /** Die Halle neu bauen, wenn sie verlängert wurde (oder ein anderer Stand geladen ist). */
+  function hofPruefen() {
+    const felder = werte(s).hallenFelder;
+    if (felder === hofFelder) return;
+    hofFelder = felder;
+    s3.szene.remove(hof.gruppe);
+    hof.gruppe.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); } });
+    hof = hofBauen(s3.szene, s3.qualitaet, felder);
+    stationenSetzen();
+    zustand.umgebungVersion = -1;
+  }
   const v = new THREE.Vector3();
+
+  /* ------------------------------------------------ Baumodus */
+  const bauHud = bauHudBauen(app, {
+    setzen: () => bm.setzen(), drehen: () => bm.drehen(), naeher: () => bm.naeher(), weiter: () => bm.weiter(),
+    einrasten: () => bm.einrasten(), abbrechen: () => bm.abbrechen(),
+  });
+  const bm = baumodusBauen({
+    holeStand: () => s,
+    objekte,
+    hud: bauHud,
+    ui,
+    klang,
+    strahl: (k, blick) => { strahl.set(k, v.set(blick[0], blick[1], blick[2])); return strahl; },
+    ereignisse: (liste) => ereignisPuffer.push(...liste),
+    abbauFragen: (bau, info, weiter) => ui.modal({
+      titel: `${BAU_BY_ID[bau.typ].name} abbauen?`,
+      absaetze: ['In der Maschine steckt eine Nadel. Sie fällt zurück in den Haufen.'],
+      knoepfe: [{ text: 'Behalten', klasse: 'primaer' }, { text: 'Trotzdem abbauen', klasse: 'gefahr', aktion: weiter }],
+    }),
+  });
 
   function zielFinden() {
     const k = s3.kamera.position;
@@ -186,16 +265,34 @@ function hauptStart() {
     }
     if (bestNadel) return { art: 'nadel', nadel: bestNadel };
     const haufenTreffer = haufenStrahl(s.hf, k.x, k.y, k.z, dx, dy, dz, reichweite + 0.5);
+    const kandidaten = [];
+    if (haufenTreffer && haufenTreffer.t <= reichweite) kandidaten.push({ art: 'haufen', ...haufenTreffer, abstand: haufenTreffer.t });
     strahl.set(k, v.set(dx, dy, dz));
     strahl.far = reichweite + 0.6;
     const treffer = strahl.intersectObjects(stationenObjekte, true);
-    if (treffer.length && (!haufenTreffer || treffer[0].distance < haufenTreffer.t)) {
+    if (treffer.length) {
       let o = treffer[0].object;
       while (o && !stationen.some(([x]) => x === o)) o = o.parent;
       const eintrag = stationen.find(([x]) => x === o);
-      if (eintrag) return { art: eintrag[1], abstand: treffer[0].distance };
+      if (eintrag) kandidaten.push({ art: eintrag[1], abstand: treffer[0].distance });
     }
-    if (haufenTreffer && haufenTreffer.t <= reichweite) return { art: 'haufen', ...haufenTreffer };
+    // Liegende Stücke (Heubündel, Waren): klein, darum etwas bevorzugt
+    const stueck = stueckImBlick(s, k.x, k.y, k.z, dx, dy, dz, reichweite + 0.4);
+    if (stueck) kandidaten.push({ art: 'stueck', g: stueck.g, abstand: stueck.t - 0.35 });
+    // Bauten: Maschinen, Bänder, Masten
+    strahl.set(k, v.set(dx, dy, dz));
+    const bauTreffer = objekte.trefferBau(strahl, reichweite + 1.4);
+    if (bauTreffer) kandidaten.push({ art: 'bau', bau: bauTreffer.bau, punkt: bauTreffer.punkt, abstand: bauTreffer.abstand });
+    // Ladefläche des Lasters, wenn er am Tor steht
+    if (lasterBereit(s)) {
+      const B = LASTER_BETT;
+      const tt = strahlKasten(k, dx, dy, dz, B.x0, 0, B.z0, B.x1, B.y + 0.6, B.z1);
+      if (tt != null && tt < reichweite + 1.5) kandidaten.push({ art: 'laster', abstand: tt });
+    }
+    if (kandidaten.length) {
+      kandidaten.sort((a, b) => a.abstand - b.abstand);
+      return kandidaten[0];
+    }
     // Boden vor den Füßen (für Besen und lose Büschel)
     if (dy < -0.05) {
       const t = (0.02 - k.y) / dy;
@@ -206,6 +303,43 @@ function hauptStart() {
       }
     }
     return null;
+  }
+
+  /** Strahl gegen achsparallelen Kasten: Abstand oder null. */
+  function strahlKasten(k, dx, dy, dz, x0, y0, z0, x1, y1, z1) {
+    let tmin = 0;
+    let tmax = Infinity;
+    for (const [o, d, a, b] of [[k.x, dx, x0, x1], [k.y, dy, y0, y1], [k.z, dz, z0, z1]]) {
+      if (Math.abs(d) < 1e-9) { if (o < a || o > b) return null; continue; }
+      let t1 = (a - o) / d;
+      let t2 = (b - o) / d;
+      if (t1 > t2) [t1, t2] = [t2, t1];
+      tmin = Math.max(tmin, t1);
+      tmax = Math.min(tmax, t2);
+      if (tmin > tmax) return null;
+    }
+    return tmin;
+  }
+
+  /** Heu oder ein Stück in Blickrichtung werfen, aus Brusthöhe. */
+  function wurfStart() {
+    const k = s3.kamera.position;
+    const [dx, dy, dz] = blickRichtung(s.spieler);
+    return { von: [k.x + dx * 0.45, k.y - 0.3, k.z + dz * 0.45], richtung: [dx, dy, dz] };
+  }
+
+  /** Nimmt der Bau geworfenes Heu an (Band, Trichter)? */
+  const heuZiel = (bau) => bau.typ === 'band' || annehmenMoeglich(s, bau, 'roh', -1);
+
+  /** Der kleine Knopf „Ansehen“ neben der Aktion: Maschinentafel auch mit Heu im Arm. */
+  function infoTippen() {
+    const z = zustand.ziel;
+    if (z && z.art === 'bau') maschineZeigen(z.bau);
+    else if (z && z.art === 'auftragstafel') auftragZeigen();
+  }
+  function auftragZeigen() {
+    st.zeigerFreigeben();
+    auftragstafelZeigen(ui, s, { ablehnen: () => { if (lasterAblehnen(s)) { klang.klick(); ui.toast('Auftrag abgelehnt. Der nächste kommt gleich.'); } } });
   }
 
   /* ------------------------------------------------ Aktion */
@@ -223,6 +357,52 @@ function hauptStart() {
     const halten = e.aktion;
     zustand.stichPause -= dt;
     const w = werte(s);
+    // Ein Stück in der Hand: am Stand verkaufen, sonst werfen
+    const gehalten = gehaltenesStueck(s);
+    if (gehalten) {
+      if (!druck) return;
+      if (ziel && ziel.art === 'stand') {
+        gegenstandVerkaufen(s, gehalten, ereignisPuffer, 'stand');
+        s.spieler.haelt = null;
+        return;
+      }
+      const { von, richtung } = wurfStart();
+      stueckWerfen(s, von, richtung);
+      klang.werfen();
+      return;
+    }
+    if (ziel && ziel.art === 'stueck') {
+      if (!druck) return;
+      const r = gegenstandNehmen(s, ziel.g, ereignisPuffer);
+      if (r.ok) klang.plopp();
+      else if (r.grund === 'voll') voll();
+      return;
+    }
+    if (ziel && ziel.art === 'laster') {
+      if (!druck) return;
+      if (sp.last > 0) { const { von, richtung } = wurfStart(); heuWerfen(s, von, richtung, 60); klang.werfen(); }
+      else ui.toast('Was auf die Ladefläche fällt, nimmt der Laster mit.');
+      return;
+    }
+    if (ziel && ziel.art === 'bau') {
+      if (!druck) return;
+      const bau = ziel.bau;
+      if (bau.typ === 'mast') {
+        const an = netzSchalten(s, netzHolen(s), bau);
+        klang.klick();
+        ui.toast(an ? 'Netz eingeschaltet.' : 'Netz ausgeschaltet.');
+        return;
+      }
+      if (bau.typ === 'scanner' && (bau.nadeln || []).length) { scannerLeeren(s, bau, ereignisPuffer); return; }
+      if (sp.last > 0 && heuZiel(bau)) {
+        const { von, richtung } = wurfStart();
+        heuWerfen(s, von, richtung, bau.typ === 'band' ? 40 : 60);
+        klang.werfen();
+        return;
+      }
+      maschineZeigen(bau);
+      return;
+    }
     // Stationen: nur beim Drücken
     if (ziel && ['stand', 'werkzeugstand', 'lieferschalter', 'auftragstafel', 'hausanschluss', 'werkbank', 'nadel'].includes(ziel.art)) {
       if (!druck) return;
@@ -243,7 +423,7 @@ function hauptStart() {
           },
         });
       } else if (ziel.art === 'auftragstafel') {
-        ui.modal({ titel: 'Aufträge', absaetze: ['Mit dem Auftragsbuch aus der Forschung (Verkauf) hängen hier Aufträge. Ein Laster setzt dann ans Tor.'], knoepfe: [{ text: 'OK', klasse: 'primaer' }] });
+        auftragZeigen();
       } else if (ziel.art === 'hausanschluss') {
         ui.modal({ titel: 'Hausanschluss', absaetze: ['Hier kommen 5 kW aus dem Netz. Maschinen in der Nähe hängen direkt dran, weiter weg helfen Strommasten.'], knoepfe: [{ text: 'OK', klasse: 'primaer' }] });
       } else if (ziel.art === 'werkbank') {
@@ -295,8 +475,28 @@ function hauptStart() {
   function aktionsText(ziel) {
     const sp = s.spieler;
     const wz = sp.werkzeug;
+    const gehalten = gehaltenesStueck(s);
+    if (gehalten) {
+      const name = gehalten.art === 'roh' ? 'Heubündel' : ({ knaeuel: 'Heuknäuel', ballen: 'Pressballen', pellet: 'Pellets', brei: 'Heubrei', silage: 'Wickelballen', papier: 'Heupapier', brikett: 'Öko-Ziegel' })[gehalten.art];
+      if (ziel && ziel.art === 'stand') return ['Verkaufen', `${name} verkaufen · ${geld(gegenstandWert(s, gehalten))}`];
+      return ['Werfen', `${name} in der Hand`];
+    }
     if (!ziel) return wz === 'detektor' ? ['Messen', ''] : wz === 'sauger' ? ['Saugen', ''] : ['Aktion', ''];
     switch (ziel.art) {
+      case 'stueck': {
+        const g = ziel.g;
+        if (g.art === 'roh' || g.art === 'knaeuel') return ['Aufheben', `${halme(g.art === 'roh' ? g.halme : 20)} Halme${g.nadel >= 0 ? ' · da glitzert etwas' : ''}`];
+        return ['Aufheben', `${({ ballen: 'Pressballen', pellet: 'Pellets', brei: 'Heubrei', silage: 'Wickelballen', papier: 'Heupapier', brikett: 'Öko-Ziegel' })[g.art]} · ${geld(gegenstandWert(s, g))}`];
+      }
+      case 'laster': return [sp.last > 0 ? 'Werfen' : 'Laster', sp.last > 0 ? 'Heu auf die Ladefläche werfen' : 'Ladefläche des Lasters'];
+      case 'bau': {
+        const b = ziel.bau;
+        const name = BAU_BY_ID[b.typ].name;
+        if (b.typ === 'mast') return ['Schalten', `${name} · Netz ${b.aus ? 'aus' : 'an'}`];
+        if (b.typ === 'scanner' && (b.nadeln || []).length) return ['Nehmen', 'Der Scanner hält eine Nadel fest!'];
+        if (sp.last > 0 && heuZiel(b)) return ['Werfen', `Heu ${b.typ === 'band' ? 'aufs Band' : `in ${name}`} werfen`];
+        return ['Ansehen', name];
+      }
       case 'nadel': return ['Aufheben', 'Eine Nadel! Aufheben'];
       case 'stand': return ['Verkaufen', sp.last > 0 ? `${halme(sp.last)} Halme verkaufen · ${geld(sp.last * werte(s).preisRoh * werte(s).preisAlle)}` : 'Heu verkaufen'];
       case 'werkzeugstand': return ['Einkaufen', 'Werkzeugstand'];
@@ -342,10 +542,44 @@ function hauptStart() {
           if (p) ui.schwebeText(e.krit ? `Glücksstich! +${e.menge}` : `+${e.menge}`, p[0], p[1], 'klein');
         }
       } else if (e.typ === 'verkauft') {
-        klang.kasse();
-        const t = hof.standTrichter;
-        const p = bildschirmPunkt(t.x, t.y + 1.2, t.z) || [leinwand.clientWidth / 2, leinwand.clientHeight / 2];
-        ui.schwebeText(`+${geld(e.betrag)}`, p[0], p[1]);
+        if (e.wo === 'stand' && !e.art) {
+          klang.kasse();
+          const t = hof.standTrichter;
+          const p = bildschirmPunkt(t.x, t.y + 1.2, t.z) || [leinwand.clientWidth / 2, leinwand.clientHeight / 2];
+          ui.schwebeText(`+${geld(e.betrag)}`, p[0], p[1]);
+        } else {
+          // Maschinen, Bänder, Drohnen: gesammelt anzeigen, damit es nicht flackert
+          zustand.verkaufSumme += e.betrag;
+          zustand.verkaufOrt = [e.x ?? hof.standTrichter.x, (e.y ?? hof.standTrichter.y) + 0.9, e.z ?? hof.standTrichter.z];
+        }
+      } else if (e.typ === 'gebaut') {
+        ansicht.schwung();
+      } else if (e.typ === 'rechen' || e.typ === 'greifen' || e.typ === 'produziert' || e.typ === 'schuss') {
+        const sp = s.spieler;
+        const bau = e.id != null ? s.bauten.find((b) => b.id === e.id) : null;
+        const d = bau ? Math.hypot(bau.x - sp.x, bau.z - sp.z) : 20;
+        const laut = Math.max(0, 1 - d / 18);
+        if (e.typ === 'rechen') { if (zustand.rechenZeit <= 0) { klang.rechen(laut); zustand.rechenZeit = 0.2; } }
+        else if (e.typ === 'greifen') klang.greifen(laut);
+        else if (e.typ === 'schuss') klang.werfen();
+        else klang.plopp(laut * 0.8);
+      } else if (e.typ === 'scannerNadel') {
+        klang.scanner();
+        ui.toast('Der Scanner hat eine Nadel gefunden! Sie wartet dort auf dich.', 'gut');
+      } else if (e.typ === 'radar') {
+        klang.fund(0);
+        ui.toast('Das Radar hat eine Nadel markiert: der goldene Lichtstrahl.', 'gut');
+      } else if (e.typ === 'lasterKommt') {
+        klang.hupe();
+        ui.toast('Der Laster kommt ans Tor.', '');
+      } else if (e.typ === 'lasterDa') {
+        ui.toast(`Auftrag: ${e.auftrag.titel} will ${e.auftrag.will === 'roh' ? `${halme(e.auftrag.menge)} Halme loses Heu` : `${e.auftrag.menge} Stück`}.`, '');
+      } else if (e.typ === 'auftrag') {
+        klang.auftrag();
+        ui.toast(`Auftrag erfüllt: ${e.auftrag.titel} · +${geld(e.lohn)}`, 'gut');
+      } else if (e.typ === 'stromKnapp') {
+        klang.summen();
+        ui.toast('Zu wenig Strom: die Maschinen laufen langsamer. Ein Generator hilft.', 'warn');
       } else if (e.typ === 'gefegt' || e.typ === 'gegriffen') {
         const p = bildschirmPunkt(e.x, 0.3, e.z);
         if (p) ui.schwebeText(`+${e.menge}`, p[0], p[1], 'klein');
@@ -381,6 +615,15 @@ function hauptStart() {
       const e = st.lesen();
       const w = werte(s);
       umgebung.haufen = s.hf;
+      hofPruefen();
+      if (zustand.umgebungStand !== s || zustand.umgebungVersion !== bauVersion(s)) {
+        const u = bautenUmgebung(s);
+        umgebung.kollider = hof.kollider.concat(u.kollider);
+        umgebung.flaechen = u.flaechen;
+        umgebung.grenzen = hallenGrenzen(w.hallenFelder);
+        zustand.umgebungVersion = bauVersion(s);
+        zustand.umgebungStand = s;
+      }
       let tempo = 0;
       let ziel = null;
       if (!zustand.laeuft) {
@@ -398,8 +641,14 @@ function hauptStart() {
         s.stat.umgesehen += Math.abs(e.blickX) + Math.abs(e.blickY);
         pusteSchritt(s, dt, rennt && tempo > 0.5);
         spielerKamera(s.spieler, s3.kamera, tempo);
-        ziel = zielFinden();
-        aktionAusfuehren(ziel, e, dt);
+        if (bm.aktiv()) {
+          bm.schritt(s3.kamera.position, blickRichtung(s.spieler), dt);
+          if (e.aktionNeu) bm.setzen();
+        } else {
+          ziel = zielFinden();
+          aktionAusfuehren(ziel, e, dt);
+        }
+        zustand.ziel = ziel;
         // Sauger
         const saugZiel = ziel && ziel.art === 'haufen' ? ziel : null;
         const saugBoden = ziel && (ziel.art === 'boden' || ziel.art === 'haufen') ? ziel : null;
@@ -432,16 +681,36 @@ function hauptStart() {
       } else ui.detektorZeigen(false);
 
       // Welt
-      const erg = spielTakt(s, zustand.laeuft ? dt : 0);
+      const erg = spielTakt(s, zustand.laeuft ? dt : 0, [automatikSchritt]);
       ereignisPuffer.push(...erg);
       if (ereignisPuffer.length) { ereignisseZeigen(ereignisPuffer.splice(0)); }
+      zustand.rechenZeit -= dt;
+      zustand.verkaufZeit -= dt;
+      if (zustand.verkaufSumme > 0 && zustand.verkaufZeit <= 0) {
+        const o = zustand.verkaufOrt || [hof.standTrichter.x, hof.standTrichter.y + 1.2, hof.standTrichter.z];
+        const p = bildschirmPunkt(o[0], o[1], o[2]);
+        if (p) ui.schwebeText(`+${geld(zustand.verkaufSumme)}`, p[0], p[1]);
+        const sp = s.spieler;
+        if (Math.hypot(o[0] - sp.x, o[2] - sp.z) < 14) klang.kasse();
+        zustand.verkaufSumme = 0;
+        zustand.verkaufZeit = 0.6;
+      }
+      objekte.schritt(s, netzHolen(s), dt, s.zeit, s3.kamera);
 
       hAnsicht.schritt(s.hf);
       ansicht.schritt(s, dt, {
         tempo, detektor: detektorStaerke, behaelter: behaelter(s), platz: taschePlatz(w), boden: bodenBei,
+        haelt: gehaltenesStueck(s), bauen: bm.aktiv(),
       });
       s3.schritt(dt);
       const m = Math.floor(s.zeit / 60);
+      // Das Rolltor geht hoch, wenn der Laster ans Tor setzt
+      const L = s.laster;
+      const torZiel = L.zustand === 'steht' || (L.zustand === 'kommt' && L.t > 4) || (L.zustand === 'faehrt' && L.t < 1.2) ? 1 : 0;
+      zustand.torOffen = (zustand.torOffen || 0) + (torZiel - (zustand.torOffen || 0)) * Math.min(1, dt * 1.6);
+      const torRest = Math.max(0.07, 1 - zustand.torOffen);
+      hof.tor.scale.y = torRest;
+      hof.tor.position.y = WELT.torHoehe - (WELT.torHoehe * torRest) / 2;
       hof.uhr.setze(m >= 100 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}` : `${m}:${String(Math.floor(s.zeit % 60)).padStart(2, '0')}`);
 
       // Anzeigen
@@ -460,10 +729,15 @@ function hauptStart() {
         ui.forschungMarke(TECH.filter((t) => techStatus(s, t.id) === 'kaufbar').length);
         if (zustand.tafel && zustand.tafel.aktualisieren) zustand.tafel.aktualisieren();
       }
-      if (zustand.laeuft) {
+      if (zustand.laeuft && bm.aktiv()) {
+        ui.aktionZeigen(({ bau: 'Bauen', band: 'Setzen', linie: 'Setzen', abbau: 'Abbauen' })[bm.art()] || 'Bauen', true);
+        ui.hinweisZeigen('');
+        ui.infoZeigen(false);
+      } else if (zustand.laeuft) {
         const [knopfText, hinweisText] = aktionsText(ziel);
-        ui.aktionZeigen(knopfText, !!ziel);
+        ui.aktionZeigen(knopfText, !!ziel || !!gehaltenesStueck(s));
         ui.hinweisZeigen(hinweisText);
+        ui.infoZeigen(!!ziel && (ziel.art === 'bau' && ziel.bau.typ !== 'mast'));
       }
       s3.zeichnen();
       st.verbraucht();
@@ -499,6 +773,17 @@ function hauptStart() {
     startbild.remove();
     app.classList.remove('vorstart');
     zustand.laeuft = true;
+    if (!neu) {
+      // Was die Maschinen in der Zwischenzeit geschafft haben
+      const r = abwesenheit(s, Date.now(), [automatikSchritt]);
+      if (r && !r.kurz && r.verdient > 0) {
+        ui.modal({
+          ober: `${dauer(r.abwesend)} weg`, titel: 'Willkommen zurück',
+          absaetze: [`Die Maschinen haben ${halme(r.halme)} Halme abgetragen und ${geld(r.verdient)} eingenommen.`],
+          knoepfe: [{ text: 'Weiter', klasse: 'primaer' }],
+        });
+      }
+    }
     s.zuletzt = Date.now();
     spielerKamera(s.spieler, s3.kamera, 0);
     if (neu) anleitungZeigen(ui);
@@ -510,7 +795,15 @@ function hauptStart() {
   window.addEventListener('pagehide', () => { if (zustand.laeuft) speichernJetzt(); });
   requestAnimationFrame(schleife);
   window.__heuhaufen3d = {
-    get s() { return s; }, set s(x) { s = x; }, s3, ui, zustand, losgehen, speichernJetzt,
+    get s() { return s; }, set s(x) { s = x; }, s3, ui, zustand, losgehen, speichernJetzt, objekte, bm, netz: () => netzHolen(s),
+    // Für Tests und Prüfer: Bauen ohne Zielen
+    logik: {
+      bauSetzen: (typ, x, z, rot = 0) => bauSetzen(s, typ, x, z, rot),
+      band: (von, nach) => {
+        const plan = bandPlanen(s, bandAnker(s, von[0], von[1], false), bandAnker(s, nach[0], nach[1], true));
+        return plan.ok ? bandSetzen(s, plan) : plan;
+      },
+    },
   };
 }
 

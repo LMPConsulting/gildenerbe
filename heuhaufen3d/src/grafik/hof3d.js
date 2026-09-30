@@ -26,8 +26,9 @@ function gekachelt(textur, b, h, meterB, meterH) {
   return t;
 }
 
-export function hofBauen(szene, qualitaet) {
-  const W = WELT;
+export function hofBauen(szene, qualitaet, felder = 0) {
+  // „Schuppen verlängern“: jedes Feld schiebt die rechte Wand 4 m weiter hinaus.
+  const W = { ...WELT, xMax: WELT.xMax + felder * 4 };
   const gruppe = new THREE.Group();
   gruppe.name = 'hof';
   const kollider = [];
@@ -124,9 +125,11 @@ export function hofBauen(szene, qualitaet) {
     gruppe.add(mitte);
   }
 
-  // --- Stahlbögen über dem offenen Dach
+  // --- Stahlbögen über dem offenen Dach (weitere alle 7 m, wenn die Halle wächst)
   const oben = H + B + 0.2;
-  for (const x of W.boegen) {
+  const boegen = [...W.boegen];
+  while (boegen[boegen.length - 1] + 7 <= W.xMax - 3) boegen.push(boegen[boegen.length - 1] + 7);
+  for (const x of boegen) {
     const punkte = [];
     for (let i = 0; i <= 40; i++) {
       const t = Math.PI * (i / 40);
@@ -142,9 +145,9 @@ export function hofBauen(szene, qualitaet) {
     const winkel = Math.PI * t;
     const y = oben + Math.sin(winkel) * W.bogenHoehe;
     const z = mz + Math.cos(winkel) * (tiefe / 2);
-    const strebe = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, W.boegen[W.boegen.length - 1] - W.boegen[0], 6), rostMat);
+    const strebe = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, boegen[boegen.length - 1] - boegen[0], 6), rostMat);
     strebe.rotation.z = Math.PI / 2;
-    strebe.position.set((W.boegen[0] + W.boegen[W.boegen.length - 1]) / 2, y, z);
+    strebe.position.set((boegen[0] + boegen[boegen.length - 1]) / 2, y, z);
     strebe.castShadow = true;
     gruppe.add(strebe);
   }

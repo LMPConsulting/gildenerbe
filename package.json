@@ -21,6 +21,7 @@
     "sperre:build": "node sperre/build.mjs",
     "mauern:build": "node mauern/build.mjs",
     "heuhaufen:build": "node heuhaufen/build.mjs",
+    "heuhaufen3d:build": "node heuhaufen3d/build.mjs",
     "spiele:web": "node scripts/webseite.mjs"
   },
   "devDependencies": {

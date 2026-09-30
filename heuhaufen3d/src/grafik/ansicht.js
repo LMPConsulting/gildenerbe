@@ -5,7 +5,7 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import {
   spatenModell, heugabelModell, sandschaufelModell, besenModell, detektorModell, saugerModell, handModell,
-  eimerModell, heuBueschel, nadelModell,
+  eimerModell, heuBueschel, nadelModell, gegenstandGeometrien, GEGENSTAND_FARBEN,
 } from './modelle.js';
 
 const HALM_TOENE = [0xf6cf6a, 0xeeb94c, 0xe2a338, 0xf9de90, 0xd58f2c, 0xe8a940];
@@ -83,6 +83,17 @@ export function ansichtBauen(szene, kamera) {
   const karre = schubkarreModell();
   karre.position.set(0, -1.12, -1.05);
   kamera.add(karre);
+  // Ein Stück in beiden Händen (Pressballen, Knäuel, Ziegel …)
+  const stueckGeos = gegenstandGeometrien();
+  const STUECK_GEO = {
+    roh: stueckGeos.buendel, knaeuel: stueckGeos.knaeuel, ballen: stueckGeos.ballen, pellet: stueckGeos.pellet,
+    brei: stueckGeos.brei, silage: stueckGeos.silage, papier: stueckGeos.papier, brikett: stueckGeos.ziegel,
+  };
+  const gehalten = new THREE.Mesh(STUECK_GEO.roh, new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN.roh, roughness: 0.9 }));
+  gehalten.visible = false;
+  gehalten.renderOrder = 5;
+  kamera.add(gehalten);
+  let gehaltenArt = null;
 
   // Lose Büschel am Boden
   const bueschelGeo = bueschelGeometrie();
@@ -151,32 +162,48 @@ export function ansichtBauen(szene, kamera) {
     schritt(s, dt, info) {
       zeit += dt;
       const sp = s.spieler;
-      werkzeugZeigen(sp.werkzeug);
-      const ruhe = RUHE[sp.werkzeug] || RUHE.hand;
-      const m = modelle[sp.werkzeug];
+      // Mit einem Stück in den Händen oder beim Bauen ist das Werkzeug weggesteckt
+      const weg = !!info.haelt || !!info.bauen;
+      werkzeugZeigen(weg ? null : sp.werkzeug);
+      gehalten.visible = !!info.haelt;
+      if (info.haelt) {
+        const art = info.haelt.art;
+        if (art !== gehaltenArt) {
+          gehaltenArt = art;
+          gehalten.geometry = STUECK_GEO[art] || STUECK_GEO.roh;
+          gehalten.material.color.setHex(GEGENSTAND_FARBEN[art] || GEGENSTAND_FARBEN.roh);
+        }
+        const wippen = Math.min(1, (info.tempo || 0) / 4);
+        gehalten.position.set(0.02, -0.34 - Math.abs(Math.cos(zeit * 7.5)) * 0.012 * wippen, -0.62);
+        gehalten.rotation.set(0.25, 0.4, 0);
+      }
       // Wippen beim Gehen, Stoß nach vorn beim Stechen
       const gehen = Math.min(1, (info.tempo || 0) / 4);
       const wx = Math.sin(zeit * 7.5) * 0.012 * gehen;
       const wy = Math.abs(Math.cos(zeit * 7.5)) * 0.014 * gehen;
-      stoss = Math.max(0, stoss - dt * 4.2);
-      const st = Math.sin(stoss * Math.PI);
-      const saugZittern = sp.sauger.an ? (Math.random() - 0.5) * 0.006 : 0;
-      m.position.set(ruhe.p[0] + wx + saugZittern, ruhe.p[1] - wy - st * 0.05, ruhe.p[2] - st * 0.22);
-      m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
-      // Heu auf dem Blatt kurz sichtbar, dann in den Behälter
-      ladungZeit = Math.max(0, ladungZeit - dt);
-      ladung.visible = ladungZeit > 0 && ['spaten', 'heugabel', 'sandschaufel'].includes(sp.werkzeug);
-      if (ladung.visible) {
-        const lz = sp.werkzeug === 'sandschaufel' ? -0.62 : -0.86;
-        ladung.position.set(m.position.x, m.position.y + 0.05 + Math.sin(ruhe.r[0]) * 0.25, m.position.z + lz * Math.cos(ruhe.r[0]) * 0.55);
-      }
-      // Detektoranzeige färbt sich
-      if (sp.werkzeug === 'detektor') {
-        const anzeige = modelle.detektor.getObjectByName('anzeige');
-        if (anzeige) {
-          const s01 = info.detektor || 0;
-          anzeige.material.emissive.setRGB(0.2 + s01 * 1.4, 0.8 - s01 * 0.5, 0.3 - s01 * 0.2);
-          anzeige.material.emissiveIntensity = 0.6 + s01 * 2 * (0.5 + 0.5 * Math.sin(zeit * (6 + s01 * 20)));
+      if (!weg) {
+        const ruhe = RUHE[sp.werkzeug] || RUHE.hand;
+        const m = modelle[sp.werkzeug];
+        stoss = Math.max(0, stoss - dt * 4.2);
+        const st = Math.sin(stoss * Math.PI);
+        const saugZittern = sp.sauger.an ? (Math.random() - 0.5) * 0.006 : 0;
+        m.position.set(ruhe.p[0] + wx + saugZittern, ruhe.p[1] - wy - st * 0.05, ruhe.p[2] - st * 0.22);
+        m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
+        // Heu auf dem Blatt kurz sichtbar, dann in den Behälter
+        ladungZeit = Math.max(0, ladungZeit - dt);
+        ladung.visible = ladungZeit > 0 && ['spaten', 'heugabel', 'sandschaufel'].includes(sp.werkzeug);
+        if (ladung.visible) {
+          const lz = sp.werkzeug === 'sandschaufel' ? -0.62 : -0.86;
+          ladung.position.set(m.position.x, m.position.y + 0.05 + Math.sin(ruhe.r[0]) * 0.25, m.position.z + lz * Math.cos(ruhe.r[0]) * 0.55);
+        }
+        // Detektoranzeige färbt sich
+        if (sp.werkzeug === 'detektor') {
+          const anzeige = modelle.detektor.getObjectByName('anzeige');
+          if (anzeige) {
+            const s01 = info.detektor || 0;
+            anzeige.material.emissive.setRGB(0.2 + s01 * 1.4, 0.8 - s01 * 0.5, 0.3 - s01 * 0.2);
+            anzeige.material.emissiveIntensity = 0.6 + s01 * 2 * (0.5 + 0.5 * Math.sin(zeit * (6 + s01 * 20)));
+          }
         }
       }
       // Behälter

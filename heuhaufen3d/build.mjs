@@ -46,10 +46,16 @@ export const MODULE = [
   'src/grafik/hof3d.js',
   'src/grafik/haufen3d.js',
   'src/grafik/ansicht.js',
+  'src/grafik/maschinenmodelle.js',
+  'src/grafik/objekte3d.js',
   'src/steuerung.js',
   'src/ui/oberflaeche.js',
   'src/ui/forschung.js',
   'src/ui/panele.js',
+  'src/ui/bauen.js',
+  'src/ui/maschine.js',
+  'src/ui/auftrag.js',
+  'src/baumodus.js',
   'src/main.js',
 ];
 

@@ -115,6 +115,59 @@ export const klang = {
     rauschen(0.5, { frequenz: 1200, q: 3, laut: 0.15 });
     ton(300, 0.4, { typ: 'sawtooth', laut: 0.06, gleiten: 90 });
   },
+  /** Ein Bau steht: dumpfer Schlag und ein heller Ton wie beim Aufbau-Hologramm. */
+  bauen() {
+    if (!bereit()) return;
+    rauschen(0.12, { frequenz: 220, q: 0.7, laut: 0.3, typ: 'lowpass' });
+    ton(440, 0.12, { typ: 'triangle', laut: 0.1, start: 0.04 });
+    ton(880, 0.22, { typ: 'sine', laut: 0.08, start: 0.1, gleiten: 1320 });
+  },
+  abbauen() {
+    if (!bereit()) return;
+    ton(700, 0.2, { typ: 'triangle', laut: 0.09, gleiten: 260 });
+    rauschen(0.18, { frequenz: 900, q: 0.6, laut: 0.12 });
+  },
+  /** Maschinengeräusche; laut 0..1 nach Entfernung. */
+  rechen(laut = 1) {
+    if (!bereit() || laut < 0.03) return;
+    rauschen(0.07, { frequenz: 300, q: 0.9, laut: 0.22 * laut, typ: 'lowpass' });
+    rauschen(0.12, { frequenz: 2600, q: 0.7, laut: 0.1 * laut, start: 0.03 });
+  },
+  greifen(laut = 1) {
+    if (!bereit() || laut < 0.03) return;
+    ton(420, 0.18, { typ: 'sawtooth', laut: 0.025 * laut, gleiten: 560 });
+  },
+  plopp(laut = 1) {
+    if (!bereit() || laut < 0.03) return;
+    ton(260, 0.09, { typ: 'sine', laut: 0.14 * laut, gleiten: 140 });
+  },
+  werfen() {
+    if (!bereit()) return;
+    rauschen(0.22, { frequenz: 1500, q: 0.6, laut: 0.12 });
+  },
+  scanner() {
+    if (!bereit()) return;
+    [988, 1319, 988, 1319].forEach((f, i) => ton(f, 0.16, { typ: 'square', laut: 0.05, start: i * 0.15 }));
+  },
+  hupe() {
+    if (!bereit()) return;
+    ton(311, 0.35, { typ: 'sawtooth', laut: 0.07 });
+    ton(392, 0.35, { typ: 'sawtooth', laut: 0.06 });
+    ton(311, 0.5, { typ: 'sawtooth', laut: 0.07, start: 0.45 });
+    ton(392, 0.5, { typ: 'sawtooth', laut: 0.06, start: 0.45 });
+  },
+  auftrag() {
+    if (!bereit()) return;
+    rauschen(0.04, { frequenz: 5000, q: 2, laut: 0.2 });
+    ton(1046, 0.15, { laut: 0.18, start: 0.02 });
+    ton(1568, 0.3, { laut: 0.16, start: 0.1 });
+    [2093, 2637, 2349, 2794].forEach((f, i) => ton(f, 0.12, { typ: 'triangle', laut: 0.07, start: 0.18 + i * 0.06 }));
+  },
+  summen() {
+    if (!bereit()) return;
+    ton(110, 0.5, { typ: 'sawtooth', laut: 0.05 });
+    ton(116, 0.5, { typ: 'sawtooth', laut: 0.04 });
+  },
 };
 
 export function saugerAn() {

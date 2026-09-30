@@ -376,3 +376,139 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .voraus .fehlt { color: #ffb36b; }
 .knopf.breit { width: 100%; }
 .forschungsfuss { padding: 6px 10px; font-size: 11px; color: var(--dim); text-align: center; background: #050605; border-top: 1px solid #1d231d; }
+
+/* ---------------- Bauen, Maschinentafeln, Aufträge ---------------- */
+
+/* Baukatalog: Reiter je Kategorie (bleiben beim Blättern oben), Karten im Raster,
+   auf dem Handy hochkant zwei Spalten, quer drei bis vier. */
+.modal.baukatalog { width: min(720px, 96vw); }
+.modal .baugeschenke {
+  margin: 0 0 8px; padding: 6px 10px; border: 1px solid rgba(255, 219, 87, 0.45); border-left: 3px solid var(--gold);
+  background: rgba(255, 219, 87, 0.08); color: var(--gold); font-size: 13px; font-weight: 700;
+}
+.modal .baugeschenke[hidden] { display: none; }
+.bautabs {
+  position: sticky; top: 0; z-index: 1; display: flex; gap: 6px; margin: 0 -16px 8px; padding: 6px 16px;
+  overflow-x: auto; background: rgba(9, 11, 16, 0.97); scrollbar-width: none;
+}
+.bautabs::-webkit-scrollbar { display: none; }
+.bautab {
+  position: relative; flex: none; min-height: 44px; padding: 4px 14px; border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04); color: var(--dim); font-size: 13px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.bautab.gewaehlt { border-color: var(--gold); background: rgba(255, 219, 87, 0.16); color: var(--gold); }
+.bautab.geschenk::after {
+  content: ''; position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
+}
+.baukarten { display: grid; grid-template-columns: repeat(auto-fill, minmax(146px, 1fr)); gap: 6px; }
+.baukarte {
+  display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; min-height: 108px; padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.04); color: var(--text); text-align: left;
+}
+.baukarte:not(:disabled):active { border-color: var(--gold-dunkel); background: rgba(255, 219, 87, 0.12); }
+.baukarte:disabled { cursor: default; }
+.baukarte.gesperrt { opacity: 0.55; }
+.baukarte.geschenk { border-color: var(--gold); box-shadow: inset 0 0 0 1px rgba(255, 219, 87, 0.3); }
+.bkname { font-size: 15px; font-weight: 800; line-height: 1.15; }
+.bktext {
+  flex: 1; font-size: 12px; line-height: 1.25; color: var(--dim);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.bkfuss { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.bkpreis { font-size: 14px; font-weight: 800; color: var(--geld); }
+.bkpreis.teuer { color: var(--rot); }
+.bkpreis.geschenk { color: var(--gold); }
+.bkgebaut { font-size: 11px; font-weight: 700; color: var(--dim); white-space: nowrap; }
+.bkstrom { font-size: 11px; font-weight: 700; color: var(--rate); }
+.bkplan { font-size: 12px; font-weight: 700; color: #ffb36b; }
+.bkgebaut[hidden], .bkplan[hidden] { display: none; }
+
+/* Bau-Einblendung: Karte oben zwischen Missionskarte und Kasse (hochkant unter der
+   Missionskarte), Knöpfe rechts über dem Aktionsknopf. Unter Toasts und Modals. */
+.bauhud { position: absolute; inset: 0; z-index: 15; pointer-events: none; }
+.bauhud[hidden] { display: none; }
+.bhband {
+  position: absolute; top: calc(var(--safe-t) + 8px); left: calc(var(--safe-l) + min(300px, 42vw) + 18px);
+  right: calc(var(--safe-r) + 198px); display: flex; justify-content: center; pointer-events: none;
+}
+.bhkarte {
+  display: flex; align-items: center; gap: 8px; min-width: 0; max-width: min(100%, 380px); padding: 5px 5px 5px 10px;
+  background: var(--karte); border: 1px solid var(--haar); border-left: 3px solid var(--gold); pointer-events: auto;
+}
+.bhkarte.nein { border-color: rgba(255, 122, 92, 0.8); border-left-color: var(--rot); }
+.bhtexte { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; line-height: 1.2; }
+.bhtitel { font-size: 15px; font-weight: 800; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bhzeile { font-size: 13px; font-weight: 700; color: var(--geld); }
+.bhgrund { font-size: 13px; font-weight: 800; color: var(--rot); }
+.bhzeile[hidden], .bhgrund[hidden] { display: none; }
+.bhzu {
+  flex: none; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.06);
+  color: var(--gold); display: flex; align-items: center; justify-content: center;
+}
+.bhzu:active { background: rgba(60, 50, 20, 0.9); }
+.bhleiste {
+  position: absolute; right: calc(var(--safe-r) + 12px); bottom: calc(var(--safe-b) + 128px); width: 164px;
+  display: flex; flex-direction: column; gap: 4px; pointer-events: auto;
+}
+.bhreihe { display: flex; gap: 4px; }
+.bhreihe[hidden], .bhknopf[hidden] { display: none; }
+.bhknopf {
+  min-height: 44px; padding: 3px 6px; border: 1px solid rgba(255, 255, 255, 0.25); background: var(--karte);
+  color: var(--text); font-size: 13px; font-weight: 800; line-height: 1.1; text-shadow: 0 1px 2px #000;
+}
+.bhreihe .bhknopf { flex: 1 1 0; min-width: 0; }
+.bhknopf:active { background: rgba(60, 50, 20, 0.9); }
+.bhknopf.an { border-color: var(--gold-dunkel); color: var(--gold); }
+.bhknopf.bestaetigen { min-height: 46px; border: 2px solid rgba(255, 219, 87, 0.8); background: rgba(40, 32, 12, 0.85); color: var(--gold); font-size: 15px; }
+.bhknopf.bestaetigen.gefahr { border-color: #c4553f; color: #ffb3a3; }
+.bhknopf.bestaetigen.matt { opacity: 0.45; border-color: rgba(255, 255, 255, 0.3); }
+@media (max-height: 420px) {
+  .bhleiste { bottom: calc(var(--safe-b) + 112px); }
+}
+@media (orientation: portrait) {
+  .bhband { top: calc(var(--safe-t) + 166px); left: calc(var(--safe-l) + 16px); right: calc(var(--safe-r) + 16px); }
+  /* Hochkant ist unten kein Platz: Werkzeuge und Behälter ruhen, solange gebaut wird. */
+  .bauend .werkzeugleiste, .bauend .statuszeile { visibility: hidden; }
+}
+
+/* Maschinentafel */
+.mtkopf { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 8px; }
+.tafelstatus { flex: 1 1 170px; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; line-height: 1.25; }
+.mtkopf[hidden], .tafelstatus[hidden], .werte[hidden] { display: none; }
+.mtkopf .knopf { flex: 1 0 auto; max-width: 100%; }
+.statuspunkt { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--grau); }
+.statuspunkt.gut { background: #8fd694; box-shadow: 0 0 8px rgba(143, 214, 148, 0.6); }
+.statuspunkt.warn { background: #f2b544; box-shadow: 0 0 8px rgba(242, 181, 68, 0.45); }
+.statuspunkt.stoerung { background: var(--rot); box-shadow: 0 0 8px rgba(255, 122, 92, 0.55); }
+.mtteil { margin: 10px 0; }
+.modal .mtteil .ober { margin: 0 0 5px; }
+.regelkopf { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.regelkopf > span:first-child { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); font-weight: 800; }
+.regelkopf .num { font-size: 14px; font-weight: 800; color: var(--gold); }
+.mtteil .regler { display: block; width: 100%; height: 44px; margin: 0; accent-color: var(--gold); cursor: pointer; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  flex: 1 1 auto; min-height: 44px; padding: 4px 12px; border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04); color: var(--text); font-size: 13px; font-weight: 800;
+}
+.chip.gewaehlt { border-color: var(--gold); background: rgba(255, 219, 87, 0.18); color: var(--gold); }
+.fortschritt {
+  position: relative; height: 12px; margin: 4px 0 10px; overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.05);
+}
+.fortschritt .fuellung { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--gold); transition: width 0.2s linear; }
+.fortschritt.brenn .fuellung { background: linear-gradient(90deg, #b8541f, #ffb36b); }
+.knopf.nadelknopf {
+  width: 100%; min-height: 54px; margin: 0 0 10px; border: 2px solid #ffd24a; background: rgba(255, 210, 74, 0.22);
+  color: #ffe27a; font-size: 17px; box-shadow: 0 0 18px rgba(255, 210, 74, 0.35); animation: nadelglanz 1.6s ease-in-out infinite;
+}
+@keyframes nadelglanz { 50% { box-shadow: 0 0 6px rgba(255, 210, 74, 0.15); } }
+.mtabbau { margin-top: 6px; }
+.rueckfrage { margin: 8px 0 4px; padding: 10px; border: 1px solid #a4402f; background: rgba(164, 64, 47, 0.14); }
+.rueckfrage[hidden] { display: none; }
+.modal .rueckfrage p { margin: 0 0 8px; font-weight: 700; }
+.rueckfragewahl { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Auftragstafel */
+.auftraginhalt .tafelstatus { margin: 0 0 6px; font-size: 14px; }
+.modal .tafelhinweis { margin: 0 0 10px; font-size: 13px; color: var(--dim); }

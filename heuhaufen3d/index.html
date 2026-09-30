@@ -393,6 +393,142 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .knopf.breit { width: 100%; }
 .forschungsfuss { padding: 6px 10px; font-size: 11px; color: var(--dim); text-align: center; background: #050605; border-top: 1px solid #1d231d; }
 
+/* ---------------- Bauen, Maschinentafeln, Aufträge ---------------- */
+
+/* Baukatalog: Reiter je Kategorie (bleiben beim Blättern oben), Karten im Raster,
+   auf dem Handy hochkant zwei Spalten, quer drei bis vier. */
+.modal.baukatalog { width: min(720px, 96vw); }
+.modal .baugeschenke {
+  margin: 0 0 8px; padding: 6px 10px; border: 1px solid rgba(255, 219, 87, 0.45); border-left: 3px solid var(--gold);
+  background: rgba(255, 219, 87, 0.08); color: var(--gold); font-size: 13px; font-weight: 700;
+}
+.modal .baugeschenke[hidden] { display: none; }
+.bautabs {
+  position: sticky; top: 0; z-index: 1; display: flex; gap: 6px; margin: 0 -16px 8px; padding: 6px 16px;
+  overflow-x: auto; background: rgba(9, 11, 16, 0.97); scrollbar-width: none;
+}
+.bautabs::-webkit-scrollbar { display: none; }
+.bautab {
+  position: relative; flex: none; min-height: 44px; padding: 4px 14px; border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04); color: var(--dim); font-size: 13px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.bautab.gewaehlt { border-color: var(--gold); background: rgba(255, 219, 87, 0.16); color: var(--gold); }
+.bautab.geschenk::after {
+  content: ''; position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--gold);
+}
+.baukarten { display: grid; grid-template-columns: repeat(auto-fill, minmax(146px, 1fr)); gap: 6px; }
+.baukarte {
+  display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; min-height: 108px; padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.04); color: var(--text); text-align: left;
+}
+.baukarte:not(:disabled):active { border-color: var(--gold-dunkel); background: rgba(255, 219, 87, 0.12); }
+.baukarte:disabled { cursor: default; }
+.baukarte.gesperrt { opacity: 0.55; }
+.baukarte.geschenk { border-color: var(--gold); box-shadow: inset 0 0 0 1px rgba(255, 219, 87, 0.3); }
+.bkname { font-size: 15px; font-weight: 800; line-height: 1.15; }
+.bktext {
+  flex: 1; font-size: 12px; line-height: 1.25; color: var(--dim);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.bkfuss { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.bkpreis { font-size: 14px; font-weight: 800; color: var(--geld); }
+.bkpreis.teuer { color: var(--rot); }
+.bkpreis.geschenk { color: var(--gold); }
+.bkgebaut { font-size: 11px; font-weight: 700; color: var(--dim); white-space: nowrap; }
+.bkstrom { font-size: 11px; font-weight: 700; color: var(--rate); }
+.bkplan { font-size: 12px; font-weight: 700; color: #ffb36b; }
+.bkgebaut[hidden], .bkplan[hidden] { display: none; }
+
+/* Bau-Einblendung: Karte oben zwischen Missionskarte und Kasse (hochkant unter der
+   Missionskarte), Knöpfe rechts über dem Aktionsknopf. Unter Toasts und Modals. */
+.bauhud { position: absolute; inset: 0; z-index: 15; pointer-events: none; }
+.bauhud[hidden] { display: none; }
+.bhband {
+  position: absolute; top: calc(var(--safe-t) + 8px); left: calc(var(--safe-l) + min(300px, 42vw) + 18px);
+  right: calc(var(--safe-r) + 198px); display: flex; justify-content: center; pointer-events: none;
+}
+.bhkarte {
+  display: flex; align-items: center; gap: 8px; min-width: 0; max-width: min(100%, 380px); padding: 5px 5px 5px 10px;
+  background: var(--karte); border: 1px solid var(--haar); border-left: 3px solid var(--gold); pointer-events: auto;
+}
+.bhkarte.nein { border-color: rgba(255, 122, 92, 0.8); border-left-color: var(--rot); }
+.bhtexte { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; line-height: 1.2; }
+.bhtitel { font-size: 15px; font-weight: 800; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bhzeile { font-size: 13px; font-weight: 700; color: var(--geld); }
+.bhgrund { font-size: 13px; font-weight: 800; color: var(--rot); }
+.bhzeile[hidden], .bhgrund[hidden] { display: none; }
+.bhzu {
+  flex: none; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.06);
+  color: var(--gold); display: flex; align-items: center; justify-content: center;
+}
+.bhzu:active { background: rgba(60, 50, 20, 0.9); }
+.bhleiste {
+  position: absolute; right: calc(var(--safe-r) + 12px); bottom: calc(var(--safe-b) + 128px); width: 164px;
+  display: flex; flex-direction: column; gap: 4px; pointer-events: auto;
+}
+.bhreihe { display: flex; gap: 4px; }
+.bhreihe[hidden], .bhknopf[hidden] { display: none; }
+.bhknopf {
+  min-height: 44px; padding: 3px 6px; border: 1px solid rgba(255, 255, 255, 0.25); background: var(--karte);
+  color: var(--text); font-size: 13px; font-weight: 800; line-height: 1.1; text-shadow: 0 1px 2px #000;
+}
+.bhreihe .bhknopf { flex: 1 1 0; min-width: 0; }
+.bhknopf:active { background: rgba(60, 50, 20, 0.9); }
+.bhknopf.an { border-color: var(--gold-dunkel); color: var(--gold); }
+.bhknopf.bestaetigen { min-height: 46px; border: 2px solid rgba(255, 219, 87, 0.8); background: rgba(40, 32, 12, 0.85); color: var(--gold); font-size: 15px; }
+.bhknopf.bestaetigen.gefahr { border-color: #c4553f; color: #ffb3a3; }
+.bhknopf.bestaetigen.matt { opacity: 0.45; border-color: rgba(255, 255, 255, 0.3); }
+@media (max-height: 420px) {
+  .bhleiste { bottom: calc(var(--safe-b) + 112px); }
+}
+@media (orientation: portrait) {
+  .bhband { top: calc(var(--safe-t) + 166px); left: calc(var(--safe-l) + 16px); right: calc(var(--safe-r) + 16px); }
+  /* Hochkant ist unten kein Platz: Werkzeuge und Behälter ruhen, solange gebaut wird. */
+  .bauend .werkzeugleiste, .bauend .statuszeile { visibility: hidden; }
+}
+
+/* Maschinentafel */
+.mtkopf { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 8px; }
+.tafelstatus { flex: 1 1 170px; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; line-height: 1.25; }
+.mtkopf[hidden], .tafelstatus[hidden], .werte[hidden] { display: none; }
+.mtkopf .knopf { flex: 1 0 auto; max-width: 100%; }
+.statuspunkt { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--grau); }
+.statuspunkt.gut { background: #8fd694; box-shadow: 0 0 8px rgba(143, 214, 148, 0.6); }
+.statuspunkt.warn { background: #f2b544; box-shadow: 0 0 8px rgba(242, 181, 68, 0.45); }
+.statuspunkt.stoerung { background: var(--rot); box-shadow: 0 0 8px rgba(255, 122, 92, 0.55); }
+.mtteil { margin: 10px 0; }
+.modal .mtteil .ober { margin: 0 0 5px; }
+.regelkopf { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.regelkopf > span:first-child { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); font-weight: 800; }
+.regelkopf .num { font-size: 14px; font-weight: 800; color: var(--gold); }
+.mtteil .regler { display: block; width: 100%; height: 44px; margin: 0; accent-color: var(--gold); cursor: pointer; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  flex: 1 1 auto; min-height: 44px; padding: 4px 12px; border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04); color: var(--text); font-size: 13px; font-weight: 800;
+}
+.chip.gewaehlt { border-color: var(--gold); background: rgba(255, 219, 87, 0.18); color: var(--gold); }
+.fortschritt {
+  position: relative; height: 12px; margin: 4px 0 10px; overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.05);
+}
+.fortschritt .fuellung { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--gold); transition: width 0.2s linear; }
+.fortschritt.brenn .fuellung { background: linear-gradient(90deg, #b8541f, #ffb36b); }
+.knopf.nadelknopf {
+  width: 100%; min-height: 54px; margin: 0 0 10px; border: 2px solid #ffd24a; background: rgba(255, 210, 74, 0.22);
+  color: #ffe27a; font-size: 17px; box-shadow: 0 0 18px rgba(255, 210, 74, 0.35); animation: nadelglanz 1.6s ease-in-out infinite;
+}
+@keyframes nadelglanz { 50% { box-shadow: 0 0 6px rgba(255, 210, 74, 0.15); } }
+.mtabbau { margin-top: 6px; }
+.rueckfrage { margin: 8px 0 4px; padding: 10px; border: 1px solid #a4402f; background: rgba(164, 64, 47, 0.14); }
+.rueckfrage[hidden] { display: none; }
+.modal .rueckfrage p { margin: 0 0 8px; font-weight: 700; }
+.rueckfragewahl { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Auftragstafel */
+.auftraginhalt .tafelstatus { margin: 0 0 6px; font-size: 14px; }
+.modal .tafelhinweis { margin: 0 0 10px; font-size: 13px; color: var(--dim); }
+
 </style>
 </head>
 <body>
@@ -3991,7 +4127,7 @@ function maschinenZeilen(s, bau) {
   const l = lauf(bau);
   const z = [];
   if (d.kw > 0) z.push(['Strom', l.netz >= 0 ? `${Math.round((l.strom || 0) * 100)} % von ${d.kw} kW` : 'nicht angeschlossen']);
-  if (d.kw < 0) z.push(['Leistung', `${Math.round(-(l.leistung || 0) * 10) / 10} kW`]);
+  if (d.kw < 0) z.push(['Leistung', `${Math.round((l.leistung || 0) * 10) / 10} kW`]);
   if (bau.typ === 'generator') z.push(['Brennstoff', `${Math.round(bau.brenn || 0)} Halme`]);
   if (bau.lager) {
     for (const [zutat, m] of Object.entries(d.rezept || {})) {
@@ -4903,9 +5039,10 @@ function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
     }
     if (!geschoben) break;
   }
-  // Halle nicht verlassen
-  nx = Math.max(WELT.xMin + r, Math.min(WELT.xMax - r, nx));
-  nz = Math.max(WELT.zMin + r, Math.min(WELT.zMax - r, nz));
+  // Halle nicht verlassen (umgebung.grenzen, wenn die Halle verlängert ist)
+  const gr = umgebung.grenzen || WELT;
+  nx = Math.max(gr.xMin + r, Math.min(gr.xMax - r, nx));
+  nz = Math.max(gr.zMin + r, Math.min(gr.zMax - r, nz));
   sp.x = nx;
   sp.z = nz;
 
@@ -5147,26 +5284,34 @@ function laden(text) {
   return s;
 }
 
-/** Offline nachholen: in dieser Fassung läuft ohne Spieler noch nichts von selbst. */
+/**
+ * Offline nachholen: die ersten drei Minuten rechnet die Automatik genau nach
+ * (Bänder, Maschinen, Laster), den Rest bis zur erforschten Grenze schätzt sie
+ * aus den Einnahmen dieser Minuten, mal dem Offline-Anteil.
+ */
 function abwesenheit(s, jetzt = Date.now(), systeme = []) {
   const weg = Math.max(0, (jetzt - (Number.isFinite(s.zuletzt) ? s.zuletzt : jetzt)) / 1000);
   s.zuletzt = jetzt;
   const w = werte(s);
   const sek = Math.min(weg, w.offlineStunden * 3600);
-  if (!systeme.length || sek < 5 || !s.bauten.length) return null;
+  if (!systeme.length || sek < 10 || !s.bauten.length) return null;
   const geldVor = s.geld;
   const verdientVor = s.verdient;
   const halmeVor = s.stat.abgetragen;
-  const schritte = Math.min(900, Math.ceil(sek / 2));
-  const dt = (sek / schritte) * w.offlineEff;
+  const genau = Math.min(sek, 180);
   const ereignisse = [];
-  for (let i = 0; i < schritte; i++) ereignisse.push(...spielTakt(s, dt, systeme));
+  const dt = 0.1;
+  for (let t = 0; t < genau; t += dt) {
+    for (const e of spielTakt(s, dt, systeme)) if (e.typ === 'mission' || e.typ === 'nadel' || e.typ === 'auftrag' || e.typ === 'scannerNadel') ereignisse.push(e);
+  }
+  const rate = (s.verdient - verdientVor) / genau;
+  const rest = Math.max(0, sek - genau) * w.offlineEff;
+  if (rate > 0 && rest > 0) einnahme(s, rate * rest);
   return {
     kurz: sek < 30, sekunden: sek, abwesend: weg, ereignisse,
     geld: s.geld - geldVor, verdient: s.verdient - verdientVor, halme: s.stat.abgetragen - halmeVor,
   };
 }
-
 
 // ---- src/klang.js
 // Alle Geräusche werden erzeugt, nicht abgespielt: Rauschen für Heu, Sinus
@@ -5285,6 +5430,59 @@ const klang = {
     if (!bereit()) return;
     rauschen(0.5, { frequenz: 1200, q: 3, laut: 0.15 });
     ton(300, 0.4, { typ: 'sawtooth', laut: 0.06, gleiten: 90 });
+  },
+  /** Ein Bau steht: dumpfer Schlag und ein heller Ton wie beim Aufbau-Hologramm. */
+  bauen() {
+    if (!bereit()) return;
+    rauschen(0.12, { frequenz: 220, q: 0.7, laut: 0.3, typ: 'lowpass' });
+    ton(440, 0.12, { typ: 'triangle', laut: 0.1, start: 0.04 });
+    ton(880, 0.22, { typ: 'sine', laut: 0.08, start: 0.1, gleiten: 1320 });
+  },
+  abbauen() {
+    if (!bereit()) return;
+    ton(700, 0.2, { typ: 'triangle', laut: 0.09, gleiten: 260 });
+    rauschen(0.18, { frequenz: 900, q: 0.6, laut: 0.12 });
+  },
+  /** Maschinengeräusche; laut 0..1 nach Entfernung. */
+  rechen(laut = 1) {
+    if (!bereit() || laut < 0.03) return;
+    rauschen(0.07, { frequenz: 300, q: 0.9, laut: 0.22 * laut, typ: 'lowpass' });
+    rauschen(0.12, { frequenz: 2600, q: 0.7, laut: 0.1 * laut, start: 0.03 });
+  },
+  greifen(laut = 1) {
+    if (!bereit() || laut < 0.03) return;
+    ton(420, 0.18, { typ: 'sawtooth', laut: 0.025 * laut, gleiten: 560 });
+  },
+  plopp(laut = 1) {
+    if (!bereit() || laut < 0.03) return;
+    ton(260, 0.09, { typ: 'sine', laut: 0.14 * laut, gleiten: 140 });
+  },
+  werfen() {
+    if (!bereit()) return;
+    rauschen(0.22, { frequenz: 1500, q: 0.6, laut: 0.12 });
+  },
+  scanner() {
+    if (!bereit()) return;
+    [988, 1319, 988, 1319].forEach((f, i) => ton(f, 0.16, { typ: 'square', laut: 0.05, start: i * 0.15 }));
+  },
+  hupe() {
+    if (!bereit()) return;
+    ton(311, 0.35, { typ: 'sawtooth', laut: 0.07 });
+    ton(392, 0.35, { typ: 'sawtooth', laut: 0.06 });
+    ton(311, 0.5, { typ: 'sawtooth', laut: 0.07, start: 0.45 });
+    ton(392, 0.5, { typ: 'sawtooth', laut: 0.06, start: 0.45 });
+  },
+  auftrag() {
+    if (!bereit()) return;
+    rauschen(0.04, { frequenz: 5000, q: 2, laut: 0.2 });
+    ton(1046, 0.15, { laut: 0.18, start: 0.02 });
+    ton(1568, 0.3, { laut: 0.16, start: 0.1 });
+    [2093, 2637, 2349, 2794].forEach((f, i) => ton(f, 0.12, { typ: 'triangle', laut: 0.07, start: 0.18 + i * 0.06 }));
+  },
+  summen() {
+    if (!bereit()) return;
+    ton(110, 0.5, { typ: 'sawtooth', laut: 0.05 });
+    ton(116, 0.5, { typ: 'sawtooth', laut: 0.04 });
   },
 };
 
@@ -6120,8 +6318,9 @@ function gekachelt(textur, b, h, meterB, meterH) {
   return t;
 }
 
-function hofBauen(szene, qualitaet) {
-  const W = WELT;
+function hofBauen(szene, qualitaet, felder = 0) {
+  // „Schuppen verlängern“: jedes Feld schiebt die rechte Wand 4 m weiter hinaus.
+  const W = { ...WELT, xMax: WELT.xMax + felder * 4 };
   const gruppe = new THREE.Group();
   gruppe.name = 'hof';
   const kollider = [];
@@ -6218,9 +6417,11 @@ function hofBauen(szene, qualitaet) {
     gruppe.add(mitte);
   }
 
-  // --- Stahlbögen über dem offenen Dach
+  // --- Stahlbögen über dem offenen Dach (weitere alle 7 m, wenn die Halle wächst)
   const oben = H + B + 0.2;
-  for (const x of W.boegen) {
+  const boegen = [...W.boegen];
+  while (boegen[boegen.length - 1] + 7 <= W.xMax - 3) boegen.push(boegen[boegen.length - 1] + 7);
+  for (const x of boegen) {
     const punkte = [];
     for (let i = 0; i <= 40; i++) {
       const t = Math.PI * (i / 40);
@@ -6236,9 +6437,9 @@ function hofBauen(szene, qualitaet) {
     const winkel = Math.PI * t;
     const y = oben + Math.sin(winkel) * W.bogenHoehe;
     const z = mz + Math.cos(winkel) * (tiefe / 2);
-    const strebe = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, W.boegen[W.boegen.length - 1] - W.boegen[0], 6), rostMat);
+    const strebe = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, boegen[boegen.length - 1] - boegen[0], 6), rostMat);
     strebe.rotation.z = Math.PI / 2;
-    strebe.position.set((W.boegen[0] + W.boegen[W.boegen.length - 1]) / 2, y, z);
+    strebe.position.set((boegen[0] + boegen[boegen.length - 1]) / 2, y, z);
     strebe.castShadow = true;
     gruppe.add(strebe);
   }
@@ -6929,6 +7130,17 @@ function ansichtBauen(szene, kamera) {
   const karre = schubkarreModell();
   karre.position.set(0, -1.12, -1.05);
   kamera.add(karre);
+  // Ein Stück in beiden Händen (Pressballen, Knäuel, Ziegel …)
+  const stueckGeos = gegenstandGeometrien();
+  const STUECK_GEO = {
+    roh: stueckGeos.buendel, knaeuel: stueckGeos.knaeuel, ballen: stueckGeos.ballen, pellet: stueckGeos.pellet,
+    brei: stueckGeos.brei, silage: stueckGeos.silage, papier: stueckGeos.papier, brikett: stueckGeos.ziegel,
+  };
+  const gehalten = new THREE.Mesh(STUECK_GEO.roh, new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN.roh, roughness: 0.9 }));
+  gehalten.visible = false;
+  gehalten.renderOrder = 5;
+  kamera.add(gehalten);
+  let gehaltenArt = null;
 
   // Lose Büschel am Boden
   const bueschelGeo = bueschelGeometrie();
@@ -6997,32 +7209,48 @@ function ansichtBauen(szene, kamera) {
     schritt(s, dt, info) {
       zeit += dt;
       const sp = s.spieler;
-      werkzeugZeigen(sp.werkzeug);
-      const ruhe = RUHE[sp.werkzeug] || RUHE.hand;
-      const m = modelle[sp.werkzeug];
+      // Mit einem Stück in den Händen oder beim Bauen ist das Werkzeug weggesteckt
+      const weg = !!info.haelt || !!info.bauen;
+      werkzeugZeigen(weg ? null : sp.werkzeug);
+      gehalten.visible = !!info.haelt;
+      if (info.haelt) {
+        const art = info.haelt.art;
+        if (art !== gehaltenArt) {
+          gehaltenArt = art;
+          gehalten.geometry = STUECK_GEO[art] || STUECK_GEO.roh;
+          gehalten.material.color.setHex(GEGENSTAND_FARBEN[art] || GEGENSTAND_FARBEN.roh);
+        }
+        const wippen = Math.min(1, (info.tempo || 0) / 4);
+        gehalten.position.set(0.02, -0.34 - Math.abs(Math.cos(zeit * 7.5)) * 0.012 * wippen, -0.62);
+        gehalten.rotation.set(0.25, 0.4, 0);
+      }
       // Wippen beim Gehen, Stoß nach vorn beim Stechen
       const gehen = Math.min(1, (info.tempo || 0) / 4);
       const wx = Math.sin(zeit * 7.5) * 0.012 * gehen;
       const wy = Math.abs(Math.cos(zeit * 7.5)) * 0.014 * gehen;
-      stoss = Math.max(0, stoss - dt * 4.2);
-      const st = Math.sin(stoss * Math.PI);
-      const saugZittern = sp.sauger.an ? (Math.random() - 0.5) * 0.006 : 0;
-      m.position.set(ruhe.p[0] + wx + saugZittern, ruhe.p[1] - wy - st * 0.05, ruhe.p[2] - st * 0.22);
-      m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
-      // Heu auf dem Blatt kurz sichtbar, dann in den Behälter
-      ladungZeit = Math.max(0, ladungZeit - dt);
-      ladung.visible = ladungZeit > 0 && ['spaten', 'heugabel', 'sandschaufel'].includes(sp.werkzeug);
-      if (ladung.visible) {
-        const lz = sp.werkzeug === 'sandschaufel' ? -0.62 : -0.86;
-        ladung.position.set(m.position.x, m.position.y + 0.05 + Math.sin(ruhe.r[0]) * 0.25, m.position.z + lz * Math.cos(ruhe.r[0]) * 0.55);
-      }
-      // Detektoranzeige färbt sich
-      if (sp.werkzeug === 'detektor') {
-        const anzeige = modelle.detektor.getObjectByName('anzeige');
-        if (anzeige) {
-          const s01 = info.detektor || 0;
-          anzeige.material.emissive.setRGB(0.2 + s01 * 1.4, 0.8 - s01 * 0.5, 0.3 - s01 * 0.2);
-          anzeige.material.emissiveIntensity = 0.6 + s01 * 2 * (0.5 + 0.5 * Math.sin(zeit * (6 + s01 * 20)));
+      if (!weg) {
+        const ruhe = RUHE[sp.werkzeug] || RUHE.hand;
+        const m = modelle[sp.werkzeug];
+        stoss = Math.max(0, stoss - dt * 4.2);
+        const st = Math.sin(stoss * Math.PI);
+        const saugZittern = sp.sauger.an ? (Math.random() - 0.5) * 0.006 : 0;
+        m.position.set(ruhe.p[0] + wx + saugZittern, ruhe.p[1] - wy - st * 0.05, ruhe.p[2] - st * 0.22);
+        m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
+        // Heu auf dem Blatt kurz sichtbar, dann in den Behälter
+        ladungZeit = Math.max(0, ladungZeit - dt);
+        ladung.visible = ladungZeit > 0 && ['spaten', 'heugabel', 'sandschaufel'].includes(sp.werkzeug);
+        if (ladung.visible) {
+          const lz = sp.werkzeug === 'sandschaufel' ? -0.62 : -0.86;
+          ladung.position.set(m.position.x, m.position.y + 0.05 + Math.sin(ruhe.r[0]) * 0.25, m.position.z + lz * Math.cos(ruhe.r[0]) * 0.55);
+        }
+        // Detektoranzeige färbt sich
+        if (sp.werkzeug === 'detektor') {
+          const anzeige = modelle.detektor.getObjectByName('anzeige');
+          if (anzeige) {
+            const s01 = info.detektor || 0;
+            anzeige.material.emissive.setRGB(0.2 + s01 * 1.4, 0.8 - s01 * 0.5, 0.3 - s01 * 0.2);
+            anzeige.material.emissiveIntensity = 0.6 + s01 * 2 * (0.5 + 0.5 * Math.sin(zeit * (6 + s01 * 20)));
+          }
         }
       }
       // Behälter
@@ -7157,6 +7385,970 @@ function glanzSprite() {
   x.beginPath(); x.moveTo(32, 2); x.lineTo(32, 62); x.moveTo(2, 32); x.lineTo(62, 32); x.stroke();
   const t = new THREE.CanvasTexture(c);
   return t;
+}
+
+// ---- src/grafik/maschinenmodelle.js
+// Platzhalter, bis die ausgearbeiteten Modelle da sind: jede Maschine als
+// schlichter Kasten in ihren Maßen, Mast als Stange, Laster und Drohne grob.
+
+
+const PLATZHALTER_FARBE = { auto: 0xe0641e, strom: 0x5a6068, suche: 0xd8d4c8, verarbeitung: 0xb86f2c, wasser: 0x3d6fa8, linien: 0x6a6f75, hofbau: 0x9c7349 };
+
+function maschinenModell(typ) {
+  const d = BAU_BY_ID[typ];
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: PLATZHALTER_FARBE[d.kat] || 0x888888, roughness: 0.7 });
+  if (typ === 'mast') {
+    const stange = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, d.h, 8), mat);
+    stange.position.y = d.h / 2;
+    g.add(stange);
+    return g;
+  }
+  const k = new THREE.Mesh(new THREE.BoxGeometry(d.b, d.h, d.t), mat);
+  k.position.y = d.h / 2;
+  g.add(k);
+  return g;
+}
+
+function lasterModell() {
+  const g = new THREE.Group();
+  const kabine = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.2, 2.2), new THREE.MeshStandardMaterial({ color: 0x2f5f9f }));
+  kabine.position.set(2.3, 1.3, 0);
+  const bett = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.3, 2.1), new THREE.MeshStandardMaterial({ color: 0x555a60 }));
+  bett.position.set(-0.4, 0.9, 0);
+  g.add(kabine, bett);
+  return g;
+}
+
+function drohnenModell() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.5), new THREE.MeshStandardMaterial({ color: 0x222222 })));
+  return g;
+}
+
+// ---- src/grafik/objekte3d.js
+// Alles Gebaute in 3D: Bänder als Profil entlang ihrer Bahn mit laufendem
+// Gummi, Maschinen (Modelle aus maschinenmodelle.js, bewegt nach ihrem
+// Zustand), Stücke als Instanzen, Stromleitungen mit Durchhang, der Laster
+// am Tor, Heudrohnen, der Radarstrahl. Dazu der grüne Baugeist, die
+// Bandvorschau, Einrastpunkte und die Markierung beim Abbauen.
+
+
+/* ------------------------------------------------------------ Hilfen */
+
+/** Gummiband mit Querrippen; läuft über den Versatz der Textur. */
+function objBandTextur() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#2a2a2c';
+  g.fillRect(0, 0, 64, 128);
+  for (let i = 0; i < 4; i++) {
+    g.fillStyle = '#3b3b3e';
+    g.fillRect(4, i * 32 + 4, 56, 7);
+    g.fillStyle = '#1d1d1f';
+    g.fillRect(4, i * 32 + 11, 56, 2);
+  }
+  g.fillStyle = '#19191a';
+  g.fillRect(0, 0, 4, 128);
+  g.fillRect(60, 0, 4, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
+  t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 4;
+  return t;
+}
+
+/** Warnzeichen über Maschinen ohne Strom (wie die Alarmmarken im Vorbild). */
+function objWarnTextur() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e8412c';
+  g.beginPath(); g.moveTo(32, 4); g.lineTo(61, 58); g.lineTo(3, 58); g.closePath(); g.fill();
+  g.fillStyle = '#fff';
+  g.fillRect(29, 20, 6, 22);
+  g.fillRect(29, 46, 6, 6);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function objRauchTextur() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const g = c.getContext('2d');
+  const r = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+  r.addColorStop(0, 'rgba(120,118,112,0.55)');
+  r.addColorStop(1, 'rgba(120,118,112,0)');
+  g.fillStyle = r;
+  g.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/**
+ * Ein Profil (Liste von [seitlich, hoch]) entlang einer Bahn ([x, y, z]) ziehen.
+ * uvLaenge: Meter je Texturwiederholung entlang der Bahn.
+ */
+function objExtrudieren(bahn, profil, uvLaenge = 1) {
+  const n = bahn.length;
+  const m = profil.length;
+  const pos = new Float32Array(n * m * 3);
+  const uv = new Float32Array(n * m * 2);
+  let laenge = 0;
+  for (let i = 0; i < n; i++) {
+    const p = bahn[i];
+    const a = bahn[Math.max(0, i - 1)];
+    const b = bahn[Math.min(n - 1, i + 1)];
+    let tx = b[0] - a[0];
+    let tz = b[2] - a[2];
+    const tl = Math.hypot(tx, tz) || 1;
+    tx /= tl; tz /= tl;
+    // links von der Laufrichtung
+    const nx = tz;
+    const nz = -tx;
+    if (i > 0) laenge += Math.hypot(p[0] - bahn[i - 1][0], p[1] - bahn[i - 1][1], p[2] - bahn[i - 1][2]);
+    for (let j = 0; j < m; j++) {
+      const [l, h] = profil[j];
+      const k = (i * m + j) * 3;
+      pos[k] = p[0] + nx * l;
+      pos[k + 1] = p[1] + h;
+      pos[k + 2] = p[2] + nz * l;
+      uv[(i * m + j) * 2] = j / (m - 1);
+      uv[(i * m + j) * 2 + 1] = laenge / uvLaenge;
+    }
+  }
+  const idx = [];
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = 0; j < m - 1; j++) {
+      const a = i * m + j; const b = a + 1; const c = a + m; const d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** Mehrere Geometrien zu einer (Position, Normale, UV wenn alle eine haben). */
+function objVereinen(liste) {
+  let anzahl = 0;
+  for (const g of liste) anzahl += g.attributes.position.count;
+  const mitUv = liste.every((g) => g.attributes.uv);
+  const pos = new Float32Array(anzahl * 3);
+  const nor = new Float32Array(anzahl * 3);
+  const uv = mitUv ? new Float32Array(anzahl * 2) : null;
+  const idx = [];
+  let o = 0;
+  for (const g of liste) {
+    if (!g.attributes.normal) g.computeVertexNormals();
+    pos.set(g.attributes.position.array, o * 3);
+    nor.set(g.attributes.normal.array, o * 3);
+    if (uv) uv.set(g.attributes.uv.array, o * 2);
+    if (g.index) for (const i of g.index.array) idx.push(i + o);
+    else for (let i = 0; i < g.attributes.position.count; i++) idx.push(i + o);
+    o += g.attributes.position.count;
+    g.dispose();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  if (uv) geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  return geo;
+}
+
+/**
+ * Alles Unbewegliche eines Modells (Teile ohne Namen) je Material zu einem Netz
+ * verschmelzen: aus zwanzig Zeichenaufrufen werden drei oder vier.
+ */
+function objVereinfachen(wurzel) {
+  wurzel.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(wurzel.matrixWorld).invert();
+  const gruppen = new Map();
+  const weg = [];
+  wurzel.traverse((o) => {
+    if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh) return;
+    for (let p = o; p && p !== wurzel; p = p.parent) if (p.name) return;
+    if (Array.isArray(o.material) || o.material.transparent) return;
+    const g = o.geometry.index ? o.geometry.clone() : o.geometry.clone();
+    g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+    for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+    if (!gruppen.has(o.material)) gruppen.set(o.material, []);
+    gruppen.get(o.material).push(g);
+    weg.push(o);
+  });
+  for (const o of weg) o.parent.remove(o);
+  for (const [mat, geos] of gruppen) {
+    // UV nur behalten, wenn das Material eine Textur zeigt
+    if (!mat.map) for (const g of geos) if (g.attributes.uv) g.deleteAttribute('uv');
+    const m = new THREE.Mesh(objVereinen(geos), mat);
+    m.userData.verschmolzen = true;
+    wurzel.add(m);
+  }
+  return wurzel;
+}
+
+/** Vorlagen je Bauart: einmal gebaut und vereinfacht, danach nur noch geklont. */
+const OBJ_VORLAGEN = new Map();
+function objModell(typ, qualitaet) {
+  if (!OBJ_VORLAGEN.has(typ)) OBJ_VORLAGEN.set(typ, objVereinfachen(maschinenModell(typ, { qualitaet })));
+  const obj = OBJ_VORLAGEN.get(typ).clone(true);
+  // Bewegliche Teile mit leuchtendem Material brauchen je Maschine ein eigenes
+  obj.traverse((o) => {
+    if (!o.isMesh || o.userData.verschmolzen) return;
+    if (o.material && o.material.emissive) o.material = o.material.clone();
+  });
+  return obj;
+}
+
+function objHologramm(ok) {
+  return new THREE.MeshBasicMaterial({
+    color: ok ? 0x4dff88 : 0xff4d3a, transparent: true, opacity: 0.38, depthWrite: false,
+  });
+}
+
+/** Alle Materialien einer Gruppe durch eines ersetzen (für den Baugeist). */
+function objEinfaerben(obj, material) {
+  obj.traverse((o) => {
+    if (o.isMesh) { o.material = material; o.castShadow = false; o.receiveShadow = false; }
+    if (o.isLight) o.visible = false;
+  });
+}
+
+/** Kettenlinie zwischen zwei Aufhängepunkten. */
+function objDurchhang(a, b, tiefe, n = 12) {
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    pts.push(new THREE.Vector3(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - Math.sin(Math.PI * t) * tiefe, a[2] + (b[2] - a[2]) * t));
+  }
+  return pts;
+}
+
+/* ------------------------------------------------------------ Bänder */
+
+const BAND_PROFIL_GURT = [[0.3, 0], [-0.3, 0]];
+const BAND_PROFIL_RAHMEN = [[0.36, 0.06], [0.36, -0.14], [0.3, -0.16], [-0.3, -0.16], [-0.36, -0.14], [-0.36, 0.06]];
+
+/* ------------------------------------------------------------ Aufbau */
+
+function objekteBauen(szene, qualitaet = 'mittel') {
+  const wurzel = new THREE.Group();
+  wurzel.name = 'objekte';
+  szene.add(wurzel);
+  const bautenGruppe = new THREE.Group();
+  const vorschauGruppe = new THREE.Group();
+  wurzel.add(bautenGruppe, vorschauGruppe);
+  const schatten = qualitaet !== 'niedrig';
+
+  const bandTex = objBandTextur();
+  const MAT = {
+    gurt: new THREE.MeshStandardMaterial({ map: bandTex, roughness: 0.92, metalness: 0 }),
+    rahmen: new THREE.MeshStandardMaterial({ color: 0x8b9096, roughness: 0.5, metalness: 0.55 }),
+    bein: new THREE.MeshStandardMaterial({ color: 0x5b6066, roughness: 0.6, metalness: 0.4 }),
+    rolle: new THREE.MeshStandardMaterial({ color: 0x3a3d40, roughness: 0.5, metalness: 0.6 }),
+    leitung: new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7 }),
+    rohr: new THREE.MeshStandardMaterial({ color: 0x3d6fa8, roughness: 0.45, metalness: 0.3 }),
+    wand: new THREE.MeshStandardMaterial({ color: 0x9c7349, roughness: 0.85 }),
+    gelaender: new THREE.MeshStandardMaterial({ color: 0xd8b13a, roughness: 0.5, metalness: 0.3 }),
+  };
+
+  /* -------------------------------- Stücke (Instanzen) */
+  const geos = gegenstandGeometrien();
+  const GEO_FUER = {
+    roh: geos.buendel, knaeuel: geos.knaeuel, ballen: geos.ballen, pellet: geos.pellet, brei: geos.brei,
+    silage: geos.silage, papier: geos.papier, brikett: geos.ziegel,
+  };
+  const MAX_STUECKE = 700;
+  const stueckMeshes = {};
+  for (const [art, geo] of Object.entries(GEO_FUER)) {
+    const m = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN[art], roughness: art === 'silage' ? 0.35 : 0.95 });
+    const im = new THREE.InstancedMesh(geo, m, MAX_STUECKE);
+    im.count = 0;
+    im.castShadow = schatten;
+    im.receiveShadow = false;
+    im.frustumCulled = false;
+    im.name = `stuecke-${art}`;
+    wurzel.add(im);
+    stueckMeshes[art] = im;
+  }
+  const glanzTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 64;
+    const g = c.getContext('2d');
+    const r = g.createRadialGradient(32, 32, 0, 32, 32, 30);
+    r.addColorStop(0, 'rgba(255,255,255,1)');
+    r.addColorStop(0.25, 'rgba(255,240,180,0.8)');
+    r.addColorStop(1, 'rgba(255,220,120,0)');
+    g.fillStyle = r;
+    g.fillRect(0, 0, 64, 64);
+    g.fillStyle = 'rgba(255,255,255,0.9)';
+    g.fillRect(31, 2, 2, 60);
+    g.fillRect(2, 31, 60, 2);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const glanzMat = new THREE.SpriteMaterial({ map: glanzTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  const glanzPool = Array.from({ length: 8 }, () => {
+    const sp = new THREE.Sprite(glanzMat);
+    sp.scale.setScalar(0.35);
+    sp.visible = false;
+    wurzel.add(sp);
+    return sp;
+  });
+
+  /* -------------------------------- Warnmarken, Rauch */
+  const warnMat = new THREE.SpriteMaterial({ map: objWarnTextur(), transparent: true, depthWrite: false });
+  const rauchMat = new THREE.SpriteMaterial({ map: objRauchTextur(), transparent: true, depthWrite: false });
+  const rauch = Array.from({ length: 36 }, () => {
+    const sp = new THREE.Sprite(rauchMat.clone());
+    sp.visible = false;
+    wurzel.add(sp);
+    return { sp, t: 0, leben: 0, vx: 0, vz: 0 };
+  });
+  let rauchNaechster = 0;
+
+  /* -------------------------------- Radarstrahl */
+  const radarMat = new THREE.MeshBasicMaterial({ color: 0xffd966, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+  const radarStrahl = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 14, 16, 1, true), radarMat);
+  radarStrahl.visible = false;
+  wurzel.add(radarStrahl);
+
+  /* -------------------------------- Laster */
+  const laster = lasterModell();
+  laster.visible = false;
+  wurzel.add(laster);
+  laster.traverse((o) => { if (o.isMesh) { o.castShadow = schatten; o.receiveShadow = schatten; } });
+  const lasterRaeder = [];
+  laster.traverse((o) => { if (o.name && o.name.startsWith('rad')) lasterRaeder.push(o); });
+  const ladung = new THREE.InstancedMesh(new THREE.BoxGeometry(0.42, 0.3, 0.42), new THREE.MeshStandardMaterial({ color: 0xe0a846, roughness: 0.95 }), 48);
+  ladung.count = 0;
+  ladung.frustumCulled = false;
+  wurzel.add(ladung);
+
+  /* -------------------------------- Lampenlicht */
+  // Feste Zahl an Lichtern, die den nächsten Lampen folgen: sonst übersetzt three.js
+  // bei jeder neuen Lampe alle Shader neu.
+  const lichtPool = Array.from({ length: qualitaet === 'niedrig' ? 0 : 3 }, () => {
+    const l = new THREE.PointLight(0xffe2b0, 0, 10, 1.6);
+    wurzel.add(l);
+    return l;
+  });
+  const lichtVec = new THREE.Vector3();
+  function lichterVerteilen(kamera) {
+    if (!lichtPool.length) return;
+    const sortiert = lampenLichter
+      .filter((e) => (e.hell || 0) > 0.01)
+      .map((e) => ({ e, d: kamera ? kamera.position.distanceToSquared(lichtVec.set(e.bau.x, 1.5, e.bau.z)) : 0 }))
+      .sort((a, b) => a.d - b.d);
+    lichtPool.forEach((licht, i) => {
+      const x = sortiert[i];
+      if (!x) { licht.intensity = 0; return; }
+      licht.position.set(x.e.bau.x, (x.e.bau.y || 0) + BAU_BY_ID.lampe.h - 0.25, x.e.bau.z);
+      licht.intensity = x.e.hell * 7;
+    });
+  }
+
+  /* -------------------------------- Drohnen */
+  const drohnenVorlage = drohnenModell();
+  const drohnen = [];
+
+  /* -------------------------------- Leitungen */
+  let leitungen = null;
+  let leitungsQuelle = null;
+
+  /* -------------------------------- Bauten */
+  const eintraege = new Map();
+  let version = -1;
+  let ersterAbgleich = true;
+  const aufbauEffekte = [];
+  const lampenLichter = [];
+  const matrix = new THREE.Matrix4();
+  const quat = new THREE.Quaternion();
+  const vec = new THREE.Vector3();
+  const skal = new THREE.Vector3();
+  const euler = new THREE.Euler();
+  const achseY = new THREE.Vector3(0, 1, 0);
+
+  function bandObjekt(bau) {
+    const g = new THREE.Group();
+    const { bahn, laenge } = bandGeometrie(bau);
+    const gurt = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_GURT, 0.5), MAT.gurt);
+    gurt.receiveShadow = schatten;
+    const rahmen = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_RAHMEN, 1), MAT.rahmen);
+    rahmen.castShadow = schatten;
+    rahmen.receiveShadow = schatten;
+    g.add(gurt, rahmen);
+    // Beine alle 1,6 m, Rollen an beiden Enden
+    const beine = [];
+    const rollen = [];
+    const probe = (t) => {
+      let s0 = 0;
+      for (let i = 1; i < bahn.length; i++) {
+        const a = bahn[i - 1]; const b = bahn[i];
+        const l = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        if (s0 + l >= t) {
+          const u = l > 0 ? (t - s0) / l : 0;
+          return { p: [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u], d: [(b[0] - a[0]) / (l || 1), (b[2] - a[2]) / (l || 1)] };
+        }
+        s0 += l;
+      }
+      const a = bahn[bahn.length - 2] || bahn[0]; const b = bahn[bahn.length - 1];
+      const l = Math.hypot(b[0] - a[0], b[2] - a[2]) || 1;
+      return { p: b, d: [(b[0] - a[0]) / l, (b[2] - a[2]) / l] };
+    };
+    const schritte = Math.max(1, Math.round(laenge / 1.6));
+    for (let i = 0; i <= schritte; i++) {
+      const { p, d } = probe((laenge * i) / schritte);
+      const hoehe = p[1] - 0.16;
+      if (hoehe < 0.05) continue;
+      for (const seite of [-0.31, 0.31]) {
+        const bg = new THREE.BoxGeometry(0.05, hoehe, 0.05);
+        bg.translate(p[0] + d[1] * seite, hoehe / 2, p[2] - d[0] * seite);
+        beine.push(bg);
+      }
+    }
+    for (const t of [0.06, laenge - 0.06]) {
+      const { p, d } = probe(Math.max(0, t));
+      const rg = new THREE.CylinderGeometry(0.07, 0.07, 0.64, 10);
+      rg.rotateZ(Math.PI / 2);
+      rg.rotateY(Math.atan2(-d[1], d[0]) + Math.PI / 2);
+      rg.translate(p[0], p[1] - 0.06, p[2]);
+      rollen.push(rg);
+    }
+    if (beine.length) {
+      const bm = new THREE.Mesh(objVereinen(beine), MAT.bein);
+      bm.castShadow = schatten;
+      g.add(bm);
+    }
+    g.add(new THREE.Mesh(objVereinen(rollen), MAT.rolle));
+    return g;
+  }
+
+  function linienObjekt(bau) {
+    const d = BAU_BY_ID[bau.typ];
+    const g = new THREE.Group();
+    const l = Math.hypot(bau.b[0] - bau.a[0], bau.b[1] - bau.a[1]);
+    const w = Math.atan2(-(bau.b[1] - bau.a[1]), bau.b[0] - bau.a[0]);
+    const mx = (bau.a[0] + bau.b[0]) / 2;
+    const mz = (bau.a[1] + bau.b[1]) / 2;
+    if (bau.typ === 'leitung') {
+      const rohr = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, l, 10), MAT.rohr);
+      rohr.rotation.z = Math.PI / 2;
+      const halter = new THREE.Group();
+      halter.add(rohr);
+      halter.position.set(mx, 0.2, mz);
+      halter.rotation.y = w;
+      g.add(halter);
+      return g;
+    }
+    const halter = new THREE.Group();
+    halter.position.set(mx, 0, mz);
+    halter.rotation.y = w;
+    g.add(halter);
+    if (bau.typ === 'wand') {
+      const platte = new THREE.Mesh(new THREE.BoxGeometry(l, d.h, d.b), MAT.wand);
+      platte.position.y = d.h / 2;
+      platte.castShadow = schatten; platte.receiveShadow = schatten;
+      halter.add(platte);
+    } else {
+      for (const y of [0.5, 1.0]) {
+        const holm = new THREE.Mesh(new THREE.BoxGeometry(l, 0.05, 0.05), MAT.gelaender);
+        holm.position.y = y;
+        halter.add(holm);
+      }
+      const n = Math.max(1, Math.round(l / 1.2));
+      for (let i = 0; i <= n; i++) {
+        const p = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.0, 0.05), MAT.gelaender);
+        p.position.set(-l / 2 + (l * i) / n, 0.5, 0);
+        halter.add(p);
+      }
+    }
+    return g;
+  }
+
+  function bauObjekt(bau) {
+    let obj;
+    if (bau.typ === 'band') obj = bandObjekt(bau);
+    else if (BAU_BY_ID[bau.typ].linie && bau.a) obj = linienObjekt(bau);
+    else {
+      obj = objModell(bau.typ, qualitaet);
+      obj.position.set(bau.x, bau.y || 0, bau.z);
+      obj.rotation.y = bau.rot || 0;
+      obj.traverse((o) => { if (o.isMesh) { o.castShadow = schatten; o.receiveShadow = schatten; } });
+      const warn = new THREE.Sprite(warnMat);
+      warn.name = 'warnmarke';
+      warn.raycast = () => {}; // nicht anklickbar
+      warn.scale.setScalar(0.42);
+      warn.position.set(0, BAU_BY_ID[bau.typ].h + 0.45, 0);
+      warn.visible = false;
+      obj.add(warn);
+    }
+    if (bau.typ === 'band' || (BAU_BY_ID[bau.typ].linie && bau.a)) obj.traverse((o) => { if (o.isMesh) o.userData.eigen = true; });
+    obj.userData.bauId = bau.id;
+    obj.traverse((o) => { o.userData.bauId = bau.id; });
+    return obj;
+  }
+
+  const schluesselVon = (bau) => (bau.typ === 'band'
+    ? `b|${bau.punkte.length}|${bau.punkte[0].join(',')}|${bau.punkte[bau.punkte.length - 1].join(',')}`
+    : `m|${bau.typ}|${bau.x}|${bau.z}|${bau.y || 0}|${bau.rot || 0}|${bau.a ? bau.a.join(',') + bau.b.join(',') : ''}`);
+
+  function abgleichen(s) {
+    const v = bauVersion(s);
+    if (v === version && eintraege.size === s.bauten.length) return;
+    version = v;
+    const da = new Set();
+    for (const bau of s.bauten) {
+      da.add(bau.id);
+      const e = eintraege.get(bau.id);
+      const k = schluesselVon(bau);
+      if (e && e.schluessel === k && e.bau === bau) continue;
+      if (e) { bautenGruppe.remove(e.obj); entsorgen(e.obj); }
+      const obj = bauObjekt(bau);
+      bautenGruppe.add(obj);
+      eintraege.set(bau.id, { bau, obj, schluessel: k, teile: teileSuchen(obj) });
+      if (!ersterAbgleich) aufbauEffekt(obj);
+    }
+    for (const [id, e] of eintraege) {
+      if (!da.has(id)) { bautenGruppe.remove(e.obj); entsorgen(e.obj); eintraege.delete(id); }
+    }
+    lampenLichter.length = 0;
+    for (const e of eintraege.values()) if (e.bau.typ === 'lampe') lampenLichter.push(e);
+    ersterAbgleich = false;
+  }
+
+  /** Eigene Geometrien (Bänder, Linien) freigeben; Maschinen teilen ihre mit der Vorlage. */
+  function entsorgen(obj) {
+    obj.traverse((o) => { if (o.isMesh && o.userData.eigen) o.geometry.dispose(); });
+  }
+
+  function teileSuchen(obj) {
+    const t = {};
+    obj.traverse((o) => { if (o.name && !(o.name in t)) t[o.name] = o; });
+    return t;
+  }
+
+  /** Der Aufbau-Effekt: kurz ein grünes Hologramm, das sich in die Maschine auflöst. */
+  function aufbauEffekt(obj) {
+    const geist = obj.clone(true);
+    const mat = objHologramm(true);
+    objEinfaerben(geist, mat);
+    geist.scale.multiplyScalar(1.02);
+    vorschauGruppe.add(geist);
+    aufbauEffekte.push({ geist, mat, t: 0, obj });
+    obj.scale.setScalar(0.94);
+  }
+
+  /* -------------------------------- Bewegung der Maschinen */
+  function maschineBewegen(e, s, dt, zeit) {
+    const { bau, obj, teile } = e;
+    const l = lauf(bau);
+    const d = BAU_BY_ID[bau.typ];
+    const laeuft = l.status === 'laeuft' || l.status === 'prueft';
+    if (teile.warnmarke) {
+      const zeigen = l.status === 'strom' && !bau.aus;
+      teile.warnmarke.visible = zeigen && Math.floor(zeit * 2.5) % 2 === 0;
+    }
+    switch (bau.typ) {
+      case 'rechen': {
+        const p = l.phase || 0;
+        // Kolben fährt aus (0..0.5) und zieht zurück (0.5..1)
+        const hub = laeuft ? (p < 0.5 ? p / 0.5 : 1 - (p - 0.5) / 0.5) : 0;
+        if (teile.kolben) teile.kolben.position.x = (teile.kolben.userData.x0 ?? (teile.kolben.userData.x0 = teile.kolben.position.x)) + hub * 0.55;
+        if (teile.kamm) {
+          teile.kamm.position.x = (teile.kamm.userData.x0 ?? (teile.kamm.userData.x0 = teile.kamm.position.x)) + hub * 0.55;
+          teile.kamm.rotation.z = laeuft && p > 0.5 ? -0.35 * Math.sin(((p - 0.5) / 0.5) * Math.PI) : 0;
+        }
+        break;
+      }
+      case 'arm': case 'vorrangarm': {
+        armStellen(bau, obj, teile, dt);
+        if (teile.bake) {
+          const m = teile.bake.material;
+          if (m && m.emissive) m.emissiveIntensity = laeuft ? 0.6 + 0.6 * Math.max(0, Math.sin(zeit * 8)) : 0.1;
+        }
+        break;
+      }
+      case 'generator': {
+        const brennt = !!l.brennt;
+        if (teile.feuer) {
+          teile.feuer.visible = brennt;
+          const f = 0.8 + 0.2 * Math.sin(zeit * 17) + 0.15 * Math.sin(zeit * 29);
+          teile.feuer.scale.setScalar(brennt ? f : 0.01);
+          if (teile.feuer.material && teile.feuer.material.emissive) teile.feuer.material.emissiveIntensity = brennt ? 1.2 * f : 0;
+        }
+        if (teile.heufuellung) teile.heufuellung.scale.y = 0.1 + 0.9 * Math.min(1, (bau.brenn || 0) / BRENN_MAX);
+        if (brennt && teile.rauchPunkt && Math.random() < dt * 5) {
+          teile.rauchPunkt.getWorldPosition(vec);
+          rauchAusstossen(vec.x, vec.y, vec.z);
+        }
+        break;
+      }
+      case 'scanner': {
+        if (teile.trommel && laeuft) teile.trommel.rotation.x += dt * 5;
+        if (teile.lampe && teile.lampe.material && teile.lampe.material.emissive) {
+          const wartet = (bau.nadeln || []).length > 0;
+          teile.lampe.material.emissive.setHex(wartet ? 0xffc400 : laeuft ? 0x3cff6a : 0x333333);
+          teile.lampe.material.emissiveIntensity = wartet ? 1 + Math.sin(zeit * 6) * 0.6 : laeuft ? 1 : 0.2;
+        }
+        break;
+      }
+      case 'radar':
+        if (teile.schuessel && laeuft) teile.schuessel.rotation.y += dt * 1.6;
+        break;
+      case 'presse': case 'brikett':
+        if (teile.stempel) teile.stempel.position.y = (teile.stempel.userData.y0 ?? (teile.stempel.userData.y0 = teile.stempel.position.y)) - (laeuft ? (0.5 - 0.5 * Math.cos((bau.fort || 0) * Math.PI * 2)) * 0.3 : 0);
+        break;
+      case 'pellet':
+        if (teile.scheibe && laeuft) teile.scheibe.rotation.y += dt * 9;
+        break;
+      case 'wickler':
+        if (teile.ring && laeuft) teile.ring.rotation.x += dt * 4;
+        break;
+      case 'pulper':
+        if (teile.ruehrer && laeuft) teile.ruehrer.rotation.y += dt * 3;
+        break;
+      case 'papier':
+        if (teile.walzen && laeuft) teile.walzen.children.forEach((w) => { w.rotation.z += dt * 4; });
+        break;
+      case 'brunnen':
+        if (teile.pumpe && laeuft) teile.pumpe.rotation.z = Math.sin(zeit * 3) * 0.35;
+        break;
+      case 'weiche':
+        if (teile.klappe) {
+          const ziel = (bau.modus === 'links' || bau.modus === 'vorrangLinks') ? 0.35 : (bau.modus === 'rechts' || bau.modus === 'vorrangRechts') ? -0.35 : (bau.seite ? -0.35 : 0.35);
+          teile.klappe.rotation.y += (ziel - teile.klappe.rotation.y) * Math.min(1, dt * 8);
+        }
+        break;
+      case 'rohrwerfer':
+        if (teile.rohr) teile.rohr.rotation.y = bau.winkel || 0;
+        break;
+      case 'heulift':
+        if (teile.korb && laeuft) teile.korb.position.y = 0.3 + ((zeit * 0.6) % 1) * 2.2;
+        break;
+      case 'lampe': {
+        e.hell = (bau.aus ? 0 : (l.strom || 0)) * (bau.hell ?? 1);
+        if (teile.schirm && teile.schirm.material && teile.schirm.material.emissive) teile.schirm.material.emissiveIntensity = e.hell * 1.5;
+        break;
+      }
+      default:
+        break;
+    }
+    if (d.kw > 0 && teile.anzeige && teile.anzeige.material && teile.anzeige.material.emissive) {
+      teile.anzeige.material.emissive.setHex(l.status === 'strom' ? 0xff3322 : laeuft ? 0x33ff66 : 0xffaa22);
+    }
+  }
+
+  /** Den Greifarm so stellen, dass der Greifer auf greiferPunkt zeigt (einfache Zwei-Glieder-Kinematik). */
+  function armStellen(bau, obj, teile, dt) {
+    const ziel = greiferPunkt(bau);
+    const d = BAU_BY_ID[bau.typ];
+    const basisY = (bau.y || 0) + (teile.schulter ? teile.schulter.position.y : d.h * 0.45);
+    const dx = ziel[0] - bau.x;
+    const dz = ziel[2] - bau.z;
+    const weltWinkel = Math.atan2(-dz, dx);
+    const drehung = weltWinkel - (bau.rot || 0);
+    const r = Math.hypot(dx, dz);
+    const h = ziel[1] - basisY;
+    const l1 = teile.schulter && teile.schulter.userData.laenge ? teile.schulter.userData.laenge : 1.1;
+    const l2 = teile.ellbogen && teile.ellbogen.userData.laenge ? teile.ellbogen.userData.laenge : 1.1;
+    const dist = Math.min(l1 + l2 - 0.01, Math.max(0.2, Math.hypot(r, h)));
+    const cosE = (l1 * l1 + l2 * l2 - dist * dist) / (2 * l1 * l2);
+    const ellbogen = Math.PI - Math.acos(Math.max(-1, Math.min(1, cosE)));
+    const cosS = (l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist);
+    const schulter = Math.atan2(h, r) + Math.acos(Math.max(-1, Math.min(1, cosS)));
+    const k = Math.min(1, dt * 14);
+    const glatt = (alt, neu) => alt + (neu - alt) * k;
+    if (teile.drehteller) {
+      let w = drehung - teile.drehteller.rotation.y;
+      w = Math.atan2(Math.sin(w), Math.cos(w));
+      teile.drehteller.rotation.y += w * k;
+    }
+    // Glieder zeigen in Ruhe nach oben (+y); Drehung um z kippt sie nach vorn (+x)
+    if (teile.schulter) teile.schulter.rotation.z = glatt(teile.schulter.rotation.z, schulter - Math.PI / 2);
+    if (teile.ellbogen) teile.ellbogen.rotation.z = glatt(teile.ellbogen.rotation.z, -ellbogen);
+    if (teile.handgelenk) teile.handgelenk.rotation.z = glatt(teile.handgelenk.rotation.z, -(schulter - Math.PI / 2) + ellbogen - Math.PI / 2);
+    if (teile.greifer) {
+      const zu = lauf(bau).job && lauf(bau).job.g ? 1 : 0;
+      teile.greifer.children.forEach((f, i) => { f.rotation.x = (i % 2 ? 1 : -1) * (0.35 - zu * 0.3); });
+    }
+  }
+
+  function rauchAusstossen(x, y, z) {
+    const r = rauch[rauchNaechster++ % rauch.length];
+    r.sp.visible = true;
+    r.sp.position.set(x, y, z);
+    r.t = 0;
+    r.leben = 2.4 + Math.random();
+    r.vx = (Math.random() - 0.5) * 0.3;
+    r.vz = (Math.random() - 0.5) * 0.3;
+  }
+
+  /* -------------------------------- Stücke zeichnen */
+  const zaehler = {};
+  function stueckSetzen(art, x, y, z, drehY, kippen, skalierung) {
+    const im = stueckMeshes[art];
+    const i = zaehler[art] || 0;
+    if (!im || i >= MAX_STUECKE) return;
+    euler.set(kippen, drehY, kippen * 0.6);
+    quat.setFromEuler(euler);
+    skal.setScalar(skalierung);
+    vec.set(x, y, z);
+    matrix.compose(vec, quat, skal);
+    im.setMatrixAt(i, matrix);
+    zaehler[art] = i + 1;
+  }
+
+  function stueckeZeichnen(s, netz, zeit) {
+    for (const art of Object.keys(stueckMeshes)) zaehler[art] = 0;
+    let glanz = 0;
+    for (const g of s.gegenstaende) {
+      if (g.ort === 'hand' || g.ort === 'weg') continue;
+      const sk = g.art === 'roh' ? Math.max(0.75, Math.min(1.8, Math.cbrt(g.halme / 20))) : 1;
+      const hoehe = g.art === 'roh' ? 0.11 * sk : GROESSE[g.art] * 0.75;
+      const kippen = g.ort === 'flug' ? (g.dreh || 0) : 0;
+      stueckSetzen(g.art, g.x, g.y + hoehe, g.z, (g.dreh || 0) + (g.id % 7) * 0.9, kippen, sk);
+      if (g.nadel >= 0 && g.ort === 'boden' && glanz < glanzPool.length) {
+        const sp = glanzPool[glanz++];
+        sp.visible = true;
+        sp.position.set(g.x, g.y + hoehe * 2 + 0.05, g.z);
+        sp.scale.setScalar(0.25 + 0.15 * Math.abs(Math.sin(zeit * 3 + g.id)));
+      }
+    }
+    for (let i = glanz; i < glanzPool.length; i++) glanzPool[i].visible = false;
+    // Einträge in Heutreppe und Heulift
+    for (const bau of netz.maschinenAlle) {
+      if (!bau.innen || !bau.innen.length) continue;
+      for (const r of bau.innen) {
+        const p = innenPunkt(bau, r.t);
+        const sk = r.art === 'roh' ? Math.max(0.75, Math.min(1.8, Math.cbrt(r.halme / 20))) : 1;
+        stueckSetzen(r.art, p[0], p[1] + (r.art === 'roh' ? 0.11 * sk : GROESSE[r.art] * 0.75), p[2], bau.rot || 0, 0, sk);
+      }
+    }
+    for (const [art, im] of Object.entries(stueckMeshes)) {
+      im.count = zaehler[art];
+      im.instanceMatrix.needsUpdate = true;
+    }
+  }
+
+  /* -------------------------------- Leitungen */
+  function leitungenZeichnen(netz) {
+    if (netz.leitungen === leitungsQuelle) return;
+    leitungsQuelle = netz.leitungen;
+    if (leitungen) { wurzel.remove(leitungen); leitungen.geometry.dispose(); }
+    const geos = [];
+    for (const l of netz.leitungen) {
+      const lang = Math.hypot(l.b[0] - l.a[0], l.b[2] - l.a[2]);
+      const pts = objDurchhang(l.a, l.b, Math.min(0.9, 0.04 * lang + (l.fall ? 0.05 : 0.15)));
+      const kurve = new THREE.CatmullRomCurve3(pts);
+      geos.push(new THREE.TubeGeometry(kurve, 14, 0.014, 4, false));
+    }
+    if (!geos.length) { leitungen = null; return; }
+    leitungen = new THREE.Mesh(objVereinen(geos), MAT.leitung);
+    wurzel.add(leitungen);
+  }
+
+  /* -------------------------------- Vorschau beim Bauen */
+  const geisterCache = new Map();
+  let geistAktiv = null;
+  const matOk = objHologramm(true);
+  const matNein = objHologramm(false);
+  let bandGeist = null;
+  let linienGeist = null;
+  const ankerMat = new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.8, depthWrite: false });
+  const ankerZiel = new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.95, depthWrite: false });
+  const anker = Array.from({ length: 24 }, () => {
+    const m = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 6, 20), ankerMat);
+    m.rotation.x = Math.PI / 2;
+    m.visible = false;
+    vorschauGruppe.add(m);
+    return m;
+  });
+  const markierung = new THREE.Box3Helper(new THREE.Box3(), 0xff5533);
+  markierung.visible = false;
+  vorschauGruppe.add(markierung);
+
+  function geistHolen(typ) {
+    if (!geisterCache.has(typ)) {
+      const g = maschinenModell(typ, { qualitaet });
+      objEinfaerben(g, matOk);
+      // Pfeil nach vorn (+x), damit man sieht, wohin die Maschine schaut
+      const pfeil = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.4, 3), matOk);
+      pfeil.rotation.z = -Math.PI / 2;
+      pfeil.position.set(BAU_BY_ID[typ].b / 2 + 0.35, 0.08, 0);
+      pfeil.name = 'pfeil';
+      g.add(pfeil);
+      vorschauGruppe.add(g);
+      geisterCache.set(typ, g);
+    }
+    return geisterCache.get(typ);
+  }
+
+  return {
+    wurzel,
+    /** Jedes Bild: Bauten abgleichen, bewegen, Stücke, Leitungen, Laster, Drohnen. */
+    schritt(s, netz, dt, zeit, kamera = null) {
+      abgleichen(s);
+      // laufendes Gummi
+      bandTex.offset.y -= (werte(s).band * dt) / 0.5;
+      for (const e of eintraege.values()) if (e.bau.typ !== 'band' && !BAU_BY_ID[e.bau.typ].linie) maschineBewegen(e, s, dt, zeit);
+      // Aufbau-Effekte
+      for (let i = aufbauEffekte.length - 1; i >= 0; i--) {
+        const a = aufbauEffekte[i];
+        a.t += dt;
+        const u = Math.min(1, a.t / 0.7);
+        a.mat.opacity = 0.5 * (1 - u);
+        a.obj.scale.setScalar(0.94 + 0.06 * u);
+        if (u >= 1) { vorschauGruppe.remove(a.geist); a.mat.dispose(); aufbauEffekte.splice(i, 1); }
+      }
+      stueckeZeichnen(s, netz, zeit);
+      leitungenZeichnen(netz);
+      lichterVerteilen(kamera);
+      // Rauch
+      for (const r of rauch) {
+        if (!r.sp.visible) continue;
+        r.t += dt;
+        const u = r.t / r.leben;
+        if (u >= 1) { r.sp.visible = false; continue; }
+        r.sp.position.x += r.vx * dt;
+        r.sp.position.z += r.vz * dt;
+        r.sp.position.y += dt * (0.9 - u * 0.3);
+        r.sp.scale.setScalar(0.4 + u * 1.6);
+        r.sp.material.opacity = 0.7 * (1 - u);
+      }
+      // Radar
+      if (netz.radar) {
+        const n = s.nadeln[netz.radar.nadel];
+        if (n && n.zustand === 'versteckt') {
+          radarStrahl.visible = true;
+          radarStrahl.position.set(n.x, 7, n.z);
+          radarMat.opacity = 0.18 + 0.2 * Math.abs(Math.sin(zeit * 4));
+        } else radarStrahl.visible = false;
+      } else radarStrahl.visible = false;
+      // Laster
+      const lage = lasterLage(s);
+      laster.visible = lage.sichtbar;
+      if (lage.sichtbar) {
+        laster.position.set(lage.x, 0, lage.z);
+        laster.rotation.y = lage.rot;
+        for (const r of lasterRaeder) r.rotation.z -= dt * lage.fahrt * 6;
+        const n = s.laster.zustand === 'steht' || s.laster.zustand === 'faehrt' ? Math.min(ladung.count = Math.min(48, s.laster.stapel), 48) : 0;
+        ladung.count = n;
+        for (let i = 0; i < n; i++) {
+          const reihe = Math.floor(i / 12);
+          const k = i % 12;
+          const lx = -1.2 + (k % 4) * 0.5 - (LASTER_BETT.z1 - LASTER_BETT.z0) / 2 + 1.0;
+          const lz = -0.6 + Math.floor(k / 4) * 0.55;
+          const [wx, wz] = lokalZuWelt({ x: lage.x, z: lage.z, rot: lage.rot }, lx - 0.9, lz);
+          vec.set(wx, LASTER_BETT.y + 0.15 + reihe * 0.31, wz);
+          quat.setFromAxisAngle(achseY, lage.rot);
+          skal.setScalar(1);
+          matrix.compose(vec, quat, skal);
+          ladung.setMatrixAt(i, matrix);
+        }
+        ladung.instanceMatrix.needsUpdate = true;
+      } else ladung.count = 0;
+      // Drohnen
+      const liste = drohnenListe(s);
+      while (drohnen.length < liste.length) {
+        const m = drohnenVorlage.clone(true);
+        const rotoren = [];
+        m.traverse((o) => { if (o.name && o.name.startsWith('rotor')) rotoren.push(o); });
+        wurzel.add(m);
+        drohnen.push({ m, rotoren });
+      }
+      while (drohnen.length > liste.length) wurzel.remove(drohnen.pop().m);
+      liste.forEach((d, i) => {
+        const e = drohnen[i];
+        e.m.position.set(d.x, d.y, d.z);
+        e.m.rotation.y = d.rot || 0;
+        for (const r of e.rotoren) r.rotation.y += dt * (d.zustand === 'ruht' ? 2 : 40);
+      });
+    },
+
+    /** Welcher Bau liegt unter dem Strahl? */
+    trefferBau(raycaster, maxT = 6) {
+      raycaster.far = maxT;
+      const treffer = raycaster.intersectObjects(bautenGruppe.children, true);
+      for (const t of treffer) {
+        const id = t.object.userData.bauId;
+        if (id == null) continue;
+        const e = eintraege.get(id);
+        if (e) return { bau: e.bau, punkt: t.point, abstand: t.distance };
+      }
+      return null;
+    },
+
+    /** Grünes (oder rotes) Modell an der Stelle, an der gebaut würde. typ null: weg. */
+    geist(typ, lage, ok) {
+      if (geistAktiv && (!typ || geistAktiv.typ !== typ)) { geistAktiv.obj.visible = false; geistAktiv = null; }
+      if (!typ) return;
+      const g = geistHolen(typ);
+      g.visible = true;
+      g.position.set(lage.x, lage.y || 0, lage.z);
+      g.rotation.y = lage.rot || 0;
+      const mat = ok ? matOk : matNein;
+      if (g.userData.mat !== mat) { objEinfaerben(g, mat); g.userData.mat = mat; }
+      geistAktiv = { typ, obj: g };
+    },
+
+    /** Vorschau eines Bandes entlang der Eckpunkte. punkte null: weg. */
+    bandVorschau(punkte, ok) {
+      if (bandGeist) { vorschauGruppe.remove(bandGeist); bandGeist.geometry.dispose(); bandGeist = null; }
+      if (!punkte || punkte.length < 2) return;
+      const bahn = bandBahn(punkte);
+      bandGeist = new THREE.Mesh(objExtrudieren(bahn.map((p) => [p[0], p[1] + 0.02, p[2]]), BAND_PROFIL_RAHMEN, 1), ok ? matOk : matNein);
+      vorschauGruppe.add(bandGeist);
+    },
+
+    /** Vorschau eines Linienbaus (Wand, Geländer, Leitung) von a nach b. */
+    linienVorschau(typ, a, b, ok) {
+      if (linienGeist) { vorschauGruppe.remove(linienGeist); linienGeist = null; }
+      if (!typ || !a || !b) return;
+      linienGeist = linienObjekt({ typ, a, b });
+      objEinfaerben(linienGeist, ok ? matOk : matNein);
+      vorschauGruppe.add(linienGeist);
+    },
+
+    /** Einrastpunkte zeigen: [{ x, y, z, ziel }] (ziel = der gerade gewählte). */
+    ankerZeigen(liste = []) {
+      anker.forEach((m, i) => {
+        const a = liste[i];
+        m.visible = !!a;
+        if (!a) return;
+        m.position.set(a.x, a.y + 0.03, a.z);
+        m.material = a.ziel ? ankerZiel : ankerMat;
+        m.scale.setScalar(a.ziel ? 1.3 : 1);
+      });
+    },
+
+    /** Einen Bau markieren (Abbauen, Antippen). bau null: weg. */
+    markieren(bau, farbe = 0xff5533) {
+      if (!bau) { markierung.visible = false; return; }
+      const e = eintraege.get(bau.id);
+      if (!e) { markierung.visible = false; return; }
+      markierung.box.setFromObject(e.obj);
+      markierung.material.color.setHex(farbe);
+      markierung.visible = true;
+    },
+
+    vorschauWeg() {
+      this.geist(null);
+      this.bandVorschau(null);
+      this.linienVorschau(null);
+      this.ankerZeigen([]);
+      this.markieren(null);
+    },
+  };
 }
 
 // ---- src/steuerung.js
@@ -7379,6 +8571,7 @@ const ICON = {
   eimer: '<path d="M5 8h14l-2 12H7Z"/><path d="M5 8c0-3 3-5 7-5s7 2 7 5"/>',
   puste: '<path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.65-7 10-7 10Z"/>',
   sprung: '<path d="M12 20V6M6 11l6-6 6 6"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.5"/>',
 };
 
 function icon(name, klasse = 'ic') {
@@ -7445,13 +8638,16 @@ function oberflaecheBauen(wurzel, rueckruf) {
   el.aktion.addEventListener('lostpointercapture', los);
   el.sprung = h('button', { class: 'sprungknopf', 'aria-label': 'Springen' }, icon('sprung'));
   el.sprung.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); rueckruf.sprung(); });
+  // Kleiner Knopf „Ansehen“: öffnet die Tafel einer Maschine, auch wenn man Heu trägt
+  el.info = h('button', { class: 'infoknopf', 'aria-label': 'Ansehen', hidden: true }, icon('info'));
+  el.info.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); if (rueckruf.info) rueckruf.info(); });
 
   el.toasts = h('div', { class: 'toasts', 'aria-live': 'polite' });
   el.modal = h('div', { class: 'modalhalter' });
   el.schwebe = h('div', { class: 'schwebetexte' });
 
   const hud = h('div', { class: 'hud' }, kasse, leiste, el.mission, el.fadenkreuz, el.hinweis, el.detektor,
-    status, el.leiste, el.aktion, el.sprung, el.schwebe, el.toasts, el.modal);
+    status, el.leiste, el.aktion, el.sprung, el.info, el.schwebe, el.toasts, el.modal);
   wurzel.append(hud);
 
   /* ------------------------------ Toasts und Einblendungen */
@@ -7556,6 +8752,10 @@ function oberflaecheBauen(wurzel, rueckruf) {
     hinweisZeigen(text) {
       setzeText(el.hinweis, text || '');
       el.hinweis.classList.toggle('sichtbar', !!text);
+    },
+    infoZeigen(sichtbar) {
+      if (el.info.hidden === !sichtbar) return;
+      el.info.hidden = !sichtbar;
     },
     aktionZeigen(text, aktiv = true) {
       setzeText(el.aktionText, text);
@@ -8021,6 +9221,853 @@ function anleitungZeigen(ui) {
 }
 
 
+// ---- src/ui/bauen.js
+// Baukatalog und Bau-Einblendung. Der Katalog zeigt je Kategorie eine Karte
+// pro Bau mit Preis, Strombedarf und Stückzahl; Gesperrtes nennt die
+// Forschung, die es freischaltet, Geschenke stehen in Gold. Die Einblendung
+// begleitet das Platzieren: oben eine Karte mit Bau, Preis und Hinderungsgrund,
+// rechts über dem Aktionsknopf Bestätigen, Drehen, Näher, Weiter, Einrasten.
+// Dazu kleine Helfer, die auch Maschinentafel und Auftragstafel nutzen.
+
+
+/** Zuletzt gewählter Reiter im Katalog; null, bis der Katalog einmal offen war. */
+let katalogReiter = null;
+
+/** Zahl mit Komma und höchstens einer Nachkommastelle: 2,5 · 15 · 0,5. */
+function kommaZahl(v) {
+  return String(Math.round(v * 10) / 10).replace('.', ',');
+}
+
+/** hidden nur anfassen, wenn es sich ändert. */
+function sichtbarSetzen(e, sichtbar) {
+  if (e.hidden === sichtbar) e.hidden = !sichtbar;
+}
+
+/**
+ * Ruft fn alle ms Millisekunden, solange el im Dokument hängt. Steht die Tafel
+ * noch in der Warteschlange der Modals, wartet die Uhr bis zu einer Minute.
+ */
+function solangeOffen(el, ms, fn) {
+  let warDrin = false;
+  let leer = 0;
+  const uhr = setInterval(() => {
+    if (!el.isConnected) {
+      leer += ms;
+      if (warDrin || leer > 60000) clearInterval(uhr);
+      return;
+    }
+    warDrin = true;
+    fn();
+  }, ms);
+  return uhr;
+}
+
+function stromHinweis(kw) {
+  if (kw > 0) return `braucht ${kommaZahl(kw)} kW`;
+  if (kw < 0) return `liefert ${kommaZahl(-kw)} kW`;
+  return '';
+}
+
+function planHinweis(b) {
+  const t = b.frei ? TECH_NACH_ID[PLAN_FUER[b.frei]] : null;
+  return t ? `Forschung: ${t.name}` : 'Noch gesperrt';
+}
+
+/**
+ * Baukatalog als Modal. rueck: { waehlen(typ), abbauen() }.
+ * Antippen einer freien Karte schließt den Katalog und ruft waehlen(typ);
+ * zu teure Bauten bleiben wählbar, das Platzieren erklärt dann den Grund.
+ */
+function baukatalogZeigen(ui, s, rueck) {
+  const geschenkDa = (typ) => (s.geschenke[typ] || 0) > 0;
+  if (!BAU_KATEGORIEN.some((k) => k.id === katalogReiter)) {
+    const mitGeschenk = BAUTEN.find((b) => geschenkDa(b.id));
+    katalogReiter = mitGeschenk ? mitGeschenk.kat : BAU_KATEGORIEN[0].id;
+  }
+  const hinweis = h('p', { class: 'baugeschenke', hidden: true });
+  const reiter = {};
+  const reiterReihe = h('div', { class: 'bautabs', role: 'tablist', 'aria-label': 'Kategorien' },
+    BAU_KATEGORIEN.map((k) => {
+      reiter[k.id] = h('button', {
+        class: 'bautab', type: 'button', role: 'tab',
+        onclick: () => { katalogReiter = k.id; zeichnen(); },
+      }, k.name);
+      return reiter[k.id];
+    }));
+  const raster = h('div', { class: 'baukarten', role: 'tabpanel' });
+  const inhalt = h('div', {}, hinweis, reiterReihe, raster);
+  let karten = [];
+
+  function karteBauen(b) {
+    const preis = h('span', { class: 'bkpreis num' });
+    const anzahl = h('span', { class: 'bkgebaut num' });
+    const strom = stromHinweis(b.kw);
+    const plan = h('span', { class: 'bkplan' });
+    const knopf = h('button', {
+      class: 'baukarte', type: 'button',
+      onclick: () => {
+        if (!bauFrei(s, b.id)) return;
+        ui.modalSchliessen();
+        rueck.waehlen(b.id);
+      },
+    }, h('b', { class: 'bkname' }, b.name), h('span', { class: 'bktext' }, b.text || ''),
+    h('span', { class: 'bkfuss' }, preis, anzahl), strom ? h('span', { class: 'bkstrom' }, strom) : null, plan);
+    const aktualisieren = () => {
+      const frei = bauFrei(s, b.id);
+      const geschenke = s.geschenke[b.id] || 0;
+      const kosten = bauKosten(s, b.id, b.prometer ? 1 : 0);
+      const n = bauAnzahl(s, b.id);
+      if (knopf.disabled === frei) knopf.disabled = !frei;
+      knopf.classList.toggle('gesperrt', !frei);
+      knopf.classList.toggle('geschenk', geschenke > 0);
+      if (geschenke > 0) setzeText(preis, geschenke > 1 ? `${geschenke} Geschenke` : 'Geschenk');
+      else setzeText(preis, b.prometer ? `je Meter ${geld(kosten)}` : geld(kosten));
+      preis.classList.toggle('geschenk', geschenke > 0);
+      preis.classList.toggle('teuer', frei && !geschenke && s.geld < kosten);
+      setzeText(anzahl, n > 0 ? `gebaut: ${n}` : '');
+      sichtbarSetzen(anzahl, n > 0);
+      setzeText(plan, frei ? '' : planHinweis(b));
+      sichtbarSetzen(plan, !frei);
+    };
+    return { knopf, aktualisieren };
+  }
+
+  function aktualisieren() {
+    const warten = Object.entries(s.geschenke).filter(([typ, n]) => n > 0 && BAU_NACH_ID[typ]);
+    const summe = warten.reduce((n, [, m]) => n + m, 0);
+    setzeText(hinweis, summe ? `${summe > 1 ? 'Geschenke warten' : 'Geschenk wartet'}: ${
+      warten.map(([typ, n]) => (n > 1 ? `${n}× ${BAU_NACH_ID[typ].name}` : BAU_NACH_ID[typ].name)).join(', ')}` : '');
+    sichtbarSetzen(hinweis, summe > 0);
+    for (const k of BAU_KATEGORIEN) reiter[k.id].classList.toggle('geschenk', BAUTEN.some((b) => b.kat === k.id && geschenkDa(b.id)));
+    for (const k of karten) k.aktualisieren();
+    const kasse = inhalt.closest('.modal')?.querySelector(':scope > .ober');
+    if (kasse) setzeText(kasse, `Kasse: ${geld(s.geld)}`);
+  }
+
+  function zeichnen() {
+    for (const k of BAU_KATEGORIEN) {
+      reiter[k.id].classList.toggle('gewaehlt', k.id === katalogReiter);
+      reiter[k.id].setAttribute('aria-selected', k.id === katalogReiter ? 'true' : 'false');
+    }
+    karten = BAUTEN.filter((b) => b.kat === katalogReiter).map(karteBauen);
+    raster.replaceChildren(...karten.map((k) => k.knopf));
+    aktualisieren();
+  }
+
+  zeichnen();
+  ui.modal({
+    ober: `Kasse: ${geld(s.geld)}`, titel: 'Baukatalog', inhalt, klasse: 'baukatalog',
+    knoepfe: [{ text: 'Abbauen', aktion: () => rueck.abbauen() }, { text: 'Schließen', klasse: 'primaer' }],
+  });
+  // Den gemerkten Reiter in die Reihe holen, falls er rechts außerhalb liegt.
+  const tab = reiter[katalogReiter];
+  if (tab.isConnected) reiterReihe.scrollLeft += tab.getBoundingClientRect().left - reiterReihe.getBoundingClientRect().left - 16;
+  solangeOffen(inhalt, 500, aktualisieren);
+}
+
+/**
+ * Einblendung beim Platzieren, hängt unter wurzel (dort, wo auch das HUD liegt).
+ * rueck: { setzen(), drehen(), naeher(), weiter(), einrasten(), abbrechen() }.
+ * zeigen(info) darf jedes Bild laufen, es ändert das DOM nur bei neuen Werten.
+ * info: { titel, zeile, grund, ok, schritt: 'setzen'|'anfang'|'ende'|'abbau',
+ *         einrasten: true|false|null (null blendet den Schalter aus), drehen, abstand }.
+ */
+function bauHudBauen(wurzel, rueck) {
+  const BESTAETIGEN = { setzen: 'Hier bauen', anfang: 'Anfang setzen', ende: 'Ende setzen', abbau: 'Abbauen' };
+  const knopf = (klasse, text, fn) => h('button', {
+    class: `bhknopf${klasse ? ` ${klasse}` : ''}`, type: 'button',
+    onclick: (ev) => { ev.stopPropagation(); fn(); },
+  }, text);
+  const titel = h('b', { class: 'bhtitel' });
+  const zeile = h('span', { class: 'bhzeile num' });
+  const grund = h('span', { class: 'bhgrund', hidden: true });
+  const zu = h('button', {
+    class: 'bhzu', type: 'button', 'aria-label': 'Abbrechen', title: 'Abbrechen',
+    onclick: (ev) => { ev.stopPropagation(); rueck.abbrechen(); },
+  }, icon('zu'));
+  const karte = h('div', { class: 'bhkarte', role: 'status' }, h('div', { class: 'bhtexte' }, titel, zeile, grund), zu);
+  const naeher = knopf('', 'Näher', () => rueck.naeher());
+  const weiter = knopf('', 'Weiter', () => rueck.weiter());
+  const drehen = knopf('', 'Drehen', () => rueck.drehen());
+  const einrasten = knopf('schalter', 'Einrasten: an', () => rueck.einrasten());
+  const bestaetigen = knopf('bestaetigen', BESTAETIGEN.setzen, () => rueck.setzen());
+  const reiheAbstand = h('div', { class: 'bhreihe' }, naeher, weiter);
+  const reiheDrehen = h('div', { class: 'bhreihe' }, drehen, einrasten);
+  const leiste = h('div', { class: 'bhleiste' }, reiheAbstand, reiheDrehen, bestaetigen);
+  const el = h('div', { class: 'bauhud', hidden: true }, h('div', { class: 'bhband' }, karte), leiste);
+  // Nichts davon darf bis zur 3D-Fläche durchgehen (Tippen hieße dort: Aktion).
+  for (const x of [karte, leiste]) x.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+  wurzel.append(el);
+
+  const alt = { an: false, ok: undefined, schritt: undefined, rast: undefined };
+  function zeigen(info) {
+    sichtbarSetzen(el, true);
+    if (!alt.an) { alt.an = true; wurzel.classList.add('bauend'); }
+    setzeText(titel, info.titel || '');
+    setzeText(zeile, info.zeile || '');
+    sichtbarSetzen(zeile, !!info.zeile);
+    setzeText(grund, info.grund || '');
+    sichtbarSetzen(grund, !!info.grund);
+    const ok = !!info.ok;
+    if (alt.ok !== ok) {
+      alt.ok = ok;
+      karte.classList.toggle('nein', !ok);
+      bestaetigen.classList.toggle('matt', !ok);
+      bestaetigen.setAttribute('aria-disabled', ok ? 'false' : 'true');
+    }
+    const schritt = BESTAETIGEN[info.schritt] ? info.schritt : 'setzen';
+    if (alt.schritt !== schritt) {
+      alt.schritt = schritt;
+      setzeText(bestaetigen, BESTAETIGEN[schritt]);
+      bestaetigen.classList.toggle('gefahr', schritt === 'abbau');
+    }
+    const rast = info.einrasten == null ? null : !!info.einrasten;
+    if (alt.rast !== rast) {
+      alt.rast = rast;
+      sichtbarSetzen(einrasten, rast !== null);
+      if (rast !== null) {
+        setzeText(einrasten, rast ? 'Einrasten: an' : 'Einrasten: aus');
+        einrasten.classList.toggle('an', rast);
+        einrasten.setAttribute('aria-pressed', rast ? 'true' : 'false');
+      }
+    }
+    sichtbarSetzen(drehen, !!info.drehen);
+    sichtbarSetzen(naeher, !!info.abstand);
+    sichtbarSetzen(weiter, !!info.abstand);
+    sichtbarSetzen(reiheAbstand, !!info.abstand);
+    sichtbarSetzen(reiheDrehen, !!info.drehen || rast !== null);
+  }
+  function verstecken() {
+    sichtbarSetzen(el, false);
+    if (alt.an) { alt.an = false; wurzel.classList.remove('bauend'); }
+  }
+  return { zeigen, verstecken, el };
+}
+
+// ---- src/ui/maschine.js
+// Maschinentafel: was ein Bau gerade tut (Status mit farbigem Punkt, Werte aus
+// maschinenZeilen) und die Schalter und Regler je Typ: Ein/Aus, Wurfweite,
+// Weichenmodus, Greiffilter, Richtung und Weite des Rohrwerfers, Helligkeit,
+// Brennstoffvorrat, Nadel aus dem Scanner, das ganze Netz am Mast. Abbauen
+// fragt nach, wenn eine Nadel darin steckt. Solange die Tafel offen ist,
+// frischt sie sich alle 250 ms auf; Eingestelltes wird aus dem Bau gelesen.
+
+
+/** Farbe des Statuspunkts: gut (grün), warn (gelb), stoerung (rot), aus (grau). */
+const STATUS_PUNKT = {
+  laeuft: 'gut', bereit: 'gut', prueft: 'gut',
+  wartet: 'warn', voll: 'warn', stau: 'warn', leer: 'warn',
+  strom: 'stoerung', wasser: 'stoerung', aus: 'aus',
+};
+/** Bauten mit Ein/Aus auch ohne Strombedarf und Rezept. */
+const EIN_AUS_TYPEN = new Set(['weiche', 'vereiniger', 'rohrwerfer', 'heutreppe', 'heulift', 'rechen', 'arm', 'scanner',
+  'radar', 'brunnen', 'generator', 'lampe', 'drohnenstation']);
+const WEICHEN_MODI = [['wechsel', 'Abwechselnd'], ['links', 'Nur links'], ['rechts', 'Nur rechts'],
+  ['vorrangLinks', 'Vorrang links'], ['vorrangRechts', 'Vorrang rechts']];
+
+/** Rohrwerfer: Schieber rechts = nach rechts drehen (winkel wächst gegen den Uhrzeigersinn). */
+function richtungText(g) {
+  if (g === 0) return '0°, geradeaus';
+  if (Math.abs(g) >= 180) return '180°, nach hinten';
+  return `${Math.abs(g)}° nach ${g > 0 ? 'rechts' : 'links'}`;
+}
+
+/**
+ * Öffnet die Tafel zu einem Bau. rueck: { netz: () => netz, schalten(bau),
+ * einstellen(bau, feld, wert), abbauen(bau), nadelnNehmen(bau), netzSchalten(mast) }.
+ * Abbauen und Nadel herausnehmen schließen die Tafel, bevor sie zurückrufen.
+ */
+function maschinePanelZeigen(ui, s, bau, rueck) {
+  const d = BAU_NACH_ID[bau.typ];
+  if (!d) return;
+  const kat = BAU_KATEGORIEN.find((k) => k.id === d.kat);
+  const netzInfo = () => {
+    const netz = rueck.netz ? rueck.netz() : null;
+    return netz ? netzVon(netz, bau) : null;
+  };
+  const netzAus = () => {
+    const n = netzInfo();
+    return n ? n.masten.some((m) => m.aus) : !!bau.aus;
+  };
+  const eigeneDrohnen = () => drohnenListe(s).filter((dr) => dr.station === bau.id);
+  const auffrischen = [];
+
+  // Kopf: Status links, Schalter rechts
+  const punkt = h('span', { class: 'statuspunkt' });
+  const statusText = h('span', {});
+  const status = h('div', { class: 'tafelstatus', role: 'status' }, punkt, statusText);
+  let schalter = null;
+  if (bau.typ === 'mast') {
+    schalter = h('button', { class: 'knopf', type: 'button', onclick: () => { rueck.netzSchalten(bau); aktualisieren(); } });
+  } else if (d.kw !== 0 || d.rezept || EIN_AUS_TYPEN.has(bau.typ)) {
+    schalter = h('button', { class: 'knopf', type: 'button', onclick: () => { rueck.schalten(bau); aktualisieren(); } });
+  }
+  const kopf = h('div', { class: 'mtkopf' }, status, schalter);
+
+  function statusJetzt() {
+    if (bau.typ === 'mast') {
+      const n = netzInfo();
+      if (netzAus()) return ['aus', 'Netz aus'];
+      if (!n) return ['aus', 'Nicht verbunden'];
+      return [n.anteil >= 0.999 ? 'gut' : 'warn',
+        `${kommaZahl(n.angebot)} kW da, ${kommaZahl(n.bedarf)} kW gebraucht, ${prozent(n.anteil)}`];
+    }
+    let st = lauf(bau).status;
+    if (bau.aus) st = 'aus';
+    else if (bau.typ === 'drohnenstation') st = eigeneDrohnen().some((dr) => dr.zustand !== 'ruht') ? 'laeuft' : 'bereit';
+    else if (!st && d.kw > 0) st = (lauf(bau).strom || 0) > 0 ? 'laeuft' : 'strom';
+    else if (!st && schalter) st = 'bereit';
+    if (!st) return null;
+    // „leer“ heißt beim Rechen: kein Heu am Kamm; beim Generator: nichts zum Verbrennen.
+    const wort = bau.typ === 'generator' && st === 'leer' ? 'Kein Brennstoff' : STATUS_TEXT[st] || st;
+    return [STATUS_PUNKT[st] || 'aus', wort];
+  }
+
+  // Werte: maschinenZeilen und was nur die Tafel kennt
+  const zeilen = h('dl', { class: 'werte' });
+  let zeilenSchluessel = null;
+  let zellen = [];
+  function zeilenJetzt() {
+    const liste = maschinenZeilen(s, bau);
+    if (bau.typ === 'mast') {
+      const n = netzInfo();
+      if (n) {
+        const imNetz = [`${n.masten.length} ${n.masten.length === 1 ? 'Mast' : 'Masten'}`];
+        if (n.erzeuger.length) imNetz.push(`${n.erzeuger.length} ${n.erzeuger.length === 1 ? 'Generator' : 'Generatoren'}`);
+        imNetz.push(`${n.verbraucher.length} ${n.verbraucher.length === 1 ? 'Maschine' : 'Maschinen'}`);
+        liste.push(['Im Netz', imNetz.join(', ')], ['Hausanschluss', n.haus ? 'verbunden' : 'nicht verbunden']);
+      }
+    }
+    if (bau.typ === 'drohnenstation') {
+      const eigene = eigeneDrohnen();
+      const unterwegs = eigene.filter((dr) => dr.zustand !== 'ruht').length;
+      liste.push(['Drohnen', eigene.length ? `${eigene.length}${unterwegs ? ` (${unterwegs} unterwegs)` : ''}` : 'keine']);
+    }
+    return liste;
+  }
+  function zeilenZeigen() {
+    const liste = zeilenJetzt();
+    const schluessel = liste.map((z) => z[0]).join('|');
+    if (schluessel !== zeilenSchluessel) {
+      zeilenSchluessel = schluessel;
+      zellen = liste.map(() => h('dd', { class: 'num' }));
+      zeilen.replaceChildren(...liste.flatMap((z, i) => [h('dt', {}, z[0]), zellen[i]]));
+    }
+    liste.forEach((z, i) => setzeText(zellen[i], z[1]));
+    sichtbarSetzen(zeilen, liste.length > 0);
+  }
+
+  // Bausteine für Regler und Auswahl; beide lesen den Wert nach dem Rückruf aus dem Bau.
+  function regler(titel, min, max, schritt, lesen, schreiben, text) {
+    const wert = h('span', { class: 'num' });
+    const eingabe = h('input', {
+      type: 'range', class: 'regler', min: String(min), max: String(max), step: String(schritt),
+      value: String(lesen()), 'aria-label': titel,
+    });
+    const zeigen = () => setzeText(wert, text(lesen()));
+    eingabe.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+    eingabe.addEventListener('input', () => { schreiben(Number(eingabe.value)); zeigen(); });
+    eingabe.addEventListener('change', () => { eingabe.value = String(lesen()); zeigen(); });
+    zeigen();
+    return h('div', { class: 'mtteil' }, h('div', { class: 'regelkopf' }, h('span', {}, titel), wert), eingabe);
+  }
+  function wahl(titel, optionen, lesen, schreiben) {
+    const knoepfe = optionen.map(([id, name]) => h('button', {
+      class: 'chip', type: 'button', onclick: () => { schreiben(id); markieren(); },
+    }, name));
+    const markieren = () => {
+      const jetzt = lesen();
+      optionen.forEach(([id], i) => {
+        knoepfe[i].classList.toggle('gewaehlt', id === jetzt);
+        knoepfe[i].setAttribute('aria-pressed', id === jetzt ? 'true' : 'false');
+      });
+    };
+    markieren();
+    auffrischen.push(markieren);
+    const reihe = h('div', { class: 'chips' }, knoepfe);
+    reihe.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+    return h('div', { class: 'mtteil' }, h('p', { class: 'ober' }, titel), reihe);
+  }
+
+  const teile = [];
+  let nadelKnopf = null;
+  if (bau.typ === 'scanner') {
+    nadelKnopf = h('button', {
+      class: 'knopf nadelknopf', type: 'button', hidden: true,
+      onclick: () => {
+        if (!(bau.nadeln || []).length) return;
+        ui.modalSchliessen();
+        rueck.nadelnNehmen(bau);
+      },
+    });
+    auffrischen.push(() => {
+      const n = (bau.nadeln || []).length;
+      setzeText(nadelKnopf, n > 1 ? `${n} Nadeln herausnehmen` : 'Nadel herausnehmen');
+      sichtbarSetzen(nadelKnopf, n > 0);
+    });
+  }
+  if (bau.typ === 'rechen' || bau.typ === 'pellet') {
+    const standard = bau.typ === 'rechen' ? 2.5 : 3;
+    teile.push(regler('Wurfweite', d.wurf[0], d.wurf[1], 0.1, () => bau.weite ?? standard,
+      (v) => rueck.einstellen(bau, 'weite', v), (v) => `${kommaZahl(v)} m`));
+  }
+  if (bau.typ === 'weiche') {
+    teile.push(wahl('Verteilung', WEICHEN_MODI, () => bau.modus || 'wechsel', (id) => rueck.einstellen(bau, 'modus', id)));
+  }
+  if (bau.typ === 'arm' || bau.typ === 'vorrangarm') {
+    const filter = [['alle', 'Alles'], ...Object.entries(PRODUKTE).map(([id, p]) => [id, p.name])];
+    teile.push(wahl('Greift nach', filter, () => bau.filter || 'alle', (id) => rueck.einstellen(bau, 'filter', id)));
+  }
+  if (bau.typ === 'rohrwerfer') {
+    teile.push(regler('Richtung', -180, 180, 5, () => Math.round((-(bau.winkel || 0) * 180) / Math.PI),
+      (v) => rueck.einstellen(bau, 'winkel', (-v * Math.PI) / 180), richtungText));
+    teile.push(regler('Weite', 2, 20, 0.5, () => bau.weite ?? 8,
+      (v) => rueck.einstellen(bau, 'weite', v), (v) => `${kommaZahl(v)} m`));
+  }
+  if (bau.typ === 'lampe') {
+    teile.push(regler('Helligkeit', 0, 100, 5, () => Math.round((bau.hell ?? 1) * 100),
+      (v) => rueck.einstellen(bau, 'hell', v / 100), (v) => `${v} %`));
+  }
+  if (bau.typ === 'generator') {
+    const fuellung = h('div', { class: 'fuellung' });
+    const vorrat = h('span', { class: 'num' });
+    teile.push(h('div', { class: 'mtteil' }, h('div', { class: 'regelkopf' }, h('span', {}, 'Vorrat'), vorrat),
+      h('div', { class: 'fortschritt brenn', role: 'img', 'aria-label': 'Brennstoffvorrat' }, fuellung)));
+    auffrischen.push(() => {
+      const teil = Math.max(0, Math.min(1, (bau.brenn || 0) / BRENN_MAX));
+      const breite = `${Math.round(teil * 100)}%`;
+      if (fuellung.style.width !== breite) fuellung.style.width = breite;
+      setzeText(vorrat, prozent(teil));
+    });
+  }
+
+  // Abbauen, mit Rückfrage, wenn eine Nadel darin steckt
+  const abbauKnopf = h('button', { class: 'knopf gefahr breit mtabbau', type: 'button' });
+  const rueckfrage = h('div', { class: 'rueckfrage', hidden: true },
+    h('p', {}, 'In der Maschine steckt eine Nadel. Sie fällt zurück in den Haufen.'),
+    h('div', { class: 'rueckfragewahl' },
+      h('button', { class: 'knopf gefahr', type: 'button', onclick: () => { ui.modalSchliessen(); rueck.abbauen(bau); } }, 'Trotzdem abbauen'),
+      h('button', {
+        class: 'knopf primaer', type: 'button',
+        onclick: () => { sichtbarSetzen(rueckfrage, false); sichtbarSetzen(abbauKnopf, true); },
+      }, 'Behalten')));
+  abbauKnopf.addEventListener('click', () => {
+    if (abbauInfo(s, bau).warnung === 'nadel') {
+      sichtbarSetzen(rueckfrage, true);
+      sichtbarSetzen(abbauKnopf, false);
+      return;
+    }
+    ui.modalSchliessen();
+    rueck.abbauen(bau);
+  });
+  auffrischen.push(() => {
+    const info = abbauInfo(s, bau);
+    setzeText(abbauKnopf, info.geschenk ? 'Abbauen (Geschenk zurück)'
+      : info.erstattung > 0 ? `Abbauen (+${geld(info.erstattung)} zurück)` : 'Abbauen');
+  });
+
+  function aktualisieren() {
+    const st = statusJetzt();
+    sichtbarSetzen(status, !!st);
+    if (st) {
+      for (const f of ['gut', 'warn', 'stoerung', 'aus']) punkt.classList.toggle(f, f === st[0]);
+      setzeText(statusText, st[1]);
+    }
+    if (schalter) {
+      setzeText(schalter, bau.typ === 'mast' ? (netzAus() ? 'Netz einschalten' : 'Netz ausschalten')
+        : bau.aus ? 'Einschalten' : 'Ausschalten');
+    }
+    sichtbarSetzen(kopf, !!st || !!schalter);
+    zeilenZeigen();
+    for (const f of auffrischen) f();
+  }
+
+  const inhalt = h('div', { class: 'maschineninhalt' }, kopf, nadelKnopf, zeilen, teile, abbauKnopf, rueckfrage);
+  aktualisieren();
+  ui.modal({
+    ober: kat ? kat.name : '', titel: d.name, inhalt, klasse: 'maschinentafel',
+    knoepfe: [{ text: 'Schließen', klasse: 'primaer' }],
+  });
+  solangeOffen(inhalt, 250, () => {
+    // Anderswo abgebaut: Tafel zu, sie zeigte sonst einen Bau, den es nicht mehr gibt.
+    if (!s.bauten.includes(bau)) { ui.modalSchliessen(); return; }
+    aktualisieren();
+  });
+}
+
+// ---- src/ui/auftrag.js
+// Auftragstafel am Tor: wer was bestellt hat, wie viel davon schon auf dem
+// Laster liegt, was der Auftrag bringt und wo der Laster gerade ist. Ohne
+// Auftragsbuch steht dort nur, wie man zu Aufträgen kommt. Frischt sich alle
+// 250 ms auf, solange sie offen ist.
+
+
+/** Öffnet die Tafel. rueck: { ablehnen() }. Ablehnen gibt es nur, solange keine Pause läuft. */
+function auftragstafelZeigen(ui, s, rueck) {
+  if (!werte(s).frei.has('auftraege')) {
+    ui.modal({
+      ober: 'Auftragstafel', titel: 'Noch keine Aufträge',
+      absaetze: [`Mit dem ${TECH_NACH_ID.auftraege.name} aus der Forschung (Verkauf) setzt ein Laster ans Tor. `
+        + 'Er holt bestellte Ware ab und zahlt dafür einen Lohn.'],
+      knoepfe: [{ text: 'Verstanden', klasse: 'primaer' }],
+    });
+    return;
+  }
+  const mengeText = (a, n) => (a.will === 'roh' ? `${halme(n)} Halme` : `${zahl(n)} Stück`);
+  const nummer = h('p', { class: 'ober' });
+  const kunde = h('h2', {});
+  const ware = h('dd', {});
+  const stand = h('dd', { class: 'num' });
+  const lohn = h('dd', { class: 'num' });
+  const fuellung = h('div', { class: 'fuellung' });
+  const balken = h('div', { class: 'fortschritt', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100' }, fuellung);
+  const punkt = h('span', { class: 'statuspunkt' });
+  const lasterText = h('span', {});
+  const ablehnen = h('button', { class: 'knopf breit', type: 'button' }, 'Ablehnen');
+  const frage = h('p', {});
+  const rueckfrage = h('div', { class: 'rueckfrage', hidden: true }, frage, h('div', { class: 'rueckfragewahl' },
+    h('button', {
+      class: 'knopf gefahr', type: 'button',
+      onclick: () => { sichtbarSetzen(rueckfrage, false); rueck.ablehnen(); aktualisieren(); },
+    }, 'Trotzdem ablehnen'),
+    h('button', { class: 'knopf primaer', type: 'button', onclick: () => { sichtbarSetzen(rueckfrage, false); aktualisieren(); } }, 'Behalten')));
+  ablehnen.addEventListener('click', () => {
+    const A = s.auftrag;
+    if (A.geliefert > 0) {
+      // Schon Geliefertes wäre weg: erst nachfragen.
+      setzeText(frage, `Schon ${mengeText(auftrag(A.nr, A.skip), A.geliefert)} geliefert. Das zählt dann nicht mehr.`);
+      sichtbarSetzen(rueckfrage, true);
+      sichtbarSetzen(ablehnen, false);
+      return;
+    }
+    rueck.ablehnen();
+    aktualisieren();
+  });
+
+  function aktualisieren() {
+    const A = s.auftrag;
+    const a = auftrag(A.nr, A.skip);
+    setzeText(nummer, `Auftragstafel · Auftrag ${A.nr + (A.skip || 0) + 1}`);
+    setzeText(kunde, a.titel);
+    setzeText(ware, a.will === 'roh' ? 'Loses Heu' : PRODUKTE[a.will].name);
+    setzeText(stand, `${a.will === 'roh' ? halme(A.geliefert) : zahl(A.geliefert)} / ${mengeText(a, a.menge)}`);
+    setzeText(lohn, geld(auftragLohn(s, a)));
+    const prozentWert = Math.round(Math.max(0, Math.min(1, A.geliefert / a.menge)) * 100);
+    if (fuellung.style.width !== `${prozentWert}%`) {
+      fuellung.style.width = `${prozentWert}%`;
+      balken.setAttribute('aria-valuenow', String(prozentWert));
+    }
+    const zustand = s.laster ? s.laster.zustand : 'weg';
+    let farbe = 'aus';
+    let text = `Nächster Laster in ${dauer(Math.ceil(A.pause))}`;
+    if (zustand === 'steht') { farbe = 'gut'; text = 'Der Laster steht am Tor. Was auf seine Ladefläche fällt, zählt.'; }
+    else if (zustand === 'kommt' || !(A.pause > 0)) { farbe = 'warn'; text = 'Der Laster ist unterwegs.'; }
+    for (const f of ['gut', 'warn', 'aus']) punkt.classList.toggle(f, f === farbe);
+    setzeText(lasterText, text);
+    const darf = !(A.pause > 0);
+    if (!darf) sichtbarSetzen(rueckfrage, false);
+    sichtbarSetzen(ablehnen, darf && rueckfrage.hidden);
+  }
+
+  const inhalt = h('div', { class: 'auftraginhalt' },
+    nummer, kunde,
+    h('dl', { class: 'werte' }, h('dt', {}, 'Ware'), ware, h('dt', {}, 'Geliefert'), stand, h('dt', {}, 'Lohn'), lohn),
+    balken,
+    h('div', { class: 'tafelstatus', role: 'status' }, punkt, lasterText),
+    h('p', { class: 'tafelhinweis' }, 'Andere Ware auf der Ladefläche wird normal bezahlt.'),
+    ablehnen, rueckfrage);
+  aktualisieren();
+  ui.modal({ inhalt, klasse: 'auftragstafel', knoepfe: [{ text: 'Schließen', klasse: 'primaer' }] });
+  solangeOffen(inhalt, 250, aktualisieren);
+}
+
+// ---- src/baumodus.js
+// Der Baumodus: wie im Vorbild schwebt ein Abbild des gewählten Baus vor dir,
+// dorthin, wo du auf den Boden schaust. Drehen in 45°-Schritten, ein Kolben-
+// rechen dreht sich von selbst zum Haufen. Bänder in zwei Schritten (Anfang,
+// Ende), der Weg dazwischen wird gesucht und rastet an Anschlüssen ein. Wände,
+// Geländer und Leitungen ebenso von Punkt zu Punkt. Abbauen: anschauen und
+// bestätigen. Verbindet Logik (bauen.js) mit Grafik (objekte3d.js) und der
+// Bauleiste (ui/bauen.js).
+
+
+const RASTER_BAU = 0.25;
+const WEITE_MIN = 1.2;
+const WEITE_MAX = 12;
+const rastern = (v, r = RASTER_BAU) => Math.round(v / r) * r;
+const winkel45 = (w) => Math.round(w / (Math.PI / 4)) * (Math.PI / 4);
+const meter = (m) => `${m.toFixed(1).replace('.', ',')} m`;
+
+/**
+ * ctx: { holeStand(), objekte, hud (aus bauHudBauen), ui, klang, ereignisse(liste), abbauFragen(bau, info, weiter) }.
+ * Liefert { aktiv(), art(), starten(typ), abbauStarten(), abbrechen(), setzen(), drehen(), naeher(), weiter(), einrasten(), schritt(kamera, blick) }.
+ */
+function baumodusBauen(ctx) {
+  let modus = null;
+  let planZeit = 0;
+
+  const stand = () => ctx.holeStand();
+  const beenden = () => {
+    modus = null;
+    ctx.objekte.vorschauWeg();
+    ctx.hud.verstecken();
+  };
+
+  /** Wohin der Blick auf den Boden trifft (oder ein Punkt vor dir). */
+  function blickPunkt(k, blick, weite) {
+    const [dx, dy, dz] = blick;
+    const flach = Math.hypot(dx, dz) || 1;
+    let t = dy < -0.02 ? (0 - k.y) / dy : Infinity;
+    let hx; let hz;
+    if (Number.isFinite(t) && t * flach <= WEITE_MAX) {
+      hx = k.x + dx * t; hz = k.z + dz * t;
+      const d = Math.hypot(hx - k.x, hz - k.z);
+      if (d < WEITE_MIN) { hx = k.x + (dx / flach) * WEITE_MIN; hz = k.z + (dz / flach) * WEITE_MIN; }
+    } else {
+      t = weite;
+      hx = k.x + (dx / flach) * t; hz = k.z + (dz / flach) * t;
+    }
+    const gr = hallenGrenzen(werte(stand()).hallenFelder);
+    return [Math.max(gr.xMin + 0.2, Math.min(gr.xMax - 0.2, hx)), Math.max(gr.zMin + 0.2, Math.min(gr.zMax - 0.2, hz))];
+  }
+
+  function kostenText(s, typ) {
+    if ((s.geschenke[typ] || 0) > 0) return 'Geschenk';
+    return geld(bauKosten(s, typ));
+  }
+
+  /** Anschlüsse in der Nähe zeigen (beim Bandbau). */
+  function ankerListe(s, x, z, ende, gewaehlt) {
+    const liste = [];
+    for (const b of s.bauten) {
+      if (b.typ === 'band' || Math.hypot(b.x - x, b.z - z) > 7) continue;
+      for (const p of anschlussListe(b)) {
+        if ((p.art === 'ein') !== ende) continue;
+        liste.push({ x: p.x, y: p.y, z: p.z, ziel: !!gewaehlt && gewaehlt.bau === b && gewaehlt.port === p.i && gewaehlt.art === p.art });
+      }
+    }
+    if (gewaehlt && (gewaehlt.art === 'stand' || gewaehlt.art === 'laster' || gewaehlt.art === 'band')) {
+      liste.push({ x: gewaehlt.x, y: gewaehlt.y, z: gewaehlt.z, ziel: true });
+    }
+    return liste.slice(0, 24);
+  }
+
+  function abbauAusfuehren(bau) {
+    const s = stand();
+    const ev = [];
+    const r = bauAbbauen(s, bau, ev);
+    if (r.ok) {
+      ctx.klang.abbauen();
+      ctx.ui.toast(r.geschenk ? `${BAU_BY_ID[bau.typ].name} liegt wieder im Katalog.` : `${BAU_BY_ID[bau.typ].name} abgebaut · +${geld(r.erstattung)}`, '');
+    }
+    ctx.ereignisse(ev);
+  }
+
+  const api = {
+    aktiv: () => !!modus,
+
+    /** Abbauen ohne Zielen (aus der Maschinentafel, die schon nachgefragt hat). */
+    abbauDirekt(bau) {
+      abbauAusfuehren(bau);
+      if (modus && modus.art === 'abbau') beenden();
+    },
+    art: () => (modus ? modus.art : null),
+
+    /** Einen Bau aus dem Katalog in die Hand nehmen. */
+    starten(typ) {
+      const d = BAU_BY_ID[typ];
+      if (!d) return;
+      ctx.objekte.vorschauWeg();
+      if (typ === 'band') modus = { art: 'band', typ, schritt: 'anfang', einrasten: true, weite: 5 };
+      else if (d.linie) modus = { art: 'linie', typ, schritt: 'anfang', weite: 5 };
+      else modus = { art: 'bau', typ, dreh: 0, weite: 5 };
+    },
+
+    abbauStarten() {
+      ctx.objekte.vorschauWeg();
+      modus = { art: 'abbau' };
+    },
+
+    abbrechen() {
+      if (!modus) return;
+      if ((modus.art === 'band' || modus.art === 'linie') && modus.schritt === 'ende') {
+        modus.schritt = 'anfang';
+        modus.von = null;
+        modus.plan = null;
+        ctx.objekte.bandVorschau(null);
+        ctx.objekte.linienVorschau(null);
+        return;
+      }
+      beenden();
+    },
+
+    drehen() { if (modus && modus.art === 'bau') { modus.dreh += Math.PI / 4; ctx.klang.klick(); } },
+    naeher() { if (modus) modus.weite = Math.max(WEITE_MIN, modus.weite - 1); },
+    weiter() { if (modus) modus.weite = Math.min(WEITE_MAX, modus.weite + 1); },
+    einrasten() { if (modus && modus.art === 'band') { modus.einrasten = !modus.einrasten; modus.plan = null; ctx.klang.klick(); } },
+
+    /** Bestätigen: bauen, Anfang oder Ende setzen, abbauen. */
+    setzen() {
+      if (!modus) return;
+      const s = stand();
+      const ev = [];
+      if (modus.art === 'bau') {
+        const l = modus.lage;
+        if (!l) return;
+        const r = bauSetzen(s, modus.typ, l.x, l.z, l.rot);
+        if (!r.ok) { ctx.klang.fehler(); ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht hier nicht.', 'warn'); return; }
+        ctx.klang.bauen();
+        ev.push({ typ: 'gebaut', bau: r.bau });
+        // Ein Geschenk gibt es meist nur einmal: ist keins mehr da und reicht das Geld nicht, ist der Modus vorbei.
+        if (r.bau.geschenk && !(s.geschenke[modus.typ] > 0) && s.geld < bauKosten(s, modus.typ)) beenden();
+      } else if (modus.art === 'band' || modus.art === 'linie') {
+        if (modus.schritt === 'anfang') {
+          if (!modus.anker || modus.ankerOk === false) { ctx.klang.fehler(); return; }
+          modus.von = modus.anker;
+          modus.schritt = 'ende';
+          modus.plan = null;
+          ctx.klang.klick();
+          return;
+        }
+        const plan = modus.plan;
+        if (!plan || !plan.ok) {
+          ctx.klang.fehler();
+          ctx.ui.toast(GRUND_TEXT[plan ? plan.grund : 'kein Weg'] || 'Geht so nicht.', 'warn');
+          return;
+        }
+        const r = modus.art === 'band' ? bandSetzen(s, plan) : linieSetzen(s, modus.typ, plan.a, plan.b);
+        if (!r.ok) { ctx.klang.fehler(); ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht so nicht.', 'warn'); return; }
+        ctx.klang.bauen();
+        ev.push({ typ: 'gebaut', bau: r.bau });
+        modus.schritt = 'anfang';
+        modus.von = null;
+        modus.plan = null;
+        ctx.objekte.bandVorschau(null);
+        ctx.objekte.linienVorschau(null);
+      } else if (modus.art === 'abbau') {
+        const bau = modus.ziel;
+        if (!bau) { ctx.klang.fehler(); return; }
+        if (abbauInfo(s, bau).warnung) ctx.abbauFragen(bau, abbauInfo(s, bau), () => abbauAusfuehren(bau));
+        else abbauAusfuehren(bau);
+        modus.ziel = null;
+        return;
+      }
+      ctx.ereignisse(ev);
+    },
+
+    /** Jedes Bild im Baumodus: Vorschau und Leiste nachführen. */
+    schritt(k, blick, dt) {
+      if (!modus) return false;
+      const s = stand();
+      planZeit -= dt;
+      if (modus.art === 'abbau') {
+        const t = ctx.objekte.trefferBau(ctx.strahl(k, blick), 9);
+        modus.ziel = t ? t.bau : null;
+        ctx.objekte.markieren(modus.ziel);
+        const info = modus.ziel ? abbauInfo(s, modus.ziel) : null;
+        ctx.hud.zeigen({
+          titel: modus.ziel ? `${BAU_BY_ID[modus.ziel.typ].name} abbauen` : 'Abbauen',
+          zeile: info ? (info.geschenk ? 'Geschenk zurück in den Katalog' : `+${geld(info.erstattung)} zurück`) : 'Auf einen Bau schauen',
+          grund: info && info.warnung ? 'Darin steckt eine Nadel' : null,
+          ok: !!modus.ziel, schritt: 'abbau', einrasten: null, drehen: false, abstand: false,
+        });
+        return true;
+      }
+      const [px, pz] = blickPunkt(k, blick, modus.weite);
+      if (modus.art === 'bau') {
+        const d = BAU_BY_ID[modus.typ];
+        const x = rastern(px);
+        const z = rastern(pz);
+        let rot;
+        if (modus.typ === 'rechen' && Math.hypot(x - WELT.haufenX, z - WELT.haufenZ) < 14) {
+          // Der Rechen schaut von selbst zum Haufen (in 15°-Schritten), Drehen dreht weiter
+          const w = Math.atan2(-(WELT.haufenZ - z), WELT.haufenX - x);
+          rot = Math.round(w / (Math.PI / 12)) * (Math.PI / 12) + modus.dreh;
+        } else {
+          // Blickrichtung (x, z) als Drehung: lokal +x zeigt nach (cos rot, -sin rot)
+          rot = winkel45(Math.atan2(-blick[2], blick[0])) + modus.dreh;
+        }
+        const p = bauPruefen(s, modus.typ, x, z, rot);
+        modus.lage = { x, z, rot };
+        ctx.objekte.geist(modus.typ, { x, y: 0, z, rot }, p.ok);
+        let grund = p.ok ? null : GRUND_TEXT[p.grund] || 'Geht hier nicht';
+        if (p.ok && modus.typ === 'rechen') {
+          const [kx, kz] = [x + Math.cos(rot) * (d.b / 2 + 0.45), z - Math.sin(rot) * (d.b / 2 + 0.45)];
+          if (haufenHoehe(s.hf, kx, kz) < 0.06) grund = 'Der Kamm muss ins Heu zeigen';
+        }
+        const kw = d.kw > 0 ? ` · braucht ${d.kw} kW` : d.kw < 0 ? ` · liefert ${-d.kw} kW` : '';
+        ctx.hud.zeigen({
+          titel: d.name, zeile: `${kostenText(s, modus.typ)}${kw}`, grund, ok: p.ok,
+          schritt: 'setzen', einrasten: null, drehen: true, abstand: false,
+        });
+        return true;
+      }
+      if (modus.art === 'band') {
+        const ende = modus.schritt === 'ende';
+        const a = bandAnker(s, px, pz, ende, { radius: 1.2 });
+        const d = BAU_BY_ID.band;
+        if (!ende) {
+          const ok = haufenHoehe(s.hf, a.x, a.z) < 0.15;
+          modus.anker = a;
+          modus.ankerOk = ok;
+          ctx.objekte.ankerZeigen([...ankerListe(s, px, pz, false, a), { x: a.x, y: a.y, z: a.z, ziel: true }]);
+          ctx.hud.zeigen({
+            titel: 'Förderband', zeile: `Anfang wählen · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
+            grund: ok ? null : GRUND_TEXT.haufen, ok, schritt: 'anfang', einrasten: modus.einrasten, drehen: false, abstand: false,
+          });
+          return true;
+        }
+        const alt = modus.plan;
+        const verschoben = !modus.anker || Math.hypot(a.x - modus.anker.x, a.z - modus.anker.z) > 0.12 || a.art !== modus.anker.art;
+        if ((verschoben || !alt) && planZeit <= 0) {
+          modus.anker = a;
+          modus.plan = bandPlanen(s, modus.von, a, { gerade: !modus.einrasten });
+          planZeit = 0.12;
+          ctx.objekte.bandVorschau(modus.plan.punkte || [[modus.von.x, modus.von.y, modus.von.z], [a.x, a.y, a.z]], !!modus.plan.ok);
+        }
+        const plan = modus.plan;
+        ctx.objekte.ankerZeigen([{ x: modus.von.x, y: modus.von.y, z: modus.von.z, ziel: true }, ...ankerListe(s, px, pz, true, a)]);
+        const ziel = a.art === 'stand' ? ' · zum Stand' : a.art === 'laster' ? ' · zum Laster' : a.art === 'ein' ? ` · in ${BAU_BY_ID[a.bau.typ].name}` : a.art === 'band' ? ' · aufs Band' : '';
+        ctx.hud.zeigen({
+          titel: 'Förderband',
+          zeile: plan && plan.punkte ? `${meter(plan.laenge)} · ${geld(plan.kosten)}${ziel}` : `Ende wählen${ziel}`,
+          grund: plan && !plan.ok ? GRUND_TEXT[plan.grund] || 'Geht so nicht' : null,
+          ok: !!(plan && plan.ok), schritt: 'ende', einrasten: modus.einrasten, drehen: false, abstand: false,
+        });
+        return true;
+      }
+      if (modus.art === 'linie') {
+        const d = BAU_BY_ID[modus.typ];
+        const x = rastern(px);
+        const z = rastern(pz);
+        if (modus.schritt === 'anfang') {
+          modus.anker = { x, z, y: 0 };
+          modus.ankerOk = true;
+          ctx.objekte.ankerZeigen([{ x, y: 0, z, ziel: true }]);
+          ctx.hud.zeigen({
+            titel: d.name, zeile: `Anfang wählen · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
+            grund: null, ok: true, schritt: 'anfang', einrasten: null, drehen: false, abstand: false,
+          });
+          return true;
+        }
+        const a = [modus.von.x, modus.von.z];
+        const b = [x, z];
+        const plan = liniePlanen(s, modus.typ, a, b);
+        modus.plan = { ...plan, a, b };
+        ctx.objekte.linienVorschau(modus.typ, a, b, plan.ok);
+        ctx.objekte.ankerZeigen([{ x: a[0], y: 0, z: a[1], ziel: true }, { x, y: 0, z, ziel: false }]);
+        ctx.hud.zeigen({
+          titel: d.name, zeile: plan.laenge ? `${meter(plan.laenge)} · ${geld(plan.kosten)}` : 'Ende wählen',
+          grund: plan.ok ? null : GRUND_TEXT[plan.grund] || 'Geht so nicht', ok: plan.ok, schritt: 'ende', einrasten: null, drehen: false, abstand: false,
+        });
+        return true;
+      }
+      return false;
+    },
+  };
+  return api;
+}
+
 // ---- src/main.js
 // Start und Spielschleife: baut Szene, Halle, Haufen und Oberfläche, liest die
 // Eingabe, bewegt den Spieler, findet heraus, worauf er zielt, führt die
@@ -8046,14 +10093,17 @@ function hauptStart() {
   const einst = einstellungenLaden();
   klangStumm(!einst.ton);
   const s3 = szeneBauen(leinwand, einst.grafik);
-  const hof = hofBauen(s3.szene, s3.qualitaet);
+  let hof = null;
 
   let s = null;
   try { s = laden(localStorage.getItem(SPEICHER3D_KEY) || ''); } catch { s = null; }
   const gespeichert = !!s;
   if (!s) s = standNeu();
+  hof = hofBauen(s3.szene, s3.qualitaet, werte(s).hallenFelder);
+  let hofFelder = werte(s).hallenFelder;
   const hAnsicht = haufenAnsichtBauen(s3.szene, s.hf, s3.qualitaet);
   const ansicht = ansichtBauen(s3.szene, s3.kamera);
+  const objekte = objekteBauen(s3.szene, s3.qualitaet);
 
   const zustand = {
     laeuft: false, // nach dem Startbild
@@ -8064,6 +10114,12 @@ function hauptStart() {
     hudZeit: 0,
     zielText: '',
     nadelWarte: [],
+    umgebungVersion: -1,
+    umgebungStand: null,
+    verkaufSumme: 0, // Verkäufe der Maschinen, gesammelt für eine Anzeige
+    verkaufZeit: 0,
+    kasseZeit: 0,
+    rechenZeit: 0,
   };
 
   const st = steuerungBauen(flaeche, {
@@ -8077,7 +10133,9 @@ function hauptStart() {
       else if (k === 'tab' || k === 'r') forschungAuf();
       else if (k === 'b') bauenAuf();
       else if (k === 'n') nadelnAuf();
-      else if (k === 'escape') { if (zustand.tafel) zustand.tafel.schliessen(); }
+      else if (k === 'escape') { if (zustand.tafel) zustand.tafel.schliessen(); else if (bm.aktiv()) bm.abbrechen(); }
+      else if (k === 'q' && bm.aktiv()) bm.drehen();
+      else if (k === 'f' && bm.aktiv()) bm.einrasten();
     },
   });
   st.zustand.empfindlichkeit = einst.empfindlichkeit;
@@ -8092,6 +10150,7 @@ function hauptStart() {
     menue: () => menueAuf(),
     modalAuf: () => { st.zeigerFreigeben(); },
     modalZu: () => {},
+    info: () => infoTippen(),
   });
 
   function speichernJetzt() {
@@ -8126,7 +10185,24 @@ function hauptStart() {
     zustand.tafel = f;
   }
   function bauenAuf() {
-    ui.toast('Der Baukatalog kommt mit den Förderband-Plänen.', '');
+    if (zustand.tafel || !zustand.laeuft) return;
+    if (bm.aktiv()) { bm.abbrechen(); if (bm.aktiv()) bm.abbrechen(); return; }
+    st.zeigerFreigeben();
+    baukatalogZeigen(ui, s, {
+      waehlen: (typ) => { klang.klick(); bm.starten(typ); },
+      abbauen: () => { klang.klick(); bm.abbauStarten(); },
+    });
+  }
+  function maschineZeigen(bau) {
+    st.zeigerFreigeben();
+    maschinePanelZeigen(ui, s, bau, {
+      netz: () => netzHolen(s),
+      schalten: (b) => { b.aus = !b.aus; klang.klick(); },
+      einstellen: (b, feld, wert) => { b[feld] = wert; },
+      abbauen: (b) => { ui.modalSchliessen(); bm.abbauDirekt(b); },
+      nadelnNehmen: (b) => { ui.modalSchliessen(); scannerLeeren(s, b, ereignisPuffer); },
+      netzSchalten: (m) => { const an = netzSchalten(s, netzHolen(s), m); klang.klick(); ui.toast(an ? 'Netz eingeschaltet.' : 'Netz ausgeschaltet.'); },
+    });
   }
   function nadelnAuf() { nadelbuchZeigen(ui, s); }
   function menueAuf() {
@@ -8157,12 +10233,48 @@ function hauptStart() {
 
   /* ------------------------------------------------ Ziel bestimmen */
   const strahl = new THREE.Raycaster();
-  const stationen = [
-    [hof.stand, 'stand'], [hof.werkzeugstand, 'werkzeugstand'], [hof.lieferschalter, 'lieferschalter'],
-    [hof.auftragstafel, 'auftragstafel'], [hof.hausanschluss, 'hausanschluss'], [hof.werkbank, 'werkbank'],
-  ];
-  const stationenObjekte = stationen.map(([o]) => o);
+  let stationen = [];
+  let stationenObjekte = [];
+  function stationenSetzen() {
+    stationen = [
+      [hof.stand, 'stand'], [hof.werkzeugstand, 'werkzeugstand'], [hof.lieferschalter, 'lieferschalter'],
+      [hof.auftragstafel, 'auftragstafel'], [hof.hausanschluss, 'hausanschluss'], [hof.werkbank, 'werkbank'],
+    ];
+    stationenObjekte = stationen.map(([o]) => o);
+  }
+  stationenSetzen();
+  /** Die Halle neu bauen, wenn sie verlängert wurde (oder ein anderer Stand geladen ist). */
+  function hofPruefen() {
+    const felder = werte(s).hallenFelder;
+    if (felder === hofFelder) return;
+    hofFelder = felder;
+    s3.szene.remove(hof.gruppe);
+    hof.gruppe.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); } });
+    hof = hofBauen(s3.szene, s3.qualitaet, felder);
+    stationenSetzen();
+    zustand.umgebungVersion = -1;
+  }
   const v = new THREE.Vector3();
+
+  /* ------------------------------------------------ Baumodus */
+  const bauHud = bauHudBauen(app, {
+    setzen: () => bm.setzen(), drehen: () => bm.drehen(), naeher: () => bm.naeher(), weiter: () => bm.weiter(),
+    einrasten: () => bm.einrasten(), abbrechen: () => bm.abbrechen(),
+  });
+  const bm = baumodusBauen({
+    holeStand: () => s,
+    objekte,
+    hud: bauHud,
+    ui,
+    klang,
+    strahl: (k, blick) => { strahl.set(k, v.set(blick[0], blick[1], blick[2])); return strahl; },
+    ereignisse: (liste) => ereignisPuffer.push(...liste),
+    abbauFragen: (bau, info, weiter) => ui.modal({
+      titel: `${BAU_BY_ID[bau.typ].name} abbauen?`,
+      absaetze: ['In der Maschine steckt eine Nadel. Sie fällt zurück in den Haufen.'],
+      knoepfe: [{ text: 'Behalten', klasse: 'primaer' }, { text: 'Trotzdem abbauen', klasse: 'gefahr', aktion: weiter }],
+    }),
+  });
 
   function zielFinden() {
     const k = s3.kamera.position;
@@ -8181,16 +10293,34 @@ function hauptStart() {
     }
     if (bestNadel) return { art: 'nadel', nadel: bestNadel };
     const haufenTreffer = haufenStrahl(s.hf, k.x, k.y, k.z, dx, dy, dz, reichweite + 0.5);
+    const kandidaten = [];
+    if (haufenTreffer && haufenTreffer.t <= reichweite) kandidaten.push({ art: 'haufen', ...haufenTreffer, abstand: haufenTreffer.t });
     strahl.set(k, v.set(dx, dy, dz));
     strahl.far = reichweite + 0.6;
     const treffer = strahl.intersectObjects(stationenObjekte, true);
-    if (treffer.length && (!haufenTreffer || treffer[0].distance < haufenTreffer.t)) {
+    if (treffer.length) {
       let o = treffer[0].object;
       while (o && !stationen.some(([x]) => x === o)) o = o.parent;
       const eintrag = stationen.find(([x]) => x === o);
-      if (eintrag) return { art: eintrag[1], abstand: treffer[0].distance };
+      if (eintrag) kandidaten.push({ art: eintrag[1], abstand: treffer[0].distance });
     }
-    if (haufenTreffer && haufenTreffer.t <= reichweite) return { art: 'haufen', ...haufenTreffer };
+    // Liegende Stücke (Heubündel, Waren): klein, darum etwas bevorzugt
+    const stueck = stueckImBlick(s, k.x, k.y, k.z, dx, dy, dz, reichweite + 0.4);
+    if (stueck) kandidaten.push({ art: 'stueck', g: stueck.g, abstand: stueck.t - 0.35 });
+    // Bauten: Maschinen, Bänder, Masten
+    strahl.set(k, v.set(dx, dy, dz));
+    const bauTreffer = objekte.trefferBau(strahl, reichweite + 1.4);
+    if (bauTreffer) kandidaten.push({ art: 'bau', bau: bauTreffer.bau, punkt: bauTreffer.punkt, abstand: bauTreffer.abstand });
+    // Ladefläche des Lasters, wenn er am Tor steht
+    if (lasterBereit(s)) {
+      const B = LASTER_BETT;
+      const tt = strahlKasten(k, dx, dy, dz, B.x0, 0, B.z0, B.x1, B.y + 0.6, B.z1);
+      if (tt != null && tt < reichweite + 1.5) kandidaten.push({ art: 'laster', abstand: tt });
+    }
+    if (kandidaten.length) {
+      kandidaten.sort((a, b) => a.abstand - b.abstand);
+      return kandidaten[0];
+    }
     // Boden vor den Füßen (für Besen und lose Büschel)
     if (dy < -0.05) {
       const t = (0.02 - k.y) / dy;
@@ -8201,6 +10331,43 @@ function hauptStart() {
       }
     }
     return null;
+  }
+
+  /** Strahl gegen achsparallelen Kasten: Abstand oder null. */
+  function strahlKasten(k, dx, dy, dz, x0, y0, z0, x1, y1, z1) {
+    let tmin = 0;
+    let tmax = Infinity;
+    for (const [o, d, a, b] of [[k.x, dx, x0, x1], [k.y, dy, y0, y1], [k.z, dz, z0, z1]]) {
+      if (Math.abs(d) < 1e-9) { if (o < a || o > b) return null; continue; }
+      let t1 = (a - o) / d;
+      let t2 = (b - o) / d;
+      if (t1 > t2) [t1, t2] = [t2, t1];
+      tmin = Math.max(tmin, t1);
+      tmax = Math.min(tmax, t2);
+      if (tmin > tmax) return null;
+    }
+    return tmin;
+  }
+
+  /** Heu oder ein Stück in Blickrichtung werfen, aus Brusthöhe. */
+  function wurfStart() {
+    const k = s3.kamera.position;
+    const [dx, dy, dz] = blickRichtung(s.spieler);
+    return { von: [k.x + dx * 0.45, k.y - 0.3, k.z + dz * 0.45], richtung: [dx, dy, dz] };
+  }
+
+  /** Nimmt der Bau geworfenes Heu an (Band, Trichter)? */
+  const heuZiel = (bau) => bau.typ === 'band' || annehmenMoeglich(s, bau, 'roh', -1);
+
+  /** Der kleine Knopf „Ansehen“ neben der Aktion: Maschinentafel auch mit Heu im Arm. */
+  function infoTippen() {
+    const z = zustand.ziel;
+    if (z && z.art === 'bau') maschineZeigen(z.bau);
+    else if (z && z.art === 'auftragstafel') auftragZeigen();
+  }
+  function auftragZeigen() {
+    st.zeigerFreigeben();
+    auftragstafelZeigen(ui, s, { ablehnen: () => { if (lasterAblehnen(s)) { klang.klick(); ui.toast('Auftrag abgelehnt. Der nächste kommt gleich.'); } } });
   }
 
   /* ------------------------------------------------ Aktion */
@@ -8218,6 +10385,52 @@ function hauptStart() {
     const halten = e.aktion;
     zustand.stichPause -= dt;
     const w = werte(s);
+    // Ein Stück in der Hand: am Stand verkaufen, sonst werfen
+    const gehalten = gehaltenesStueck(s);
+    if (gehalten) {
+      if (!druck) return;
+      if (ziel && ziel.art === 'stand') {
+        gegenstandVerkaufen(s, gehalten, ereignisPuffer, 'stand');
+        s.spieler.haelt = null;
+        return;
+      }
+      const { von, richtung } = wurfStart();
+      stueckWerfen(s, von, richtung);
+      klang.werfen();
+      return;
+    }
+    if (ziel && ziel.art === 'stueck') {
+      if (!druck) return;
+      const r = gegenstandNehmen(s, ziel.g, ereignisPuffer);
+      if (r.ok) klang.plopp();
+      else if (r.grund === 'voll') voll();
+      return;
+    }
+    if (ziel && ziel.art === 'laster') {
+      if (!druck) return;
+      if (sp.last > 0) { const { von, richtung } = wurfStart(); heuWerfen(s, von, richtung, 60); klang.werfen(); }
+      else ui.toast('Was auf die Ladefläche fällt, nimmt der Laster mit.');
+      return;
+    }
+    if (ziel && ziel.art === 'bau') {
+      if (!druck) return;
+      const bau = ziel.bau;
+      if (bau.typ === 'mast') {
+        const an = netzSchalten(s, netzHolen(s), bau);
+        klang.klick();
+        ui.toast(an ? 'Netz eingeschaltet.' : 'Netz ausgeschaltet.');
+        return;
+      }
+      if (bau.typ === 'scanner' && (bau.nadeln || []).length) { scannerLeeren(s, bau, ereignisPuffer); return; }
+      if (sp.last > 0 && heuZiel(bau)) {
+        const { von, richtung } = wurfStart();
+        heuWerfen(s, von, richtung, bau.typ === 'band' ? 40 : 60);
+        klang.werfen();
+        return;
+      }
+      maschineZeigen(bau);
+      return;
+    }
     // Stationen: nur beim Drücken
     if (ziel && ['stand', 'werkzeugstand', 'lieferschalter', 'auftragstafel', 'hausanschluss', 'werkbank', 'nadel'].includes(ziel.art)) {
       if (!druck) return;
@@ -8238,7 +10451,7 @@ function hauptStart() {
           },
         });
       } else if (ziel.art === 'auftragstafel') {
-        ui.modal({ titel: 'Aufträge', absaetze: ['Mit dem Auftragsbuch aus der Forschung (Verkauf) hängen hier Aufträge. Ein Laster setzt dann ans Tor.'], knoepfe: [{ text: 'OK', klasse: 'primaer' }] });
+        auftragZeigen();
       } else if (ziel.art === 'hausanschluss') {
         ui.modal({ titel: 'Hausanschluss', absaetze: ['Hier kommen 5 kW aus dem Netz. Maschinen in der Nähe hängen direkt dran, weiter weg helfen Strommasten.'], knoepfe: [{ text: 'OK', klasse: 'primaer' }] });
       } else if (ziel.art === 'werkbank') {
@@ -8290,8 +10503,28 @@ function hauptStart() {
   function aktionsText(ziel) {
     const sp = s.spieler;
     const wz = sp.werkzeug;
+    const gehalten = gehaltenesStueck(s);
+    if (gehalten) {
+      const name = gehalten.art === 'roh' ? 'Heubündel' : ({ knaeuel: 'Heuknäuel', ballen: 'Pressballen', pellet: 'Pellets', brei: 'Heubrei', silage: 'Wickelballen', papier: 'Heupapier', brikett: 'Öko-Ziegel' })[gehalten.art];
+      if (ziel && ziel.art === 'stand') return ['Verkaufen', `${name} verkaufen · ${geld(gegenstandWert(s, gehalten))}`];
+      return ['Werfen', `${name} in der Hand`];
+    }
     if (!ziel) return wz === 'detektor' ? ['Messen', ''] : wz === 'sauger' ? ['Saugen', ''] : ['Aktion', ''];
     switch (ziel.art) {
+      case 'stueck': {
+        const g = ziel.g;
+        if (g.art === 'roh' || g.art === 'knaeuel') return ['Aufheben', `${halme(g.art === 'roh' ? g.halme : 20)} Halme${g.nadel >= 0 ? ' · da glitzert etwas' : ''}`];
+        return ['Aufheben', `${({ ballen: 'Pressballen', pellet: 'Pellets', brei: 'Heubrei', silage: 'Wickelballen', papier: 'Heupapier', brikett: 'Öko-Ziegel' })[g.art]} · ${geld(gegenstandWert(s, g))}`];
+      }
+      case 'laster': return [sp.last > 0 ? 'Werfen' : 'Laster', sp.last > 0 ? 'Heu auf die Ladefläche werfen' : 'Ladefläche des Lasters'];
+      case 'bau': {
+        const b = ziel.bau;
+        const name = BAU_BY_ID[b.typ].name;
+        if (b.typ === 'mast') return ['Schalten', `${name} · Netz ${b.aus ? 'aus' : 'an'}`];
+        if (b.typ === 'scanner' && (b.nadeln || []).length) return ['Nehmen', 'Der Scanner hält eine Nadel fest!'];
+        if (sp.last > 0 && heuZiel(b)) return ['Werfen', `Heu ${b.typ === 'band' ? 'aufs Band' : `in ${name}`} werfen`];
+        return ['Ansehen', name];
+      }
       case 'nadel': return ['Aufheben', 'Eine Nadel! Aufheben'];
       case 'stand': return ['Verkaufen', sp.last > 0 ? `${halme(sp.last)} Halme verkaufen · ${geld(sp.last * werte(s).preisRoh * werte(s).preisAlle)}` : 'Heu verkaufen'];
       case 'werkzeugstand': return ['Einkaufen', 'Werkzeugstand'];
@@ -8337,10 +10570,44 @@ function hauptStart() {
           if (p) ui.schwebeText(e.krit ? `Glücksstich! +${e.menge}` : `+${e.menge}`, p[0], p[1], 'klein');
         }
       } else if (e.typ === 'verkauft') {
-        klang.kasse();
-        const t = hof.standTrichter;
-        const p = bildschirmPunkt(t.x, t.y + 1.2, t.z) || [leinwand.clientWidth / 2, leinwand.clientHeight / 2];
-        ui.schwebeText(`+${geld(e.betrag)}`, p[0], p[1]);
+        if (e.wo === 'stand' && !e.art) {
+          klang.kasse();
+          const t = hof.standTrichter;
+          const p = bildschirmPunkt(t.x, t.y + 1.2, t.z) || [leinwand.clientWidth / 2, leinwand.clientHeight / 2];
+          ui.schwebeText(`+${geld(e.betrag)}`, p[0], p[1]);
+        } else {
+          // Maschinen, Bänder, Drohnen: gesammelt anzeigen, damit es nicht flackert
+          zustand.verkaufSumme += e.betrag;
+          zustand.verkaufOrt = [e.x ?? hof.standTrichter.x, (e.y ?? hof.standTrichter.y) + 0.9, e.z ?? hof.standTrichter.z];
+        }
+      } else if (e.typ === 'gebaut') {
+        ansicht.schwung();
+      } else if (e.typ === 'rechen' || e.typ === 'greifen' || e.typ === 'produziert' || e.typ === 'schuss') {
+        const sp = s.spieler;
+        const bau = e.id != null ? s.bauten.find((b) => b.id === e.id) : null;
+        const d = bau ? Math.hypot(bau.x - sp.x, bau.z - sp.z) : 20;
+        const laut = Math.max(0, 1 - d / 18);
+        if (e.typ === 'rechen') { if (zustand.rechenZeit <= 0) { klang.rechen(laut); zustand.rechenZeit = 0.2; } }
+        else if (e.typ === 'greifen') klang.greifen(laut);
+        else if (e.typ === 'schuss') klang.werfen();
+        else klang.plopp(laut * 0.8);
+      } else if (e.typ === 'scannerNadel') {
+        klang.scanner();
+        ui.toast('Der Scanner hat eine Nadel gefunden! Sie wartet dort auf dich.', 'gut');
+      } else if (e.typ === 'radar') {
+        klang.fund(0);
+        ui.toast('Das Radar hat eine Nadel markiert: der goldene Lichtstrahl.', 'gut');
+      } else if (e.typ === 'lasterKommt') {
+        klang.hupe();
+        ui.toast('Der Laster kommt ans Tor.', '');
+      } else if (e.typ === 'lasterDa') {
+        ui.toast(`Auftrag: ${e.auftrag.titel} will ${e.auftrag.will === 'roh' ? `${halme(e.auftrag.menge)} Halme loses Heu` : `${e.auftrag.menge} Stück`}.`, '');
+      } else if (e.typ === 'auftrag') {
+        klang.auftrag();
+        ui.toast(`Auftrag erfüllt: ${e.auftrag.titel} · +${geld(e.lohn)}`, 'gut');
+      } else if (e.typ === 'stromKnapp') {
+        klang.summen();
+        ui.toast('Zu wenig Strom: die Maschinen laufen langsamer. Ein Generator hilft.', 'warn');
       } else if (e.typ === 'gefegt' || e.typ === 'gegriffen') {
         const p = bildschirmPunkt(e.x, 0.3, e.z);
         if (p) ui.schwebeText(`+${e.menge}`, p[0], p[1], 'klein');
@@ -8376,6 +10643,15 @@ function hauptStart() {
       const e = st.lesen();
       const w = werte(s);
       umgebung.haufen = s.hf;
+      hofPruefen();
+      if (zustand.umgebungStand !== s || zustand.umgebungVersion !== bauVersion(s)) {
+        const u = bautenUmgebung(s);
+        umgebung.kollider = hof.kollider.concat(u.kollider);
+        umgebung.flaechen = u.flaechen;
+        umgebung.grenzen = hallenGrenzen(w.hallenFelder);
+        zustand.umgebungVersion = bauVersion(s);
+        zustand.umgebungStand = s;
+      }
       let tempo = 0;
       let ziel = null;
       if (!zustand.laeuft) {
@@ -8393,8 +10669,14 @@ function hauptStart() {
         s.stat.umgesehen += Math.abs(e.blickX) + Math.abs(e.blickY);
         pusteSchritt(s, dt, rennt && tempo > 0.5);
         spielerKamera(s.spieler, s3.kamera, tempo);
-        ziel = zielFinden();
-        aktionAusfuehren(ziel, e, dt);
+        if (bm.aktiv()) {
+          bm.schritt(s3.kamera.position, blickRichtung(s.spieler), dt);
+          if (e.aktionNeu) bm.setzen();
+        } else {
+          ziel = zielFinden();
+          aktionAusfuehren(ziel, e, dt);
+        }
+        zustand.ziel = ziel;
         // Sauger
         const saugZiel = ziel && ziel.art === 'haufen' ? ziel : null;
         const saugBoden = ziel && (ziel.art === 'boden' || ziel.art === 'haufen') ? ziel : null;
@@ -8427,16 +10709,36 @@ function hauptStart() {
       } else ui.detektorZeigen(false);
 
       // Welt
-      const erg = spielTakt(s, zustand.laeuft ? dt : 0);
+      const erg = spielTakt(s, zustand.laeuft ? dt : 0, [automatikSchritt]);
       ereignisPuffer.push(...erg);
       if (ereignisPuffer.length) { ereignisseZeigen(ereignisPuffer.splice(0)); }
+      zustand.rechenZeit -= dt;
+      zustand.verkaufZeit -= dt;
+      if (zustand.verkaufSumme > 0 && zustand.verkaufZeit <= 0) {
+        const o = zustand.verkaufOrt || [hof.standTrichter.x, hof.standTrichter.y + 1.2, hof.standTrichter.z];
+        const p = bildschirmPunkt(o[0], o[1], o[2]);
+        if (p) ui.schwebeText(`+${geld(zustand.verkaufSumme)}`, p[0], p[1]);
+        const sp = s.spieler;
+        if (Math.hypot(o[0] - sp.x, o[2] - sp.z) < 14) klang.kasse();
+        zustand.verkaufSumme = 0;
+        zustand.verkaufZeit = 0.6;
+      }
+      objekte.schritt(s, netzHolen(s), dt, s.zeit, s3.kamera);
 
       hAnsicht.schritt(s.hf);
       ansicht.schritt(s, dt, {
         tempo, detektor: detektorStaerke, behaelter: behaelter(s), platz: taschePlatz(w), boden: bodenBei,
+        haelt: gehaltenesStueck(s), bauen: bm.aktiv(),
       });
       s3.schritt(dt);
       const m = Math.floor(s.zeit / 60);
+      // Das Rolltor geht hoch, wenn der Laster ans Tor setzt
+      const L = s.laster;
+      const torZiel = L.zustand === 'steht' || (L.zustand === 'kommt' && L.t > 4) || (L.zustand === 'faehrt' && L.t < 1.2) ? 1 : 0;
+      zustand.torOffen = (zustand.torOffen || 0) + (torZiel - (zustand.torOffen || 0)) * Math.min(1, dt * 1.6);
+      const torRest = Math.max(0.07, 1 - zustand.torOffen);
+      hof.tor.scale.y = torRest;
+      hof.tor.position.y = WELT.torHoehe - (WELT.torHoehe * torRest) / 2;
       hof.uhr.setze(m >= 100 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}` : `${m}:${String(Math.floor(s.zeit % 60)).padStart(2, '0')}`);
 
       // Anzeigen
@@ -8455,10 +10757,15 @@ function hauptStart() {
         ui.forschungMarke(TECH.filter((t) => techStatus(s, t.id) === 'kaufbar').length);
         if (zustand.tafel && zustand.tafel.aktualisieren) zustand.tafel.aktualisieren();
       }
-      if (zustand.laeuft) {
+      if (zustand.laeuft && bm.aktiv()) {
+        ui.aktionZeigen(({ bau: 'Bauen', band: 'Setzen', linie: 'Setzen', abbau: 'Abbauen' })[bm.art()] || 'Bauen', true);
+        ui.hinweisZeigen('');
+        ui.infoZeigen(false);
+      } else if (zustand.laeuft) {
         const [knopfText, hinweisText] = aktionsText(ziel);
-        ui.aktionZeigen(knopfText, !!ziel);
+        ui.aktionZeigen(knopfText, !!ziel || !!gehaltenesStueck(s));
         ui.hinweisZeigen(hinweisText);
+        ui.infoZeigen(!!ziel && (ziel.art === 'bau' && ziel.bau.typ !== 'mast'));
       }
       s3.zeichnen();
       st.verbraucht();
@@ -8494,6 +10801,17 @@ function hauptStart() {
     startbild.remove();
     app.classList.remove('vorstart');
     zustand.laeuft = true;
+    if (!neu) {
+      // Was die Maschinen in der Zwischenzeit geschafft haben
+      const r = abwesenheit(s, Date.now(), [automatikSchritt]);
+      if (r && !r.kurz && r.verdient > 0) {
+        ui.modal({
+          ober: `${dauer(r.abwesend)} weg`, titel: 'Willkommen zurück',
+          absaetze: [`Die Maschinen haben ${halme(r.halme)} Halme abgetragen und ${geld(r.verdient)} eingenommen.`],
+          knoepfe: [{ text: 'Weiter', klasse: 'primaer' }],
+        });
+      }
+    }
     s.zuletzt = Date.now();
     spielerKamera(s.spieler, s3.kamera, 0);
     if (neu) anleitungZeigen(ui);
@@ -8505,7 +10823,15 @@ function hauptStart() {
   window.addEventListener('pagehide', () => { if (zustand.laeuft) speichernJetzt(); });
   requestAnimationFrame(schleife);
   window.__heuhaufen3d = {
-    get s() { return s; }, set s(x) { s = x; }, s3, ui, zustand, losgehen, speichernJetzt,
+    get s() { return s; }, set s(x) { s = x; }, s3, ui, zustand, losgehen, speichernJetzt, objekte, bm, netz: () => netzHolen(s),
+    // Für Tests und Prüfer: Bauen ohne Zielen
+    logik: {
+      bauSetzen: (typ, x, z, rot = 0) => bauSetzen(s, typ, x, z, rot),
+      band: (von, nach) => {
+        const plan = bandPlanen(s, bandAnker(s, von[0], von[1], false), bandAnker(s, nach[0], nach[1], true));
+        return plan.ok ? bandSetzen(s, plan) : plan;
+      },
+    },
   };
 }
 

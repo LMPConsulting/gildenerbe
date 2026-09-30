@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { WELT, BAUTEN } from '../../heuhaufen3d/src/daten.js';
 import { haufenHoehe } from '../../heuhaufen3d/src/haufen.js';
 import { werte, auftrag } from '../../heuhaufen3d/src/wirtschaft.js';
-import { standNeu, spielTakt, speichern, laden } from '../../heuhaufen3d/src/spiel.js';
+import { standNeu, spielTakt, speichern, laden, abwesenheit } from '../../heuhaufen3d/src/spiel.js';
 import { STAND_TRICHTER, lauf } from '../../heuhaufen3d/src/welt.js';
 import { gegenstandNeu, nadelMitgeben, gegenstandNehmen, heuWerfen } from '../../heuhaufen3d/src/gegenstaende.js';
 import { bandEinlegen, bandLaenge, bandWeg, bandPunkt } from '../../heuhaufen3d/src/baender.js';
@@ -348,6 +348,25 @@ describe('Spielstand mit Automatik', () => {
     laufen(s, 1.5);
     expect(g.ort === 'band' || g.ort === 'weg').toBe(true);
     expect(lauf(b).ziel.art).toBe('stand');
+  });
+});
+
+describe('Abwesenheit', () => {
+  it('rechnet drei Minuten genau nach und schätzt den Rest', () => {
+    const s = hof();
+    const x = rechenPlatz(s);
+    const r = bauSetzen(s, 'rechen', x, WELT.haufenZ, 0);
+    band(s, [x - 0.5 - r.bau.weite, WELT.haufenZ], [STAND_TRICHTER.x + 0.5, STAND_TRICHTER.z]);
+    bauSetzen(s, 'mast', -11, 4, 0);
+    bauSetzen(s, 'mast', x - 1, 3.4, 0);
+    s.zuletzt = Date.now() - 3600 * 1000;
+    const erg = abwesenheit(s, Date.now(), [automatikSchritt]);
+    expect(erg.kurz).toBe(false);
+    expect(erg.halme).toBeGreaterThan(600);
+    // drei Minuten genau, dazu 57 Minuten zur Hälfte geschätzt: gut das Zehnfache
+    const genauGeld = erg.halme * werte(s).preisRoh;
+    expect(erg.verdient).toBeGreaterThan(genauGeld * 5);
+    expect(abwesenheit(s, Date.now(), [automatikSchritt])).toBeNull();
   });
 });
 

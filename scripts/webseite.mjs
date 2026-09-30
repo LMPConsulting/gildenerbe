@@ -1,10 +1,10 @@
-// Baut alle zwölf Reisespiele als Webfassung in einen Ordner und schreibt die
+// Baut alle dreizehn Reisespiele als Webfassung in einen Ordner und schreibt die
 // Startseite dazu. Aufruf:
 //
 //   node scripts/webseite.mjs <zielordner>
 //
 // Ergebnis:
-//   <ziel>/index.html          Startseite mit den zwölf Kacheln
+//   <ziel>/index.html          Startseite mit den dreizehn Kacheln
 //   <ziel>/stil.css            Stil der Startseite
 //   <ziel>/<spiel>/index.html  das Spiel (Stil und Skript als eigene Dateien)
 //   <ziel>/<spiel>/Spiel.html  dieselbe Fassung als eine Datei zum Mitnehmen
@@ -200,6 +200,21 @@ const SPIELE = [
     icon: '<path d="M6 54 Q14 24 32 18 Q50 24 58 54 Z" stroke="none"/>'
       + '<path d="M38 6 L30 40" fill="none" stroke-width="4" stroke-linecap="round" opacity="0.55"/>',
   },
+  {
+    ordner: 'heuhaufen3d',
+    titel: 'Heuhaufen 3D',
+    zeile: 'Die Halle in der Ich-Perspektive',
+    text: 'Durch die Halle laufen, mit Spaten und Heugabel graben, Förderbänder selbst verlegen, '
+      + 'Kolbenrechen, Greifarme und Scanner aufstellen, Strommasten ziehen. Der Laster holt Aufträge am Tor ab.',
+    dauer: 'ein paar Abende',
+    fassungen: 'Bänder mit Wegfindung · Strom · Aufträge',
+    zwei: 'Allein, fürs Handy quer',
+    zweiOhne: 'Allein, fürs Handy quer',
+    farbe: '#d9913a',
+    icon: '<path d="M4 50 Q32 -6 60 50" fill="none" stroke-width="4"/>'
+      + '<path d="M12 54 Q16 30 32 24 Q48 30 52 54 Z" stroke="none"/>'
+      + '<path d="M2 58 H62" fill="none" stroke-width="4" opacity="0.55"/>',
+  },
 ];
 
 mkdirSync(ziel, { recursive: true });
@@ -290,7 +305,7 @@ const startseite = `<!doctype html>
     <h3>Vor dem Flug: einmal installieren</h3>
     <p><strong>Auf beiden Handys</strong> im Chrome-Menü (⋮) auf
       <em>Zum Startbildschirm hinzufügen</em> tippen. Danach liegt „Spiele“ wie eine App
-      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle zwölf Spiele
+      auf dem Homescreen und läuft <strong>komplett ohne Netz</strong> — alle dreizehn Spiele
       sind dann auf dem Gerät gespeichert.</p>
     <p><span class="offlineampel" id="offlineampel">wird gespeichert …</span></p>
     <p>Zu zweit ohne Internet: beide Handys ins <strong>selbe WLAN</strong>, dann im Spiel

@@ -693,7 +693,7 @@ export function maschinenZeilen(s, bau) {
   const l = lauf(bau);
   const z = [];
   if (d.kw > 0) z.push(['Strom', l.netz >= 0 ? `${Math.round((l.strom || 0) * 100)} % von ${d.kw} kW` : 'nicht angeschlossen']);
-  if (d.kw < 0) z.push(['Leistung', `${Math.round(-(l.leistung || 0) * 10) / 10} kW`]);
+  if (d.kw < 0) z.push(['Leistung', `${Math.round((l.leistung || 0) * 10) / 10} kW`]);
   if (bau.typ === 'generator') z.push(['Brennstoff', `${Math.round(bau.brenn || 0)} Halme`]);
   if (bau.lager) {
     for (const [zutat, m] of Object.entries(d.rezept || {})) {

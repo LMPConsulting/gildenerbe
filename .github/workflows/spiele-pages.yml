@@ -27,6 +27,7 @@ on:
       - 'sperre/**'
       - 'mauern/**'
       - 'heuhaufen/**'
+      - 'heuhaufen3d/**'
       - 'scripts/webseite.mjs'
       - '.github/workflows/spiele-pages.yml'
   workflow_dispatch:

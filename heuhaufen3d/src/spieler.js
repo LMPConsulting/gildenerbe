@@ -100,9 +100,10 @@ export function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
     }
     if (!geschoben) break;
   }
-  // Halle nicht verlassen
-  nx = Math.max(WELT.xMin + r, Math.min(WELT.xMax - r, nx));
-  nz = Math.max(WELT.zMin + r, Math.min(WELT.zMax - r, nz));
+  // Halle nicht verlassen (umgebung.grenzen, wenn die Halle verlängert ist)
+  const gr = umgebung.grenzen || WELT;
+  nx = Math.max(gr.xMin + r, Math.min(gr.xMax - r, nx));
+  nz = Math.max(gr.zMin + r, Math.min(gr.zMax - r, nz));
   sp.x = nx;
   sp.z = nz;
 
