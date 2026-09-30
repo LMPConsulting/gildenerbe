@@ -2,7 +2,7 @@
 // Systeme an, bestellt neue Ladungen, speichert und lädt. Reine Logik; die
 // Oberfläche ruft spielTakt() jedes Bild auf und liest die Ereignisse.
 
-import { WELT, GRUND, MISSIONEN, NADELN } from './daten.js';
+import { WELT, GRUND, MISSIONEN, NADELN, PRODUKTE } from './daten.js';
 import { zufallNeu } from './zufall.js';
 import {
   haufenNeu, haufenSetzen, haufenRest, haufenPacken, haufenEntpacken,
@@ -13,6 +13,8 @@ import {
 import { nadelnVerteilen, nadelnFreilegen, loseNadelnSetzen } from './nadeln.js';
 import { spielerNeu } from './spieler.js';
 import { WERKZEUG_NACH_ID } from './werkzeuge.js';
+import { lasterNeu } from './laster.js';
+import { bauZustand } from './maschinen.js';
 
 export const STAND3D_VERSION = 1;
 export const SPEICHER3D_KEY = 'heuhaufen3d-stand-v1';
@@ -46,7 +48,7 @@ export function standNeu(seed = (Date.now() % 2147483647) || 7) {
     lose: [],
     spieler: {
       ...spielerNeu(), werkzeug: 'hand', last: 0, puste: GRUND.ausdauer, ruhe: 0,
-      sauger: { an: false, hitze: 0, heiss: false, rest: 0 },
+      sauger: { an: false, hitze: 0, heiss: false, rest: 0 }, haelt: null,
     },
     bauten: [],
     gegenstaende: [],
@@ -55,6 +57,7 @@ export function standNeu(seed = (Date.now() % 2147483647) || 7) {
     mission: 0,
     missionErledigt: [],
     auftrag: { nr: 0, skip: 0, geliefert: 0, pause: 0 },
+    laster: lasterNeu(),
     stat: statNeu(),
     einnahmenFenster: [],
     haufenStart: 0,
@@ -153,10 +156,42 @@ export function laden(text) {
   s.tech.scheune = 1;
   s.arten = Object.fromEntries(Object.entries(s.arten).filter(([a, n]) => NADELN[a] && Number.isFinite(n)));
   s.nadeln = s.nadeln.filter((n) => istObjekt(n) && Number.isFinite(n.x) && Number.isFinite(n.y) && Number.isFinite(n.z)
-    && NADELN[n.art] && ['versteckt', 'lose', 'gefunden', 'unterwegs', 'scanner'].includes(n.zustand));
+    && NADELN[n.art] && ['versteckt', 'lose', 'gefunden', 'unterwegs', 'scanner', 'maschine'].includes(n.zustand));
+  s.nadeln.forEach((n, i) => { n.nr = i; });
   s.lose = s.lose.filter((b) => istObjekt(b) && Number.isFinite(b.x) && Number.isFinite(b.z) && b.m > 0).slice(0, 400);
-  s.bauten = s.bauten.filter((b) => istObjekt(b) && BAU_NACH_ID[b.typ] && Number.isFinite(b.x) && Number.isFinite(b.z));
-  s.gegenstaende = s.gegenstaende.filter((g) => istObjekt(g) && Number.isFinite(g.x) && Number.isFinite(g.z)).slice(0, 600);
+  s.bauten = s.bauten.filter((b) => istObjekt(b) && BAU_NACH_ID[b.typ] && Number.isFinite(b.x) && Number.isFinite(b.z)
+    && (b.typ !== 'band' || (Array.isArray(b.punkte) && b.punkte.length >= 2 && b.punkte.every((p) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite))))
+    && (!BAU_NACH_ID[b.typ].linie || b.typ === 'band' || (Array.isArray(b.a) && Array.isArray(b.b))));
+  for (const b of s.bauten) {
+    // fehlende Felder (ältere Stände) mit dem Grundzustand auffüllen
+    const grund = bauZustand(b.typ);
+    for (const [k, v] of Object.entries(grund)) if (!(k in b) || typeof b[k] !== typeof v || Array.isArray(v) !== Array.isArray(b[k])) b[k] = v;
+    b.rot = zahlOder(b.rot, 0);
+    b.y = zahlOder(b.y, 0);
+  }
+  const ORTE = ['boden', 'flug', 'band', 'hand'];
+  s.gegenstaende = s.gegenstaende.filter((g) => istObjekt(g) && Number.isFinite(g.x) && Number.isFinite(g.y) && Number.isFinite(g.z)
+    && PRODUKTE[g.art] && (g.art !== 'roh' || g.halme > 0)).slice(0, 600);
+  for (const g of s.gegenstaende) {
+    if (!ORTE.includes(g.ort)) g.ort = 'flug';
+    if (g.ort === 'band' && !s.bauten.some((b) => b.id === g.band && b.typ === 'band')) g.ort = 'flug';
+    if (g.ort === 'hand' && s.spieler.haelt !== g.id) g.ort = 'flug';
+    for (const k of ['vx', 'vy', 'vz']) g[k] = zahlOder(g[k], 0);
+    if (!Number.isInteger(g.nadel) || !s.nadeln[g.nadel]) g.nadel = -1;
+  }
+  if (s.spieler.haelt != null && !s.gegenstaende.some((g) => g.id === s.spieler.haelt && g.ort === 'hand')) s.spieler.haelt = null;
+  // Nadeln unterwegs oder in Maschinen brauchen ihren Träger, sonst liegen sie lose am Haufen
+  for (const n of s.nadeln) {
+    if (n.zustand === 'unterwegs' && !s.gegenstaende.some((g) => g.nadel === n.nr)) n.zustand = 'lose';
+    if (n.zustand === 'scanner' || n.zustand === 'maschine') {
+      const bau = s.bauten.find((b) => b.id === n.bei);
+      const drin = bau && ((bau.nadeln || []).includes(n.nr)
+        || [bau.puffer, ...(bau.schlange || []), ...(bau.fertig || []), ...(bau.innen || [])].some((r) => r && r.nadel === n.nr));
+      if (!drin) n.zustand = 'lose';
+    }
+    if (n.zustand === 'lose' && !Number.isFinite(n.zeit)) n.zeit = 0;
+  }
+  if (!['weg', 'kommt', 'steht', 'faehrt'].includes(s.laster.zustand)) s.laster = lasterNeu();
   s.geschenke = Object.fromEntries(Object.entries(s.geschenke).filter(([id, n]) => BAU_NACH_ID[id] && n > 0));
   const sp = s.spieler;
   if (!WERKZEUG_NACH_ID[sp.werkzeug]) sp.werkzeug = 'hand';

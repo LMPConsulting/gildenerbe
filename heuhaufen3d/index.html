@@ -1924,6 +1924,131 @@ function missionenPruefen(s, ereignisse) {
   }
 }
 
+// ---- src/welt.js
+// Geometrie der Welt ohne three.js: Lage von Bauten (Drehung, Anschlüsse,
+// Fußabdruck), feste Hindernisse der Halle, besondere Punkte (Trichter am
+// Stand, Laderampe am Tor, Hausanschluss). Reine Logik.
+
+
+const BAND_Y = 0.55; // Oberkante eines Bandes
+const BAU_BY_ID = Object.fromEntries(BAUTEN.map((b) => [b.id, b]));
+
+/** Trichter vorn am Verkaufsstand: hier rasten Bänder ein. */
+const STAND_TRICHTER = { x: WELT.standX + WELT.standTiefe / 2 + 0.45, y: 0.9, z: WELT.standZ };
+/** Schwelle im Tor: hier steht die Ladefläche des Lasters, wenn er angesetzt hat. */
+const LADERAMPE = { x: WELT.torX, y: 0.9, z: WELT.zMin + 0.5 };
+/** Hausanschluss an der linken Wand: 5 kW Grundstrom. */
+const HAUSANSCHLUSS = { x: WELT.anschlussX + 0.25, y: 1.4, z: WELT.anschlussZ };
+
+/** Innenmaße der Halle (die Halle kann um Felder à 4 m verlängert werden). */
+function hallenGrenzen(felder = 0) {
+  return { xMin: WELT.xMin, xMax: WELT.xMax + felder * 4, zMin: WELT.zMin, zMax: WELT.zMax };
+}
+
+/** Lokaler Punkt (lx, lz) eines Baus in Weltkoordinaten. +x lokal zeigt in Blickrichtung rot. */
+function lokalZuWelt(bau, lx, lz) {
+  const c = Math.cos(bau.rot || 0);
+  const s = Math.sin(bau.rot || 0);
+  return [bau.x + lx * c + lz * s, bau.z - lx * s + lz * c];
+}
+
+/** Weltpunkt in lokale Koordinaten eines Baus. */
+function weltZuLokal(bau, x, z) {
+  const c = Math.cos(bau.rot || 0);
+  const s = Math.sin(bau.rot || 0);
+  const dx = x - bau.x;
+  const dz = z - bau.z;
+  return [dx * c - dz * s, dx * s + dz * c];
+}
+
+/** Richtung von lokal +x in Welt. */
+const vorwaerts = (rot) => [Math.cos(rot || 0), -Math.sin(rot || 0)];
+
+/** Anschlüsse eines Baus in Welt: { ein: [[x,z],...], aus: [[x,z],...] }. */
+function anschluesse(bau) {
+  const d = BAU_BY_ID[bau.typ];
+  if (!d) return { ein: [], aus: [] };
+  return {
+    ein: d.ein.map(([lx, lz]) => lokalZuWelt(bau, lx, lz)),
+    aus: d.aus.map(([lx, lz]) => lokalZuWelt(bau, lx, lz)),
+  };
+}
+
+/** Achsparalleler Kasten um den gedrehten Fußabdruck (etwas großzügig). */
+function fussabdruck(typ, x, z, rot = 0, rand = 0) {
+  const d = BAU_BY_ID[typ];
+  const hb = d.b / 2 + rand;
+  const ht = d.t / 2 + rand;
+  const c = Math.abs(Math.cos(rot));
+  const s = Math.abs(Math.sin(rot));
+  const ex = hb * c + ht * s;
+  const ez = hb * s + ht * c;
+  return { x0: x - ex, x1: x + ex, z0: z - ez, z1: z + ez, h: d.h };
+}
+
+/** Die vier Ecken des gedrehten Fußabdrucks. */
+function ecken(typ, x, z, rot = 0) {
+  const d = BAU_BY_ID[typ];
+  const bau = { x, z, rot };
+  return [[-d.b / 2, -d.t / 2], [d.b / 2, -d.t / 2], [d.b / 2, d.t / 2], [-d.b / 2, d.t / 2]].map(([lx, lz]) => lokalZuWelt(bau, lx, lz));
+}
+
+/** Liegt (x, z) im gedrehten Fußabdruck (mit Rand)? */
+function imFussabdruck(bau, x, z, rand = 0) {
+  const d = BAU_BY_ID[bau.typ];
+  const [lx, lz] = weltZuLokal(bau, x, z);
+  return Math.abs(lx) <= d.b / 2 + rand && Math.abs(lz) <= d.t / 2 + rand;
+}
+
+const kastenUeberlapp = (a, b) => a.x0 < b.x1 && a.x1 > b.x0 && a.z0 < b.z1 && a.z1 > b.z0;
+
+/** Feste Hindernisse der Halle (Stand, Werkzeugstand, Werkbank, Lieferschalter, Aufsteller). */
+function festeHindernisse() {
+  const W = WELT;
+  return [
+    { name: 'stand', x0: W.standX - W.standTiefe / 2 - 0.1, x1: W.standX + W.standTiefe / 2 + 0.1, z0: W.standZ - W.standBreite / 2 - 0.1, z1: W.standZ + W.standBreite / 2 + 0.1, h: 2.4 },
+    { name: 'aufsteller', x0: W.standX + 1.95, x1: W.standX + 2.65, z0: W.standZ + 1.35, z1: W.standZ + 2.05, h: 1.1 },
+    { name: 'werkzeugstand', x0: W.werkzeugX - 1.6, x1: W.werkzeugX + 1.6, z0: W.werkzeugZ - 0.8, z1: W.werkzeugZ + 0.8, h: 2.4 },
+    { name: 'werkbank', x0: W.bankX - 1.0, x1: W.bankX + 1.0, z0: W.bankZ - 0.6, z1: W.bankZ + 0.6, h: 1.0 },
+    { name: 'lieferschalter', x0: W.lieferX - 1.4, x1: W.lieferX + 1.4, z0: W.lieferZ - 0.45, z1: W.lieferZ + 0.45, h: 1.1 },
+  ];
+}
+
+/** Abstand eines Punktes zu einer Strecke, dazu der Anteil t entlang der Strecke. */
+function streckenAbstand(px, pz, ax, az, bx, bz) {
+  const dx = bx - ax;
+  const dz = bz - az;
+  const l2 = dx * dx + dz * dz;
+  let t = l2 > 0 ? ((px - ax) * dx + (pz - az) * dz) / l2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  const qx = ax + dx * t;
+  const qz = az + dz * t;
+  return { d: Math.hypot(px - qx, pz - qz), t, qx, qz };
+}
+
+/** Laufzeitdaten an einem Objekt (Bau, Stand), die nicht mitgespeichert werden. */
+function lauf(obj) {
+  if (!obj._l) Object.defineProperty(obj, '_l', { value: {}, writable: true, enumerable: false, configurable: true });
+  return obj._l;
+}
+
+/** Grobes Gitter (1 m) für schnelle Nachbarschaftssuche. */
+const GITTER = 1;
+const gitterSchluessel = (ix, iz) => ix * 4096 + iz;
+function gitterEintragen(gitter, x0, z0, x1, z1, wert) {
+  const i0 = Math.floor(x0 / GITTER); const i1 = Math.floor(x1 / GITTER);
+  const k0 = Math.floor(z0 / GITTER); const k1 = Math.floor(z1 / GITTER);
+  for (let i = i0; i <= i1; i++) {
+    for (let k = k0; k <= k1; k++) {
+      const key = gitterSchluessel(i, k);
+      let liste = gitter.get(key);
+      if (!liste) { liste = []; gitter.set(key, liste); }
+      liste.push(wert);
+    }
+  }
+}
+const gitterBei = (gitter, x, z) => gitter.get(gitterSchluessel(Math.floor(x / GITTER), Math.floor(z / GITTER))) || [];
+
 // ---- src/nadeln.js
 // Nadeln stecken an echten Stellen im Haufen. Sinkt die Oberfläche unter eine
 // Nadel, springt sie heraus: liegt dann glitzernd obenauf (Hand oder Werkzeug hebt
@@ -2326,6 +2451,2357 @@ function pusteSchritt(s, dt, rennt) {
   }
 }
 
+// ---- src/gegenstaende.js
+// Gegenstände: Heubündel und Waren, die fliegen, liegen, auf Bändern fahren
+// oder in der Hand getragen werden. Wie im Vorbild sind sie auf dem Band nur
+// Einträge (Band, Weg), in der Luft einfache Würfe mit Schwerkraft. Landet
+// etwas, fängt es der Trichter am Stand, die Ladefläche des Lasters, ein
+// Maschinentrichter oder ein Band; sonst bleibt es liegen. Reine Logik.
+
+
+const SCHWERE = 9.81;
+const GEGENSTAENDE_MAX = 600;
+
+/** Halbe Höhe (Radius) je Ware: so weit ragt ein Stück über seine Auflage. */
+const GROESSE = {
+  roh: 0.2, knaeuel: 0.17, ballen: 0.26, pellet: 0.15, brei: 0.18, silage: 0.32, papier: 0.12, brikett: 0.14,
+};
+
+/** Halme eines Stücks (bei losem Heu steht es im Stück selbst). */
+const gegenstandHalme = (g) => (g.art === 'roh' ? g.halme : PRODUKTE[g.art].halme);
+
+/** Was das Stück am Stand bringt. */
+function gegenstandWert(s, g) {
+  const w = werte(s);
+  return g.art === 'roh' ? g.halme * preisRoh(w) : produktPreis(w, g.art);
+}
+
+function gegenstandNeu(s, art, halme, x, y, z, extra = {}) {
+  const g = {
+    id: s.naechsteId++, art, halme: art === 'roh' ? Math.max(1, Math.round(halme)) : PRODUKTE[art].halme,
+    nadel: -1, ort: 'boden', x, y, z, vx: 0, vy: 0, vz: 0, dreh: 0, ...extra,
+  };
+  s.gegenstaende.push(g);
+  return g;
+}
+
+const gegenstandNachId = (s, id) => s.gegenstaende.find((g) => g.id === id) || null;
+
+/** Stück entfernen (verkauft, verarbeitet, verbrannt). */
+function gegenstandWeg(s, g) {
+  const i = s.gegenstaende.indexOf(g);
+  if (i >= 0) s.gegenstaende.splice(i, 1);
+  g.ort = 'weg';
+  if (s.spieler.haelt === g.id) s.spieler.haelt = null;
+}
+
+/** Eine Nadel wandert mit dem Stück mit. */
+function nadelMitgeben(s, g, n) {
+  if (!n) return;
+  n.zustand = 'unterwegs';
+  n.bei = g.id;
+  g.nadel = n.nr;
+}
+
+/** Die Nadel im Stück (oder null). */
+const nadelIn = (s, g) => (g.nadel >= 0 ? s.nadeln[g.nadel] || null : null);
+
+/**
+ * Das Stück wird verkauft (Stand, Band am Stand, Laster, Drohne). Eine Nadel darin
+ * fällt zurück in den Haufen. Liefert den Betrag.
+ */
+function gegenstandVerkaufen(s, g, ereignisse, wo = 'stand') {
+  const betrag = gegenstandWert(s, g);
+  const n = nadelIn(s, g);
+  if (n) nadelZurueck(s, s.hf, n, s.zufallFn || Math.random, ereignisse);
+  verkaufen(s, betrag, gegenstandHalme(g), null, wo);
+  if (ereignisse) ereignisse.push({ typ: 'verkauft', betrag, halme: gegenstandHalme(g), wo, x: g.x, y: g.y, z: g.z, art: g.art });
+  gegenstandWeg(s, g);
+  return betrag;
+}
+
+/* ------------------------------------------------------------ Werfen */
+
+/**
+ * Wirft das Stück von (x, y, z) so, dass es nach etwa `dauer` Sekunden bei
+ * (zx, zy, zz) landet.
+ */
+function werfenNach(g, x, y, z, zx, zy, zz, dauer = 0.8) {
+  g.ort = 'flug';
+  g.x = x; g.y = y; g.z = z;
+  g.vx = (zx - x) / dauer;
+  g.vz = (zz - z) / dauer;
+  g.vy = (zy - y) / dauer + 0.5 * SCHWERE * dauer;
+  g.flug = 0;
+}
+
+/** Wurf mit fester Anfangsgeschwindigkeit. */
+function werfenMit(g, x, y, z, vx, vy, vz) {
+  g.ort = 'flug';
+  g.x = x; g.y = y; g.z = z;
+  g.vx = vx; g.vy = vy; g.vz = vz;
+  g.flug = 0;
+}
+
+/* ------------------------------------------------------------ Fangen */
+
+/** Trichter am Stand: hier verkauft sich alles, was hineinfällt. */
+function imStandTrichter(x, y, z) {
+  const T = STAND_TRICHTER;
+  return Math.abs(x - T.x) < 0.62 && Math.abs(z - T.z) < 0.85 && y < T.y + 0.5 && y > T.y - 0.9;
+}
+
+/**
+ * Der Weltzugang, den gegenstaendeSchritt braucht (von automatik.js gebaut):
+ * {
+ *   boden(x, z, y): Auflagehöhe (Boden, Haufen, Plattformen, Maschinendächer),
+ *   fangen(s, g, ereignisse): true, wenn ein Trichter, Laster oder Band das Stück nahm,
+ *   grenzen: { xMin, xMax, zMin, zMax }
+ * }
+ */
+function gegenstaendeSchritt(s, dt, welt, ereignisse) {
+  const hf = s.hf;
+  const l = lauf(s);
+  l.liegenTakt = (l.liegenTakt || 0) + dt;
+  const liegenPruefen = l.liegenTakt > 0.3;
+  if (liegenPruefen) l.liegenTakt = 0;
+  const z = s.zufallFn || Math.random;
+  for (let i = s.gegenstaende.length - 1; i >= 0; i--) {
+    const g = s.gegenstaende[i];
+    if (!g) continue;
+    if (g.ort === 'flug') {
+      flugSchritt(s, g, dt, welt, ereignisse, z);
+    } else if (g.ort === 'boden' && liegenPruefen) {
+      // Wird unter einem liegenden Stück gegraben, sinkt es nach.
+      const unten = welt.boden(g.x, g.z, g.y + 0.05);
+      if (g.y > unten + 0.05) {
+        g.ort = 'flug';
+        g.vx = 0; g.vy = 0; g.vz = 0; g.flug = 0;
+      } else if (g.y < unten - 0.02) {
+        g.y = unten;
+      }
+    }
+  }
+  if (s.gegenstaende.length > GEGENSTAENDE_MAX) aufraeumen(s, hf);
+}
+
+function flugSchritt(s, g, dt, welt, ereignisse, zufall) {
+  const schritte = Math.max(1, Math.ceil(dt / (1 / 90)));
+  const h = dt / schritte;
+  for (let k = 0; k < schritte; k++) {
+    g.vy -= SCHWERE * h;
+    const ny = g.y + g.vy * h;
+    let nx = g.x + g.vx * h;
+    let nz = g.z + g.vz * h;
+    const gr = welt.grenzen;
+    if (nx < gr.xMin + 0.2 || nx > gr.xMax - 0.2) { g.vx *= -0.3; nx = Math.max(gr.xMin + 0.2, Math.min(gr.xMax - 0.2, nx)); }
+    if (nz < gr.zMin - 6 || nz > gr.zMax - 0.2) { g.vz *= -0.3; nz = Math.max(gr.zMin - 6, Math.min(gr.zMax - 0.2, nz)); }
+    g.x = nx; g.z = nz;
+    g.flug = (g.flug || 0) + h;
+    g.dreh = (g.dreh || 0) + h * 5;
+    // Beim Sinken durch eine Fangfläche? (Trichter, Ladefläche, Maschinen, Bänder)
+    if (g.vy < 0) {
+      g.y = ny;
+      if (welt.fangen(s, g, ereignisse)) return;
+      const unten = welt.boden(g.x, g.z, g.y + 0.3);
+      if (g.y <= unten) {
+        landen(s, g, unten, welt, zufall);
+        return;
+      }
+    } else {
+      g.y = ny;
+    }
+    if (g.flug > 12) { landen(s, g, welt.boden(g.x, g.z, 99), welt, zufall); return; }
+  }
+}
+
+function landen(s, g, unten, welt, zufall) {
+  g.ort = 'boden';
+  delete g.vomBand;
+  g.vx = 0; g.vy = 0; g.vz = 0;
+  g.y = unten;
+  // Auf dem Haufen rollt ein Stück den Hang hinunter bis an den Fuß.
+  const hf = s.hf;
+  if (hf && unten > 0.25 && Math.abs(unten - haufenHoehe(hf, g.x, g.z)) < 0.05) {
+    const [fx, fz] = hangFuss(hf, g.x, g.z, zufall);
+    g.x = fx; g.z = fz;
+    g.y = welt.boden(fx, fz, 99);
+  }
+}
+
+/** Zu viele Stücke: die ältesten liegenden Bündel werden zu losen Halmen. */
+function aufraeumen(s) {
+  const zuViel = s.gegenstaende.length - GEGENSTAENDE_MAX;
+  let weg = 0;
+  for (let i = 0; i < s.gegenstaende.length && weg < zuViel; i++) {
+    const g = s.gegenstaende[i];
+    if (g.ort !== 'boden' || g.art !== 'roh' || g.nadel >= 0) continue;
+    s.lose.push({ x: g.x, z: g.z, m: g.halme, a: 0 });
+    s.gegenstaende.splice(i, 1);
+    i--;
+    weg++;
+  }
+}
+
+/* ------------------------------------------------------------ Spieler */
+
+/**
+ * Der Spieler hebt ein Stück auf. Loses Heu und Knäuel kommen in den Behälter
+ * (so viel Platz ist), Waren nimmt er in die Hand. Eine Nadel im Heu findet er dabei.
+ * Liefert { ok, grund, menge, haelt }.
+ */
+function gegenstandNehmen(s, g, ereignisse) {
+  const sp = s.spieler;
+  if (!g || (g.ort !== 'boden' && g.ort !== 'flug')) return { ok: false, grund: 'weg' };
+  const n = nadelIn(s, g);
+  if (g.art === 'roh' || g.art === 'knaeuel') {
+    const frei = platzFrei(s);
+    if (frei <= 0) return { ok: false, grund: 'voll' };
+    const halme = gegenstandHalme(g);
+    const menge = Math.min(frei, halme);
+    sp.last += menge;
+    s.stat.gefegt += menge;
+    if (n) { g.nadel = -1; nadelFinden(s, n, ereignisse); }
+    if (menge >= halme) gegenstandWeg(s, g);
+    else if (g.art === 'roh') g.halme = halme - menge;
+    else { g.art = 'roh'; g.halme = halme - menge; }
+    ereignisse.push({ typ: 'gegriffen', menge, x: g.x, z: g.z });
+    return { ok: true, menge };
+  }
+  if (sp.haelt != null) return { ok: false, grund: 'haende' };
+  g.ort = 'hand';
+  sp.haelt = g.id;
+  if (n) { g.nadel = -1; nadelFinden(s, n, ereignisse); }
+  ereignisse.push({ typ: 'aufgehoben', art: g.art });
+  return { ok: true, haelt: g };
+}
+
+/** Das getragene Stück (oder null). */
+const gehaltenesStueck = (s) => (s.spieler.haelt != null ? gegenstandNachId(s, s.spieler.haelt) : null);
+
+/** Wirft das getragene Stück in Blickrichtung. */
+function stueckWerfen(s, von, richtung, kraft = 6.5) {
+  const g = gehaltenesStueck(s);
+  if (!g) { s.spieler.haelt = null; return null; }
+  s.spieler.haelt = null;
+  werfenMit(g, von[0], von[1], von[2], richtung[0] * kraft, richtung[1] * kraft + 2.2, richtung[2] * kraft);
+  return g;
+}
+
+/**
+ * Heu aus dem Behälter als Bündel werfen (etwa auf ein Band oder in einen Trichter).
+ * Liefert das Bündel oder null.
+ */
+function heuWerfen(s, von, richtung, menge = 40, kraft = 5.5) {
+  const sp = s.spieler;
+  const m = Math.min(sp.last, menge);
+  if (m < 1) return null;
+  sp.last -= m;
+  const g = gegenstandNeu(s, 'roh', m, von[0], von[1], von[2]);
+  werfenMit(g, von[0], von[1], von[2], richtung[0] * kraft, richtung[1] * kraft + 2, richtung[2] * kraft);
+  return g;
+}
+
+/** Nächstes liegendes Stück in Reichweite eines Strahls (für das Zielen). */
+function stueckImBlick(s, ox, oy, oz, dx, dy, dz, maxT = 3.2) {
+  let beste = null;
+  let bestT = maxT;
+  for (const g of s.gegenstaende) {
+    if (g.ort !== 'boden') continue;
+    const r = GROESSE[g.art] + 0.12;
+    const cx = g.x - ox;
+    const cy = g.y + r * 0.8 - oy;
+    const cz = g.z - oz;
+    const t = cx * dx + cy * dy + cz * dz;
+    if (t < 0 || t > bestT) continue;
+    const px = cx - dx * t;
+    const py = cy - dy * t;
+    const pz = cz - dz * t;
+    if (px * px + py * py + pz * pz <= r * r * 1.6) { beste = g; bestT = t; }
+  }
+  return beste ? { g: beste, t: bestT } : null;
+}
+
+// ---- src/baender.js
+// Förderbänder wie im Vorbild: Anfang und Ende setzen, der Weg dazwischen
+// findet sich selbst (Raster 0,5 m, wenige Kurven, um Maschinen und den
+// Haufen herum). Ein Band trägt Einträge (Stück, Weg); am Ende gibt es sie an
+// Stand, Laster, Maschine oder das nächste Band weiter. Nimmt niemand an,
+// fallen sie herunter. Landet etwas auf einem Band, fährt es mit. Reine Logik.
+
+
+const BAND_BREITE = 0.62;
+const RASTER = 0.5;
+const KURVE = 0.55; // so weit vor der Ecke beginnt die Rundung
+const lerp = (a, b, t) => a + (b - a) * t;
+
+/* ------------------------------------------------------------ Geometrie */
+
+/** Die Bahn eines Bandes: Eckpunkte mit gerundeten Kurven als dichte Linie. */
+function bandBahn(punkte, radius = KURVE) {
+  if (punkte.length < 3) return punkte.map((p) => [...p]);
+  const aus = [[...punkte[0]]];
+  for (let i = 1; i < punkte.length - 1; i++) {
+    const p0 = punkte[i - 1]; const p1 = punkte[i]; const p2 = punkte[i + 1];
+    const l1 = Math.hypot(p1[0] - p0[0], p1[2] - p0[2]);
+    const l2 = Math.hypot(p2[0] - p1[0], p2[2] - p1[2]);
+    if (l1 < 1e-6 || l2 < 1e-6) continue;
+    const u1x = (p1[0] - p0[0]) / l1; const u1z = (p1[2] - p0[2]) / l1;
+    const u2x = (p2[0] - p1[0]) / l2; const u2z = (p2[2] - p1[2]) / l2;
+    if (u1x * u2x + u1z * u2z > 0.999) { aus.push([...p1]); continue; }
+    const r = Math.min(radius, l1 * 0.5, l2 * 0.5);
+    const a = [p1[0] - u1x * r, lerp(p0[1], p1[1], 1 - r / l1), p1[2] - u1z * r];
+    const b = [p1[0] + u2x * r, lerp(p1[1], p2[1], r / l2), p1[2] + u2z * r];
+    const n = 6;
+    for (let k = 0; k <= n; k++) {
+      const t = k / n;
+      const ka = (1 - t) * (1 - t); const kb = 2 * (1 - t) * t; const kc = t * t;
+      aus.push([ka * a[0] + kb * p1[0] + kc * b[0], ka * a[1] + kb * p1[1] + kc * b[1], ka * a[2] + kb * p1[2] + kc * b[2]]);
+    }
+  }
+  aus.push([...punkte[punkte.length - 1]]);
+  return aus;
+}
+
+function bahnSegmente(bahn) {
+  const segs = [];
+  let s0 = 0;
+  for (let i = 0; i < bahn.length - 1; i++) {
+    const a = bahn[i]; const b = bahn[i + 1];
+    const dx = b[0] - a[0]; const dy = b[1] - a[1]; const dz = b[2] - a[2];
+    const len = Math.hypot(dx, dy, dz);
+    if (len < 1e-5) continue;
+    segs.push({ ax: a[0], ay: a[1], az: a[2], bx: b[0], by: b[1], bz: b[2], dx: dx / len, dy: dy / len, dz: dz / len, len, s0 });
+    s0 += len;
+  }
+  return { segs, laenge: s0 };
+}
+
+/** Geometrie eines Bandes (zwischengespeichert, bis sich die Punkte ändern). */
+function bandGeometrie(band) {
+  const l = lauf(band);
+  if (!l.geo || l.geo.punkte !== band.punkte) {
+    const bahn = bandBahn(band.punkte);
+    l.geo = { punkte: band.punkte, bahn, ...bahnSegmente(bahn) };
+  }
+  return l.geo;
+}
+
+const bandLaenge = (band) => bandGeometrie(band).laenge;
+
+/** Punkt und Richtung auf dem Band nach t Metern. */
+function bandPunkt(band, t) {
+  const { segs, laenge } = bandGeometrie(band);
+  if (!segs.length) return { x: band.punkte[0][0], y: band.punkte[0][1], z: band.punkte[0][2], dx: 1, dy: 0, dz: 0 };
+  t = Math.max(0, Math.min(laenge, t));
+  let lo = 0; let hi = segs.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (segs[mid].s0 <= t) lo = mid; else hi = mid - 1;
+  }
+  const g = segs[lo];
+  const u = Math.min(g.len, t - g.s0);
+  return { x: g.ax + g.dx * u, y: g.ay + g.dy * u, z: g.az + g.dz * u, dx: g.dx, dy: g.dy, dz: g.dz };
+}
+
+/** Nächster Punkt des Bandes zu (x, z): { d, t, y }. */
+function bandNaechster(band, x, z) {
+  const { segs } = bandGeometrie(band);
+  let beste = { d: Infinity, t: 0, y: 0 };
+  for (const g of segs) {
+    const r = streckenAbstand(x, z, g.ax, g.az, g.bx, g.bz);
+    if (r.d < beste.d) beste = { d: r.d, t: g.s0 + r.t * g.len, y: lerp(g.ay, g.by, r.t) };
+  }
+  return beste;
+}
+
+/* ------------------------------------------------------------ Stücke auf dem Band */
+
+const abstand = (a, b) => GROESSE[a] + GROESSE[b] + 0.08;
+
+/** Ist auf dem Band bei t Platz für ein Stück der Ware art? */
+function platzAuf(band, t, art) {
+  const l = lauf(band);
+  if (t < 0 || t > bandLaenge(band) + 1e-6) return false;
+  for (const g of l.items || []) if (Math.abs(g.t - t) < abstand(g.art, art)) return false;
+  return true;
+}
+
+/** Legt ein Stück aufs Band bei t (ohne Platzprüfung). */
+function bandEinlegen(band, g, t) {
+  g.ort = 'band';
+  delete g.vomBand;
+  g.band = band.id;
+  g.t = t;
+  g.vx = 0; g.vy = 0; g.vz = 0;
+  const p = bandPunkt(band, t);
+  g.x = p.x; g.y = p.y; g.z = p.z;
+  const l = lauf(band);
+  (l.items || (l.items = [])).push(g);
+}
+
+/** Freie Stelle nahe t suchen (bis ±0,6 m). */
+function freieStelle(band, t, art) {
+  const L = bandLaenge(band);
+  for (const d of [0, 0.15, -0.15, 0.3, -0.3, 0.45, -0.45, 0.6, -0.6]) {
+    const tt = Math.max(0, Math.min(L, t + d));
+    if (platzAuf(band, tt, art)) return tt;
+  }
+  return null;
+}
+
+/**
+ * Ein fallendes Stück über einem Band? Dann fängt das Band es. netz.bandGitter
+ * ordnet 1-m-Zellen den Bandsegmenten zu.
+ */
+function bandFangen(netz, g) {
+  if (!netz.bandGitter || g.y > netz.bandHoechst + 0.4) return false;
+  for (const [band, seg] of gitterBei(netz.bandGitter, g.x, g.z)) {
+    if (g.vomBand === band.id) continue; // gerade erst vorn heruntergefallen
+    const r = streckenAbstand(g.x, g.z, seg.ax, seg.az, seg.bx, seg.bz);
+    if (r.d > BAND_BREITE * 0.62) continue;
+    const y = lerp(seg.ay, seg.by, r.t);
+    if (g.y > y + 0.12 || g.y < y - 0.4) continue;
+    const t = freieStelle(band, seg.s0 + r.t * seg.len, g.art);
+    if (t == null) continue;
+    bandEinlegen(band, g, t);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Bänder bewegen. netz.baender: alle Bänder; netz.abgeben(s, band, ziel, g, ereignisse)
+ * gibt am Ende weiter und liefert true, wenn jemand angenommen hat.
+ */
+function baenderSchritt(s, dt, netz, ereignisse) {
+  const v = werte(s).band;
+  for (const band of netz.baender) lauf(band).items = [];
+  for (const g of s.gegenstaende) {
+    if (g.ort !== 'band') continue;
+    const band = netz.bauNachId.get(g.band);
+    if (!band || band.typ !== 'band') { g.ort = 'flug'; g.vx = 0; g.vy = 0; g.vz = 0; g.flug = 0; continue; }
+    lauf(band).items.push(g);
+  }
+  for (const band of netz.baender) {
+    const l = lauf(band);
+    const items = l.items;
+    if (!items.length) continue;
+    items.sort((a, b) => b.t - a.t);
+    const L = bandLaenge(band);
+    let vorne = null;
+    const bleiben = [];
+    for (const g of items) {
+      let nt = g.t + v * dt;
+      if (vorne) nt = Math.min(nt, vorne.t - abstand(vorne.art, g.art));
+      if (!vorne && nt >= L) {
+        const ziel = l.ziel;
+        if (ziel && netz.abgeben(s, band, ziel, g, ereignisse)) continue;
+        if (!ziel) {
+          // Nimmt niemand an: das Stück fällt vorn herunter.
+          const p = bandPunkt(band, L);
+          werfenMit(g, p.x + p.dx * 0.15, p.y + 0.02, p.z + p.dz * 0.15, p.dx * v, 0.4, p.dz * v);
+          g.band = null;
+          g.vomBand = band.id;
+          continue;
+        }
+        nt = L;
+      }
+      if (nt > g.t) g.t = nt;
+      const p = bandPunkt(band, g.t);
+      g.x = p.x; g.y = p.y; g.z = p.z;
+      g.dreh = Math.atan2(-p.dz, p.dx);
+      bleiben.push(g);
+      vorne = g;
+    }
+    l.items = bleiben;
+    l.voll = bleiben.length > 0 && bleiben[0].t >= L - 1e-6;
+  }
+}
+
+/* ------------------------------------------------------------ Anschlüsse */
+
+/** Nach außen weisende Richtung eines Anschlusses (lokal an der Kante). */
+function anschlussRichtung(bau, lx, lz) {
+  const d = BAU_BY_ID[bau.typ];
+  const rx = Math.abs(lx) / Math.max(1e-6, d.b / 2);
+  const rz = Math.abs(lz) / Math.max(1e-6, d.t / 2);
+  const [nx, nz] = rx >= rz ? [Math.sign(lx) || 1, 0] : [0, Math.sign(lz) || 1];
+  const [wx, wz] = lokalZuWelt({ x: 0, z: 0, rot: bau.rot }, nx, nz);
+  return [wx, wz];
+}
+
+/** Alle Anschlüsse eines Baus in Welt, mit Höhe und Richtung. */
+function anschlussListe(bau) {
+  const d = BAU_BY_ID[bau.typ];
+  const y = (bau.y || 0) + BAND_Y;
+  const liste = [];
+  d.ein.forEach(([lx, lz], i) => {
+    const [x, z] = lokalZuWelt(bau, lx, lz);
+    liste.push({ art: 'ein', i, x, y: bau.typ === 'heutreppe' ? (bau.y || 0) + BAND_Y : y, z, richtung: anschlussRichtung(bau, lx, lz) });
+  });
+  d.aus.forEach(([lx, lz], i) => {
+    const [x, z] = lokalZuWelt(bau, lx, lz);
+    const hoch = bau.typ === 'heutreppe' || bau.typ === 'heulift' ? (bau.y || 0) + 2.2 + BAND_Y : y;
+    liste.push({ art: 'aus', i, x, y: hoch, z, richtung: anschlussRichtung(bau, lx, lz) });
+  });
+  return liste;
+}
+
+/* ------------------------------------------------------------ Wegfindung */
+
+class Haufenliste {
+  constructor() { this.a = []; }
+  get leer() { return !this.a.length; }
+  rein(f, v) {
+    const a = this.a; a.push([f, v]);
+    let i = a.length - 1;
+    while (i > 0) { const p = (i - 1) >> 1; if (a[p][0] <= a[i][0]) break; [a[p], a[i]] = [a[i], a[p]]; i = p; }
+  }
+  raus() {
+    const a = this.a; const top = a[0]; const last = a.pop();
+    if (a.length) {
+      a[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1; const r = l + 1; let m = i;
+        if (l < a.length && a[l][0] < a[m][0]) m = l;
+        if (r < a.length && a[r][0] < a[m][0]) m = r;
+        if (m === i) break;
+        [a[m], a[i]] = [a[i], a[m]]; i = m;
+      }
+    }
+    return top[1];
+  }
+}
+
+const RICHTUNGEN = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+
+/**
+ * Sperrraster für die Wegfindung: 1 = belegt. frei: Punkte [[x, z, r]], um die
+ * herum nichts gesperrt wird (Anfang, Ende). ohne: Bau-IDs, die nicht stören.
+ */
+function sperrRaster(s, { frei = [], ohne = [] } = {}) {
+  const gr = hallenGrenzen(werte(s).hallenFelder);
+  const x0 = gr.xMin; const z0 = gr.zMin;
+  const nx = Math.floor((gr.xMax - gr.xMin) / RASTER);
+  const nz = Math.floor((gr.zMax - gr.zMin) / RASTER);
+  const sperre = new Uint8Array(nx * nz);
+  const mitte = (i, k) => [x0 + (i + 0.5) * RASTER, z0 + (k + 0.5) * RASTER];
+  const istFrei = (x, z) => frei.some(([fx, fz, r]) => Math.hypot(x - fx, z - fz) < r);
+  const kasten = (k, rand) => {
+    const i0 = Math.max(0, Math.floor((k.x0 - rand - x0) / RASTER));
+    const i1 = Math.min(nx - 1, Math.floor((k.x1 + rand - x0) / RASTER));
+    const k0 = Math.max(0, Math.floor((k.z0 - rand - z0) / RASTER));
+    const k1 = Math.min(nz - 1, Math.floor((k.z1 + rand - z0) / RASTER));
+    for (let i = i0; i <= i1; i++) {
+      for (let kk = k0; kk <= k1; kk++) {
+        const [cx, cz] = mitte(i, kk);
+        if (cx < k.x0 - rand || cx > k.x1 + rand || cz < k.z0 - rand || cz > k.z1 + rand) continue;
+        if (!istFrei(cx, cz)) sperre[i * nz + kk] = 1;
+      }
+    }
+  };
+  // Hallenwände
+  for (let i = 0; i < nx; i++) for (let k = 0; k < nz; k++) {
+    const [cx, cz] = mitte(i, k);
+    if (cx < gr.xMin + 0.4 || cx > gr.xMax - 0.4 || cz < gr.zMin + 0.4 || cz > gr.zMax - 0.4) sperre[i * nz + k] = 1;
+    else if (s.hf && haufenHoehe(s.hf, cx, cz) > 0.1 && !istFrei(cx, cz)) sperre[i * nz + k] = 1;
+  }
+  for (const k of festeHindernisse()) kasten(k, 0.3);
+  for (const b of s.bauten) {
+    if (ohne.includes(b.id)) continue;
+    if (b.typ === 'band') {
+      const { segs } = bandGeometrie(b);
+      for (const g of segs) {
+        const k = { x0: Math.min(g.ax, g.bx), x1: Math.max(g.ax, g.bx), z0: Math.min(g.az, g.bz), z1: Math.max(g.az, g.bz) };
+        const i0 = Math.max(0, Math.floor((k.x0 - 0.6 - x0) / RASTER));
+        const i1 = Math.min(nx - 1, Math.floor((k.x1 + 0.6 - x0) / RASTER));
+        const k0 = Math.max(0, Math.floor((k.z0 - 0.6 - z0) / RASTER));
+        const k1 = Math.min(nz - 1, Math.floor((k.z1 + 0.6 - z0) / RASTER));
+        for (let i = i0; i <= i1; i++) for (let kk = k0; kk <= k1; kk++) {
+          const [cx, cz] = mitte(i, kk);
+          if (streckenAbstand(cx, cz, g.ax, g.az, g.bx, g.bz).d < 0.52 && !istFrei(cx, cz)) sperre[i * nz + kk] = 1;
+        }
+      }
+      continue;
+    }
+    if (['plattform', 'dach', 'leitung', 'klappe'].includes(b.typ)) continue;
+    if (b.a && b.b) {
+      // Linienbau (Wand, Geländer)
+      const lx0 = Math.min(b.a[0], b.b[0]); const lx1 = Math.max(b.a[0], b.b[0]);
+      const lz0 = Math.min(b.a[1], b.b[1]); const lz1 = Math.max(b.a[1], b.b[1]);
+      for (let i = 0; i < nx; i++) for (let kk = 0; kk < nz; kk++) {
+        const [cx, cz] = mitte(i, kk);
+        if (cx < lx0 - 0.6 || cx > lx1 + 0.6 || cz < lz0 - 0.6 || cz > lz1 + 0.6) continue;
+        if (streckenAbstand(cx, cz, b.a[0], b.a[1], b.b[0], b.b[1]).d < 0.45) sperre[i * nz + kk] = 1;
+      }
+      continue;
+    }
+    kasten(fussabdruck(b.typ, b.x, b.z, b.rot || 0), 0.28);
+  }
+  return { sperre, nx, nz, x0, z0, mitte };
+}
+
+/**
+ * Weg für ein Band von `von` nach `nach` ({x, y, z, richtung?}). richtung: bei
+ * Anschlüssen die Richtung, in die das Band dort laufen muss. gerade: ohne
+ * Raster, direkt (Einrasten aus). Liefert { punkte, laenge } oder { fehler }.
+ */
+function bandWeg(s, von, nach, { ohne = [], gerade = false } = {}) {
+  const frei = [[von.x, von.z, 0.75], [nach.x, nach.z, 0.75]];
+  const raster = sperrRaster(s, { frei, ohne });
+  const { sperre, nx, nz, x0, z0, mitte } = raster;
+  const zelle = (x, z) => [Math.floor((x - x0) / RASTER), Math.floor((z - z0) / RASTER)];
+  const gesperrt = (x, z) => {
+    const [i, k] = zelle(x, z);
+    return i < 0 || k < 0 || i >= nx || k >= nz || sperre[i * nz + k] === 1;
+  };
+  const hoehe = (punkte) => {
+    // Höhe gleichmäßig von von.y nach nach.y über die Länge
+    let laenge = 0;
+    const abschnitte = [0];
+    for (let i = 1; i < punkte.length; i++) {
+      laenge += Math.hypot(punkte[i][0] - punkte[i - 1][0], punkte[i][1] - punkte[i - 1][1]);
+      abschnitte.push(laenge);
+    }
+    return {
+      laenge,
+      punkte: punkte.map((p, i) => [p[0], lerp(von.y, nach.y, laenge > 0 ? abschnitte[i] / laenge : 0), p[1]]),
+    };
+  };
+  const fertig = (flach) => {
+    const r = hoehe(flach);
+    if (r.laenge < 0.6) return { fehler: 'kurz' };
+    if (Math.abs(nach.y - von.y) / r.laenge > 0.6) return { fehler: 'steil' };
+    if (r.laenge > 80) return { fehler: 'lang' };
+    return r;
+  };
+
+  if (gerade) {
+    const l = Math.hypot(nach.x - von.x, nach.z - von.z);
+    for (let t = 0.2; t < l - 0.2; t += 0.25) {
+      const x = lerp(von.x, nach.x, t / l); const z = lerp(von.z, nach.z, t / l);
+      if (gesperrt(x, z)) return { fehler: 'blockiert' };
+    }
+    return fertig([[von.x, von.z], [nach.x, nach.z]]);
+  }
+
+  const stubA = von.richtung ? [von.x + von.richtung[0] * 0.5, von.z + von.richtung[1] * 0.5] : [von.x, von.z];
+  const stubB = nach.richtung ? [nach.x - nach.richtung[0] * 0.5, nach.z - nach.richtung[1] * 0.5] : [nach.x, nach.z];
+  const [ai, ak] = zelle(...stubA);
+  const [bi, bk] = zelle(...stubB);
+  if (ai < 0 || ak < 0 || ai >= nx || ak >= nz || bi < 0 || bk < 0 || bi >= nx || bk >= nz) return { fehler: 'draussen' };
+  sperre[ai * nz + ak] = 0;
+  sperre[bi * nz + bk] = 0;
+
+  // A* über (Zelle, Richtung): jede Kurve kostet extra, damit der Weg ruhig bleibt.
+  const N = nx * nz * 4;
+  const kosten = new Float32Array(N).fill(Infinity);
+  const her = new Int32Array(N).fill(-1);
+  const offen = new Haufenliste();
+  const h = (i, k) => Math.abs(i - bi) + Math.abs(k - bk);
+  const startRichtungen = von.richtung
+    ? [RICHTUNGEN.findIndex(([dx, dz]) => dx === Math.round(von.richtung[0]) && dz === Math.round(von.richtung[1]))].filter((d) => d >= 0)
+    : [0, 1, 2, 3];
+  for (const d of (startRichtungen.length ? startRichtungen : [0, 1, 2, 3])) {
+    const st = (ai * nz + ak) * 4 + d;
+    kosten[st] = 0;
+    offen.rein(h(ai, ak), st);
+  }
+  const zielRichtung = nach.richtung
+    ? RICHTUNGEN.findIndex(([dx, dz]) => dx === Math.round(nach.richtung[0]) && dz === Math.round(nach.richtung[1]))
+    : -1;
+  let ende = -1;
+  let schritte = 0;
+  while (!offen.leer && schritte++ < 60000) {
+    const st = offen.raus();
+    const d = st & 3;
+    const c = st >> 2;
+    const i = Math.floor(c / nz); const k = c % nz;
+    if (i === bi && k === bk) { ende = st; break; }
+    const g0 = kosten[st];
+    for (let nd = 0; nd < 4; nd++) {
+      if (nd === ((d + 2) & 3)) continue;
+      const ni = i + RICHTUNGEN[nd][0]; const nk = k + RICHTUNGEN[nd][1];
+      if (ni < 0 || nk < 0 || ni >= nx || nk >= nz || sperre[ni * nz + nk]) continue;
+      const ns = (ni * nz + nk) * 4 + nd;
+      const amZiel = ni === bi && nk === bk;
+      const ng = g0 + 1 + (nd === d ? 0 : 1.6) + (amZiel && zielRichtung >= 0 && nd !== zielRichtung ? 1.6 : 0);
+      if (ng < kosten[ns]) {
+        kosten[ns] = ng;
+        her[ns] = st;
+        offen.rein(ng + h(ni, nk), ns);
+      }
+    }
+  }
+  if (ende < 0) return { fehler: 'kein Weg' };
+  // Zellen zurückverfolgen, nur die Ecken behalten
+  const zellen = [];
+  for (let st = ende; st >= 0; st = her[st]) zellen.push(st >> 2);
+  zellen.reverse();
+  const ik = (c) => [Math.floor(c / nz), c % nz];
+  const ecken = [];
+  for (let n = 0; n < zellen.length; n++) {
+    if (n === 0 || n === zellen.length - 1) { ecken.push(zellen[n]); continue; }
+    const [ia, ka] = ik(zellen[n - 1]); const [ic, kc] = ik(zellen[n]); const [ib, kb] = ik(zellen[n + 1]);
+    if (ic - ia !== ib - ic || kc - ka !== kb - kc) ecken.push(zellen[n]);
+  }
+  let pts = ecken.map((c) => mitte(...ik(c)));
+  if (pts.length < 2) {
+    pts = [[...stubA], [...stubB]];
+  } else {
+    // Erste und letzte Gerade seitlich auf die Anschlüsse ausrichten, damit kein Versatz bleibt.
+    const ausrichten = (a, b, stub) => {
+      if (Math.abs(a[1] - b[1]) < 1e-6) { a[1] = stub[1]; b[1] = stub[1]; } else { a[0] = stub[0]; b[0] = stub[0]; }
+    };
+    if (pts.length > 2) {
+      ausrichten(pts[0], pts[1], stubA);
+      ausrichten(pts[pts.length - 1], pts[pts.length - 2], stubB);
+      pts[0] = [...stubA];
+      pts[pts.length - 1] = [...stubB];
+    } else {
+      pts = [[...stubA], [...stubB]];
+    }
+  }
+  const flach = [[von.x, von.z], ...pts, [nach.x, nach.z]];
+  // doppelte und gerade Zwischenpunkte weg
+  const sauber = [];
+  for (const p of flach) {
+    const q = sauber[sauber.length - 1];
+    if (q && Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.05) continue;
+    sauber.push(p);
+  }
+  for (let n = sauber.length - 2; n >= 1; n--) {
+    const a = sauber[n - 1]; const b = sauber[n]; const c = sauber[n + 1];
+    const kreuz = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    const skal = (b[0] - a[0]) * (c[0] - b[0]) + (b[1] - a[1]) * (c[1] - b[1]);
+    if (Math.abs(kreuz) < 1e-4 && skal > 0) sauber.splice(n, 1);
+  }
+  return fertig(sauber);
+}
+
+/** Das Band als Bau (ohne Kosten; die rechnet bauen.js). */
+function bandBau(id, punkte) {
+  const [x, , z] = punkte[0];
+  return { id, typ: 'band', x, z, y: punkte[0][1] - BAND_Y, rot: 0, punkte };
+}
+
+/** Wo der Hallenboden die Bänder trägt: Oberkante bei Bauhöhe y. */
+const bandHoehe = (y = 0) => y + BAND_Y;
+
+
+// ---- src/laster.js
+// Aufträge mit dem Laster, wie im Vorbild: Er fährt vor, setzt rückwärts ans
+// Tor und lädt, was auf seiner Ladefläche landet. Die bestellte Ware zählt
+// für den Auftrag, alles andere wird normal bezahlt. Ist der Auftrag voll,
+// gibt es den Lohn und der Laster fährt ab. Reine Logik.
+
+
+/** Sekunden für An- und Abfahrt. */
+const LASTER_FAHRT = 7;
+
+/** Ladefläche, wenn der Laster am Tor steht (außen vor der Vorderwand). */
+const LASTER_BETT = {
+  x: WELT.torX, x0: WELT.torX - 1.05, x1: WELT.torX + 1.05, z0: WELT.zMin - 3.6, z1: WELT.zMin - 0.3, y: 1.05,
+};
+
+const lasterNeu = () => ({ zustand: 'weg', t: 0, stapel: 0 });
+const lasterBereit = (s) => !!s.laster && s.laster.zustand === 'steht';
+
+/** Wo der Laster gerade ist: Mitte, Blickrichtung (Fahrerhaus vorn), sichtbar? */
+function lasterLage(s) {
+  const L = s.laster;
+  const parkX = WELT.torX;
+  const parkZ = WELT.zMin - 3.7;
+  const strasseZ = WELT.zMin - 8.5;
+  const glatt = (t) => t * t * (3 - 2 * t);
+  if (!L || L.zustand === 'weg') return { sichtbar: false, x: parkX + 40, z: strasseZ, rot: Math.PI, fahrt: 0 };
+  if (L.zustand === 'steht') return { sichtbar: true, x: parkX, z: parkZ, rot: -Math.PI / 2, fahrt: 0 };
+  const u = Math.min(1, L.t / LASTER_FAHRT);
+  if (L.zustand === 'kommt') {
+    // die Straße entlang, dann rückwärts ans Tor
+    if (u < 0.65) {
+      const k = glatt(u / 0.65);
+      return { sichtbar: true, x: parkX + 40 * (1 - k), z: strasseZ, rot: Math.PI, fahrt: 1 };
+    }
+    const k = glatt((u - 0.65) / 0.35);
+    return { sichtbar: true, x: parkX, z: strasseZ + (parkZ - strasseZ) * k, rot: Math.PI - (Math.PI / 2) * k, fahrt: -1 };
+  }
+  // fährt ab: vorwärts vom Tor weg, dann die Straße hinunter
+  if (u < 0.35) {
+    const k = glatt(u / 0.35);
+    return { sichtbar: true, x: parkX, z: parkZ + (strasseZ - parkZ) * k, rot: -Math.PI / 2 - (Math.PI / 2) * k, fahrt: 1 };
+  }
+  const k = glatt((u - 0.35) / 0.65);
+  return { sichtbar: true, x: parkX - 40 * k, z: strasseZ, rot: 0, fahrt: 1 };
+}
+
+function lasterSchritt(s, dt, ereignisse) {
+  const L = s.laster;
+  if (!werte(s).frei.has('auftraege')) { L.zustand = 'weg'; return; }
+  switch (L.zustand) {
+    case 'weg':
+      if (s.auftrag.pause <= 0) { L.zustand = 'kommt'; L.t = 0; L.stapel = 0; ereignisse.push({ typ: 'lasterKommt' }); }
+      break;
+    case 'kommt':
+      L.t += dt;
+      if (L.t >= LASTER_FAHRT) {
+        L.zustand = 'steht'; L.t = 0;
+        ereignisse.push({ typ: 'lasterDa', auftrag: auftrag(s.auftrag.nr, s.auftrag.skip) });
+      }
+      break;
+    case 'faehrt':
+      L.t += dt;
+      if (L.t >= LASTER_FAHRT) { L.zustand = 'weg'; L.t = 0; }
+      break;
+    default:
+      break;
+  }
+}
+
+/** Ein Stück landet auf der Ladefläche. true, wenn der Laster da ist und es nimmt. */
+function lasterAnnehmen(s, g, ereignisse) {
+  if (!lasterBereit(s)) return false;
+  const a = s.auftrag;
+  const au = auftrag(a.nr, a.skip);
+  if (g.art !== au.will) {
+    gegenstandVerkaufen(s, g, ereignisse, 'laster');
+    s.laster.stapel++;
+    return true;
+  }
+  const n = nadelIn(s, g);
+  if (n) nadelZurueck(s, s.hf, n, s.zufallFn || Math.random, ereignisse);
+  a.geliefert += g.art === 'roh' ? g.halme : 1;
+  s.stat.verkauft += gegenstandHalme(g);
+  s.laster.stapel++;
+  gegenstandWeg(s, g);
+  ereignisse.push({ typ: 'geladen', art: g.art, geliefert: a.geliefert, menge: au.menge });
+  if (a.geliefert >= au.menge) {
+    const lohn = auftragLohn(s, au);
+    einnahme(s, lohn);
+    s.einnahmenFenster.push([s.zeit, lohn]);
+    s.stat.auftraege++;
+    ereignisse.push({ typ: 'auftrag', auftrag: au, lohn });
+    a.nr++;
+    a.geliefert = 0;
+    a.pause = AUFTRAG_PAUSE;
+    s.laster.zustand = 'faehrt';
+    s.laster.t = 0;
+  }
+  return true;
+}
+
+/** Fällt ein Stück auf die Ladefläche? */
+function lasterFangen(s, g, ereignisse) {
+  if (!lasterBereit(s)) return false;
+  const B = LASTER_BETT;
+  if (g.x < B.x0 || g.x > B.x1 || g.z < B.z0 || g.z > B.z1) return false;
+  if (g.y > B.y + 0.3 || g.y < B.y - 0.5) return false;
+  return lasterAnnehmen(s, g, ereignisse);
+}
+
+/** Auftrag ablehnen: der Laster fährt leer ab, nach der Pause kommt der nächste. */
+function lasterAblehnen(s) {
+  if (!auftragAblehnen(s)) return false;
+  if (s.laster.zustand === 'steht' || s.laster.zustand === 'kommt') { s.laster.zustand = 'faehrt'; s.laster.t = 0; }
+  return true;
+}
+
+// ---- src/maschinen.js
+// Was jede Maschine tut. Kolbenrechen schieben Heu aus dem Haufen und werfen
+// es im Bogen nach hinten, Greifarme heben Heu vom Haufen oder einem Band aufs
+// nächste Band, Generatoren verbrennen Heu zu Strom, Scanner prüfen, was
+// durchläuft, und halten Nadeln fest, Weichen und Vereiniger verteilen,
+// Verarbeiter machen aus Heu Waren. Stücke in einer Maschine sind nur noch
+// Einträge { art, halme, nadel }. Reine Logik.
+
+
+const HALM_WAREN = new Set(['roh', 'knaeuel']);
+/** Was im Generator brennt und wie gut (Faktor auf die Halme). */
+const BRENNBAR = { roh: 1, knaeuel: 1, ballen: 1, pellet: 1.5 };
+const BRENN_MAX = 240;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/** Strom-Anteil 0..1 (Maschinen ohne Strombedarf: 1, wenn eingeschaltet). */
+function anteil(bau) {
+  if (bau.aus) return 0;
+  return BAU_BY_ID[bau.typ].kw > 0 ? (lauf(bau).strom || 0) : 1;
+}
+
+const tempo = (s, bau) => werte(s).maschinenTempo * (lauf(bau).dach ? 1.03 : 1);
+
+/** Standardzustand eines neuen Baus je Typ. */
+function bauZustand(typ) {
+  switch (typ) {
+    case 'rechen': return { takt: 0, weite: 2.5 };
+    case 'arm': case 'vorrangarm': return { filter: 'alle' };
+    case 'generator': return { brenn: 0 };
+    case 'scanner': return { schlange: [], nadeln: [] };
+    case 'weiche': return { modus: 'wechsel', seite: 0, puffer: null };
+    case 'vereiniger': return { letzte: -1, puffer: null };
+    case 'rohrwerfer': return { schlange: [], winkel: 0, weite: 8, takt: 0 };
+    case 'heutreppe': case 'heulift': return { innen: [] };
+    case 'radar': return { rest: 5 };
+    case 'lampe': return { hell: 1 };
+    case 'pellet': return { lager: {}, fort: 0, fertig: [], nadeln: [], weite: 3 };
+    case 'silo': case 'presse': case 'wickler': case 'pulper': case 'papier': case 'brikett':
+      return { lager: {}, fort: 0, fertig: [], nadeln: [] };
+    default: return {};
+  }
+}
+
+/** Ein Stück wird zum Eintrag in der Maschine; eine Nadel darin bleibt bei der Maschine. */
+function aufnehmen(s, bau, g) {
+  const rec = { art: g.art, halme: gegenstandHalme(g), nadel: g.nadel };
+  const n = nadelIn(s, g);
+  if (n) { n.zustand = 'maschine'; n.bei = bau.id; }
+  g.nadel = -1;
+  gegenstandWeg(s, g);
+  return rec;
+}
+
+/* ------------------------------------------------------------ Ausgänge */
+
+/** Anschlusspunkt eines Ausgangs in Welt, mit Richtung nach außen. */
+function ausgangPunkt(bau, port) {
+  const d = BAU_BY_ID[bau.typ];
+  const [lx, lz] = d.aus[port] || [d.b / 2, 0];
+  const [x, z] = lokalZuWelt(bau, lx, lz);
+  const hoch = bau.typ === 'heutreppe' || bau.typ === 'heulift' ? 2.2 : 0;
+  const rx = Math.abs(lx) / (d.b / 2); const rz = Math.abs(lz) / (d.t / 2);
+  const [nx, nz] = rx >= rz ? [Math.sign(lx) || 1, 0] : [0, Math.sign(lz) || 1];
+  const [wx, wz] = lokalZuWelt({ x: 0, z: 0, rot: bau.rot }, nx, nz);
+  return { x, y: (bau.y || 0) + hoch + BAND_Y, z, richtung: [wx, wz] };
+}
+
+/** Kann der Ausgang jetzt ein Stück der Ware art abgeben? */
+function ausgangFrei(s, netz, bau, port, art) {
+  const ziel = (lauf(bau).aus || [])[port];
+  if (ziel) {
+    if (ziel.art === 'band') return platzAuf(ziel.band, 0, art);
+    if (ziel.art === 'bau') return annehmenMoeglich(s, ziel.bau, art, ziel.port);
+    if (ziel.art === 'stand') return true;
+    if (ziel.art === 'laster') return lasterBereit(s);
+  }
+  // Nichts angeschlossen: es fällt vor die Maschine, solange dort nicht zu viel liegt.
+  const p = ausgangPunkt(bau, port);
+  let n = 0;
+  for (const g of s.gegenstaende) if (g.ort === 'boden' && Math.abs(g.x - p.x) < 1.3 && Math.abs(g.z - p.z) < 1.3) n++;
+  return n < 8;
+}
+
+/** Gibt einen Eintrag am Ausgang ab (vorher ausgangFrei prüfen). */
+function ausgeben(s, netz, bau, port, rec, ereignisse) {
+  const p = ausgangPunkt(bau, port);
+  const g = gegenstandNeu(s, rec.art, rec.halme, p.x, p.y, p.z);
+  if (rec.nadel >= 0) nadelMitgeben(s, g, s.nadeln[rec.nadel]);
+  const ziel = (lauf(bau).aus || [])[port];
+  if (ziel && ziel.art === 'band') { bandEinlegen(ziel.band, g, 0); return g; }
+  if (ziel && ziel.art === 'bau' && annehmen(s, netz, ziel.bau, g, ziel.port, ereignisse)) return g;
+  if (ziel && ziel.art === 'stand') { gegenstandVerkaufen(s, g, ereignisse, 'band'); return g; }
+  if (ziel && ziel.art === 'laster' && lasterAnnehmen(s, g, ereignisse)) return g;
+  werfenMit(g, p.x + p.richtung[0] * 0.15, p.y, p.z + p.richtung[1] * 0.15, p.richtung[0] * 1.3, 0.9, p.richtung[1] * 1.3);
+  return g;
+}
+
+/* ------------------------------------------------------------ Annehmen */
+
+function zutatFuer(typ, art) {
+  const d = BAU_BY_ID[typ];
+  if (!d.rezept) return null;
+  if (d.rezept.halme && (art === 'roh' || (art === 'knaeuel' && typ !== 'silo'))) return 'halme';
+  return d.rezept[art] ? art : null;
+}
+const lagerMax = (d, z) => (z === 'halme' ? Math.max(60, d.rezept.halme * 3) : d.rezept[z] * 3);
+
+/** Nähme die Maschine jetzt ein Stück der Ware art (am Eingang port, -1 = Trichter oben)? */
+function annehmenMoeglich(s, bau, art, port = -1) {
+  const d = BAU_BY_ID[bau.typ];
+  if (!d) return false;
+  switch (bau.typ) {
+    case 'generator': return !!BRENNBAR[art] && (bau.brenn || 0) < BRENN_MAX;
+    case 'scanner': return port !== -1 && (bau.schlange || []).length < 3;
+    case 'weiche': case 'vereiniger': return port !== -1 && !bau.puffer;
+    case 'rohrwerfer': return (bau.schlange || []).length < 4;
+    case 'heutreppe': case 'heulift': return port === 0 && !(bau.innen || []).some((r) => r.t < 0.55);
+    default: {
+      const z = zutatFuer(bau.typ, art);
+      return !!z && (bau.lager[z] || 0) < lagerMax(d, z);
+    }
+  }
+}
+
+/** Die Maschine nimmt das Stück (vom Band am Eingang port oder von oben). true, wenn angenommen. */
+function annehmen(s, netz, bau, g, port = -1, ereignisse = []) {
+  if (!annehmenMoeglich(s, bau, g.art, port)) return false;
+  // Vereiniger: kommt dieselbe Seite zweimal und wartet die andere, ist die andere dran.
+  if (bau.typ === 'vereiniger' && port >= 0 && port === bau.letzte) {
+    const anderer = (lauf(bau).einBand || [])[1 - port];
+    if (anderer && lauf(anderer).voll) return false;
+  }
+  switch (bau.typ) {
+    case 'generator': {
+      bau.brenn = (bau.brenn || 0) + gegenstandHalme(g) * BRENNBAR[g.art];
+      const n = nadelIn(s, g);
+      if (n) nadelZurueck(s, s.hf, n, s.zufallFn || Math.random, ereignisse);
+      g.nadel = -1;
+      gegenstandWeg(s, g);
+      ereignisse.push({ typ: 'verbrannt', id: bau.id });
+      return true;
+    }
+    case 'scanner': case 'rohrwerfer':
+      bau.schlange.push(aufnehmen(s, bau, g));
+      return true;
+    case 'weiche': case 'vereiniger':
+      bau.puffer = { ...aufnehmen(s, bau, g), zeit: 0 };
+      if (bau.typ === 'vereiniger' && port >= 0) bau.letzte = port;
+      return true;
+    case 'heutreppe': case 'heulift':
+      bau.innen.push({ ...aufnehmen(s, bau, g), t: 0 });
+      return true;
+    default: {
+      const z = zutatFuer(bau.typ, g.art);
+      bau.lager[z] = (bau.lager[z] || 0) + (z === 'halme' ? gegenstandHalme(g) : 1);
+      const rec = aufnehmen(s, bau, g);
+      if (rec.nadel >= 0) bau.nadeln.push(rec.nadel);
+      return true;
+    }
+  }
+}
+
+/** Fällt ein Stück von oben in einen Maschinentrichter? */
+function maschineFangen(s, netz, g, ereignisse) {
+  if (!netz.bauGitter) return false;
+  for (const bau of gitterBei(netz.bauGitter, g.x, g.z)) {
+    const d = BAU_BY_ID[bau.typ];
+    if (!d.ein.length && bau.typ !== 'generator' && bau.typ !== 'rohrwerfer' && !d.rezept) continue;
+    const oben = (bau.y || 0) + d.h;
+    if (g.y > oben + 0.05 || g.y < oben - 0.7) continue;
+    if (!imFussabdruck(bau, g.x, g.z, -0.08)) continue;
+    return annehmen(s, netz, bau, g, -1, ereignisse);
+  }
+  return false;
+}
+
+/* ------------------------------------------------------------ Kolbenrechen */
+
+function rechenSchritt(s, netz, bau, dt, ereignisse) {
+  const d = BAU_BY_ID.rechen;
+  const l = lauf(bau);
+  const w = werte(s);
+  const [fx, fz] = lokalZuWelt(bau, d.b / 2 + 0.45, 0);
+  l.kamm = [fx, fz];
+  const a = anteil(bau);
+  if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
+  s.stat.rechenMitStrom = 1;
+  const h = s.hf ? haufenHoehe(s.hf, fx, fz) : 0;
+  if (h < 0.06) { l.status = 'leer'; return; }
+  l.status = 'laeuft';
+  bau.takt = (bau.takt || 0) + (dt * a * w.rechenTempo * tempo(s, bau)) / d.takt;
+  l.phase = bau.takt % 1;
+  if (bau.takt < 1) return;
+  bau.takt -= 1;
+  const weg = haufenAbtragen(s.hf, fx, fz, d.menge, 0.55);
+  if (weg < 0.5) return;
+  s.stat.abgetragen += weg;
+  s.stat.maschine += weg;
+  const weite = clamp(bau.weite ?? 2.5, d.wurf[0], d.wurf[1]);
+  const [sx, sz] = lokalZuWelt(bau, d.b * 0.2, 0);
+  const sy = (bau.y || 0) + d.h + 0.15;
+  const [zx, zz] = lokalZuWelt(bau, -d.b / 2 - weite, 0);
+  const g = gegenstandNeu(s, 'roh', weg, sx, sy, sz);
+  mitnehmen(s, g, fx, fz, 0.7, ereignisse);
+  werfenNach(g, sx, sy, sz, zx, (bau.y || 0) + BAND_Y + 0.04, zz, 0.55 + weite * 0.07);
+  ereignisse.push({ typ: 'rechen', id: bau.id, x: bau.x, z: bau.z });
+}
+
+/** Nadeln, die beim Abtragen frei werden, stecken im weggenommenen Heu. */
+function mitnehmen(s, g, x, z, radius, ereignisse) {
+  const mit = nadelnFreilegen(s, s.hf, { art: 'maschine', x, z, radius }, ereignisse);
+  if (!mit.length) return;
+  nadelMitgeben(s, g, mit[0]);
+  for (const n of mit.slice(1)) {
+    n.zustand = 'lose';
+    n.y = Math.max(0.02, haufenHoehe(s.hf, n.x, n.z)) + 0.02;
+    n.zeit = s.zeit;
+    ereignisse.push({ typ: 'nadelFrei', nadel: n });
+  }
+}
+
+/* ------------------------------------------------------------ Greifarme */
+
+/** Wohin der Greifer gerade zeigt (für Grafik und das getragene Stück). */
+function greiferPunkt(bau) {
+  const d = BAU_BY_ID[bau.typ];
+  const l = lauf(bau);
+  const y0 = (bau.y || 0);
+  const [rx, rz] = lokalZuWelt(bau, 0.55, 0);
+  const ruhe = [rx, y0 + d.h + 0.2, rz];
+  const job = l.job;
+  if (!job) return ruhe;
+  const p = l.phase || 0;
+  const glatt = (t) => t * t * (3 - 2 * t);
+  const misch = (a, b, t, bogen = 0) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t + Math.sin(Math.PI * t) * bogen, a[2] + (b[2] - a[2]) * t];
+  const von = [job.von[0], job.von[1] + 0.25, job.von[2]];
+  const nach = [job.nach[0], job.nach[1] + 0.35, job.nach[2]];
+  if (p < 0.4) return misch(ruhe, von, glatt(p / 0.4), 0.3);
+  if (p < 0.8) return misch(von, nach, glatt((p - 0.4) / 0.4), 0.7);
+  return misch(nach, ruhe, glatt((p - 0.8) / 0.2), 0.2);
+}
+
+/** Beste Stelle am Haufen in Reichweite (die nächste mit genug Heu). */
+function haufenGriff(s, bau, R) {
+  if (!s.hf) return null;
+  for (let r = 0.7; r <= R; r += 0.3) {
+    let beste = null;
+    for (let k = 0; k < 24; k++) {
+      const w = (k / 24) * Math.PI * 2;
+      const x = bau.x + Math.cos(w) * r;
+      const z = bau.z + Math.sin(w) * r;
+      const h = haufenHoehe(s.hf, x, z);
+      if (h > 0.2 && (!beste || h > beste[1])) beste = [[x, z], h];
+    }
+    if (beste) return { x: beste[0][0], y: beste[1], z: beste[0][1] };
+  }
+  return null;
+}
+
+function armJobSuchen(s, netz, bau, R, mitHaufen) {
+  const filter = bau.filter || 'alle';
+  const passt = (art) => filter === 'alle' || filter === art;
+  const vorn = (x, z) => weltZuLokal(bau, x, z)[0] > -0.15;
+  const nah = (x, z) => Math.hypot(x - bau.x, z - bau.z) <= R;
+  // Ziele vorn: Bänder mit Platz, Stand, Laster, Maschinentrichter
+  const [px, pz] = lokalZuWelt(bau, Math.min(1.2, R * 0.5), 0);
+  const ziele = [];
+  for (const band of netz.baender) {
+    const nb = bandNaechster(band, px, pz);
+    const p = bandPunkt(band, nb.t);
+    if (!nah(p.x, p.z) || !vorn(p.x, p.z)) continue;
+    ziele.push({ art: 'band', band, t: nb.t, punkt: [p.x, p.y, p.z], d: Math.hypot(p.x - bau.x, p.z - bau.z) });
+  }
+  if (nah(STAND_TRICHTER.x, STAND_TRICHTER.z) && vorn(STAND_TRICHTER.x, STAND_TRICHTER.z)) {
+    ziele.push({ art: 'stand', punkt: [STAND_TRICHTER.x, STAND_TRICHTER.y, STAND_TRICHTER.z], d: 9 });
+  }
+  if (lasterBereit(s) && nah(LASTER_BETT.x, LASTER_BETT.z0 + 0.6) && vorn(LASTER_BETT.x, LASTER_BETT.z0 + 0.6)) {
+    ziele.push({ art: 'laster', punkt: [LASTER_BETT.x, LASTER_BETT.y, LASTER_BETT.z0 + 0.6], d: 9 });
+  }
+  for (const m of netz.maschinen) {
+    if (m === bau || !nah(m.x, m.z) || !vorn(m.x, m.z)) continue;
+    const d = BAU_BY_ID[m.typ];
+    if (m.typ !== 'generator' && !d.rezept) continue;
+    ziele.push({ art: 'bau', bau: m, punkt: [m.x, (m.y || 0) + d.h, m.z], d: 10 });
+  }
+  if (!ziele.length) return null;
+  ziele.sort((a, b) => a.d - b.d);
+  const zielFuer = (art, ohneBand) => ziele.find((z) => {
+    if (z.art === 'band') return z.band !== ohneBand && freieStelle(z.band, z.t, art) != null;
+    if (z.art === 'bau') return annehmenMoeglich(s, z.bau, art, -1);
+    return true;
+  });
+  // Quelle hinten: Stücke auf Bändern, sonst der Haufen
+  let beste = null;
+  for (const g of s.gegenstaende) {
+    if (g.ort !== 'band' || !passt(g.art) || !nah(g.x, g.z) || vorn(g.x, g.z)) continue;
+    const d = Math.hypot(g.x - bau.x, g.z - bau.z);
+    if (!beste || d < beste.d) {
+      const band = netz.bauNachId.get(g.band);
+      const ziel = zielFuer(g.art, band);
+      if (ziel) beste = { d, g, ziel };
+    }
+  }
+  if (beste) {
+    return { quelle: 'band', g: null, gid: beste.g.id, von: [beste.g.x, beste.g.y, beste.g.z], ziel: beste.ziel, nach: beste.ziel.punkt };
+  }
+  if (mitHaufen && passt('roh')) {
+    const griff = haufenGriff(s, bau, R);
+    if (!griff) return null;
+    const ziel = zielFuer('roh', null);
+    if (!ziel) return null;
+    return { quelle: 'haufen', von: [griff.x, griff.y, griff.z], ziel, nach: ziel.punkt };
+  }
+  return null;
+}
+
+function armGreifen(s, netz, bau, job, ereignisse) {
+  if (job.quelle === 'band') {
+    const g = s.gegenstaende.find((x) => x.id === job.gid);
+    if (!g || g.ort !== 'band') return null;
+    g.ort = 'arm';
+    g.band = null;
+    return g;
+  }
+  const d = BAU_BY_ID[bau.typ];
+  const [x, , z] = job.von;
+  const weg = haufenAbtragen(s.hf, x, z, d.menge, 0.5);
+  if (weg < 1) return null;
+  s.stat.abgetragen += weg;
+  s.stat.maschine += weg;
+  const g = gegenstandNeu(s, 'roh', weg, x, job.von[1], z, { ort: 'arm' });
+  mitnehmen(s, g, x, z, 0.6, ereignisse);
+  return g;
+}
+
+function armAblegen(s, netz, bau, job, ereignisse) {
+  const g = job.g;
+  const z = job.ziel;
+  g.ort = 'boden';
+  if (z.art === 'band' && netz.bauNachId.get(z.band.id)) {
+    const t = freieStelle(z.band, z.t, g.art);
+    if (t != null) { bandEinlegen(z.band, g, t); return; }
+  } else if (z.art === 'stand') {
+    gegenstandVerkaufen(s, g, ereignisse, 'arm');
+    return;
+  } else if (z.art === 'laster') {
+    if (lasterAnnehmen(s, g, ereignisse)) return;
+  } else if (z.art === 'bau' && netz.bauNachId.get(z.bau.id)) {
+    if (annehmen(s, netz, z.bau, g, -1, ereignisse)) return;
+  }
+  // Ziel weg oder voll: loslassen, es fällt
+  werfenMit(g, g.x, g.y, g.z, 0, 0, 0);
+}
+
+function armSchritt(s, netz, bau, dt, ereignisse, mitHaufen) {
+  const d = BAU_BY_ID[bau.typ];
+  const l = lauf(bau);
+  const w = werte(s);
+  const a = anteil(bau);
+  if (a <= 0) {
+    l.status = bau.aus ? 'aus' : 'strom';
+    if (l.job && l.job.g) { werfenMit(l.job.g, l.job.g.x, l.job.g.y, l.job.g.z, 0, 0, 0); }
+    l.job = null;
+    return;
+  }
+  if (!l.job) {
+    l.warte = (l.warte || 0) - dt;
+    if (l.warte > 0) return;
+    const job = armJobSuchen(s, netz, bau, d.reichweite, mitHaufen);
+    if (!job) { l.status = 'wartet'; l.warte = 0.5; return; }
+    l.job = job;
+    l.phase = 0;
+  }
+  l.status = 'laeuft';
+  const job = l.job;
+  const takt = d.takt / (w.armTempo * tempo(s, bau) * a);
+  const vorher = l.phase;
+  l.phase += dt / takt;
+  if (vorher < 0.4 && l.phase >= 0.4) {
+    job.g = armGreifen(s, netz, bau, job, ereignisse);
+    if (!job.g) { l.job = null; l.phase = 0; return; }
+    ereignisse.push({ typ: 'greifen', id: bau.id });
+  }
+  if (job.g) {
+    const p = greiferPunkt(bau);
+    job.g.x = p[0]; job.g.y = p[1] - GROESSE[job.g.art] - 0.1; job.g.z = p[2];
+    if (vorher < 0.8 && l.phase >= 0.8) { armAblegen(s, netz, bau, job, ereignisse); job.g = null; }
+  }
+  if (l.phase >= 1) { l.job = null; l.phase = 0; }
+}
+
+/* ------------------------------------------------------------ Generator, Brunnen, Radar */
+
+function generatorSchritt(s, netz, bau, dt) {
+  const d = BAU_BY_ID.generator;
+  const l = lauf(bau);
+  const w = werte(s);
+  if (bau.aus || !(bau.brenn > 0)) {
+    l.leistung = 0; l.brennt = false; l.status = bau.aus ? 'aus' : 'leer';
+    return;
+  }
+  l.leistung = -d.kw * w.generatorMul * w.stromMul;
+  l.brennt = true;
+  l.status = 'laeuft';
+  bau.brenn = Math.max(0, bau.brenn - d.brennstoff * w.brennstoff * dt);
+}
+
+function brunnenSchritt(s, netz, bau) {
+  const d = BAU_BY_ID.brunnen;
+  const l = lauf(bau);
+  const a = anteil(bau);
+  l.wasserLeistung = -d.wasser * werte(s).wasserMul * tempo(s, bau) * a;
+  l.status = a > 0 ? 'laeuft' : bau.aus ? 'aus' : 'strom';
+}
+
+function radarSchritt(s, netz, bau, dt, ereignisse) {
+  const a = anteil(bau);
+  const l = lauf(bau);
+  if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
+  l.status = 'laeuft';
+  const w = werte(s);
+  bau.rest = (bau.rest ?? w.radarCD) - dt * a;
+  if (bau.rest > 0) return;
+  bau.rest = w.radarCD;
+  let beste = null;
+  let bestD = Infinity;
+  for (const n of s.nadeln) {
+    if (n.zustand !== 'versteckt') continue;
+    const dd = Math.hypot(n.x - bau.x, n.z - bau.z);
+    if (dd < bestD) { bestD = dd; beste = n; }
+  }
+  if (!beste) return;
+  netz.radar = { nadel: beste.nr, bis: s.zeit + 12, von: bau.id };
+  ereignisse.push({ typ: 'radar', nadel: beste, id: bau.id });
+}
+
+/* ------------------------------------------------------------ Scanner, Weiche, Vereiniger */
+
+function scannerSchritt(s, netz, bau, dt, ereignisse) {
+  const d = BAU_BY_ID.scanner;
+  const l = lauf(bau);
+  const f = bau.schlange[0];
+  const a = anteil(bau);
+  if (!f) { l.status = a > 0 ? 'bereit' : bau.aus ? 'aus' : 'strom'; return; }
+  if (!f.geprueft) {
+    if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
+    f.fort = (f.fort || 0) + d.rate * werte(s).scanDeckung * tempo(s, bau) * a * dt;
+    l.status = 'prueft';
+    l.scan = Math.min(1, f.fort / Math.max(1, f.halme));
+    if (f.fort < f.halme) return;
+    f.geprueft = true;
+    if (f.nadel >= 0) {
+      const n = s.nadeln[f.nadel];
+      if (n) { n.zustand = 'scanner'; n.bei = bau.id; bau.nadeln.push(f.nadel); }
+      f.nadel = -1;
+      ereignisse.push({ typ: 'scannerNadel', id: bau.id, x: bau.x, z: bau.z });
+    }
+  }
+  if (!ausgangFrei(s, netz, bau, 0, f.art)) { l.status = 'stau'; return; }
+  bau.schlange.shift();
+  ausgeben(s, netz, bau, 0, f, ereignisse);
+}
+
+/** Nadeln aus dem Scanner nehmen (Spieler tippt ihn an). Liefert die Zahl. */
+function scannerLeeren(s, bau, ereignisse) {
+  const nadeln = bau.nadeln || [];
+  bau.nadeln = [];
+  for (const nr of nadeln) nadelFinden(s, s.nadeln[nr], ereignisse);
+  return nadeln.length;
+}
+
+function weicheSchritt(s, netz, bau, dt, ereignisse) {
+  const p = bau.puffer;
+  if (!p) return;
+  p.zeit += dt;
+  if (p.zeit < 0.25) return;
+  const modus = bau.modus || 'wechsel';
+  const seite = bau.seite || 0;
+  const reihe = modus === 'links' ? [0] : modus === 'rechts' ? [1]
+    : modus === 'vorrangLinks' ? [0, 1] : modus === 'vorrangRechts' ? [1, 0] : [seite, 1 - seite];
+  for (const port of reihe) {
+    if (!ausgangFrei(s, netz, bau, port, p.art)) continue;
+    bau.puffer = null;
+    ausgeben(s, netz, bau, port, p, ereignisse);
+    if (modus === 'wechsel') bau.seite = 1 - port;
+    return;
+  }
+  lauf(bau).status = 'stau';
+}
+
+function vereinigerSchritt(s, netz, bau, dt, ereignisse) {
+  const p = bau.puffer;
+  if (!p) return;
+  p.zeit += dt;
+  if (p.zeit < 0.25 || !ausgangFrei(s, netz, bau, 0, p.art)) return;
+  bau.puffer = null;
+  ausgeben(s, netz, bau, 0, p, ereignisse);
+}
+
+/* ------------------------------------------------------------ Verarbeiter */
+
+function verarbeiterSchritt(s, netz, bau, dt, ereignisse) {
+  const d = BAU_BY_ID[bau.typ];
+  const l = lauf(bau);
+  const w = werte(s);
+  // Fertiges hinaus: aufs Band oder (Pellets) im Bogen nach vorn
+  while (bau.fertig.length) {
+    const f = bau.fertig[0];
+    if (d.wurf) {
+      bau.fertig.shift();
+      const weite = clamp(bau.weite ?? 3, d.wurf[0], d.wurf[1]);
+      const [sx, sz] = lokalZuWelt(bau, d.b * 0.35, 0);
+      const sy = (bau.y || 0) + d.h * 0.8;
+      const [zx, zz] = lokalZuWelt(bau, d.b / 2 + weite, 0);
+      const g = gegenstandNeu(s, f.art, f.halme, sx, sy, sz);
+      if (f.nadel >= 0) nadelMitgeben(s, g, s.nadeln[f.nadel]);
+      werfenNach(g, sx, sy, sz, zx, (bau.y || 0) + BAND_Y + 0.04, zz, 0.5 + weite * 0.07);
+      continue;
+    }
+    if (!ausgangFrei(s, netz, bau, 0, f.art)) break;
+    bau.fertig.shift();
+    ausgeben(s, netz, bau, 0, f, ereignisse);
+  }
+  l.wasserBedarf = 0;
+  if (bau.aus) { l.status = 'aus'; return; }
+  if (bau.fertig.length >= 2) { l.status = 'voll'; return; }
+  const bedarf = Object.entries(d.rezept).map(([z, m]) => [z, z === 'halme' ? m * w.ausbeute : m]);
+  if (!bedarf.every(([z, m]) => (bau.lager[z] || 0) >= m - 1e-9)) { l.status = 'wartet'; return; }
+  if (d.wasser) l.wasserBedarf = d.wasser;
+  const strom = d.kw > 0 ? (lauf(bau).strom || 0) : 1;
+  if (strom <= 0) { l.status = 'strom'; return; }
+  const wasser = d.wasser ? (lauf(bau).wasser || 0) : 1;
+  if (wasser <= 0) { l.status = 'wasser'; return; }
+  l.status = 'laeuft';
+  bau.fort = Math.min(1.5, (bau.fort || 0) + d.rate * w.verarbeitung * tempo(s, bau) * (w[bau.typ] || 1) * strom * wasser * dt);
+  if (bau.fort < 1) return;
+  bau.fort -= 1;
+  for (const [z, m] of bedarf) bau.lager[z] = Math.max(0, (bau.lager[z] || 0) - m);
+  const nadel = bau.nadeln.length ? bau.nadeln.shift() : -1;
+  bau.fertig.push({ art: d.produkt, halme: PRODUKTE[d.produkt].halme, nadel });
+  s.stat.produziert[d.produkt] = (s.stat.produziert[d.produkt] || 0) + 1;
+  ereignisse.push({ typ: 'produziert', art: d.produkt, id: bau.id, x: bau.x, z: bau.z });
+}
+
+/* ------------------------------------------------------------ Rohrwerfer, Heutreppe, Heulift */
+
+function rohrwerferSchritt(s, netz, bau, dt, ereignisse) {
+  const d = BAU_BY_ID.rohrwerfer;
+  const a = anteil(bau);
+  const l = lauf(bau);
+  if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
+  l.status = bau.schlange.length ? 'laeuft' : 'bereit';
+  if (!bau.schlange.length) return;
+  bau.takt = (bau.takt || 0) + dt * a * 2.5 * tempo(s, bau);
+  if (bau.takt < 1) return;
+  bau.takt = 0;
+  const f = bau.schlange.shift();
+  const winkel = (bau.rot || 0) + (bau.winkel || 0);
+  const weite = clamp(bau.weite ?? 8, 2, 20);
+  const sy = (bau.y || 0) + d.h + 0.1;
+  const zx = bau.x + Math.cos(winkel) * weite;
+  const zz = bau.z - Math.sin(winkel) * weite;
+  const g = gegenstandNeu(s, f.art, f.halme, bau.x, sy, bau.z);
+  if (f.nadel >= 0) nadelMitgeben(s, g, s.nadeln[f.nadel]);
+  werfenNach(g, bau.x, sy, bau.z, zx, BAND_Y + 0.04, zz, 0.7 + weite * 0.05);
+  ereignisse.push({ typ: 'schuss', id: bau.id });
+}
+
+/** Länge des Weges in Heutreppe und Heulift. */
+const innenLaenge = (typ) => (typ === 'heutreppe' ? Math.hypot(4, 2.2) : 3.4);
+
+/** Punkt im Inneren von Heutreppe und Heulift nach t Metern (für die Grafik). */
+function innenPunkt(bau, t) {
+  const L = innenLaenge(bau.typ);
+  const u = clamp(t / L, 0, 1);
+  const y0 = (bau.y || 0) + BAND_Y;
+  if (bau.typ === 'heutreppe') {
+    const [x, z] = lokalZuWelt(bau, 0, -2 + 4 * u);
+    return [x, y0 + 2.2 * u, z];
+  }
+  // Heulift: senkrecht hoch, oben hinüber
+  const hoch = 2.2 / 3.4;
+  if (u < hoch) { const [x, z] = lokalZuWelt(bau, -0.6, 0); return [x, y0 + 2.2 * (u / hoch), z]; }
+  const [x, z] = lokalZuWelt(bau, -0.6 + 1.2 * ((u - hoch) / (1 - hoch)), 0);
+  return [x, y0 + 2.2, z];
+}
+
+function innenSchritt(s, netz, bau, dt, ereignisse) {
+  const a = anteil(bau);
+  const l = lauf(bau);
+  if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
+  l.status = 'laeuft';
+  const L = innenLaenge(bau.typ);
+  const v = werte(s).band * a;
+  bau.innen.sort((p, q) => q.t - p.t);
+  let vorne = null;
+  for (let i = 0; i < bau.innen.length; i++) {
+    const r = bau.innen[i];
+    let nt = r.t + v * dt;
+    if (vorne) nt = Math.min(nt, vorne.t - 0.5);
+    if (!vorne && nt >= L) {
+      if (ausgangFrei(s, netz, bau, 0, r.art)) {
+        bau.innen.splice(i, 1);
+        i--;
+        ausgeben(s, netz, bau, 0, r, ereignisse);
+        continue;
+      }
+      nt = L;
+    }
+    r.t = Math.max(r.t, nt);
+    vorne = r;
+  }
+}
+
+/* ------------------------------------------------------------ Verzeichnis */
+
+const MASCHINE = {
+  rechen: { schritt: rechenSchritt },
+  arm: { schritt: (s, netz, bau, dt, ev) => armSchritt(s, netz, bau, dt, ev, true) },
+  vorrangarm: { schritt: (s, netz, bau, dt, ev) => armSchritt(s, netz, bau, dt, ev, false) },
+  generator: { schritt: generatorSchritt },
+  brunnen: { schritt: brunnenSchritt },
+  radar: { schritt: radarSchritt },
+  scanner: { schritt: scannerSchritt },
+  weiche: { schritt: weicheSchritt },
+  vereiniger: { schritt: vereinigerSchritt },
+  silo: { schritt: verarbeiterSchritt },
+  presse: { schritt: verarbeiterSchritt },
+  pellet: { schritt: verarbeiterSchritt },
+  wickler: { schritt: verarbeiterSchritt },
+  pulper: { schritt: verarbeiterSchritt },
+  papier: { schritt: verarbeiterSchritt },
+  brikett: { schritt: verarbeiterSchritt },
+  rohrwerfer: { schritt: rohrwerferSchritt },
+  heutreppe: { schritt: innenSchritt },
+  heulift: { schritt: innenSchritt },
+};
+
+/** Beim Abbau: was in der Maschine steckt, kommt als Stücke heraus; Nadeln darin gehen zurück in den Haufen. */
+function maschineLeeren(s, bau, ereignisse) {
+  const recs = [];
+  if (bau.puffer) recs.push(bau.puffer);
+  for (const k of ['schlange', 'fertig', 'innen']) if (Array.isArray(bau[k])) recs.push(...bau[k]);
+  if (bau.lager) {
+    for (const [z, m] of Object.entries(bau.lager)) {
+      if (z === 'halme') { if (m >= 1) recs.push({ art: 'roh', halme: Math.floor(m), nadel: -1 }); } else {
+        for (let i = 0; i < Math.floor(m); i++) recs.push({ art: z, halme: PRODUKTE[z].halme, nadel: -1 });
+      }
+    }
+  }
+  const z = s.zufallFn || Math.random;
+  for (const r of recs.slice(0, 24)) {
+    const g = gegenstandNeu(s, r.art, r.halme, bau.x + (z() - 0.5) * 0.8, (bau.y || 0) + 0.8, bau.z + (z() - 0.5) * 0.8);
+    if (r.nadel >= 0) nadelMitgeben(s, g, s.nadeln[r.nadel]);
+    werfenMit(g, g.x, g.y, g.z, (z() - 0.5) * 2, 1.5, (z() - 0.5) * 2);
+  }
+  for (const nr of [...(bau.nadeln || [])]) {
+    const n = s.nadeln[nr];
+    if (n && n.zustand !== 'gefunden') nadelZurueck(s, s.hf, n, z, ereignisse);
+  }
+  bau.nadeln = [];
+}
+
+/** Hält die Maschine eine Nadel? (Warnung beim Abbau) */
+function haeltNadel(s, bau) {
+  if ((bau.nadeln || []).length) return true;
+  const recs = [bau.puffer, ...(bau.schlange || []), ...(bau.fertig || []), ...(bau.innen || [])];
+  return recs.some((r) => r && r.nadel >= 0);
+}
+
+/* ------------------------------------------------------------ Anzeige */
+
+const STATUS_TEXT = {
+  laeuft: 'Läuft', strom: 'Kein Strom', leer: 'Kein Heu in Reichweite', wartet: 'Wartet auf Heu', voll: 'Ausgang voll',
+  stau: 'Stau am Ausgang', aus: 'Ausgeschaltet', wasser: 'Kein Wasser', bereit: 'Bereit', prueft: 'Prüft',
+};
+
+/** Zeilen für die Maschinentafel. */
+function maschinenZeilen(s, bau) {
+  const d = BAU_BY_ID[bau.typ];
+  const l = lauf(bau);
+  const z = [];
+  if (d.kw > 0) z.push(['Strom', l.netz >= 0 ? `${Math.round((l.strom || 0) * 100)} % von ${d.kw} kW` : 'nicht angeschlossen']);
+  if (d.kw < 0) z.push(['Leistung', `${Math.round(-(l.leistung || 0) * 10) / 10} kW`]);
+  if (bau.typ === 'generator') z.push(['Brennstoff', `${Math.round(bau.brenn || 0)} Halme`]);
+  if (bau.lager) {
+    for (const [zutat, m] of Object.entries(d.rezept || {})) {
+      z.push([zutat === 'halme' ? 'Loses Heu' : PRODUKTE[zutat].name, `${Math.floor(bau.lager[zutat] || 0)} / ${m} je Stück`]);
+    }
+    if (bau.fertig.length) z.push(['Fertig', `${bau.fertig.length} ${PRODUKTE[d.produkt].name}`]);
+  }
+  if (d.wasser > 0) z.push(['Wasser', `${Math.round((l.wasser || 0) * 100)} %`]);
+  if (bau.typ === 'scanner') z.push(['In der Schlange', String(bau.schlange.length)]);
+  if ((bau.nadeln || []).length) z.push(['Nadeln', `${bau.nadeln.length} wartet`]);
+  if (bau.typ === 'radar') z.push(['Nächster Ping', `${Math.ceil(Math.max(0, bau.rest || 0))} s`]);
+  return z;
+}
+
+// ---- src/versorgung.js
+// Strom und Wasser. Strom: der Hausanschluss an der Wand liefert 5 kW,
+// Masten verlängern die Leitung (Spannweite), Maschinen hängen am nächsten
+// Mast in Reichweite (Abspannung). Generatoren speisen ein. Reicht der Strom
+// nicht, laufen alle Maschinen im Netz anteilig langsamer. Tippen am Mast
+// schaltet das ganze Netz. Wasser: Brunnen und Leitungen, geteilt wie Strom.
+// Reine Logik.
+
+
+const MAST_OBEN = 4.3;
+
+/** Abstand von (x, z) zum Fußabdruck eines Baus (0, wenn darin). */
+function abstandZuBau(bau, x, z) {
+  const k = fussabdruck(bau.typ, bau.x, bau.z, bau.rot || 0);
+  const dx = Math.max(k.x0 - x, 0, x - k.x1);
+  const dz = Math.max(k.z0 - z, 0, z - k.z1);
+  return Math.hypot(dx, dz);
+}
+
+function unionFind(n) {
+  const p = Array.from({ length: n }, (_, i) => i);
+  const finde = (i) => { while (p[i] !== i) { p[i] = p[p[i]]; i = p[i]; } return i; };
+  return { finde, vereine: (a, b) => { const ra = finde(a); const rb = finde(b); if (ra !== rb) p[ra] = rb; } };
+}
+
+/** Punkt, an dem eine Leitung am Bau ansetzt. */
+function leitungsPunkt(bau) {
+  if (bau.typ === 'mast') return [bau.x, (bau.y || 0) + MAST_OBEN, bau.z];
+  const d = BAU_BY_ID[bau.typ];
+  return [bau.x, (bau.y || 0) + d.h * 0.9, bau.z];
+}
+
+/**
+ * Stromnetze aus den Bauten bilden. Knoten: Hausanschluss, Masten, Generatoren.
+ * Verbraucher hängen am nächsten Knoten in Abspannweite.
+ */
+function stromNetzBauen(s, netz) {
+  const w = werte(s);
+  const erdkabel = w.frei.has('erdkabel');
+  const knoten = [{ art: 'haus', x: HAUSANSCHLUSS.x, z: HAUSANSCHLUSS.z, punkt: [HAUSANSCHLUSS.x, HAUSANSCHLUSS.y, HAUSANSCHLUSS.z] }];
+  const verbraucher = [];
+  for (const b of s.bauten) {
+    const d = BAU_BY_ID[b.typ];
+    if (!d) continue;
+    if (b.typ === 'mast') knoten.push({ art: 'mast', bau: b, x: b.x, z: b.z, punkt: leitungsPunkt(b) });
+    else if (d.kw < 0) knoten.push({ art: 'gen', bau: b, x: b.x, z: b.z, punkt: leitungsPunkt(b) });
+    else if (d.kw > 0) verbraucher.push(b);
+    lauf(b).netz = -1;
+  }
+  const uf = unionFind(knoten.length);
+  const leitungen = [];
+  for (let i = 0; i < knoten.length; i++) {
+    for (let j = i + 1; j < knoten.length; j++) {
+      const a = knoten[i]; const b = knoten[j];
+      const d = Math.hypot(a.x - b.x, a.z - b.z);
+      const mastMast = a.art !== 'gen' && b.art !== 'gen';
+      let reicht = false;
+      let erd = false;
+      if (mastMast) {
+        if (d <= w.spannweite) reicht = true;
+        else if (erdkabel && a.art === 'mast' && b.art === 'mast') { reicht = true; erd = true; }
+      } else {
+        // Generator: hängt wie eine Maschine am nächsten Mast oder direkt am Hausanschluss
+        const gen = a.art === 'gen' ? a : b;
+        const anderer = gen === a ? b : a;
+        if (anderer.art !== 'gen' && abstandZuBau(gen.bau, anderer.x, anderer.z) <= w.abspannung) reicht = true;
+      }
+      if (!reicht) continue;
+      if (uf.finde(i) !== uf.finde(j) || !erd) {
+        uf.vereine(i, j);
+        if (!erd) leitungen.push({ a: a.punkt, b: b.punkt });
+      }
+    }
+  }
+  // Verbraucher an den nächsten Knoten (Mast oder Hausanschluss, auch Generator) in Reichweite
+  const anschluss = new Map();
+  for (const v of verbraucher) {
+    let beste = -1;
+    let bestD = w.abspannung;
+    knoten.forEach((k, i) => {
+      const dd = abstandZuBau(v, k.x, k.z);
+      if (dd <= bestD) { bestD = dd; beste = i; }
+    });
+    if (beste >= 0) {
+      anschluss.set(v, beste);
+      leitungen.push({ a: knoten[beste].punkt, b: leitungsPunkt(v), fall: true });
+    }
+  }
+  // Netze zusammenstellen
+  const netze = new Map();
+  const netzVon = (i) => {
+    const r = uf.finde(i);
+    if (!netze.has(r)) netze.set(r, { id: netze.size, haus: false, masten: [], erzeuger: [], verbraucher: [], angebot: 0, bedarf: 0, anteil: 1, aus: false });
+    return netze.get(r);
+  };
+  knoten.forEach((k, i) => {
+    const n = netzVon(i);
+    if (k.art === 'haus') n.haus = true;
+    else if (k.art === 'mast') { n.masten.push(k.bau); lauf(k.bau).netz = n.id; }
+    else { n.erzeuger.push(k.bau); lauf(k.bau).netz = n.id; }
+  });
+  for (const [v, i] of anschluss) {
+    const n = netzVon(i);
+    n.verbraucher.push(v);
+    lauf(v).netz = n.id;
+  }
+  netz.strom = [...netze.values()];
+  netz.leitungen = leitungen;
+}
+
+/** Strombilanz je Netz. Generatoren melden ihre Leistung in lauf(bau).leistung (kW). */
+function stromSchritt(s, netz) {
+  const w = werte(s);
+  let knapp = false;
+  for (const n of netz.strom) {
+    n.aus = n.masten.some((m) => m.aus);
+    n.angebot = (n.haus ? HAUSANSCHLUSS_KW : 0) + n.erzeuger.reduce((sum, g) => sum + (g.aus ? 0 : lauf(g).leistung || 0), 0);
+    n.bedarf = n.verbraucher.reduce((sum, v) => sum + (v.aus ? 0 : BAU_BY_ID[v.typ].kw * w.verbrauch), 0);
+    n.anteil = n.aus ? 0 : n.bedarf > 0 ? Math.min(1, n.angebot / n.bedarf) : 1;
+    if (!n.aus && n.anteil < 0.999 && n.verbraucher.length) knapp = true;
+    for (const v of n.verbraucher) lauf(v).strom = v.aus ? 0 : n.anteil;
+  }
+  // Verbraucher ohne Netz bekommen nichts
+  for (const b of netz.verbraucherAlle) if (lauf(b).netz < 0) lauf(b).strom = 0;
+  netz.stromKnapp = knapp;
+}
+
+/** Tippen am Mast: das ganze Netz ein- oder ausschalten. Liefert den neuen Zustand (true = an). */
+function netzSchalten(s, netz, mast) {
+  const n = netz.strom.find((x) => x.masten.includes(mast));
+  if (!n) { mast.aus = !mast.aus; return !mast.aus; }
+  const jetztAus = !n.masten.some((m) => m.aus);
+  for (const m of n.masten) m.aus = jetztAus;
+  return !jetztAus;
+}
+
+/** Netzinfo für einen Bau (Mast, Maschine): { angebot, bedarf, anteil, aus } oder null. */
+function netzVon(netz, bau) {
+  const id = lauf(bau).netz;
+  return id >= 0 ? netz.strom.find((n) => n.id === id) || null : null;
+}
+
+/* ------------------------------------------------------------ Wasser */
+
+const WASSER_KNOTEN = new Set(['brunnen', 'pulper', 'papier', 'wasserweiche', 'leitung']);
+
+/** Wassernetze: Brunnen, Leitungen, Weichen und Verbraucher, die sich berühren. */
+function wasserNetzBauen(s, netz) {
+  const teile = s.bauten.filter((b) => WASSER_KNOTEN.has(b.typ));
+  const uf = unionFind(teile.length);
+  const beruehrt = (a, b) => {
+    const linie = (x) => x.typ === 'leitung' && x.a && x.b;
+    if (linie(a) && linie(b)) {
+      for (const p of [a.a, a.b]) if (streckenAbstand(p[0], p[1], b.a[0], b.a[1], b.b[0], b.b[1]).d < 0.45) return true;
+      for (const p of [b.a, b.b]) if (streckenAbstand(p[0], p[1], a.a[0], a.a[1], a.b[0], a.b[1]).d < 0.45) return true;
+      return false;
+    }
+    if (linie(a) || linie(b)) {
+      const l = linie(a) ? a : b;
+      const m = l === a ? b : a;
+      return [l.a, l.b].some((p) => abstandZuBau(m, p[0], p[1]) < 0.6);
+    }
+    // zwei Maschinen direkt nebeneinander
+    const ka = fussabdruck(a.typ, a.x, a.z, a.rot || 0);
+    return abstandZuBau(b, Math.max(ka.x0, Math.min(b.x, ka.x1)), Math.max(ka.z0, Math.min(b.z, ka.z1))) < 0.25;
+  };
+  for (let i = 0; i < teile.length; i++) for (let j = i + 1; j < teile.length; j++) if (beruehrt(teile[i], teile[j])) uf.vereine(i, j);
+  const netze = new Map();
+  teile.forEach((b, i) => {
+    const r = uf.finde(i);
+    if (!netze.has(r)) netze.set(r, { brunnen: [], verbraucher: [], angebot: 0, bedarf: 0, anteil: 0 });
+    const n = netze.get(r);
+    if (b.typ === 'brunnen') n.brunnen.push(b);
+    else if (BAU_BY_ID[b.typ].wasser > 0) n.verbraucher.push(b);
+    lauf(b).wasserNetz = n;
+  });
+  netz.wasser = [...netze.values()];
+}
+
+/** Wasserbilanz: Brunnen melden lauf(b).wasserLeistung, Verbraucher lauf(b).wasserBedarf. */
+function wasserSchritt(s, netz) {
+  for (const b of netz.wasserVerbraucherAlle || []) lauf(b).wasser = 0;
+  for (const n of netz.wasser) {
+    n.angebot = n.brunnen.reduce((sum, b) => sum + (lauf(b).wasserLeistung || 0), 0);
+    n.bedarf = n.verbraucher.reduce((sum, b) => sum + (lauf(b).wasserBedarf || 0), 0);
+    n.anteil = n.bedarf > 0 ? Math.min(1, n.angebot / n.bedarf) : (n.angebot > 0 ? 1 : 0);
+    for (const b of n.verbraucher) lauf(b).wasser = n.anteil;
+  }
+}
+
+// ---- src/bauen.js
+// Bauen und Abbauen: prüft, ob ein Bau an eine Stelle passt (Halle, Haufen,
+// Stationen, andere Bauten, Geld oder Geschenk), setzt ihn, plant Bänder mit
+// Wegfindung und rastet ihre Enden an Anschlüssen ein. Liefert außerdem die
+// Kollisionskästen und begehbaren Flächen aller Bauten. Reine Logik.
+
+
+const bauVersion = (s) => lauf(s).bauVersion || 0;
+function bauGeaendert(s) { lauf(s).bauVersion = bauVersion(s) + 1; }
+
+/** Wie hoch darf der Haufen unter dem Bau sein? Rechen und Arm stehen am Haufen. */
+const HAUFEN_ERLAUBT = { rechen: 1.4, arm: 0.35, vorrangarm: 0.2, mast: 0.3 };
+
+/** Stellen im gedrehten Fußabdruck, an denen geprüft wird. */
+function probePunkte(typ, x, z, rot) {
+  const e = ecken(typ, x, z, rot);
+  const pts = [[x, z], ...e];
+  for (let i = 0; i < 4; i++) {
+    const a = e[i]; const b = e[(i + 1) % 4];
+    pts.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]);
+  }
+  return pts;
+}
+
+/** Berührt ein Band den Fußabdruck (Enden ausgenommen, dort rastet es ja ein)? */
+function bandImWeg(band, typ, x, z, rot) {
+  const { segs, laenge } = bandGeometrie(band);
+  const bau = { typ, x, z, rot };
+  for (const g of segs) {
+    const n = Math.max(1, Math.ceil(g.len / 0.25));
+    for (let i = 0; i <= n; i++) {
+      const t = g.s0 + (g.len * i) / n;
+      if (t < 0.6 || t > laenge - 0.6) continue;
+      if (imFussabdruck(bau, g.ax + g.dx * (g.len * i) / n, g.az + g.dz * (g.len * i) / n, 0.3)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Passt der Bau typ bei (x, z) mit Drehung rot? Liefert { ok, grund, kosten, geschenk }.
+ * Gründe: gesperrt, wand, haufen, belegt, band, geld.
+ */
+function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
+  const d = BAU_BY_ID[typ];
+  if (!d) return { ok: false, grund: 'unbekannt' };
+  const geschenk = (s.geschenke[typ] || 0) > 0;
+  const kosten = geschenk ? 0 : bauKosten(s, typ);
+  const aus = (grund) => ({ ok: false, grund, kosten, geschenk });
+  if (!bauFrei(s, typ)) return aus('gesperrt');
+  const k = fussabdruck(typ, x, z, rot);
+  const gr = hallenGrenzen(werte(s).hallenFelder);
+  if (k.x0 < gr.xMin + 0.05 || k.x1 > gr.xMax - 0.05 || k.z0 < gr.zMin + 0.05 || k.z1 > gr.zMax - 0.05) return aus('wand');
+  if (s.hf && y < 0.1) {
+    const erlaubt = HAUFEN_ERLAUBT[typ] ?? 0.15;
+    for (const [px, pz] of probePunkte(typ, x, z, rot)) if (haufenHoehe(s.hf, px, pz) > erlaubt) return aus('haufen');
+  }
+  const eng = { x0: k.x0 + 0.02, x1: k.x1 - 0.02, z0: k.z0 + 0.02, z1: k.z1 - 0.02 };
+  for (const h of festeHindernisse()) if (kastenUeberlapp(eng, h)) return aus('belegt');
+  // Trichter am Stand und die Schwelle am Tor bleiben frei
+  if (imFussabdruck({ typ, x, z, rot }, STAND_TRICHTER.x, STAND_TRICHTER.z, 0.2)) return aus('belegt');
+  if (imFussabdruck({ typ, x, z, rot }, LADERAMPE.x, LADERAMPE.z, 0.1)) return aus('belegt');
+  for (const b of s.bauten) {
+    if (b.typ === 'band') { if (bandImWeg(b, typ, x, z, rot)) return aus('band'); continue; }
+    const bd = BAU_BY_ID[b.typ];
+    if (bd.linie && b.a && b.b) {
+      if (b.typ === 'leitung') continue;
+      for (let t = 0; t <= 1; t += 0.1) {
+        const px = b.a[0] + (b.b[0] - b.a[0]) * t; const pz = b.a[1] + (b.b[1] - b.a[1]) * t;
+        if (imFussabdruck({ typ, x, z, rot }, px, pz, 0.05)) return aus('belegt');
+      }
+      continue;
+    }
+    if (b.typ === 'dach' || typ === 'dach') continue;
+    if (b.typ === 'plattform' && y > 0.1) continue;
+    if (Math.abs((b.y || 0) - y) > 1.5) continue;
+    if (kastenUeberlapp(eng, fussabdruck(b.typ, b.x, b.z, b.rot || 0))) return aus('belegt');
+  }
+  if (s.geld < kosten) return aus('geld');
+  return { ok: true, kosten, geschenk };
+}
+
+/** Setzt den Bau, wenn er passt. Liefert { ok, bau } oder { ok: false, grund }. */
+function bauSetzen(s, typ, x, z, rot = 0, optionen = {}) {
+  const p = bauPruefen(s, typ, x, z, rot, optionen);
+  if (!p.ok) return p;
+  if (p.geschenk) {
+    s.geschenke[typ]--;
+    if (s.geschenke[typ] <= 0) delete s.geschenke[typ];
+  } else {
+    s.geld -= p.kosten;
+  }
+  const bau = { id: s.naechsteId++, typ, x, z, y: optionen.y || 0, rot, bezahlt: p.kosten, ...bauZustand(typ) };
+  if (p.geschenk) bau.geschenk = true;
+  s.bauten.push(bau);
+  bauGeaendert(s);
+  return { ok: true, bau };
+}
+
+/* ------------------------------------------------------------ Bänder */
+
+/**
+ * Einrastpunkt für Bandanfang oder -ende nahe (x, z). Liefert
+ * { x, y, z, richtung, art: 'frei'|'aus'|'ein'|'stand'|'laster'|'band', bau?, band?, t? }.
+ * richtung: in diese Richtung läuft das Band dort.
+ */
+function bandAnker(s, x, z, ende, { radius = 1.0, y = 0 } = {}) {
+  let beste = null;
+  let bestD = radius;
+  const nimm = (d, a) => { if (d < bestD) { bestD = d; beste = a; } };
+  for (const b of s.bauten) {
+    if (b.typ === 'band' || !BAU_BY_ID[b.typ].ein.length && !BAU_BY_ID[b.typ].aus.length) continue;
+    for (const p of anschlussListe(b)) {
+      if ((p.art === 'ein') !== ende) continue;
+      const richtung = p.art === 'ein' ? [-p.richtung[0], -p.richtung[1]] : p.richtung;
+      nimm(Math.hypot(p.x - x, p.z - z), { x: p.x, y: p.y, z: p.z, richtung, art: p.art, bau: b, port: p.i });
+    }
+  }
+  if (ende) {
+    nimm(Math.hypot(STAND_TRICHTER.x - x, STAND_TRICHTER.z - z) * 0.8,
+      { x: STAND_TRICHTER.x + 0.2, y: BAND_Y, z: STAND_TRICHTER.z, richtung: [-1, 0], art: 'stand' });
+    nimm(Math.hypot(LADERAMPE.x - x, LADERAMPE.z - z),
+      { x: LADERAMPE.x, y: BAND_Y, z: LADERAMPE.z, richtung: [0, -1], art: 'laster' });
+    for (const b of s.bauten) {
+      if (b.typ !== 'band') continue;
+      const nb = bandNaechster(b, x, z);
+      if (nb.d > radius * 0.7) continue;
+      const p = bandPunkt(b, nb.t);
+      nimm(nb.d + 0.15, { x: p.x, y: p.y, z: p.z, richtung: null, art: 'band', band: b, t: nb.t });
+    }
+  }
+  return beste || { x, y: y + BAND_Y, z, richtung: null, art: 'frei' };
+}
+
+/**
+ * Plant ein Band zwischen zwei Ankern. Liefert { ok, punkte, laenge, kosten, grund }.
+ * gerade: ohne Raster (Einrasten aus).
+ */
+function bandPlanen(s, von, nach, { gerade = false } = {}) {
+  if (!bauFrei(s, 'band')) return { ok: false, grund: 'gesperrt' };
+  const ohne = [];
+  if (von.bau) ohne.push(von.bau.id);
+  if (nach.bau) ohne.push(nach.bau.id);
+  const weg = bandWeg(s, von, nach, { ohne, gerade });
+  if (weg.fehler) return { ok: false, grund: weg.fehler };
+  const kosten = bauKosten(s, 'band', weg.laenge);
+  const r = { ok: s.geld >= kosten, punkte: weg.punkte, laenge: weg.laenge, kosten };
+  if (!r.ok) r.grund = 'geld';
+  return r;
+}
+
+/** Baut ein geplantes Band. */
+function bandSetzen(s, plan) {
+  if (!plan || !plan.punkte) return { ok: false, grund: 'kein Weg' };
+  const kosten = bauKosten(s, 'band', plan.laenge);
+  if (s.geld < kosten) return { ok: false, grund: 'geld' };
+  s.geld -= kosten;
+  const p0 = plan.punkte[0];
+  const bau = { id: s.naechsteId++, typ: 'band', x: p0[0], z: p0[2], y: p0[1] - BAND_Y, rot: 0, punkte: plan.punkte, bezahlt: kosten };
+  s.bauten.push(bau);
+  bauGeaendert(s);
+  return { ok: true, bau };
+}
+
+/* ------------------------------------------------------------ Linien (Wand, Geländer, Leitung) */
+
+function liniePlanen(s, typ, a, b) {
+  const d = BAU_BY_ID[typ];
+  if (!d || !d.linie || typ === 'band') return { ok: false, grund: 'unbekannt' };
+  if (!bauFrei(s, typ)) return { ok: false, grund: 'gesperrt' };
+  const laenge = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  if (laenge < 0.4) return { ok: false, grund: 'kurz' };
+  const gr = hallenGrenzen(werte(s).hallenFelder);
+  for (const p of [a, b]) if (p[0] < gr.xMin || p[0] > gr.xMax || p[1] < gr.zMin || p[1] > gr.zMax) return { ok: false, grund: 'wand' };
+  const kosten = bauKosten(s, typ, laenge);
+  return { ok: s.geld >= kosten, grund: s.geld >= kosten ? undefined : 'geld', laenge, kosten };
+}
+
+function linieSetzen(s, typ, a, b) {
+  const p = liniePlanen(s, typ, a, b);
+  if (!p.ok) return p;
+  s.geld -= p.kosten;
+  const bau = {
+    id: s.naechsteId++, typ, a: [...a], b: [...b], x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, y: 0,
+    rot: Math.atan2(-(b[1] - a[1]), b[0] - a[0]), bezahlt: p.kosten,
+  };
+  s.bauten.push(bau);
+  bauGeaendert(s);
+  return { ok: true, bau };
+}
+
+/* ------------------------------------------------------------ Abbauen */
+
+/** Was der Abbau bringt und ob etwas verloren geht. */
+function abbauInfo(s, bau) {
+  return { erstattung: bauErstattung(s, bau), geschenk: !!bau.geschenk, warnung: haeltNadel(s, bau) ? 'nadel' : null };
+}
+
+function bauAbbauen(s, bau, ereignisse = []) {
+  const i = s.bauten.indexOf(bau);
+  if (i < 0) return { ok: false };
+  const erstattung = bauErstattung(s, bau);
+  if (bau.geschenk) s.geschenke[bau.typ] = (s.geschenke[bau.typ] || 0) + 1;
+  else s.geld += erstattung;
+  if (bau.typ === 'band') {
+    for (const g of s.gegenstaende) {
+      if (g.ort === 'band' && g.band === bau.id) { g.ort = 'flug'; g.band = null; g.vx = 0; g.vy = 0; g.vz = 0; g.flug = 0; }
+    }
+  } else {
+    maschineLeeren(s, bau, ereignisse);
+    const job = lauf(bau).job;
+    if (job && job.g) { job.g.ort = 'flug'; job.g.vx = 0; job.g.vy = 0; job.g.vz = 0; job.g.flug = 0; }
+  }
+  s.bauten.splice(i, 1);
+  bauGeaendert(s);
+  return { ok: true, erstattung, geschenk: !!bau.geschenk };
+}
+
+/** Anzahl, für die Anzeige im Katalog. */
+const gebaut = (s, typ) => bauAnzahl(s, typ);
+
+/* ------------------------------------------------------------ Kollision und Flächen */
+
+/**
+ * Kästen (Spieler stößt an) und Flächen (man steht darauf) aller Bauten,
+ * dazu ein Gitter für schnelle Abfragen. Zwischengespeichert bis zur nächsten Änderung.
+ */
+function bautenUmgebung(s) {
+  const L = lauf(s);
+  if (L.umgebung && L.umgebungVersion === bauVersion(s)) return L.umgebung;
+  const kollider = [];
+  const flaechen = [];
+  const klappen = s.bauten.filter((b) => b.typ === 'klappe');
+  const pfosten = (k, oben, dicke = 0.14) => {
+    for (const [px, pz] of [[k.x0, k.z0], [k.x1, k.z0], [k.x0, k.z1], [k.x1, k.z1]]) {
+      const x = Math.max(k.x0 + dicke / 2, Math.min(k.x1 - dicke / 2, px));
+      const z = Math.max(k.z0 + dicke / 2, Math.min(k.z1 - dicke / 2, pz));
+      kollider.push({ x0: x - dicke / 2, x1: x + dicke / 2, z0: z - dicke / 2, z1: z + dicke / 2, h: oben });
+    }
+  };
+  for (const b of s.bauten) {
+    const d = BAU_BY_ID[b.typ];
+    const y0 = b.y || 0;
+    if (b.typ === 'band') {
+      const { segs } = bandGeometrie(b);
+      for (const g of segs) {
+        const n = Math.max(1, Math.ceil(g.len / 0.5));
+        for (let i = 0; i < n; i++) {
+          const t0 = (g.len * i) / n; const t1 = (g.len * (i + 1)) / n;
+          const ax = g.ax + g.dx * t0; const az = g.az + g.dz * t0;
+          const bx = g.ax + g.dx * t1; const bz = g.az + g.dz * t1;
+          const top = Math.max(g.ay + g.dy * t0, g.ay + g.dy * t1) + 0.06;
+          // Rechteck um das Stück Band (ohne Überstand an den Enden), als Kasten
+          const px = -g.dz * 0.33; const pz = g.dx * 0.33;
+          const xs = [ax + px, ax - px, bx + px, bx - px];
+          const zs = [az + pz, az - pz, bz + pz, bz - pz];
+          const k = { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs), h: top, band: b.id };
+          if (top > 1.2) k.unten = top - 0.35;
+          kollider.push(k);
+          flaechen.push({ ...k });
+        }
+      }
+      continue;
+    }
+    if (d.linie && b.a && b.b) {
+      if (b.typ === 'leitung') continue;
+      const l = Math.hypot(b.b[0] - b.a[0], b.b[1] - b.a[1]);
+      const n = Math.max(1, Math.ceil(l / 0.4));
+      for (let i = 0; i < n; i++) {
+        const t0 = i / n; const t1 = (i + 1) / n;
+        const ax = b.a[0] + (b.b[0] - b.a[0]) * t0; const az = b.a[1] + (b.b[1] - b.a[1]) * t0;
+        const bx = b.a[0] + (b.b[0] - b.a[0]) * t1; const bz = b.a[1] + (b.b[1] - b.a[1]) * t1;
+        const r = d.b / 2 + 0.02;
+        kollider.push({ x0: Math.min(ax, bx) - r, x1: Math.max(ax, bx) + r, z0: Math.min(az, bz) - r, z1: Math.max(az, bz) + r, h: y0 + d.h });
+      }
+      continue;
+    }
+    const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
+    if (b.typ === 'plattform') {
+      const locher = klappen.filter((q) => imFussabdruck(b, q.x, q.z));
+      const f = { x0: k.x0, x1: k.x1, z0: k.z0, z1: k.z1, h: y0 + d.h };
+      if (locher.length) f.hoeheBei = (x, z) => (locher.some((q) => imFussabdruck(q, x, z, -0.05)) ? -Infinity : y0 + d.h);
+      flaechen.push(f);
+      pfosten(k, y0 + d.h - 0.02);
+      continue;
+    }
+    if (b.typ === 'treppe') {
+      const bau = b;
+      flaechen.push({
+        x0: k.x0, x1: k.x1, z0: k.z0, z1: k.z1, h: y0 + d.h,
+        hoeheBei: (x, z) => {
+          const [lx, lz] = weltZuLokal(bau, x, z);
+          if (Math.abs(lx) > d.b / 2 || Math.abs(lz) > d.t / 2) return -Infinity;
+          return y0 + d.h * Math.max(0, Math.min(1, (lz + d.t / 2) / d.t));
+        },
+      });
+      continue;
+    }
+    if (b.typ === 'dach') { pfosten(k, y0 + d.h - 0.1, 0.12); continue; }
+    if (b.typ === 'klappe') continue;
+    const box = { x0: k.x0, x1: k.x1, z0: k.z0, z1: k.z1, h: y0 + d.h, bau: b.id };
+    if (y0 > 0.1) box.unten = y0;
+    kollider.push(box);
+    flaechen.push({ ...box });
+  }
+  const gitter = new Map();
+  for (const f of flaechen) gitterEintragen(gitter, f.x0, f.z0, f.x1, f.z1, f);
+  L.umgebung = { kollider, flaechen, gitter };
+  L.umgebungVersion = bauVersion(s);
+  return L.umgebung;
+}
+
+/** Auflagehöhe für Stücke bei (x, z) unterhalb von y (Boden, Haufen, Flächen). */
+function auflageBei(s, x, z, y = Infinity) {
+  let h = s.hf ? Math.max(0, haufenHoehe(s.hf, x, z)) : 0;
+  const u = bautenUmgebung(s);
+  for (const f of gitterBei(u.gitter, x, z)) {
+    if (f.band || x < f.x0 || x > f.x1 || z < f.z0 || z > f.z1) continue;
+    const top = f.hoeheBei ? f.hoeheBei(x, z) : f.h;
+    if (top <= y + SPIELER.stufe * 0.5 && top > h) h = top;
+  }
+  return h;
+}
+
+/** Kurzer Text zu einem Prüfgrund, für Hinweise. */
+const GRUND_TEXT = {
+  gesperrt: 'Noch nicht erforscht', wand: 'Zu nah an der Wand', haufen: 'Da liegt Heu', belegt: 'Da steht schon etwas',
+  band: 'Ein Band ist im Weg', geld: 'Nicht genug Geld', 'kein Weg': 'Kein Weg frei', kurz: 'Zu kurz', steil: 'Zu steil',
+  lang: 'Zu lang', blockiert: 'Weg versperrt', draussen: 'Außerhalb der Halle', unbekannt: 'Geht nicht',
+};
+
+
+// ---- src/drohnen.js
+// Heudrohnen: starten an der Drohnenstation, suchen lose Halme und liegen
+// gebliebene Stücke, fliegen sie zum Stand und werfen sie in den Trichter.
+// Die Drohnen selbst werden nicht gespeichert; nach dem Laden starten sie neu.
+// Reine Logik.
+
+
+const FLUG = 3.2; // Reisehöhe
+const TEMPO = 5; // m/s waagrecht
+const STEIGEN = 2.6;
+const JE_STATION = 3;
+
+function naechstesZiel(s, d, basis, vergeben) {
+  let beste = null;
+  let bestD = 40;
+  for (const b of s.lose) {
+    if (b.m < 3 || vergeben.has(b)) continue;
+    const dd = Math.hypot(b.x - d.x, b.z - d.z);
+    if (dd < bestD && Math.hypot(b.x - basis.x, b.z - basis.z) < 40) { bestD = dd; beste = { art: 'lose', ref: b }; }
+  }
+  for (const g of s.gegenstaende) {
+    if (g.ort !== 'boden' || vergeben.has(g)) continue;
+    const dd = Math.hypot(g.x - d.x, g.z - d.z);
+    if (dd < bestD && Math.hypot(g.x - basis.x, g.z - basis.z) < 40) { bestD = dd; beste = { art: 'stueck', ref: g }; }
+  }
+  return beste;
+}
+
+const zielPunkt = (z) => (z.art === 'lose' ? [z.ref.x, 0, z.ref.z] : [z.ref.x, z.ref.y, z.ref.z]);
+const zielDa = (s, z) => (z.art === 'lose' ? z.ref.m > 0.5 && s.lose.includes(z.ref) : z.ref.ort === 'boden');
+
+/** Fliegt auf (x, y, z) zu: erst auf Reisehöhe, dann hinüber, dann hinab. Liefert true, wenn angekommen. */
+function fliegen(d, x, y, z, dt) {
+  const dx = x - d.x;
+  const dz = z - d.z;
+  const weit = Math.hypot(dx, dz);
+  const reise = Math.max(FLUG, y + 1.2);
+  if (weit > 0.25) {
+    if (d.y < reise - 0.3 && weit > 1.5) { d.y = Math.min(reise, d.y + STEIGEN * dt); }
+    const schritt = Math.min(weit, TEMPO * dt);
+    d.x += (dx / weit) * schritt;
+    d.z += (dz / weit) * schritt;
+    d.rot = Math.atan2(-dz, dx);
+    if (weit < 1.5) d.y += (y - d.y) * Math.min(1, dt * 3);
+    else d.y += (reise - d.y) * Math.min(1, dt * 2);
+    return false;
+  }
+  d.y += (y - d.y) * Math.min(1, dt * 4);
+  return Math.abs(d.y - y) < 0.12;
+}
+
+function drohnenSchritt(s, dt, netz, ereignisse) {
+  const w = werte(s);
+  const L = lauf(s);
+  const stationen = netz.maschinenAlle.filter((b) => b.typ === 'drohnenstation' && !b.aus);
+  const soll = stationen.length ? Math.min(Math.floor(w.drohnenMax), stationen.length * JE_STATION) : 0;
+  const liste = L.drohnen || (L.drohnen = []);
+  while (liste.length < soll) {
+    const st = stationen[liste.length % stationen.length];
+    liste.push({ nr: liste.length, station: st.id, x: st.x, y: (st.y || 0) + 0.55, z: st.z, rot: 0, zustand: 'ruht', warte: 0.4 + liste.length * 0.5, last: 0, stueck: null, ziel: null });
+  }
+  while (liste.length > soll) {
+    const d = liste.pop();
+    if (d.stueck) { d.stueck.ort = 'flug'; d.stueck.vx = 0; d.stueck.vy = 0; d.stueck.vz = 0; d.stueck.flug = 0; }
+  }
+  const vergeben = new Set(liste.filter((d) => d.ziel).map((d) => d.ziel.ref));
+  const kapazitaet = Math.max(10, 10 * w.drohnenRate);
+  for (const d of liste) {
+    const st = netz.bauNachId.get(d.station) || stationen[0];
+    d.station = st.id;
+    const heim = [st.x, (st.y || 0) + 0.55, st.z];
+    switch (d.zustand) {
+      case 'ruht':
+        d.warte -= dt;
+        if (d.warte > 0) break;
+        d.ziel = naechstesZiel(s, d, st, vergeben);
+        if (d.ziel) { vergeben.add(d.ziel.ref); d.zustand = 'hin'; } else d.warte = 1.5;
+        break;
+      case 'hin': {
+        if (!zielDa(s, d.ziel)) { d.ziel = null; d.zustand = 'heim'; break; }
+        const [x, y, z] = zielPunkt(d.ziel);
+        if (fliegen(d, x, y + 0.45, z, dt)) { d.zustand = 'nimmt'; d.warte = 0.5; }
+        break;
+      }
+      case 'nimmt':
+        d.warte -= dt;
+        if (d.warte > 0) break;
+        if (d.ziel && zielDa(s, d.ziel)) {
+          if (d.ziel.art === 'lose') {
+            const b = d.ziel.ref;
+            const n = Math.min(b.m, kapazitaet);
+            b.m -= n;
+            d.last = n;
+            if (b.m <= 0.5) s.lose = s.lose.filter((x) => x !== b);
+          } else {
+            d.stueck = d.ziel.ref;
+            d.stueck.ort = 'drohne';
+          }
+        }
+        d.ziel = null;
+        d.zustand = d.last > 0 || d.stueck ? 'bringt' : 'heim';
+        break;
+      case 'bringt': {
+        if (d.stueck) { d.stueck.x = d.x; d.stueck.y = d.y - 0.45; d.stueck.z = d.z; }
+        if (!fliegen(d, STAND_TRICHTER.x, STAND_TRICHTER.y + 1.1, STAND_TRICHTER.z, dt)) break;
+        if (d.stueck) {
+          s.stat.drohne += gegenstandHalme(d.stueck);
+          d.stueck.x = STAND_TRICHTER.x; d.stueck.y = STAND_TRICHTER.y; d.stueck.z = STAND_TRICHTER.z;
+          gegenstandVerkaufen(s, d.stueck, ereignisse, 'drohne');
+          d.stueck = null;
+        }
+        if (d.last > 0) {
+          const betrag = d.last * preisRoh(w);
+          verkaufen(s, betrag, d.last, null, 'drohne');
+          ereignisse.push({ typ: 'verkauft', betrag, halme: d.last, wo: 'drohne', x: STAND_TRICHTER.x, y: STAND_TRICHTER.y, z: STAND_TRICHTER.z, art: 'roh' });
+          s.stat.drohne += d.last;
+          d.last = 0;
+        }
+        d.ziel = naechstesZiel(s, d, st, vergeben);
+        if (d.ziel) { vergeben.add(d.ziel.ref); d.zustand = 'hin'; } else d.zustand = 'heim';
+        break;
+      }
+      case 'heim':
+        if (fliegen(d, heim[0], heim[1], heim[2], dt)) { d.zustand = 'ruht'; d.warte = 1; }
+        break;
+      default:
+        d.zustand = 'heim';
+    }
+  }
+}
+
+/** Die Drohnen für die Grafik. */
+const drohnenListe = (s) => lauf(s).drohnen || [];
+
+// ---- src/automatik.js
+// Die Automatisierung als ein System für spielTakt: baut aus den Bauten das
+// Netz (Bänder und ihre Ziele, Anschlüsse der Maschinen, Strom, Wasser,
+// Dächer) neu, sobald sich etwas ändert, und treibt dann in fester
+// Reihenfolge Strom, Maschinen, Bänder, fliegende Stücke, Drohnen und den
+// Laster an. Reine Logik.
+
+
+/** Wohin das Ende eines Bandes führt. */
+function bandZiel(netz, band, ports) {
+  const E = band.punkte[band.punkte.length - 1];
+  const [x, y, z] = E;
+  if (Math.hypot(x - STAND_TRICHTER.x, z - STAND_TRICHTER.z) < 0.95) return { art: 'stand' };
+  if (Math.hypot(x - LADERAMPE.x, z - LADERAMPE.z) < 1.1) return { art: 'laster' };
+  const ein = ports.find((p) => p.art === 'ein' && Math.hypot(p.x - x, p.z - z) < 0.55 && Math.abs(p.y - y) < 0.45);
+  if (ein) {
+    lauf(ein.bau).einBand[ein.i] = band;
+    return { art: 'bau', bau: ein.bau, port: ein.i };
+  }
+  let beste = null;
+  for (const b of netz.baender) {
+    if (b === band) continue;
+    const A = b.punkte[0];
+    if (Math.hypot(A[0] - x, A[2] - z) < 0.35 && Math.abs(A[1] - y) < 0.45) return { art: 'band', band: b, t: 0 };
+    const nb = bandNaechster(b, x, z);
+    if (nb.d < 0.45 && Math.abs(nb.y - y) < 0.45 && (!beste || nb.d < beste.d)) beste = { art: 'band', band: b, t: nb.t, d: nb.d };
+  }
+  return beste;
+}
+
+/** Ein Band gibt sein vorderstes Stück ab. */
+function abgeben(s, band, ziel, g, ereignisse) {
+  const netz = lauf(s).netz;
+  switch (ziel.art) {
+    case 'stand': gegenstandVerkaufen(s, g, ereignisse, 'band'); return true;
+    case 'laster': return lasterAnnehmen(s, g, ereignisse);
+    case 'bau': return annehmen(s, netz, ziel.bau, g, ziel.port, ereignisse);
+    case 'band':
+      if (!platzAuf(ziel.band, ziel.t, g.art)) return false;
+      bandEinlegen(ziel.band, g, ziel.t);
+      return true;
+    default: return false;
+  }
+}
+
+function netzBauen(s, alt = null) {
+  const netz = {
+    baender: [], maschinen: [], maschinenAlle: [], bauNachId: new Map(), bandGitter: new Map(), bandHoechst: 0,
+    bauGitter: new Map(), verbraucherAlle: [], wasserVerbraucherAlle: [], strom: [], wasser: [], leitungen: [],
+    radar: alt ? alt.radar : null, stromKnapp: false,
+  };
+  for (const b of s.bauten) netz.bauNachId.set(b.id, b);
+  for (const b of s.bauten) {
+    const d = BAU_BY_ID[b.typ];
+    if (!d) continue;
+    const l = lauf(b);
+    if (b.typ === 'band') { netz.baender.push(b); l.ziel = null; continue; }
+    netz.maschinenAlle.push(b);
+    if (MASCHINE[b.typ]) netz.maschinen.push(b);
+    if (d.kw > 0) netz.verbraucherAlle.push(b);
+    if (d.wasser > 0) netz.wasserVerbraucherAlle.push(b);
+    l.aus = [];
+    l.einBand = [];
+    if (!d.linie) {
+      const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
+      gitterEintragen(netz.bauGitter, k.x0, k.z0, k.x1, k.z1, b);
+    }
+  }
+  for (const band of netz.baender) {
+    for (const seg of bandGeometrie(band).segs) {
+      gitterEintragen(netz.bandGitter, Math.min(seg.ax, seg.bx) - 0.45, Math.min(seg.az, seg.bz) - 0.45,
+        Math.max(seg.ax, seg.bx) + 0.45, Math.max(seg.az, seg.bz) + 0.45, [band, seg]);
+      netz.bandHoechst = Math.max(netz.bandHoechst, seg.ay, seg.by);
+    }
+  }
+  const ports = [];
+  for (const m of netz.maschinen) for (const p of anschlussListe(m)) ports.push({ ...p, bau: m });
+  for (const band of netz.baender) {
+    lauf(band).ziel = bandZiel(netz, band, ports);
+    const A = band.punkte[0];
+    const aus = ports.find((p) => p.art === 'aus' && Math.hypot(p.x - A[0], p.z - A[2]) < 0.55 && Math.abs(p.y - A[1]) < 0.45);
+    if (aus && !lauf(aus.bau).aus[aus.i]) lauf(aus.bau).aus[aus.i] = { art: 'band', band };
+  }
+  // Ausgänge, die direkt an einem Eingang oder am Stand liegen
+  for (const p of ports) {
+    if (p.art !== 'aus' || lauf(p.bau).aus[p.i]) continue;
+    const ein = ports.find((q) => q.art === 'ein' && q.bau !== p.bau && Math.hypot(q.x - p.x, q.z - p.z) < 0.45);
+    if (ein) { lauf(p.bau).aus[p.i] = { art: 'bau', bau: ein.bau, port: ein.i }; continue; }
+    if (Math.hypot(p.x - STAND_TRICHTER.x, p.z - STAND_TRICHTER.z) < 0.9) lauf(p.bau).aus[p.i] = { art: 'stand' };
+  }
+  const daecher = s.bauten.filter((b) => b.typ === 'dach');
+  for (const m of netz.maschinen) lauf(m).dach = daecher.some((d) => imFussabdruck(d, m.x, m.z));
+  stromNetzBauen(s, netz);
+  wasserNetzBauen(s, netz);
+  netz.abgeben = abgeben;
+  const gr = hallenGrenzen(werte(s).hallenFelder);
+  netz.welt = {
+    grenzen: gr,
+    boden: (x, z, y) => auflageBei(s, x, z, y),
+    fangen: (st, g, ev) => {
+      if (imStandTrichter(g.x, g.y, g.z)) { gegenstandVerkaufen(st, g, ev, 'stand'); return true; }
+      if (lasterFangen(st, g, ev)) return true;
+      if (maschineFangen(st, netz, g, ev)) return true;
+      return bandFangen(netz, g);
+    },
+  };
+  return netz;
+}
+
+/** Das aktuelle Netz; neu gebaut, wenn sich Bauten oder Reichweiten geändert haben. */
+function netzHolen(s) {
+  const L = lauf(s);
+  const w = werte(s);
+  const schluessel = `${bauVersion(s)}|${w.spannweite}|${w.abspannung}|${w.frei.has('erdkabel') ? 1 : 0}|${w.hallenFelder}`;
+  if (!L.netz || L.netzSchluessel !== schluessel) {
+    L.netz = netzBauen(s, L.netz);
+    L.netzSchluessel = schluessel;
+  }
+  return L.netz;
+}
+
+/** Das System für spielTakt(s, dt, [automatikSchritt]). */
+function automatikSchritt(s, dt, ereignisse) {
+  const netz = netzHolen(s);
+  stromSchritt(s, netz);
+  wasserSchritt(s, netz);
+  for (const bau of netz.maschinen) MASCHINE[bau.typ].schritt(s, netz, bau, dt, ereignisse);
+  baenderSchritt(s, dt, netz, ereignisse);
+  gegenstaendeSchritt(s, dt, netz.welt, ereignisse);
+  drohnenSchritt(s, dt, netz, ereignisse);
+  lasterSchritt(s, dt, ereignisse);
+  const L = lauf(s);
+  L.knappZeit = Math.max(0, (L.knappZeit || 0) - dt);
+  if (netz.stromKnapp && L.knappZeit <= 0) {
+    L.knappZeit = 30;
+    ereignisse.push({ typ: 'stromKnapp' });
+  }
+  if (netz.radar && s.zeit > netz.radar.bis) netz.radar = null;
+}
+
 // ---- src/spieler.js
 // Die Spielfigur in der Ich-Perspektive: Gehen, Rennen, Springen, Stoßen an
 // Wände und Maschinen, Laufen auf dem Haufen, solange er nicht zu steil ist.
@@ -2505,7 +4981,7 @@ function standNeu(seed = (Date.now() % 2147483647) || 7) {
     lose: [],
     spieler: {
       ...spielerNeu(), werkzeug: 'hand', last: 0, puste: GRUND.ausdauer, ruhe: 0,
-      sauger: { an: false, hitze: 0, heiss: false, rest: 0 },
+      sauger: { an: false, hitze: 0, heiss: false, rest: 0 }, haelt: null,
     },
     bauten: [],
     gegenstaende: [],
@@ -2514,6 +4990,7 @@ function standNeu(seed = (Date.now() % 2147483647) || 7) {
     mission: 0,
     missionErledigt: [],
     auftrag: { nr: 0, skip: 0, geliefert: 0, pause: 0 },
+    laster: lasterNeu(),
     stat: statNeu(),
     einnahmenFenster: [],
     haufenStart: 0,
@@ -2612,10 +5089,42 @@ function laden(text) {
   s.tech.scheune = 1;
   s.arten = Object.fromEntries(Object.entries(s.arten).filter(([a, n]) => NADELN[a] && Number.isFinite(n)));
   s.nadeln = s.nadeln.filter((n) => istObjekt(n) && Number.isFinite(n.x) && Number.isFinite(n.y) && Number.isFinite(n.z)
-    && NADELN[n.art] && ['versteckt', 'lose', 'gefunden', 'unterwegs', 'scanner'].includes(n.zustand));
+    && NADELN[n.art] && ['versteckt', 'lose', 'gefunden', 'unterwegs', 'scanner', 'maschine'].includes(n.zustand));
+  s.nadeln.forEach((n, i) => { n.nr = i; });
   s.lose = s.lose.filter((b) => istObjekt(b) && Number.isFinite(b.x) && Number.isFinite(b.z) && b.m > 0).slice(0, 400);
-  s.bauten = s.bauten.filter((b) => istObjekt(b) && BAU_NACH_ID[b.typ] && Number.isFinite(b.x) && Number.isFinite(b.z));
-  s.gegenstaende = s.gegenstaende.filter((g) => istObjekt(g) && Number.isFinite(g.x) && Number.isFinite(g.z)).slice(0, 600);
+  s.bauten = s.bauten.filter((b) => istObjekt(b) && BAU_NACH_ID[b.typ] && Number.isFinite(b.x) && Number.isFinite(b.z)
+    && (b.typ !== 'band' || (Array.isArray(b.punkte) && b.punkte.length >= 2 && b.punkte.every((p) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite))))
+    && (!BAU_NACH_ID[b.typ].linie || b.typ === 'band' || (Array.isArray(b.a) && Array.isArray(b.b))));
+  for (const b of s.bauten) {
+    // fehlende Felder (ältere Stände) mit dem Grundzustand auffüllen
+    const grund = bauZustand(b.typ);
+    for (const [k, v] of Object.entries(grund)) if (!(k in b) || typeof b[k] !== typeof v || Array.isArray(v) !== Array.isArray(b[k])) b[k] = v;
+    b.rot = zahlOder(b.rot, 0);
+    b.y = zahlOder(b.y, 0);
+  }
+  const ORTE = ['boden', 'flug', 'band', 'hand'];
+  s.gegenstaende = s.gegenstaende.filter((g) => istObjekt(g) && Number.isFinite(g.x) && Number.isFinite(g.y) && Number.isFinite(g.z)
+    && PRODUKTE[g.art] && (g.art !== 'roh' || g.halme > 0)).slice(0, 600);
+  for (const g of s.gegenstaende) {
+    if (!ORTE.includes(g.ort)) g.ort = 'flug';
+    if (g.ort === 'band' && !s.bauten.some((b) => b.id === g.band && b.typ === 'band')) g.ort = 'flug';
+    if (g.ort === 'hand' && s.spieler.haelt !== g.id) g.ort = 'flug';
+    for (const k of ['vx', 'vy', 'vz']) g[k] = zahlOder(g[k], 0);
+    if (!Number.isInteger(g.nadel) || !s.nadeln[g.nadel]) g.nadel = -1;
+  }
+  if (s.spieler.haelt != null && !s.gegenstaende.some((g) => g.id === s.spieler.haelt && g.ort === 'hand')) s.spieler.haelt = null;
+  // Nadeln unterwegs oder in Maschinen brauchen ihren Träger, sonst liegen sie lose am Haufen
+  for (const n of s.nadeln) {
+    if (n.zustand === 'unterwegs' && !s.gegenstaende.some((g) => g.nadel === n.nr)) n.zustand = 'lose';
+    if (n.zustand === 'scanner' || n.zustand === 'maschine') {
+      const bau = s.bauten.find((b) => b.id === n.bei);
+      const drin = bau && ((bau.nadeln || []).includes(n.nr)
+        || [bau.puffer, ...(bau.schlange || []), ...(bau.fertig || []), ...(bau.innen || [])].some((r) => r && r.nadel === n.nr));
+      if (!drin) n.zustand = 'lose';
+    }
+    if (n.zustand === 'lose' && !Number.isFinite(n.zeit)) n.zeit = 0;
+  }
+  if (!['weg', 'kommt', 'steht', 'faehrt'].includes(s.laster.zustand)) s.laster = lasterNeu();
   s.geschenke = Object.fromEntries(Object.entries(s.geschenke).filter(([id, n]) => BAU_NACH_ID[id] && n > 0));
   const sp = s.spieler;
   if (!WERKZEUG_NACH_ID[sp.werkzeug]) sp.werkzeug = 'hand';
