@@ -18,7 +18,7 @@ import {
 } from './werkzeuge.js';
 import { detektorMessen, nadelFinden } from './nadeln.js';
 import { loseNaechster } from './lose.js';
-import { klang, klangWecken, klangStumm, saugerAn, saugerAus, saugerHitze } from './klang.js';
+import { klang, klangWecken, klangStumm, saugerAn, saugerAus, saugerHitze, brummen } from './klang.js';
 import { szeneBauen } from './grafik/szene3d.js';
 import { hofBauen } from './grafik/hof3d.js';
 import { haufenAnsichtBauen } from './grafik/haufen3d.js';
@@ -39,7 +39,7 @@ import {
 import { scannerLeeren, annehmenMoeglich } from './maschinen.js';
 import { netzSchalten } from './versorgung.js';
 import { lasterAblehnen, lasterBereit, LASTER_BETT } from './laster.js';
-import { BAU_BY_ID, hallenGrenzen } from './welt.js';
+import { BAU_BY_ID, hallenGrenzen, lauf } from './welt.js';
 import { objekteBauen } from './grafik/objekte3d.js';
 import { baumodusBauen } from './baumodus.js';
 import { baukatalogZeigen, bauHudBauen } from './ui/bauen.js';
@@ -727,6 +727,17 @@ function hauptStart() {
         ui.pusteZeigen(s.spieler.puste / w.ausdauer, s.spieler.puste < w.ausdauerKosten);
         ui.hitzeZeigen(s.spieler.werkzeug === 'sauger' || s.spieler.sauger.hitze > 0, s.spieler.sauger.hitze, s.spieler.sauger.heiss);
         ui.forschungMarke(TECH.filter((t) => techStatus(s, t.id) === 'kaufbar').length);
+        // Brummen: je näher und je mehr Maschinen laufen, desto lauter
+        let naechste = Infinity;
+        let laufen = 0;
+        for (const b of netzHolen(s).maschinenAlle) {
+          const st = lauf(b).status;
+          if (st !== 'laeuft' && st !== 'prueft') continue;
+          const d = Math.hypot(b.x - s.spieler.x, b.z - s.spieler.z);
+          if (d < 14) laufen++;
+          if (d < naechste) naechste = d;
+        }
+        brummen(zustand.laeuft ? Math.max(0, 1 - naechste / 14) * Math.min(1, 0.45 + laufen * 0.15) : 0);
         if (zustand.tafel && zustand.tafel.aktualisieren) zustand.tafel.aktualisieren();
       }
       if (zustand.laeuft && bm.aktiv()) {

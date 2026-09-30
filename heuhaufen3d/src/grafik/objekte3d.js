@@ -252,6 +252,8 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   const stueckMeshes = {};
   for (const [art, geo] of Object.entries(GEO_FUER)) {
     const m = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN[art], roughness: art === 'silage' ? 0.35 : 0.95 });
+    // Die Heubündel leuchten im Vorbild leicht orange-golden
+    if (art === 'roh' || art === 'knaeuel') { m.emissive.setHex(0x6a3000); m.emissiveIntensity = 0.35; }
     const im = new THREE.InstancedMesh(geo, m, MAX_STUECKE);
     im.count = 0;
     im.castShadow = schatten;

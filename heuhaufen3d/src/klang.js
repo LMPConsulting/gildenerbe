@@ -170,6 +170,39 @@ export const klang = {
   },
 };
 
+/** Leises Brummen laufender Maschinen in der Nähe; laut 0..1. */
+let brummTon = null;
+export function brummen(laut) {
+  if (!ctx) return;
+  if (!brummTon) {
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = 58;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 240;
+    const q = ctx.createBufferSource();
+    q.buffer = rauschPuffer;
+    q.loop = true;
+    const qf = ctx.createBiquadFilter();
+    qf.type = 'bandpass';
+    qf.frequency.value = 850;
+    qf.Q.value = 0.6;
+    const gq = ctx.createGain();
+    gq.gain.value = 0.4;
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    o.connect(f).connect(g);
+    q.connect(qf).connect(gq).connect(g);
+    g.connect(master);
+    o.start();
+    q.start();
+    brummTon = { g };
+  }
+  const ziel = stumm || ctx.state !== 'running' ? 0 : Math.max(0, Math.min(1, laut)) * 0.05;
+  brummTon.g.gain.setTargetAtTime(ziel, ctx.currentTime, 0.35);
+}
+
 export function saugerAn() {
   if (!bereit() || saugerTon) return;
   const quelle = ctx.createBufferSource();

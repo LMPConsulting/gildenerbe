@@ -5520,6 +5520,39 @@ const klang = {
   },
 };
 
+/** Leises Brummen laufender Maschinen in der Nähe; laut 0..1. */
+let brummTon = null;
+function brummen(laut) {
+  if (!ctx) return;
+  if (!brummTon) {
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = 58;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 240;
+    const q = ctx.createBufferSource();
+    q.buffer = rauschPuffer;
+    q.loop = true;
+    const qf = ctx.createBiquadFilter();
+    qf.type = 'bandpass';
+    qf.frequency.value = 850;
+    qf.Q.value = 0.6;
+    const gq = ctx.createGain();
+    gq.gain.value = 0.4;
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    o.connect(f).connect(g);
+    q.connect(qf).connect(gq).connect(g);
+    g.connect(master);
+    o.start();
+    q.start();
+    brummTon = { g };
+  }
+  const ziel = stumm || ctx.state !== 'running' ? 0 : Math.max(0, Math.min(1, laut)) * 0.05;
+  brummTon.g.gain.setTargetAtTime(ziel, ctx.currentTime, 0.35);
+}
+
 function saugerAn() {
   if (!bereit() || saugerTon) return;
   const quelle = ctx.createBufferSource();
@@ -7704,6 +7737,8 @@ function objekteBauen(szene, qualitaet = 'mittel') {
   const stueckMeshes = {};
   for (const [art, geo] of Object.entries(GEO_FUER)) {
     const m = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN[art], roughness: art === 'silage' ? 0.35 : 0.95 });
+    // Die Heubündel leuchten im Vorbild leicht orange-golden
+    if (art === 'roh' || art === 'knaeuel') { m.emissive.setHex(0x6a3000); m.emissiveIntensity = 0.35; }
     const im = new THREE.InstancedMesh(geo, m, MAX_STUECKE);
     im.count = 0;
     im.castShadow = schatten;
@@ -10791,6 +10826,17 @@ function hauptStart() {
         ui.pusteZeigen(s.spieler.puste / w.ausdauer, s.spieler.puste < w.ausdauerKosten);
         ui.hitzeZeigen(s.spieler.werkzeug === 'sauger' || s.spieler.sauger.hitze > 0, s.spieler.sauger.hitze, s.spieler.sauger.heiss);
         ui.forschungMarke(TECH.filter((t) => techStatus(s, t.id) === 'kaufbar').length);
+        // Brummen: je näher und je mehr Maschinen laufen, desto lauter
+        let naechste = Infinity;
+        let laufen = 0;
+        for (const b of netzHolen(s).maschinenAlle) {
+          const st = lauf(b).status;
+          if (st !== 'laeuft' && st !== 'prueft') continue;
+          const d = Math.hypot(b.x - s.spieler.x, b.z - s.spieler.z);
+          if (d < 14) laufen++;
+          if (d < naechste) naechste = d;
+        }
+        brummen(zustand.laeuft ? Math.max(0, 1 - naechste / 14) * Math.min(1, 0.45 + laufen * 0.15) : 0);
         if (zustand.tafel && zustand.tafel.aktualisieren) zustand.tafel.aktualisieren();
       }
       if (zustand.laeuft && bm.aktiv()) {
