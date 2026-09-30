@@ -153,6 +153,7 @@ function wechseln(id) {
   klangWecken();
   if (ui.bildschirm && ui.bildschirm.weg) ui.bildschirm.weg();
   ui.reiter = id;
+  document.getElementById('app').dataset.reiter = id;
   el.buehne.innerHTML = '';
   ui.bildschirm = { haufen: bildHaufen, halle: bildHalle, forschung: bildForschung, nadeln: bildNadeln }[id]();
   for (const [k, r] of Object.entries(el.reiter)) {
@@ -410,8 +411,9 @@ function bildHaufen() {
   const hitze = h('div', { class: 'balken hitze', title: 'Hitze des Saugers', role: 'progressbar', 'aria-label': 'Hitze des Saugers', 'aria-valuemin': '0', 'aria-valuemax': '100' }, hitzeFuellung, h('span', {}, 'Hitze'));
   const werkzeugSchild = h('div', { class: 'werkzeugschild' });
   const maschinenZeile = h('div', { class: 'maschinenzeile' });
-  const unten = h('div', { class: 'szeneunten' }, h('div', { class: 'balkenreihe' }, tasche, ausdauer, hitze),
-    h('div', { class: 'schildreihe' }, maschinenZeile, werkzeugSchild));
+  const balkenReihe = h('div', { class: 'balkenreihe' }, tasche, ausdauer, hitze);
+  const schildReihe = h('div', { class: 'schildreihe' }, maschinenZeile, werkzeugSchild);
+  const unten = h('div', { class: 'szeneunten' }, balkenReihe, schildReihe);
   const szeneBox = h('div', { class: 'szene' }, canvas, h('div', { class: 'szeneoben' }, mission, hinweisZeile), unten);
 
   const segmente = Array.from({ length: 12 }, () => h('span', { class: 'seg' }));
@@ -456,6 +458,14 @@ function bildHaufen() {
   const aktionen = h('div', { class: 'aktionen' }, verkaufKnopf, ladungKnopf, drohnenKnopf);
   const seite = h('div', { class: 'haufenseite' }, detektorLeiste, leiste, aktionen);
   const wurzel = h('section', { class: 'bild haufenbild' }, szeneBox, seite);
+  // Im Querformat stehen Balken und Schilder in der Seitenleiste, damit der Boden frei bleibt.
+  const quer = typeof matchMedia === 'function' ? matchMedia('(orientation: landscape) and (max-height: 520px)') : null;
+  const querLegen = () => {
+    if (quer && quer.matches) { if (unten.parentNode !== seite) seite.prepend(unten); }
+    else if (unten.parentNode !== szeneBox) szeneBox.append(unten);
+  };
+  querLegen();
+  if (quer) quer.addEventListener('change', querLegen);
   el.buehne.append(wurzel);
 
   const szene = haufenSzene(canvas);
@@ -553,12 +563,22 @@ function bildHaufen() {
     hitzeFuellung.style.width = `${Math.round(stand.sauger.hitze * 100)}%`;
     schalte(hitze, 'heiss', stand.sauger.heiss);
     // Was in der Halle arbeitet, steht als Zeile unten im Bild, nicht auf die Leinwand gemalt.
-    const zaehl = [['arm', 'Arm', 'Arme'], ['rechen', 'Rechen', 'Rechen'], ['generator', 'Generator', 'Generatoren']]
+    // Kurz, damit alles in eine Zeile passt; ausgeschrieben steht es im title.
+    const liste = [['arm', 'Arm', 'Arme', 'Arme'], ['rechen', 'Rechen', 'Rechen', 'Rechen'], ['generator', 'Generator', 'Generatoren', 'Gen.']]
       .filter(([id]) => stand.maschinen[id] > 0)
-      .map(([id, eins, viele]) => `${stand.maschinen[id]} ${stand.maschinen[id] === 1 ? eins : viele}${stand.aus[id] ? ' (aus)' : ''}`);
-    if (stand.drohnen) zaehl.push(`${stand.drohnen} ${stand.drohnen === 1 ? 'Drohne' : 'Drohnen'}`);
-    setzeText(maschinenZeile, zaehl.join(' · '));
+      .map(([id, eins, viele, kurz]) => {
+        const n = stand.maschinen[id];
+        const aus = stand.aus[id] ? ' (aus)' : '';
+        return [`${n} ${n === 1 ? eins : viele}${aus}`, `${n} ${n === 1 ? eins : kurz}${aus}`];
+      });
+    if (stand.drohnen) liste.push([`${stand.drohnen} ${stand.drohnen === 1 ? 'Drohne' : 'Drohnen'}`, `${stand.drohnen} Dr.`]);
+    const zaehl = liste.map((x) => x[0]);
+    setzeText(maschinenZeile, liste.map((x) => x[1]).join(' · '));
+    maschinenZeile.title = zaehl.join(' · ');
     maschinenZeile.hidden = !zaehl.length;
+    // Ohne Tasche ist die obere Reihe frei: dann steht die Maschinenzeile dort und das Werkzeugschild allein.
+    const oben = tasche.hidden ? balkenReihe : schildReihe;
+    if (maschinenZeile.parentNode !== oben) oben.prepend(maschinenZeile);
     const wzName = WERKZEUGE.find((x) => x.id === stand.werkzeug).kurz;
     let info = '';
     if (['spaten', 'heugabel', 'sandschaufel'].includes(stand.werkzeug)) info = `${rate(stichMenge(w, stand.werkzeug))} pro Stich`;
@@ -623,7 +643,7 @@ function bildHaufen() {
       }, dt);
     },
     aktualisieren: letzteAktualisierung,
-    weg() { saugen(stand, false); },
+    weg() { saugen(stand, false); if (quer) quer.removeEventListener('change', querLegen); },
   };
 }
 
@@ -857,9 +877,9 @@ function bildHalle() {
 
 /* ================================================================ Forschung */
 
-const SPALTE = 176;
-const ZEILE = 74;
-const KARTE_B = 156;
+const SPALTE = 192;
+const ZEILE = 78;
+const KARTE_B = 172;
 const RAND_L = 34;
 const RAND_O = 36;
 /** Maßstab der Übersicht; muss zu .baum.uebersicht .brettrahmen in style.css passen. */

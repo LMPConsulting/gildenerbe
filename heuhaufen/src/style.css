@@ -171,6 +171,7 @@ button:disabled { cursor: default; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto;
 }
 .balken.hitze { flex: 0 0 24%; }
+.balkenreihe .maschinenzeile { flex: 1 1 auto; margin-right: 0; align-self: center; }
 .balken.hitze .fuellung { background: linear-gradient(90deg, rgba(255, 179, 107, 0.4), rgba(255, 90, 60, 0.8)); }
 .balken.hitze.heiss { border-color: var(--rot); }
 .werkzeugschild {
@@ -319,7 +320,7 @@ button:disabled { cursor: default; }
 .suchbox { flex: 1; min-width: 0; position: relative; }
 .suche {
   width: 100%; height: 40px; border-radius: 8px; border: 1px solid #2a332a;
-  background: #121612; color: var(--text); padding: 0 84px 0 10px; font: inherit; font-size: 13px;
+  background: #121612; color: var(--text); padding: 0 58px 0 10px; font: inherit; font-size: 13px;
   user-select: text; -webkit-user-select: text;
 }
 .suche::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
@@ -428,12 +429,12 @@ button:disabled { cursor: default; }
 .nadelkarte { min-height: 100px; }
 .nsym { width: 34px; height: 34px; color: #5a4a38; margin-bottom: 4px; }
 .nadelkarte b, .sammelkarte b { font-size: 12px; }
-.sammelkarte b { padding: 0 6px; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: anywhere; }
+.sammelkarte b { padding: 0 6px; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: normal; word-break: normal; }
 .nadelkarte small, .sammelkarte small { font-size: 10.5px; color: var(--leise); margin-top: 2px; }
 .nadelkarte.gefunden, .sammelkarte.gefunden { border-style: solid; border-color: #6b5327; background: #241e12; }
 .nadelkarte.gefunden .nsym, .sammelkarte.gefunden .nsym { color: var(--heu-hell); filter: drop-shadow(0 0 4px rgba(247, 218, 138, 0.5)); }
 .nadelkarte.gold .nsym { color: var(--gold); }
-.sammlung { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.sammlung { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
 .sammelkarte .nsym { width: 26px; height: 26px; }
 
 .werte { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 13px; }
@@ -456,7 +457,9 @@ button:disabled { cursor: default; }
 .toast.gut { border-left-color: var(--gruen); }
 /* Toast und Mission teilen sich den Platz oben im Bild. */
 .toastan .szeneoben .mission { visibility: hidden; }
-@keyframes rein { from { opacity: 0; transform: translateY(-8px); } }
+/* Außerhalb des Haufens liegen oben Suchfeld und Kennzahlen: dort kommen Toasts von unten. */
+#app:not([data-reiter="haufen"]) .toasts { top: auto; bottom: calc(var(--reiter-h) + var(--safe-b) + 8px); flex-direction: column-reverse; }
+@keyframes rein { from { opacity: 0; } }
 
 .modalhalter { display: none; }
 .modalhalter.offen {
@@ -526,8 +529,15 @@ button:disabled { cursor: default; }
   .blatt { left: auto; width: min(360px, 60%); top: 8px; max-height: none; }
   .toasts { left: 12px; right: auto; width: calc(64% - 24px); }
   .marke { position: relative; left: auto; top: -7px; margin-left: -2px; }
+  .haufenseite .szeneunten { position: static; padding: 0 8px 6px; }
+  .haufenseite .werkzeugschild, .haufenseite .maschinenzeile { background: var(--panel-2); }
+  .astchips { display: none; }
   .toast:nth-child(n + 2) { display: none; }
   .hallenszene { height: 130px; }
+}
+
+@media (max-width: 340px) {
+  .fkopflinks .fortschritt { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -138,14 +138,18 @@ export function haufenSzene(canvas) {
     const r0 = Math.min(g.w * 0.56, g.h * 0.85);
     // Maßstab für alles, was keine Kulisse ist: auf dem Tablet wächst es mit.
     const S = Math.max(1, Math.min(1.8, Math.min(g.w / 390, g.h / 600)));
+    // Der Stand darf etwas stärker wachsen, damit er auf dem Tablet kein Spielzeug ist.
+    const SS = Math.max(1, Math.min(2.2, Math.max(S, Math.min(g.w / 340, g.h / 300))));
     return {
       boden,
       wand: g.h * 0.36,
       cx: g.w * 0.42,
       r0,
-      h0: Math.min(boden - g.h * 0.14, r0 * 1.15),
-      standX: g.w - 64 * S,
+      // Hochkant ragt der Haufen bis unter die Bögen, wie im Vorbild.
+      h0: Math.min(boden - g.h * 0.08, r0 * (g.h / g.w > 1.2 ? 1.6 : 1.15)),
+      standX: g.w - 64 * SS,
       S,
+      SS,
     };
   };
 
@@ -178,7 +182,7 @@ export function haufenSzene(canvas) {
     const L = lage();
     const wandOben = L.wand - 4;
     const tw = Math.min(70, g.w * 0.17);
-    const tx = g.w * 0.6;
+    const tx = g.w * 0.64;
     const th = (L.boden - wandOben) * 0.72;
     return { tw, tx, th, ty: L.boden - th };
   }
@@ -437,11 +441,11 @@ export function haufenSzene(canvas) {
 
   /* -------------------------------------------------- Stand, Band, Maschinen */
 
-  function stand(preisText) {
+  function stand() {
     const L = lage();
     ctx.save();
     ctx.translate(L.standX, L.boden);
-    ctx.scale(L.S, L.S);
+    ctx.scale(L.SS, L.SS);
     // Bude aus Brettern mit Vordach
     ctx.fillStyle = 'rgba(40,25,10,0.3)';
     ctx.fillRect(-24, -2, 78, 6);
@@ -480,25 +484,36 @@ export function haufenSzene(canvas) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('HEU VERKAUFEN', 15, -68.5, 68);
+    ctx.restore();
+  }
+
+  /** Der Aufsteller steht vorn auf dem Boden, vor dem Band. */
+  function aufsteller(preisText) {
+    const L = lage();
+    ctx.save();
+    ctx.translate(L.standX, L.boden + 18 * L.SS);
+    ctx.scale(L.SS, L.SS);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     // Aufsteller mit dem Preis, wie im Vorbild, groß genug zum Lesen
-    const ax = -42;
+    const ax = -44;
     ctx.fillStyle = '#6b4a2d';
-    ctx.beginPath(); ctx.moveTo(ax - 17, 4); ctx.lineTo(ax - 12, -40); ctx.lineTo(ax + 12, -40); ctx.lineTo(ax + 17, 4); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(ax - 20, 4); ctx.lineTo(ax - 15, -40); ctx.lineTo(ax + 15, -40); ctx.lineTo(ax + 20, 4); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#1e2320';
-    ctx.beginPath(); ctx.moveTo(ax - 14, 0); ctx.lineTo(ax - 10, -37); ctx.lineTo(ax + 10, -37); ctx.lineTo(ax + 14, 0); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(ax - 17, 0); ctx.lineTo(ax - 13, -37); ctx.lineTo(ax + 13, -37); ctx.lineTo(ax + 17, 0); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#f4f4ee';
     ctx.font = '700 10px system-ui, sans-serif';
-    ctx.fillText(preisText.replace(' $', ''), ax, -27, 24);
+    ctx.fillText(preisText.replace(' $', ''), ax, -27, 30);
     ctx.font = '700 8px system-ui, sans-serif';
-    ctx.fillText('$ PRO', ax, -16, 24);
-    ctx.fillText('HALM', ax, -7, 24);
+    ctx.fillText('$ PRO', ax, -16, 30);
+    ctx.fillText('HALM', ax, -7, 30);
     ctx.restore();
   }
 
   /** Wo das Band liegt: vom linken Rand bis vor den Stand. */
   function bandLage() {
     const L = lage();
-    return { y: L.boden + 22 * L.S, von: Math.max(g.w * 0.08, 12), bis: L.standX - 64 * L.S, S: L.S };
+    return { y: L.boden + 22 * L.S, von: Math.max(g.w * 0.08, 12), bis: L.standX - 18 * L.SS, S: L.S };
   }
 
   function foerderband(s, f, H) {
@@ -548,8 +563,8 @@ export function haufenSzene(canvas) {
     const { tx } = torMasse();
     for (let i = 0; i < gens; i++) {
       const gw = 24 * L.S;
-      const x = tx - 10 - gw - i * (gw + 6);
-      if (x < 4) break;
+      const x = 6 * L.S + i * (gw + 6);
+      if (x + gw > tx - 6) break;
       const y = L.boden - 2;
       ctx.fillStyle = '#4b5a3b';
       ctx.fillRect(x, y - 18 * L.S, gw, 18 * L.S);
@@ -565,43 +580,78 @@ export function haufenSzene(canvas) {
     }
   }
 
+  const armLage = (s, L, B) => {
+    const rechen = s.aus.rechen ? 0 : (s.maschinen.rechen || 0);
+    const zr = Math.min(4, rechen);
+    const links = Math.max(20, B.von + 14 * L.S + zr * 30 * L.S);
+    const rechts = Math.max(links, L.standX - 30 * L.SS);
+    return { zr, links, rechts, rechen };
+  };
+
+  /** Arme stehen hinter dem Band, gleichmäßig verteilt; gezeichnet vor dem Band. */
+  function arme(s, f) {
+    const L = lage();
+    const B = bandLage();
+    const leer = s.haufen.entfernt >= s.haufen.gesamt;
+    const n = s.aus.arm ? 0 : (s.maschinen.arm || 0);
+    const laeuft = !!f && f.fluss > 0 && !leer;
+    const { links, rechts } = armLage(s, L, B);
+    const platz = Math.max(1, Math.floor((rechts - links) / (30 * L.S)) + 1);
+    const vorn = Math.min(8, n, platz);
+    // Was vorn keinen Platz hat, steht in einer zweiten Reihe dahinter, kleiner und dunkler.
+    const hinten = Math.min(8, n - vorn, platz);
+    const reihe = (za, y, mass, versatz, phase) => {
+      for (let i = 0; i < za; i++) {
+        const x = za === 1 ? (links + rechts) / 2 : links + ((rechts - links) * i) / (za - 1);
+        const ph = laeuft ? Math.sin(zeit * 2.6 + i * 1.3 + phase) : 0.3;
+        roboterarm(ctx, x + versatz, y, mass, ph, laeuft && ph > 0.2);
+      }
+    };
+    if (hinten > 0) {
+      ctx.save();
+      ctx.filter = 'brightness(0.72)';
+      reihe(hinten, B.y - 13 * L.S, 0.78 * L.S, 15 * L.S, 0.7);
+      ctx.restore();
+    }
+    reihe(vorn, B.y - 5 * L.S, 0.95 * L.S, 0, 0);
+  }
+
   function maschinen(s, f, H) {
     const L = lage();
     const B = bandLage();
     const leer = s.haufen.entfernt >= s.haufen.gesamt;
-    const arme = s.aus.arm ? 0 : (s.maschinen.arm || 0);
-    const rechen = s.aus.rechen ? 0 : (s.maschinen.rechen || 0);
     const laeuft = !!f && f.fluss > 0 && !leer;
-    const zr = Math.min(4, rechen);
-    // Arme stehen hinter dem Band, gleichmäßig verteilt, alle zum Stand gewandt; links davon die Rechen.
-    const links = Math.max(20, B.von + 14 * L.S + zr * 30 * L.S);
-    const rechts = Math.max(links, L.standX - 70 * L.S);
-    const platz = Math.max(1, Math.floor((rechts - links) / (30 * L.S)) + 1);
-    const za = Math.min(8, arme, platz);
-    for (let i = 0; i < za; i++) {
-      const x = za === 1 ? (links + rechts) / 2 : links + ((rechts - links) * i) / (za - 1);
-      const y = B.y - 2 * L.S;
-      const ph = laeuft ? Math.sin(zeit * 2.6 + i * 1.3) : 0.3;
-      roboterarm(ctx, x, y, 0.95 * L.S, ph, laeuft && ph > 0.2);
-    }
-    // Rechen schieben am Anfang des Bands Heu drauf.
+    const { zr } = armLage(s, L, B);
+    // Rechen: Motor, Kolben und ein Kamm, der Heu aufs Band schiebt.
+    const S = L.S;
     for (let i = 0; i < zr; i++) {
-      const x = B.von + 12 * L.S + i * 30 * L.S;
-      const y = B.y + 2 * L.S;
-      const hub = laeuft ? (Math.sin(zeit * 3 + i) + 1) * 4 * L.S : 0;
-      ctx.fillStyle = '#5b5f63';
-      ctx.fillRect(x - 10 * L.S, y - 8 * L.S, 20 * L.S, 10 * L.S);
-      ctx.fillStyle = '#9aa0a5';
-      ctx.fillRect(x - 4 * L.S, y - 8 * L.S - hub - 6 * L.S, 3 * L.S, 6 * L.S + hub);
-      ctx.fillStyle = '#6b4a2d';
-      ctx.fillRect(x - 10 * L.S, y - 8 * L.S - hub - 9 * L.S, 20 * L.S, 3 * L.S);
+      const x = B.von + 12 * S + i * 30 * S;
+      const y = B.y + 2 * S;
+      const hub = laeuft ? (Math.sin(zeit * 3 + i) + 1) * 4 * S : 0;
+      ctx.fillStyle = '#4b4f53';
+      ctx.fillRect(x - 12 * S, y - 9 * S, 11 * S, 11 * S);
+      ctx.fillStyle = '#6d7277';
+      ctx.fillRect(x - 12 * S, y - 9 * S, 11 * S, 2 * S);
+      ctx.fillStyle = '#b8bec3';
+      ctx.fillRect(x - 1 * S, y - 5 * S, 6 * S + hub, 2.2 * S);
+      const kx = x + 5 * S + hub;
+      ctx.fillStyle = '#7a5433';
+      ctx.fillRect(kx, y - 13 * S, 2.5 * S, 15 * S);
+      ctx.strokeStyle = '#5b3d24';
+      ctx.lineWidth = 1.4 * S;
+      ctx.beginPath();
+      for (let k = 0; k < 5; k++) {
+        const ty = y - 12 * S + k * 3.4 * S;
+        ctx.moveTo(kx + 2.5 * S, ty); ctx.lineTo(kx + 6 * S, ty + 2 * S);
+      }
+      ctx.stroke();
     }
     if (s.maschinen.radar) {
       const x = L.standX - 6;
       const y = L.wand + 8;
       ctx.strokeStyle = '#8c9296';
       ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(x, y + 18); ctx.lineTo(x, y + 6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, Math.max(y + 18, L.boden - 78 * L.SS)); ctx.lineTo(x, y + 6); ctx.stroke();
       ctx.fillStyle = '#c9cfd3';
       ctx.beginPath(); ctx.ellipse(x, y + 4, 9, 4, Math.sin(zeit) * 0.4, 0, Math.PI * 2); ctx.fill();
       if (ping > 0) {
@@ -619,15 +669,16 @@ export function haufenSzene(canvas) {
     const leer = s.haufen.entfernt >= s.haufen.gesamt;
     const ax = H.cx;
     const ay = H.boden - H.h - 16;
-    const bx = L.standX + 14 * L.S;
-    const by = L.boden - 96 * L.S;
+    const bx = L.standX + 14 * L.SS;
+    const by = L.boden - 96 * L.SS;
     for (let i = 0; i < n; i++) {
       let x;
       let y;
       let traegt = false;
       if (leer) {
-        x = bx - 20 + (i % 5) * 9;
-        y = by - 2 - Math.floor(i / 5) * 5;
+        // Geparkt: ordentlich in Reihen über dem Stand, mit Abstand.
+        x = bx - 60 * L.S + (i % 5) * 24 * L.S;
+        y = by - 2 - Math.floor(i / 5) * 12 * L.S;
       } else {
         const p = (zeit * 0.16 + i / n) % 1;
         const hin = p < 0.5;
@@ -659,12 +710,12 @@ export function haufenSzene(canvas) {
     if (anteil == null) return;
     const L = lage();
     const bis = L.standX - 6 * L.S;
-    const von = Math.min(H.cx + H.r * 0.3, bis - 90 * L.S);
+    const von = Math.min(H.cx - H.r * 0.1, bis - 90 * L.S);
     const hin = anteil < 0.5;
     const q = Math.max(0, Math.min(1, hin ? anteil * 2 : 2 - anteil * 2));
     const e = (1 - Math.cos(q * Math.PI)) / 2;
     const x = von + (bis - von) * e;
-    const y = L.boden + 34 * L.S;
+    const y = L.boden + 44 * L.S;
     const schritt = Math.sin(zeit * 14);
     ctx.save();
     ctx.translate(x, y);
@@ -713,7 +764,7 @@ export function haufenSzene(canvas) {
     ctx.translate(zx + 10 * S, zy + 3 * S);
     ctx.rotate(Math.PI + 0.35);
     ctx.fillStyle = '#3a4046';
-    ctx.beginPath(); ctx.moveTo(0, -3 * S); ctx.lineTo(14 * S, -8 * S); ctx.lineTo(14 * S, 8 * S); ctx.lineTo(0, 3 * S); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0, -4 * S); ctx.lineTo(16 * S, -10 * S); ctx.lineTo(16 * S, 10 * S); ctx.lineTo(0, 4 * S); ctx.closePath(); ctx.fill();
     ctx.restore();
     // Wagen färbt sich mit der Hitze
     const rot = Math.round(200 + info.hitze * 55);
@@ -724,14 +775,14 @@ export function haufenSzene(canvas) {
     ctx.beginPath(); ctx.arc(sx - 8 * S, sy + 7 * S, 4.5 * S, 0, Math.PI * 2); ctx.arc(sx + 10 * S, sy + 7 * S, 4.5 * S, 0, Math.PI * 2); ctx.fill();
     if (info.saugt) {
       // Helle Halme fliegen aus einem Kegel in die Düse.
-      const dx = zx - 4 * S;
-      const dy = zy + 6 * S;
+      const dx = zx - 5 * S;
+      const dy = zy - 2 * S;
       for (let i = 0; i < 5; i++) {
         const a = Math.PI + 0.35 + (Math.random() - 0.5) * 0.9;
-        const d = (40 + Math.random() * 30) * S;
+        const d = (15 + Math.random() * 30) * S;
         const x = dx + Math.cos(a) * d;
         const y = dy + Math.sin(a) * d;
-        const leben = 0.4;
+        const leben = 0.28;
         teilchen.push({
           x, y, vx: (dx - x) / leben, vy: (dy - y) / leben, leben, max: leben,
           a: Math.random() * 3, l: 6 * S, farbe: Math.random() < 0.5 ? HEU_HELL : '#fff0c0', schwer: 0,
@@ -862,7 +913,7 @@ export function haufenSzene(canvas) {
 
     standText(text) {
       const L = lage();
-      neuerText({ x: L.standX + 14 * L.S, y: L.boden - 92 * L.S, text, leben: 1.4, farbe: '#a6f0b0', groesse: 15 });
+      neuerText({ x: L.standX + 14 * L.SS, y: L.boden - 92 * L.SS, text, leben: 1.4, farbe: '#a6f0b0', groesse: 15 });
     },
 
     nadelGlanz() { glanz = 2.4; },
@@ -896,9 +947,11 @@ export function haufenSzene(canvas) {
       } else leererBoden(H);
       bogenSchatten();
       bodenheu(info.boden || 0, H);
-      stand(info.preisText || '0,02 $');
+      stand();
+      arme(s, info.fabrik);
       foerderband(s, info.fabrik, H);
       maschinen(s, info.fabrik, H);
+      aufsteller(info.preisText || '0,02 $');
       if (ping > 0) ping = Math.max(0, ping - dt * 0.8);
       sauger(info, H);
       drohnen(s, H);
@@ -935,6 +988,7 @@ export function halleSzene(canvas) {
       g.anpassen();
       ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
       const { w, h } = g;
+      const S = Math.max(1, Math.min(1.8, w / 390));
       const himmel = ctx.createLinearGradient(0, 0, 0, h * 0.45);
       himmel.addColorStop(0, '#5a9ad8');
       himmel.addColorStop(1, '#c4e2f5');
@@ -967,7 +1021,7 @@ export function halleSzene(canvas) {
       const auslast = f.band ? Math.min(1, f.fluss / f.band) : 0;
       const tempo = f.fluss > 0 ? 28 + 90 * auslast : 0;
       if (f.fluss > 0) {
-        const n = 5 + Math.round(auslast * 18);
+        const n = Math.min(Math.floor((rechts - links) / (18 * S)), 5 + Math.round(auslast * 18));
         for (let i = 0; i < n; i++) {
           const x = links + ((zeit * tempo + (i * (rechts - links)) / n) % (rechts - links));
           ctx.fillStyle = KNAEUEL;
@@ -997,12 +1051,13 @@ export function halleSzene(canvas) {
         ctx.beginPath(); ctx.moveTo(x - 4, y - 18 + hub); ctx.lineTo(x + 16, y - 18 - hub); ctx.stroke();
       }
       const arme = s.aus.arm ? 0 : (s.maschinen.arm || 0);
-      const zahl = Math.min(4, arme);
+      const zahl = Math.min(Math.floor(4 * S), arme);
       for (let i = 0; i < zahl; i++) {
-        roboterarm(ctx, links + 14 + i * 24, bandY + 2, 0.75, f.fluss > 0 ? Math.sin(zeit * 3 * (f.strom || 0) + i) : 0.3, false);
+        roboterarm(ctx, links + 14 * S + i * 24 * S, bandY + 2, 0.75 * S, f.fluss > 0 ? Math.sin(zeit * 3 * (f.strom || 0) + i) : 0.3, false);
       }
       if (s.maschinen.scanner) {
-        const sx = Math.max(links + (rechts - links) * 0.4, links + 14 + zahl * 24 + 10);
+        const start = links + (rechts - links) * 0.5;
+        const sx = Math.min(start - 16, Math.max(links + (rechts - links) * 0.4, links + 14 * S + zahl * 24 * S + 10));
         ctx.strokeStyle = '#b58be8';
         ctx.lineWidth = 4;
         ctx.beginPath();
@@ -1017,7 +1072,7 @@ export function halleSzene(canvas) {
       const breite = (rechts - start) / Math.max(1, da.length);
       da.forEach(([id, name, farbe], i) => {
         const x = start + i * breite + breite / 2;
-        const bw = Math.min(44, breite - 4);
+        const bw = Math.min(44 * S, breite - 4);
         const aus = s.aus[id];
         const an = !aus && (f.auslastung[id] || 0) > 0.01;
         const hub = an ? Math.abs(Math.sin(zeit * 4 + i)) * 3 : 0;
