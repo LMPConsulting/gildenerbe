@@ -197,9 +197,11 @@ function objVereinen(liste) {
   let anzahl = 0;
   for (const g of liste) anzahl += g.attributes.position.count;
   const mitUv = liste.every((g) => g.attributes.uv);
+  const mitFarbe = liste.every((g) => g.attributes.color);
   const pos = new Float32Array(anzahl * 3);
   const nor = new Float32Array(anzahl * 3);
   const uv = mitUv ? new Float32Array(anzahl * 2) : null;
+  const farbe = mitFarbe ? new Float32Array(anzahl * 3) : null;
   const idx = [];
   let o = 0;
   for (const g of liste) {
@@ -207,6 +209,7 @@ function objVereinen(liste) {
     pos.set(g.attributes.position.array, o * 3);
     nor.set(g.attributes.normal.array, o * 3);
     if (uv) uv.set(g.attributes.uv.array, o * 2);
+    if (farbe) farbe.set(g.attributes.color.array, o * 3);
     if (g.index) for (const i of g.index.array) idx.push(i + o);
     else for (let i = 0; i < g.attributes.position.count; i++) idx.push(i + o);
     o += g.attributes.position.count;
@@ -216,37 +219,81 @@ function objVereinen(liste) {
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   if (uv) geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  if (farbe) geo.setAttribute('color', new THREE.BufferAttribute(farbe, 3));
   geo.setIndex(idx);
   return geo;
+}
+
+/**
+ * Einfarbige Standard-Materialien ohne Textur mit ähnlicher Oberfläche teilen sich
+ * ein Material mit Eckpunktfarben: aus drei Meshes je Gelenk wird eines.
+ */
+const FARB_MATERIALIEN = new Map();
+function farbMaterial(mat) {
+  if (!mat.isMeshStandardMaterial || mat.map || mat.transparent || mat.vertexColors) return null;
+  if (mat.emissive && mat.emissive.getHex() !== 0) return null;
+  const schluessel = `${Math.round(mat.roughness * 4)}|${Math.round(mat.metalness * 4)}|${mat.side}|${mat.flatShading ? 1 : 0}`;
+  if (!FARB_MATERIALIEN.has(schluessel)) {
+    FARB_MATERIALIEN.set(schluessel, new THREE.MeshStandardMaterial({
+      vertexColors: true, roughness: Math.round(mat.roughness * 4) / 4, metalness: Math.round(mat.metalness * 4) / 4,
+      side: mat.side, flatShading: !!mat.flatShading,
+    }));
+  }
+  return FARB_MATERIALIEN.get(schluessel);
 }
 
 /**
  * Alles Unbewegliche eines Modells (Teile ohne Namen) je Material zu einem Netz
  * verschmelzen: aus zwanzig Zeichenaufrufen werden drei oder vier.
  */
+/**
+ * Ein Modell für viele Kopien vorbereiten: alle unbenannten Teile unter demselben
+ * Besitzer (Wurzel oder nächster benannter, also beweglicher Knoten) werden je
+ * Material zu einem Mesh verschmolzen. So hat ein Greifarm nur noch ein paar Meshes
+ * je Gelenk statt Dutzender. Benannte Meshes, durchsichtige und leuchtende
+ * Materialien bleiben einzeln (die werden je Maschine verändert).
+ */
 function objVereinfachen(wurzel) {
   wurzel.updateMatrixWorld(true);
-  const inv = new THREE.Matrix4().copy(wurzel.matrixWorld).invert();
-  const gruppen = new Map();
+  const gruppen = new Map(); // Besitzer -> Map(Material -> Geometrien)
   const weg = [];
   wurzel.traverse((o) => {
-    if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh) return;
-    for (let p = o; p && p !== wurzel; p = p.parent) if (p.name) return;
+    if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || o.name) return;
     if (Array.isArray(o.material) || o.material.transparent) return;
-    const g = o.geometry.index ? o.geometry.clone() : o.geometry.clone();
+    if (o.material.emissive && o.material.emissive.getHex() !== 0) return;
+    let besitzer = wurzel;
+    for (let p = o.parent; p && p !== wurzel; p = p.parent) if (p.name) { besitzer = p; break; }
+    const inv = new THREE.Matrix4().copy(besitzer.matrixWorld).invert();
+    const g = o.geometry.clone();
     g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
     for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
-    if (!gruppen.has(o.material)) gruppen.set(o.material, []);
-    gruppen.get(o.material).push(g);
+    // Einfarbiges wird mit seiner Farbe als Eckpunktfarbe in ein geteiltes Material übernommen
+    const fm = farbMaterial(o.material);
+    let ziel = o.material;
+    if (fm) {
+      const n = g.attributes.position.count;
+      const c = new Float32Array(n * 3);
+      const col = o.material.color;
+      for (let i = 0; i < n; i++) { c[i * 3] = col.r; c[i * 3 + 1] = col.g; c[i * 3 + 2] = col.b; }
+      g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+      if (g.attributes.uv) g.deleteAttribute('uv');
+      ziel = fm;
+    }
+    if (!gruppen.has(besitzer)) gruppen.set(besitzer, new Map());
+    const jeMat = gruppen.get(besitzer);
+    if (!jeMat.has(ziel)) jeMat.set(ziel, []);
+    jeMat.get(ziel).push(g);
     weg.push(o);
   });
   for (const o of weg) o.parent.remove(o);
-  for (const [mat, geos] of gruppen) {
-    // UV nur behalten, wenn das Material eine Textur zeigt
-    if (!mat.map) for (const g of geos) if (g.attributes.uv) g.deleteAttribute('uv');
-    const m = new THREE.Mesh(objVereinen(geos), mat);
-    m.userData.verschmolzen = true;
-    wurzel.add(m);
+  for (const [besitzer, jeMat] of gruppen) {
+    for (const [mat, geos] of jeMat) {
+      // UV nur behalten, wenn das Material eine Textur zeigt
+      if (!mat.map) for (const g of geos) if (g.attributes.uv) g.deleteAttribute('uv');
+      const m = new THREE.Mesh(objVereinen(geos), mat);
+      m.userData.verschmolzen = true;
+      besitzer.add(m);
+    }
   }
   return wurzel;
 }
