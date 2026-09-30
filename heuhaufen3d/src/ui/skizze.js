@@ -129,7 +129,15 @@ export function skizzeZeigen(ui, s, bau, rueck) {
     }),
     knopf('Behalten', () => {
       if (!striche.length) { ui.toast('Das Blatt ist noch leer.'); return; }
-      if (s.skizzen.length >= SKIZZEN_MAX) s.skizzen.shift();
+      if (s.skizzen.length >= SKIZZEN_MAX) {
+        // Das älteste Blatt fällt heraus: Staffeleien, die es zeigten, bekommen es als eigenes Bild,
+        // alle anderen rücken eine Nummer vor
+        const alt = s.skizzen.shift();
+        for (const b of s.bauten) {
+          if (b.typ !== 'staffelei' || !(b.bild >= 0)) continue;
+          if (b.bild === 0) { b.striche = alt.striche.map((x) => [...x]); b.bild = -1; } else b.bild--;
+        }
+      }
       s.skizzen.push({ striche: striche.map((x) => [...x]), zeit: Math.round(s.zeit) });
       bau.bild = s.skizzen.length - 1;
       bau.striche = striche.map((x) => [...x]);

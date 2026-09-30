@@ -804,5 +804,12 @@ export function maschinenZeilen(s, bau) {
   if (bau.typ === 'scanner') z.push(['In der Schlange', String(bau.schlange.length)]);
   if ((bau.nadeln || []).length) z.push(['Nadeln', `${bau.nadeln.length} wartet`]);
   if (bau.typ === 'radar') z.push(['Nächster Ping', `${Math.ceil(Math.max(0, bau.rest || 0))} s`]);
+  // Brunnen, Leitung, Wasserweiche: Bilanz des Wassernetzes wie beim Strommast
+  const wn = l.wasserNetz;
+  if (wn && (bau.typ === 'brunnen' || bau.typ === 'leitung' || bau.typ === 'wasserweiche')) {
+    const r1 = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
+    z.push(['Wassernetz', `${r1(Math.abs(wn.angebot || 0))} geliefert, ${r1(wn.bedarf || 0)} gebraucht`]);
+    z.push(['Angeschlossen', `${wn.brunnen.length} Brunnen, ${wn.verbraucher.length} Maschinen`]);
+  }
   return z;
 }

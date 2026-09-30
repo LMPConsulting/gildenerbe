@@ -186,6 +186,24 @@ function landen(s, g, unten, welt, zufall) {
     g.y = welt.boden(g.x, g.z, 99);
     return;
   }
+  // Liegt dort schon ein Stück, rollt das neue ein Stück weiter (kein Stapel auf einem Punkt)
+  if (unten < 0.25) {
+    let belegt = 0;
+    for (const o of s.gegenstaende) {
+      if (o !== g && o.ort === 'boden' && Math.abs(o.x - g.x) < 0.25 && Math.abs(o.z - g.z) < 0.25) belegt++;
+      if (belegt > 6) break;
+    }
+    if (belegt) {
+      const w = (zufall ? zufall() : Math.random()) * Math.PI * 2;
+      const r = 0.22 + 0.08 * Math.min(6, belegt);
+      g.x += Math.cos(w) * r; g.z += Math.sin(w) * r;
+      if (welt.grenzen) {
+        g.x = Math.max(welt.grenzen.xMin + 0.2, Math.min(welt.grenzen.xMax - 0.2, g.x));
+        g.z = Math.max(welt.grenzen.zMin + 0.2, Math.min(welt.grenzen.zMax - 0.2, g.z));
+      }
+      g.y = welt.boden(g.x, g.z, unten + 0.3);
+    }
+  }
   // Auf dem Haufen rollt ein Stück den Hang hinunter bis an den Fuß.
   const hf = s.hf;
   if (hf && unten > 0.25 && Math.abs(unten - haufenHoehe(hf, g.x, g.z)) < 0.05) {
