@@ -1,7 +1,8 @@
 // Renderer, Himmel, Sonne und Landschaft draußen. Die Halle selbst baut hof3d.js.
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { wolkenTextur, feldTextur } from './texturen.js';
+import { wolkenTextur, feldTextur, fleckTextur } from './texturen.js';
+import { geoVereinen } from './modelle.js';
 
 export const HIMMEL_OBEN = new THREE.Color('#24518a');
 export const HIMMEL_HORIZONT = new THREE.Color('#aebfcc');
@@ -27,7 +28,8 @@ export function szeneBauen(leinwand, qualitaet = 'mittel') {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.pixel));
 
   const szene = new THREE.Scene();
-  szene.fog = new THREE.Fog(HIMMEL_HORIZONT.clone(), 70, 320);
+  // Nebel erst ab 120 m: die Nähe bleibt klar, die Ferne wird blau (Dunst wie S0/S2)
+  szene.fog = new THREE.Fog(HIMMEL_HORIZONT.clone(), 120, 320);
 
   const kamera = new THREE.PerspectiveCamera(72, 1, 0.05, 900);
   kamera.position.set(0, 1.65, 12);
@@ -86,7 +88,7 @@ export function szeneBauen(leinwand, qualitaet = 'mittel') {
     const winkel = (i / 10) * Math.PI * 2 + Math.random() * 0.4;
     const weite = 250 + Math.random() * 150;
     s.position.set(Math.cos(winkel) * weite, 90 + Math.random() * 70, Math.sin(winkel) * weite);
-    const g = 180 + Math.random() * 120;
+    const g = 260 + Math.random() * 120;
     s.scale.set(g, g * 0.5, 1);
     s.renderOrder = -9;
     wolken.push({ s, geschw: 0.6 + Math.random() * 1.2 });
@@ -140,63 +142,94 @@ export function szeneBauen(leinwand, qualitaet = 'mittel') {
   };
 }
 
-/** Hügel, Felsen und Heufelder um die Halle, einfach gehalten und im Nebel verblassend. */
+/**
+ * Stoppelfeld, weiche Wiesenflecken, runde Grashügel mit Felsflanken und dunkle
+ * Ballen draußen (S0/S2). Alles zu wenigen Meshes zusammengefasst: Wiesen, Hügel und
+ * Ballen sind je ein Zeichenaufruf.
+ */
 function landschaftBauen(szene, q) {
   const feld = feldTextur(256, 51);
   feld.repeat.set(40, 40);
   const boden = new THREE.Mesh(
     new THREE.CircleGeometry(700, 48),
-    new THREE.MeshLambertMaterial({ color: 0xd8ccb0, map: feld }),
+    new THREE.MeshLambertMaterial({ color: 0xffffff, map: feld }),
   );
   boden.rotation.x = -Math.PI / 2;
   boden.position.y = -0.02;
   boden.receiveShadow = false;
   szene.add(boden);
 
-  // Grüne Wiesenflecken
-  const wiese = new THREE.MeshLambertMaterial({ color: 0x7f9a4a });
-  for (let i = 0; i < 14; i++) {
+  // Grüne Wiesenflecken: weich auslaufend (Alpha-Verlauf), eine Geometrie
+  const flecken = [];
+  for (let i = 0; i < 16; i++) {
     const a = Math.random() * Math.PI * 2;
     const r = 70 + Math.random() * 200;
-    const m = new THREE.Mesh(new THREE.CircleGeometry(20 + Math.random() * 40, 16), wiese);
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(Math.cos(a) * r, -0.01, Math.sin(a) * r);
-    szene.add(m);
+    const g = (40 + Math.random() * 80);
+    const pg = new THREE.PlaneGeometry(g, g * (0.6 + Math.random() * 0.5));
+    pg.rotateZ(Math.random() * Math.PI);
+    pg.rotateX(-Math.PI / 2);
+    pg.translate(Math.cos(a) * r, -0.01 + i * 0.001, Math.sin(a) * r);
+    flecken.push(pg);
   }
+  const wiese = new THREE.Mesh(geoVereinen(flecken), new THREE.MeshLambertMaterial({
+    color: 0x7d8f55, map: fleckTextur(128, 61), transparent: true, depthWrite: false,
+  }));
+  wiese.renderOrder = -1;
+  szene.add(wiese);
 
-  // Hügelkette und Berge als verbeulte Kegel
-  const hang = new THREE.MeshLambertMaterial({ color: 0x8c9a62, flatShading: true });
-  const fels = new THREE.MeshLambertMaterial({ color: 0x9a948a, flatShading: true });
+  // Hügel und Berge: gestauchte Kugeln, weich schattiert; steile Flanken felsgrau (Vertexfarben)
+  const huegel = [];
+  const gras = new THREE.Color(0x6f8a45);
+  const fels = new THREE.Color(0x8a857c);
+  const tmp = new THREE.Color();
   for (let i = 0; i < 26; i++) {
     const a = (i / 26) * Math.PI * 2 + Math.random() * 0.1;
     const r = 260 + Math.random() * 180;
     const hoch = 30 + Math.random() * 70;
-    const geo = new THREE.ConeGeometry(60 + Math.random() * 60, hoch, 7, 3);
+    const breit = 60 + Math.random() * 60;
+    const geo = new THREE.SphereGeometry(1, 18, 9, 0, Math.PI * 2, 0, Math.PI / 2);
     const pos = geo.attributes.position;
+    const felsig = i % 3 === 0;
     for (let k = 0; k < pos.count; k++) {
-      pos.setX(k, pos.getX(k) * (0.85 + Math.random() * 0.3));
-      pos.setZ(k, pos.getZ(k) * (0.85 + Math.random() * 0.3));
-      if (pos.getY(k) < hoch / 2 - 1) pos.setY(k, pos.getY(k) + (Math.random() - 0.5) * 6);
+      const x = pos.getX(k); const y = pos.getY(k); const z = pos.getZ(k);
+      const beule = 1 + 0.12 * Math.sin(x * 5 + i) * Math.cos(z * 4 + i * 2);
+      pos.setXYZ(k, x * breit * beule, y * hoch * (0.95 + 0.1 * Math.sin(x * 7 + z * 3)), z * breit * beule * (0.8 + 0.2 * Math.cos(i)));
     }
     geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, i % 3 === 0 ? fels : hang);
-    m.position.set(Math.cos(a) * r, hoch / 2 - 4, Math.sin(a) * r);
-    szene.add(m);
+    const farben = new Float32Array(pos.count * 3);
+    const nor = geo.attributes.normal;
+    for (let k = 0; k < pos.count; k++) {
+      const steil = 1 - nor.getY(k);
+      tmp.copy(gras).lerp(fels, Math.min(1, Math.max(0, (steil - (felsig ? 0.25 : 0.45)) * 2.5)));
+      farben[k * 3] = tmp.r; farben[k * 3 + 1] = tmp.g; farben[k * 3 + 2] = tmp.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(farben, 3));
+    geo.translate(Math.cos(a) * r, -4, Math.sin(a) * r);
+    huegel.push(geo);
   }
+  const farbListe = huegel.map((g) => g.attributes.color.array);
+  const berge = geoVereinen(huegel);
+  const alle = new Float32Array(berge.attributes.position.count * 3);
+  let o = 0;
+  for (const f of farbListe) { alle.set(f, o); o += f.length; }
+  berge.setAttribute('color', new THREE.BufferAttribute(alle, 3));
+  szene.add(new THREE.Mesh(berge, new THREE.MeshLambertMaterial({ vertexColors: true })));
 
-  // Draußen liegen Heuballen in Reihen auf den Feldern
-  const ballenGeo = new THREE.CylinderGeometry(0.75, 0.75, 1.3, 12);
-  ballenGeo.rotateZ(Math.PI / 2);
-  const ballenMat = new THREE.MeshLambertMaterial({ color: 0xd9b25e });
+  // Draußen liegen kleine dunkle Ballen auf den Feldern
+  const ballenGeo = new THREE.BoxGeometry(0.9, 0.5, 0.5);
+  const ballenMat = new THREE.MeshLambertMaterial({ color: 0x6e5a3c });
   const anzahl = q.halme > 5000 ? 90 : 40;
   const ballen = new THREE.InstancedMesh(ballenGeo, ballenMat, anzahl);
   const m4 = new THREE.Matrix4();
   const quat = new THREE.Quaternion();
+  const achse = new THREE.Vector3(0, 1, 0);
+  const eins = new THREE.Vector3(1, 1, 1);
+  const v = new THREE.Vector3();
   for (let i = 0; i < anzahl; i++) {
     const a = Math.random() * Math.PI * 2;
     const r = 45 + Math.random() * 160;
-    quat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.random() * Math.PI);
-    m4.compose(new THREE.Vector3(Math.cos(a) * r, 0.7, Math.sin(a) * r), quat, new THREE.Vector3(1, 1, 1));
+    quat.setFromAxisAngle(achse, Math.random() * Math.PI);
+    m4.compose(v.set(Math.cos(a) * r, 0.25, Math.sin(a) * r), quat, eins);
     ballen.setMatrixAt(i, m4);
   }
   szene.add(ballen);

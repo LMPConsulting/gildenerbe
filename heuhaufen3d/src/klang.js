@@ -6,6 +6,7 @@ let master = null;
 let rauschPuffer = null;
 let stumm = false;
 let saugerTon = null;
+let muenzenZuletzt = -1e9;
 
 export function klangStumm(wert) {
   if (wert !== undefined) {
@@ -82,6 +83,26 @@ export const klang = {
     rauschen(0.03, { frequenz: 5000, q: 2, laut: 0.15 });
     ton(1046, 0.12, { laut: 0.16, start: 0.02 });
     ton(1568, 0.25, { laut: 0.14, start: 0.09 });
+  },
+  /**
+   * Münzen nach dem Kassenklang (Vorbild: coins 0,18 s nach sell_register): 4–6 kurze,
+   * helle Dreieckstöne, zufällig versetzt. verzoegerung in s; abstand: Mindestabstand in s
+   * zum letzten Münzklang (für gesammelte Maschinenverkäufe), sonst wird nichts gespielt.
+   */
+  muenzen(verzoegerung = 0.18, abstand = 0) {
+    if (!bereit()) return;
+    const jetzt = ctx.currentTime;
+    if (abstand > 0 && jetzt - muenzenZuletzt < abstand) return;
+    muenzenZuletzt = jetzt;
+    const n = 4 + Math.floor(Math.random() * 3);
+    let t = verzoegerung;
+    for (let i = 0; i < n; i++) {
+      const f = 2000 + Math.random() * 1000;
+      ton(f, 0.07 + Math.random() * 0.05, { typ: 'triangle', laut: 0.05 + Math.random() * 0.03, start: t });
+      ton(f * 1.5, 0.04, { typ: 'sine', laut: 0.025, start: t + 0.003 });
+      t += 0.03 + Math.random() * 0.03;
+    }
+    rauschen(0.05, { frequenz: 6500, q: 1.5, laut: 0.05, start: verzoegerung });
   },
   piep(staerke) {
     if (!bereit()) return;

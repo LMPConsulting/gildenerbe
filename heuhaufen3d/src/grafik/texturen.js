@@ -49,13 +49,13 @@ const STROH_FARBEN = ['#d0a14d', '#d9a263', '#e8c98a', '#c8923f', '#dcaa5c', '#e
  * Stroh: dicht gekreuzte Halme in Heutönen. Liefert Farb- und Relieftextur,
  * beide kachelbar. dichte ~ Halme pro Kachel.
  */
-export function strohTexturen(groesse = 512, dichte = 2600, seed = 7) {
+export function strohTexturen(groesse = 512, dichte = 2600, seed = 7, grund = '#b07c3c') {
   const z = texturZufall(seed);
   const farbe = leinwandNeu(groesse);
   const relief = leinwandNeu(groesse);
   const f = farbe.getContext('2d');
   const r = relief.getContext('2d');
-  f.fillStyle = '#b07c3c';
+  f.fillStyle = grund;
   f.fillRect(0, 0, groesse, groesse);
   r.fillStyle = '#000';
   r.fillRect(0, 0, groesse, groesse);
@@ -109,7 +109,7 @@ export function bodenTextur(groesse = 512, seed = 11) {
     const hell = z() < 0.5;
     kachelLinie(x, 0, groesse, (x2) => {
       const g = x2.createRadialGradient(px, py, 0, px, py, rad);
-      g.addColorStop(0, hell ? 'rgba(214,196,164,0.28)' : 'rgba(120,98,70,0.12)');
+      g.addColorStop(0, hell ? 'rgba(214,196,164,0.28)' : 'rgba(120,98,70,0.05)');
       g.addColorStop(1, 'rgba(0,0,0,0)');
       x2.fillStyle = g;
       x2.fillRect(px - rad, py - rad, rad * 2, rad * 2);
@@ -124,10 +124,10 @@ export function bodenTextur(groesse = 512, seed = 11) {
   }
   x.putImageData(bild, 0, 0);
   // Kiesel
-  for (let i = 0; i < 900; i++) {
+  for (let i = 0; i < 1800; i++) {
     const px = z() * groesse;
     const py = z() * groesse;
-    const rr = 0.6 + z() * 1.8;
+    const rr = 0.5 + z() * 1.6;
     x.fillStyle = z() < 0.5 ? 'rgba(90,72,52,0.45)' : 'rgba(235,222,196,0.4)';
     x.beginPath(); x.arc(px, py, rr, 0, Math.PI * 2); x.fill();
   }
@@ -150,17 +150,17 @@ export function bodenTextur(groesse = 512, seed = 11) {
 }
 
 /** Senkrechte, dunkle Holzplanken mit Maserung und Fugen. */
-export function plankenTextur(groesse = 512, planken = 8, seed = 23) {
+export function plankenTextur(groesse = 512, planken = 8, seed = 23, maserung = 26) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
   const b = groesse / planken;
   for (let i = 0; i < planken; i++) {
-    const ton = 96 + z() * 24;
+    const ton = 112 + z() * 24;
     x.fillStyle = `rgb(${ton + 26},${ton + 2},${ton - 18})`;
     x.fillRect(i * b, 0, b, groesse);
     // Maserung
-    for (let k = 0; k < 26; k++) {
+    for (let k = 0; k < maserung; k++) {
       const px = i * b + z() * b;
       x.strokeStyle = `rgba(${z() < 0.5 ? '30,18,8' : '140,100,65'},${0.12 + z() * 0.18})`;
       x.lineWidth = 0.6 + z() * 1.4;
@@ -198,8 +198,8 @@ export function plankenTextur(groesse = 512, planken = 8, seed = 23) {
   return alsTextur(c);
 }
 
-/** Wellblech in Rostbraun für das obere Wandband und Dächer. */
-export function wellblechTextur(groesse = 256, seed = 31) {
+/** Wellblech in Rostbraun für das obere Wandband und Dächer; hell: verzinktes Grau mit Rostschlieren. */
+export function wellblechTextur(groesse = 256, seed = 31, { hell = false } = {}) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
@@ -207,26 +207,31 @@ export function wellblechTextur(groesse = 256, seed = 31) {
   for (let i = 0; i < groesse; i++) {
     const p = (i / groesse) * wellen * Math.PI * 2;
     const l = 0.5 + 0.5 * Math.sin(p);
-    const ton = 70 + l * 60;
-    x.fillStyle = `rgb(${ton + 25},${ton * 0.72 + 10},${ton * 0.55})`;
+    if (hell) {
+      const ton = 118 + l * 62; // um #9A9690, Rippen deutlich
+      x.fillStyle = `rgb(${ton + 4},${ton},${ton - 6})`;
+    } else {
+      const ton = 70 + l * 60;
+      x.fillStyle = `rgb(${ton + 25},${ton * 0.72 + 10},${ton * 0.55})`;
+    }
     x.fillRect(i, 0, 1, groesse);
   }
   // Rostschlieren
   for (let i = 0; i < 60; i++) {
     const px = z() * groesse;
     const py = z() * groesse;
-    x.fillStyle = `rgba(${120 + z() * 60},${50 + z() * 30},20,${0.08 + z() * 0.12})`;
+    x.fillStyle = `rgba(${120 + z() * 60},${50 + z() * 30},20,${(hell ? 0.05 : 0.08) + z() * 0.12})`;
     x.fillRect(px, py, 1 + z() * 4, 10 + z() * 60);
   }
   return alsTextur(c);
 }
 
 /** Rostiger Stahl für Bögen und Pfosten. */
-export function rostTextur(groesse = 128, seed = 41) {
+export function rostTextur(groesse = 128, seed = 41, grund = '#8a6a50') {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
-  x.fillStyle = '#8a6a50';
+  x.fillStyle = grund;
   x.fillRect(0, 0, groesse, groesse);
   for (let i = 0; i < 400; i++) {
     x.fillStyle = `rgba(${90 + z() * 80},${40 + z() * 40},${20 + z() * 20},${0.2 + z() * 0.3})`;
@@ -276,42 +281,69 @@ export function wolkenTextur(seed = 3) {
   const z = texturZufall(seed);
   const c = leinwandNeu(512, 256);
   const x = c.getContext('2d');
-  for (let i = 0; i < 46; i++) {
+  for (let i = 0; i < 70; i++) {
     const px = 70 + z() * 372;
-    const py = 118 + z() * 70 - Math.abs(px - 256) * 0.22;
-    const rad = 34 + z() * 64;
+    const py = 124 + z() * 64 - Math.abs(px - 256) * 0.22;
+    const rad = 28 + z() * 58;
     const g = x.createRadialGradient(px, py, 0, px, py, rad);
-    g.addColorStop(0, 'rgba(255,255,255,0.97)');
-    g.addColorStop(0.6, 'rgba(250,250,252,0.62)');
-    g.addColorStop(1, 'rgba(245,247,250,0)');
+    // bauschig mit klarem Rand (S3/S6): fast deckend bis kurz vor den Rand
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.75, 'rgba(252,252,253,0.95)');
+    g.addColorStop(1, 'rgba(248,249,251,0)');
     x.fillStyle = g;
     x.fillRect(px - rad, py - rad, rad * 2, rad * 2);
   }
   // Schattenseite unten
   x.globalCompositeOperation = 'source-atop';
-  const unten = x.createLinearGradient(0, 120, 0, 230);
-  unten.addColorStop(0, 'rgba(150,165,185,0)');
-  unten.addColorStop(1, 'rgba(150,165,185,0.55)');
+  const unten = x.createLinearGradient(0, 118, 0, 230);
+  unten.addColorStop(0, 'rgba(154,168,186,0)');
+  unten.addColorStop(1, 'rgba(154,168,186,0.45)');
   x.fillStyle = unten;
   x.fillRect(0, 0, 512, 256);
   x.globalCompositeOperation = 'source-over';
   return alsTextur(c, { kachel: false });
 }
 
-/** Feld aus Heu draußen: Streifen und Bündel, aus der Ferne gesehen. */
+/** Stoppelfeld draußen: blass, mit feinen Stoppelreihen und losem Heu (S0/S2 #987855…#998B67). */
 export function feldTextur(groesse = 256, seed = 51) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
-  x.fillStyle = '#c9a55a';
+  x.fillStyle = '#cdbb8e';
   x.fillRect(0, 0, groesse, groesse);
-  for (let i = 0; i < 1400; i++) {
-    x.fillStyle = STROH_FARBEN[Math.floor(z() * STROH_FARBEN.length)];
-    x.globalAlpha = 0.5;
+  // Stoppelreihen
+  x.globalAlpha = 0.4;
+  x.fillStyle = '#b3a07a';
+  for (let y = 0; y < groesse; y += 8) x.fillRect(0, y + Math.floor(z() * 2), groesse, 1);
+  // Stoppeln und loses Heu
+  const toene = ['#b8a47c', '#a89468', '#d8c79c', '#9c8a62', '#c2ad80'];
+  x.globalAlpha = 0.5;
+  for (let i = 0; i < 1600; i++) {
+    x.fillStyle = toene[Math.floor(z() * toene.length)];
     x.fillRect(z() * groesse, z() * groesse, 1 + z() * 3, 1);
   }
   x.globalAlpha = 1;
   return alsTextur(c);
+}
+
+/** Weicher, runder Fleck (weiß mit Alpha) für Wiesen draußen, randlos auslaufend. */
+export function fleckTextur(groesse = 128, seed = 61) {
+  const z = texturZufall(seed);
+  const c = leinwandNeu(groesse);
+  const x = c.getContext('2d');
+  const m = groesse / 2;
+  for (let i = 0; i < 9; i++) {
+    const px = m + (z() - 0.5) * groesse * 0.35;
+    const py = m + (z() - 0.5) * groesse * 0.35;
+    const r = groesse * (0.2 + z() * 0.18);
+    const g = x.createRadialGradient(px, py, 0, px, py, r);
+    g.addColorStop(0, 'rgba(255,255,255,0.75)');
+    g.addColorStop(0.6, 'rgba(255,255,255,0.45)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, groesse, groesse);
+  }
+  return alsTextur(c, { kachel: false });
 }
 
 /** LED-Anzeige wie die Digitaluhr über dem Tor; wird jede Sekunde neu gemalt. */

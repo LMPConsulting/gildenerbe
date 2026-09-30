@@ -136,13 +136,25 @@ export function haufenAnsichtBauen(szene, hf, qualitaet) {
   }
 
   function halmeBauen(h) {
-    if (halme) { gruppe.remove(halme); halme.dispose(); }
+    if (halme) { gruppe.remove(halme); halme.geometry.dispose(); halme.material.dispose(); halme.dispose(); halme = null; }
     const anzahl = qualitaet.halme;
     const halmMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, emissive: 0x3a2610 });
+    // three.js dreht bei Rückseiten die Normale um (DoubleSide). Die flachen Streifen
+    // sieht man von oben meist von hinten: dann zeigte die Normale nach unten und die
+    // Halme wurden dunkelbraun. Die Normale des Halms gilt hier für beide Seiten.
+    halmMat.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = normalize( vNormal );');
+    };
+    halmMat.customProgramCacheKey = () => 'halmOhneFlip';
     halme = new THREE.InstancedMesh(halmGeometrie(), halmMat, anzahl);
     halme.castShadow = false;
     halme.receiveShadow = true;
-    halme.frustumCulled = false;
+    // Feste Hüllkugel um den Haufen: so fallen die Halme weg, wenn man nicht hinsieht
+    // (sonst rechnet three.js sie aus allen Instanzen nach oder zeichnet immer).
+    halme.frustumCulled = true;
+    const hh = h.hoehe > 0 ? h.hoehe : 8;
+    const hr = h.radius > 0 ? h.radius : 12;
+    halme.boundingSphere = new THREE.Sphere(new THREE.Vector3(h.mitteX || 0, hh * 0.4, h.mitteZ || 0), Math.hypot(hr * 1.12 + 0.5, hh * 0.7 + 0.5));
     halmDaten = new Float32Array(anzahl * 5); // u, v (polar), yaw, neigung, länge
     const farbe = new THREE.Color();
     for (let i = 0; i < anzahl; i++) {

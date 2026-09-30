@@ -7,6 +7,14 @@ import { WELT } from '../daten.js';
 import {
   bodenTextur, plankenTextur, wellblechTextur, rostTextur, schildTextur, ledAnzeige,
 } from './texturen.js';
+import { sandschaufelModell, spatenModell, heugabelModell, eimerModell } from './modelle.js';
+
+/** Modell aus modelle.js mit eigenen Materialkopien (die Halle gibt ihre Materialien beim Neubau frei). */
+function eigenesModell(m, skala = 1) {
+  m.traverse((o) => { if (o.isMesh) o.material = o.material.clone(); });
+  m.scale.setScalar(skala);
+  return m;
+}
 
 const STAHL = 0x3a3836;
 
@@ -39,7 +47,7 @@ export function hofBauen(szene, qualitaet, felder = 0) {
 
   // --- Boden
   const bt = bodenTextur(512, 11);
-  bt.repeat.set(breite / 5, tiefe / 5);
+  bt.repeat.set(breite / 8, tiefe / 8);
   bt.anisotropy = qualitaet.aniso;
   const boden = new THREE.Mesh(
     new THREE.PlaneGeometry(breite + 1, tiefe + 1),
@@ -53,11 +61,13 @@ export function hofBauen(szene, qualitaet, felder = 0) {
 
   // --- Wände
   const planken = plankenTextur(512, 20, 23);
+  const sockelPlanken = plankenTextur(256, 10, 29, 6); // Sockel: ruhiger, weniger Maserung
   planken.anisotropy = qualitaet.aniso;
   const blech = wellblechTextur(256, 31);
-  const rost = rostTextur(128, 41);
+  const blechHell = wellblechTextur(256, 33, { hell: true });
+  const rost = rostTextur(128, 41, '#a88a6c');
   const stahlMat = new THREE.MeshStandardMaterial({ color: STAHL, roughness: 0.6, metalness: 0.5 });
-  const rostMat = new THREE.MeshStandardMaterial({ map: rost, color: 0xf0d2b0, roughness: 0.62, metalness: 0.15 });
+  const rostMat = new THREE.MeshStandardMaterial({ map: rost, color: 0xffffff, roughness: 0.62, metalness: 0.1 });
   const dicke = 0.16;
   const H = W.wandHoehe;
   const B = W.bandHoehe;
@@ -76,7 +86,7 @@ export function hofBauen(szene, qualitaet, felder = 0) {
     oben.rotation.y = -winkel;
     gruppe.add(unten, oben);
     // graues Sockelband unten wie im Vorbild
-    const sockelMat = new THREE.MeshStandardMaterial({ map: gekachelt(planken, laenge, 1.1, 2.2, H), color: 0xa8a29a, roughness: 0.95 });
+    const sockelMat = new THREE.MeshStandardMaterial({ map: gekachelt(sockelPlanken, laenge, 1.1, 2.2, H), color: 0xd9d4ca, roughness: 0.95 });
     const sockel = kasten(laenge, 1.1, dicke + 0.04, sockelMat, cx, 0.55, cz);
     sockel.rotation.y = -winkel;
     gruppe.add(sockel);
@@ -145,23 +155,13 @@ export function hofBauen(szene, qualitaet, felder = 0) {
     bogen.castShadow = true;
     gruppe.add(bogen);
   }
-  // Längsstreben zwischen den Bögen
-  for (const t of [0.25, 0.5, 0.75]) {
-    const winkel = Math.PI * t;
-    const y = oben + Math.sin(winkel) * W.bogenHoehe;
-    const z = mz + Math.cos(winkel) * (tiefe / 2);
-    const strebe = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, boegen[boegen.length - 1] - boegen[0], 6), rostMat);
-    strebe.rotation.z = Math.PI / 2;
-    strebe.position.set((boegen[0] + boegen[boegen.length - 1]) / 2, y, z);
-    strebe.castShadow = true;
-    gruppe.add(strebe);
-  }
+  // Keine Längsstreben: im Vorbild stehen nur die Bögen (S3, S6).
 
   // --- Rolltor mit Warnstreifen und Digitaluhr
   const torCanvas = document.createElement('canvas');
   torCanvas.width = 256; torCanvas.height = 256;
   const tx = torCanvas.getContext('2d');
-  tx.fillStyle = '#4d5650'; tx.fillRect(0, 0, 256, 256);
+  tx.fillStyle = '#66735f'; tx.fillRect(0, 0, 256, 256);
   for (let y = 0; y < 256; y += 12) {
     tx.fillStyle = 'rgba(0,0,0,0.35)'; tx.fillRect(0, y, 256, 2);
     tx.fillStyle = 'rgba(255,255,255,0.06)'; tx.fillRect(0, y + 2, 256, 2);
@@ -178,7 +178,7 @@ export function hofBauen(szene, qualitaet, felder = 0) {
   tx.fillStyle = '#1b1b1b'; tx.fillRect(0, 220, 256, 6);
   const torTextur = new THREE.CanvasTexture(torCanvas);
   torTextur.colorSpace = THREE.SRGBColorSpace;
-  const torMat = new THREE.MeshStandardMaterial({ map: torTextur, roughness: 0.55, metalness: 0.4 });
+  const torMat = new THREE.MeshStandardMaterial({ map: torTextur, roughness: 0.55, metalness: 0.3, emissive: 0x101410 });
   const tor = new THREE.Mesh(new THREE.PlaneGeometry(W.torBreite, W.torHoehe), torMat);
   tor.position.set(W.torX, W.torHoehe / 2, W.zMin + 0.1);
   tor.receiveShadow = true;
@@ -188,29 +188,28 @@ export function hofBauen(szene, qualitaet, felder = 0) {
   gruppe.add(kasten(0.18, W.torHoehe + 0.2, 0.3, torRahmenMat, t0 - 0.05, (W.torHoehe + 0.2) / 2, W.zMin + 0.1));
   gruppe.add(kasten(0.18, W.torHoehe + 0.2, 0.3, torRahmenMat, t1 + 0.05, (W.torHoehe + 0.2) / 2, W.zMin + 0.1));
   gruppe.add(kasten(W.torBreite + 0.4, 0.2, 0.3, torRahmenMat, W.torX, W.torHoehe + 0.1, W.zMin + 0.1));
-  // Uhrkasten
+  // Uhrkasten oben, darunter das breite dunkle Schild „VERSAND“ mit zwei runden Lampen (s0_clock, s0_door)
   const uhr = ledAnzeige(256, 96);
   uhr.setze('0:00');
-  const uhrKasten = kasten(1.1, 0.46, 0.14, new THREE.MeshStandardMaterial({ color: 0x2a2724, roughness: 0.5, metalness: 0.4 }), W.torX, W.torHoehe + 0.5, W.zMin + 0.15);
+  const uhrY = W.torHoehe + 0.95;
+  const uhrKasten = kasten(1.1, 0.46, 0.14, new THREE.MeshStandardMaterial({ color: 0x2a2724, roughness: 0.5, metalness: 0.4 }), W.torX, uhrY, W.zMin + 0.15);
   gruppe.add(uhrKasten);
   const uhrFeld = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.32), new THREE.MeshBasicMaterial({ map: uhr.textur, toneMapped: false }));
-  uhrFeld.position.set(W.torX, W.torHoehe + 0.5, W.zMin + 0.23);
+  uhrFeld.position.set(W.torX, uhrY, W.zMin + 0.23);
   gruppe.add(uhrFeld);
-  // zwei kleine Lampen neben der Uhr
-  const lampeMat = new THREE.MeshBasicMaterial({ color: 0xffe9a8, toneMapped: false });
-  for (const dx of [-0.42, 0.42]) {
-    const l = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), lampeMat);
-    l.position.set(W.torX + dx, W.torHoehe + 0.3, W.zMin + 0.24);
+  const versand = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.5, 0.3),
+    new THREE.MeshStandardMaterial({ map: schildTextur('VERSAND', { breite: 512, hoehe: 104, grund: '#4a4744', schrift: '#26231f', rahmen: '#3a3734', groesse: 0.62, font: '800 {g}px "Arial Narrow", Arial, sans-serif' }), roughness: 0.6, metalness: 0.3 }),
+  );
+  versand.position.set(W.torX, W.torHoehe + 0.45, W.zMin + 0.12);
+  gruppe.add(versand);
+  const lampeMat = new THREE.MeshBasicMaterial({ color: 0xfff4d6, toneMapped: false });
+  const lampeGeo = new THREE.SphereGeometry(0.08, 12, 8);
+  for (const dx of [-0.84, 0.84]) {
+    const l = new THREE.Mesh(lampeGeo, lampeMat);
+    l.position.set(W.torX + dx, W.torHoehe + 0.45, W.zMin + 0.18);
     gruppe.add(l);
   }
-
-  // Schild „VERSAND“ über dem Tor, Poller davor
-  const versand = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.4, 0.3),
-    new THREE.MeshStandardMaterial({ map: schildTextur('VERSAND', { breite: 512, hoehe: 110, grund: '#d8d4c8', schrift: '#2a2a2a', rahmen: '#2a2a2a', groesse: 0.62 }), roughness: 0.7 }),
-  );
-  versand.position.set(W.torX, W.torHoehe + 0.95, W.zMin + 0.12);
-  gruppe.add(versand);
   const pollerMat = new THREE.MeshStandardMaterial({ color: 0xe0a12a, roughness: 0.55, metalness: 0.2 });
   const pollerBand = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 });
   for (const dx of [-2.0, 2.0]) {
@@ -235,7 +234,7 @@ export function hofBauen(szene, qualitaet, felder = 0) {
     const laenge = W.xMax - W.xMin;
     const neigung = Math.atan2(oben - unten, tief);
     const vdMat = new THREE.MeshStandardMaterial({
-      map: gekachelt(blech, laenge, Math.hypot(tief, oben - unten), 1.6, 1.6), color: 0x8a8278, roughness: 0.7, metalness: 0.25, side: THREE.DoubleSide,
+      map: gekachelt(blechHell, laenge, Math.hypot(tief, oben - unten), 1.6, 1.6), color: 0xc9c0b4, roughness: 0.7, metalness: 0.2, side: THREE.DoubleSide,
     });
     const vordach = new THREE.Mesh(new THREE.PlaneGeometry(laenge, Math.hypot(tief, oben - unten)), vdMat);
     vordach.rotation.x = -Math.PI / 2 + neigung;
@@ -271,7 +270,8 @@ export function hofBauen(szene, qualitaet, felder = 0) {
     z0: W.standZ - W.standBreite / 2 - 0.1, z1: W.standZ + W.standBreite / 2 + 0.1, h: 2.4,
   });
   // Aufsteller vor dem Stand
-  const aufsteller = aufstellerBauen();
+  const preisTafel = preisTafelBauen();
+  const aufsteller = aufstellerBauen(preisTafel.textur);
   aufsteller.position.set(W.standX + 2.3, 0, W.standZ + 1.7);
   aufsteller.rotation.y = Math.PI / 2 - 0.35;
   gruppe.add(aufsteller);
@@ -282,6 +282,10 @@ export function hofBauen(szene, qualitaet, felder = 0) {
   szene.add(gruppe);
   return {
     gruppe, kollider, uhr, boden, tor, torMat,
+    /** Preis auf dem Aufsteller: Zahl ($ je Halm) oder fertiger Text. Malt nur bei Änderung neu. */
+    preisSetzen: preisTafel.setze,
+    /** Halle abbauen: aus der Szene nehmen, Geometrien, Materialien und Texturen freigeben. */
+    entsorgen() { hofEntsorgen(gruppe); },
     stand: stand.gruppe, standTresen: stand.tresen,
     // Trichter vorn am Stand: hier rasten Bänder ein, hier wird verkauft
     standTrichter: { x: W.standX + W.standTiefe / 2 + 0.45, y: 0.9, z: W.standZ },
@@ -307,17 +311,18 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
   const dach = kasten(3.4, 0.08, 1.9, new THREE.MeshStandardMaterial({ color: 0x3b2a1c, roughness: 0.8 }), 0, 2.45, -0.1);
   dach.rotation.x = 0.1;
   ws.add(dach);
+  // Durchgehende rote Blende mit weißer Oberkante (farmer-eye-level.jpg, shop.png)
   const rotMat = new THREE.MeshStandardMaterial({ color: 0xa8342a, roughness: 0.7 });
   const weissMat = new THREE.MeshStandardMaterial({ color: 0xefe6d4, roughness: 0.7 });
-  for (let i = 0; i < 12; i++) {
-    const zacke = kasten(0.28, 0.24, 0.03, i % 2 ? weissMat : rotMat, -1.54 + i * 0.28, 2.28, -1.05);
-    ws.add(zacke);
-  }
-  // Werkzeuge an der Wand
+  ws.add(kasten(3.4, 0.24, 0.03, rotMat, 0, 2.26, -1.05));
+  ws.add(kasten(3.4, 0.06, 0.035, weissMat, 0, 2.41, -1.05));
+  // Werkzeuge an der Wand: dieselben Modelle wie in der Hand, senkrecht aufgehängt (Kopf unten)
   const haken = [[-0.9, 'spaten'], [-0.3, 'heugabel'], [0.35, 'besen'], [0.95, 'sauger']];
   for (const [x, art] of haken) {
-    const m = art === 'spaten' ? spatenWand() : art === 'heugabel' ? gabelWand() : art === 'besen' ? besenWand() : saugerWand();
-    m.position.set(x, 1.55, 0.6);
+    let m;
+    if (art === 'spaten') { m = eigenesModell(spatenModell()); m.rotation.set(-Math.PI / 2, 0, 0); m.position.set(x, 1.45, 0.58); }
+    else if (art === 'heugabel') { m = eigenesModell(heugabelModell()); m.rotation.set(-Math.PI / 2, 0, 0); m.position.set(x, 1.4, 0.56); }
+    else { m = art === 'besen' ? besenWand() : saugerWand(); m.position.set(x, 1.55, 0.6); }
     ws.add(m);
   }
   // Preisschilder auf dem Tresen
@@ -344,8 +349,9 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
     roughness: 0.95,
   }));
   tafel.name = 'bestenliste';
-  tafel.position.set(1.56, 1.5, -0.3);
-  tafel.rotation.y = Math.PI / 2;
+  // innen an der rechten Seitenwand, von vorn zu sehen
+  tafel.position.set(1.44, 1.55, 0.05);
+  tafel.rotation.y = -Math.PI / 2;
   ws.add(tafel);
   ws.position.set(W.werkzeugX, 0, W.werkzeugZ);
   ws.rotation.y = 0; // Tresen zeigt nach −z (in die Halle)
@@ -353,21 +359,23 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
   gruppe.add(ws);
   kollider.push({ x0: W.werkzeugX - 1.6, x1: W.werkzeugX + 1.6, z0: W.werkzeugZ - 0.8, z1: W.werkzeugZ + 0.8, h: 2.4 });
 
-  // Werkbank mit Kinderschaufel und Detektor darauf
+  // Werkbank: verwitterte Holzbank mit gelber Kinderschaufel, Eimer und Detektor (avatar.png)
   const bank = new THREE.Group();
   bank.name = 'werkbank';
-  bank.add(kasten(1.8, 0.08, 0.8, holzHell, 0, 0.9, 0));
-  for (const [x, z] of [[-0.8, -0.32], [0.8, -0.32], [-0.8, 0.32], [0.8, 0.32]]) bank.add(kasten(0.08, 0.9, 0.08, holzHell, x, 0.45, z));
-  bank.add(kasten(1.7, 0.05, 0.7, holzHell, 0, 0.25, 0));
-  const schaufel = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf2c417, roughness: 0.45 }));
-  schaufel.scale.set(1, 0.35, 1.3);
-  schaufel.position.set(-0.4, 0.96, 0);
+  const bankHolz = new THREE.MeshStandardMaterial({ map: gekachelt(planken, 1.8, 0.8, 0.9, 2.2), color: 0x9a8a7a, roughness: 0.9 });
+  const platte = kasten(1.8, 0.08, 0.8, bankHolz, 0, 0.9, 0);
+  bank.add(platte);
+  for (const [x, z] of [[-0.8, -0.32], [0.8, -0.32], [-0.8, 0.32], [0.8, 0.32]]) bank.add(kasten(0.08, 0.9, 0.08, bankHolz, x, 0.45, z));
+  bank.add(kasten(1.7, 0.05, 0.7, bankHolz, 0, 0.25, 0));
+  const schaufel = eigenesModell(sandschaufelModell());
+  schaufel.position.set(-0.45, 0.955, 0.05);
+  schaufel.rotation.set(0, 1.2, 0);
   bank.add(schaufel);
-  const stiel = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.34, 6), schaufel.material);
-  stiel.rotation.z = Math.PI / 2;
-  stiel.position.set(-0.15, 0.96, 0);
-  bank.add(stiel);
-  const det = kasten(0.3, 0.06, 0.1, new THREE.MeshStandardMaterial({ color: 0x8d949a, roughness: 0.5, metalness: 0.4 }), 0.4, 0.97, 0.1);
+  const eimer = eigenesModell(eimerModell());
+  eimer.position.set(0.15, 1.09, -0.12);
+  eimer.getObjectByName('fuellung').visible = false;
+  bank.add(eimer);
+  const det = kasten(0.3, 0.06, 0.1, new THREE.MeshStandardMaterial({ color: 0x8d949a, roughness: 0.5, metalness: 0.4 }), 0.55, 0.97, 0.15);
   bank.add(det);
   bank.position.set(W.bankX, 0, W.bankZ);
   bank.rotation.y = 0.3;
@@ -431,15 +439,28 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
   const hinten = kasten(0.05, 1.7, 0.05, holzHell, 0, 0.85, -0.35);
   hinten.rotation.x = -0.25;
   tafelG.add(hinten);
-  const kork = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.04), new THREE.MeshStandardMaterial({ color: 0xb0875a, roughness: 1 }));
+  const kork = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.04), new THREE.MeshStandardMaterial({ color: 0xb0703a, roughness: 1 }));
   kork.position.set(0, 1.25, 0.14);
   tafelG.add(kork);
+  tafelG.add(kasten(0.95, 0.06, 0.06, new THREE.MeshStandardMaterial({ color: 0x2a1f18, roughness: 0.8 }), 0, 1.63, 0.15));
+  // mehrere angepinnte Zettel (s0_door.png): Hauptzettel und drei kleine, leicht gedreht
   const zettelTextur = schildTextur(['AUFTRÄGE', '—'], { breite: 256, hoehe: 200, grund: '#f3eee2', schrift: '#2a1c10', rahmen: null, font: '700 {g}px "Arial Narrow", Arial, sans-serif', groesse: 0.42 });
-  const zettel = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.4), new THREE.MeshStandardMaterial({ map: zettelTextur, roughness: 0.95 }));
+  const zettel = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.32), new THREE.MeshStandardMaterial({ map: zettelTextur, roughness: 0.95 }));
   zettel.name = 'auftragszettel';
-  zettel.position.set(0, 1.26, 0.165);
+  zettel.position.set(-0.14, 1.3, 0.165);
   zettel.rotation.z = 0.04;
   tafelG.add(zettel);
+  const nadelMat = new THREE.MeshStandardMaterial({ color: 0xc8342a, roughness: 0.5 });
+  const nadelGeo = new THREE.SphereGeometry(0.012, 6, 4);
+  for (const [x, y, b, h2, farbe, dreh] of [[0.24, 1.42, 0.2, 0.16, 0xf2d98a, -0.12], [0.26, 1.1, 0.22, 0.2, 0xffffff, 0.09], [-0.2, 1.02, 0.18, 0.13, 0xe9b7a0, -0.06]]) {
+    const z2 = new THREE.Mesh(new THREE.PlaneGeometry(b, h2), new THREE.MeshStandardMaterial({ color: farbe, roughness: 0.95 }));
+    z2.position.set(x, y, 0.163);
+    z2.rotation.z = dreh;
+    tafelG.add(z2);
+    const pin = new THREE.Mesh(nadelGeo, nadelMat);
+    pin.position.set(x, y + h2 / 2 - 0.02, 0.17);
+    tafelG.add(pin);
+  }
   tafelG.position.set(W.tafelX, 0, W.tafelZ);
   schatten(tafelG);
   gruppe.add(tafelG);
@@ -450,33 +471,6 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
   };
 }
 
-function spatenWand() {
-  const g = new THREE.Group();
-  const holz = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.7 });
-  const stahl = new THREE.MeshStandardMaterial({ color: 0x8a8480, roughness: 0.5, metalness: 0.7 });
-  const s = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.0, 6), holz);
-  g.add(s);
-  const b = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.26, 0.012), stahl);
-  b.position.y = -0.6;
-  g.add(b);
-  return g;
-}
-function gabelWand() {
-  const g = new THREE.Group();
-  const holz = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.7 });
-  const stahl = new THREE.MeshStandardMaterial({ color: 0xb9c0c6, roughness: 0.35, metalness: 0.85 });
-  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.1, 6), holz));
-  for (let i = 0; i < 5; i++) {
-    const z = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.28, 5), stahl);
-    z.position.set(-0.12 + i * 0.06, -0.7, 0);
-    g.add(z);
-  }
-  const q = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.26, 5), stahl);
-  q.rotation.z = Math.PI / 2;
-  q.position.y = -0.56;
-  g.add(q);
-  return g;
-}
 function besenWand() {
   const g = new THREE.Group();
   g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.1, 6), new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.7 })));
@@ -495,7 +489,7 @@ function saugerWand() {
   return g;
 }
 
-/** Holzbude mit Tresen, Kasse, Schild „HEU VERKAUFEN“ und hängendem Ballen. Blick nach +x. */
+/** Holzbude mit Tresen, Kasse, Waage, Schild „HEU VERKAUFEN“ und Trichter davor. Blick nach +x. */
 function standBauen(qualitaet, planken) {
   const W = WELT;
   const g = new THREE.Group();
@@ -544,54 +538,125 @@ function standBauen(qualitaet, planken) {
   for (const dz of [-0.9, 0.9]) {
     g.add(kasten(0.05, 0.3, 0.05, new THREE.MeshStandardMaterial({ color: STAHL, metalness: 0.5, roughness: 0.5 }), tt / 2 + 0.05, 2.3, dz));
   }
-  // Registrierkasse
+  // Alte Registrierkasse (schwarz mit Messingtasten, ohne Leuchtfeld) und davor eine Waage (S1, s0_stand)
   const kasse = new THREE.Group();
   const kasseMat = new THREE.MeshStandardMaterial({ color: 0x3d3a36, metalness: 0.6, roughness: 0.35 });
+  const messing = new THREE.MeshStandardMaterial({ color: 0xb08d57, metalness: 0.7, roughness: 0.35 });
   kasse.add(kasten(0.34, 0.16, 0.4, kasseMat, 0, 0.08, 0));
   const kopf = kasten(0.2, 0.18, 0.34, kasseMat, -0.06, 0.25, 0);
   kopf.rotation.z = 0.25;
   kasse.add(kopf);
-  const anzeige = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.08), new THREE.MeshBasicMaterial({ color: 0x7cf29a, toneMapped: false }));
-  anzeige.rotation.y = Math.PI / 2;
-  anzeige.position.set(0.05, 0.3, 0);
-  kasse.add(anzeige);
+  const tasten = kasten(0.14, 0.03, 0.3, messing, 0.1, 0.175, 0);
+  tasten.rotation.z = 0.35;
+  kasse.add(tasten);
+  kasse.add(kasten(0.05, 0.06, 0.26, messing, 0.03, 0.37, 0)); // Preisfenster oben
   kasse.position.set(tt / 2 - 0.25, 1.06, 0.7);
   g.add(kasse);
-  // Hängender Ballen neben dem Schild
-  const ballen = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.28, 0.55, 14),
-    new THREE.MeshStandardMaterial({ color: 0xd8b778, roughness: 0.95 }),
-  );
-  ballen.rotation.z = Math.PI / 2 + 0.3;
-  ballen.position.set(-tt / 2 + 0.35, 2.05, -bt / 2 + 0.35); // hinten in der Ecke, nicht vor dem Gesicht
-  ballen.castShadow = true;
-  g.add(ballen);
+  const waage = new THREE.Group();
+  waage.add(kasten(0.3, 0.05, 0.3, kasseMat, 0, 0.025, 0));
+  waage.add(kasten(0.34, 0.012, 0.34, new THREE.MeshStandardMaterial({ color: 0x9ea3a6, metalness: 0.6, roughness: 0.4 }), 0, 0.056, 0));
+  waage.add(kasten(0.05, 0.22, 0.05, kasseMat, -0.1, 0.16, 0));
+  const skala = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.03, 20), new THREE.MeshStandardMaterial({ color: 0xedebe4, roughness: 0.5 }));
+  skala.rotation.z = Math.PI / 2;
+  skala.position.set(-0.08, 0.3, 0);
+  waage.add(skala);
+  const zeiger = kasten(0.005, 0.1, 0.012, kasseMat, -0.06, 0.33, 0.01);
+  zeiger.rotation.x = 0.4;
+  waage.add(zeiger);
+  waage.position.set(tt / 2 - 0.25, 1.06, -0.55);
+  g.add(waage);
+  // Blechtrichter auf vier Beinen vorn am Stand: hier rasten Bänder ein (standTrichter)
+  const trichterMat = new THREE.MeshStandardMaterial({ color: 0x9ea3a6, metalness: 0.55, roughness: 0.45, side: THREE.DoubleSide });
+  const trichter = new THREE.Group();
+  const tg = new THREE.CylinderGeometry(0.35 * Math.SQRT2, 0.15 * Math.SQRT2, 0.4, 4, 1, true);
+  tg.rotateY(Math.PI / 4);
+  const tr = new THREE.Mesh(tg, trichterMat);
+  tr.position.y = 0.8;
+  trichter.add(tr);
+  const randMat = new THREE.MeshStandardMaterial({ color: 0x5a5f64, metalness: 0.5, roughness: 0.5 });
+  for (const sgn of [-1, 1]) {
+    trichter.add(kasten(0.73, 0.03, 0.03, randMat, 0, 1.0, sgn * 0.35));
+    trichter.add(kasten(0.03, 0.03, 0.73, randMat, sgn * 0.35, 1.0, 0));
+  }
+  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const bein = kasten(0.04, 1.0, 0.04, randMat, x * 0.33, 0.5, z * 0.33);
+    trichter.add(bein);
+  }
+  trichter.position.set(tt / 2 + 0.45, 0, 0);
+  trichter.name = 'trichter';
+  g.add(trichter);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return { gruppe: g, tresen };
 }
 
-/** A-Aufsteller mit Kreidetafel: „0,0222 $ PRO HALM“. Tafel zeigt nach +z der Gruppe. */
-function aufstellerBauen() {
+/** Schwarze Preistafel für den Aufsteller, neu malbar (aktueller Preis je Halm, S1: „$0.0222 PER STRAND“). */
+function preisTafelBauen() {
+  const c = document.createElement('canvas');
+  c.width = 384; c.height = 640;
+  const x = c.getContext('2d');
+  const textur = new THREE.CanvasTexture(c);
+  textur.colorSpace = THREE.SRGBColorSpace;
+  textur.anisotropy = 4;
+  let zuletzt = null;
+  function setze(wert) {
+    let text = wert;
+    if (typeof wert === 'number' && Number.isFinite(wert)) text = `${wert.toFixed(4).replace('.', ',')} $`;
+    text = String(text == null ? '' : text);
+    if (text === zuletzt) return;
+    zuletzt = text;
+    x.fillStyle = '#151515';
+    x.fillRect(0, 0, c.width, c.height);
+    x.strokeStyle = '#2a2a28';
+    x.lineWidth = 10;
+    x.strokeRect(5, 5, c.width - 10, c.height - 10);
+    x.fillStyle = '#f4f4ee';
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.font = '900 46px "Arial Narrow", Arial, sans-serif';
+    x.fillText('HEU', c.width / 2, 110, c.width * 0.86);
+    x.font = '900 86px "Arial Narrow", Arial, sans-serif';
+    x.fillText(text, c.width / 2, 300, c.width * 0.9);
+    x.font = '800 54px "Arial Narrow", Arial, sans-serif';
+    x.fillText('PRO HALM', c.width / 2, 420, c.width * 0.86);
+    textur.needsUpdate = true;
+  }
+  setze(0.0222);
+  return { textur, setze };
+}
+
+/** A-Aufsteller (schwarzes Brett ~1,25 m) mit der Preistafel. Tafel zeigt nach +z der Gruppe. */
+function aufstellerBauen(tafelTextur) {
   const g = new THREE.Group();
-  const holz = new THREE.MeshStandardMaterial({ color: 0x5a3c22, roughness: 0.85 });
-  const tafelMat = new THREE.MeshStandardMaterial({
-    map: schildTextur(['0,0222 $', 'PRO HALM'], {
-      breite: 512, hoehe: 640, grund: '#1e2320', schrift: '#f4f4ee', rahmen: '#6b4a2d',
-      font: '700 {g}px "Arial Narrow", Arial, sans-serif', groesse: 0.36, kreide: true,
-    }),
-    roughness: 0.95,
-  });
+  const holz = new THREE.MeshStandardMaterial({ color: 0x2a2622, roughness: 0.8 });
+  const tafelMat = new THREE.MeshStandardMaterial({ map: tafelTextur, roughness: 0.9 });
   for (const seite of [1, -1]) {
     const bein = new THREE.Group();
-    const rahmen = kasten(0.62, 0.9, 0.035, holz, 0, 0.45, 0);
-    const tafel = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.78), seite > 0 ? tafelMat : holz);
-    tafel.position.set(0, 0.46, 0.02);
+    const rahmen = kasten(0.75, 1.25, 0.035, holz, 0, 0.625, 0);
+    const tafel = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 1.1), seite > 0 ? tafelMat : holz);
+    tafel.position.set(0, 0.64, 0.02);
     bein.add(rahmen, tafel);
-    bein.rotation.x = -seite * 0.22;
+    bein.rotation.x = -seite * 0.2;
     bein.position.z = seite * 0.2;
     if (seite < 0) bein.rotation.y = Math.PI;
     g.add(bein);
   }
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
+}
+
+/** Gibt Geometrien, Materialien und Texturen einer Gruppe frei (jedes nur einmal). */
+function hofEntsorgen(gruppe) {
+  if (gruppe.parent) gruppe.parent.remove(gruppe);
+  const geos = new Set();
+  const mats = new Set();
+  const texs = new Set();
+  gruppe.traverse((o) => {
+    if (o.geometry) geos.add(o.geometry);
+    if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) mats.add(m);
+    if (o.isInstancedMesh) o.dispose();
+  });
+  for (const m of mats) for (const v of Object.values(m)) if (v && v.isTexture) texs.add(v);
+  for (const g of geos) g.dispose();
+  for (const m of mats) m.dispose();
+  for (const t of texs) t.dispose();
 }

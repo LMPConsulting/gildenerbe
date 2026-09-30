@@ -5,7 +5,7 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import {
   spatenModell, heugabelModell, sandschaufelModell, besenModell, detektorModell, saugerModell, handModell,
-  eimerModell, heuBueschel, nadelModell, gegenstandGeometrien, GEGENSTAND_FARBEN,
+  eimerModell, heuBueschel, nadelModell, gegenstandGeometrien, GEGENSTAND_FARBEN, heuStueckMaterial,
 } from './modelle.js';
 
 const HALM_TOENE = [0xf6cf6a, 0xeeb94c, 0xe2a338, 0xf9de90, 0xd58f2c, 0xe8a940];
@@ -50,14 +50,16 @@ export function ansichtBauen(szene, kamera) {
   kamera.add(hand);
   // Werkzeuge liegen in der Ruhelage mittig unten, der Stiel steigt von unten ins Bild.
   const modelle = {
-    hand: handModell(), sandschaufel: (() => { const m = sandschaufelModell(); m.scale.setScalar(1.3); return m; })(), spaten: spatenModell(), heugabel: heugabelModell(),
+    hand: (() => { const m = handModell(); m.scale.setScalar(0.72); return m; })(),
+    sandschaufel: sandschaufelModell(), spaten: spatenModell(), heugabel: heugabelModell(),
     besen: besenModell(), detektor: detektorModell(), sauger: saugerModell(),
   };
+  // Köpfe liegen bei 62–68 % Bildhöhe (über Status- und Werkzeugleiste, S3/S4: Stiel füllt die Bildmitte unten).
   const RUHE = {
-    hand: { p: [0.2, -0.26, -0.42], r: [0.25, 0.1, 0] },
-    sandschaufel: { p: [0, -0.13, -0.42], r: [0.5, 0, 0] },
-    spaten: { p: [0.03, -0.12, -0.01], r: [-0.12, 0, 0] },
-    heugabel: { p: [0, -0.124, 0.037], r: [-0.1, 0, 0] },
+    hand: { p: [0.3, -0.33, -0.5], r: [0.25, 0.1, 0] },
+    sandschaufel: { p: [0.02, -0.26, -0.46], r: [0.28, 0, 0] },
+    spaten: { p: [0.03, -0.085, -0.01], r: [-0.12, 0, 0] },
+    heugabel: { p: [0, -0.112, 0.037], r: [-0.1, 0, 0] },
     besen: { p: [0.1, -0.7, -0.35], r: [0.85, 0.05, 0] },
     detektor: { p: [0.2, -0.28, -0.42], r: [0.55, 0.12, 0] },
     sauger: { p: [0.16, -0.34, -0.36], r: [0.35, 0.08, 0] },
@@ -67,29 +69,41 @@ export function ansichtBauen(szene, kamera) {
     m.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.renderOrder = 5; } });
     hand.add(m);
   }
-  // Heu, das auf dem Werkzeug liegt
-  const ladung = heuBueschel(34, 0.11);
+  // Heu, das auf dem Werkzeug liegt (S4: dicke Ladung flacher Halme auf den Zinken).
+  // Hängt am Werkzeugkopf und macht Stoß und Wippen mit.
+  const ladung = heuBueschel(50, 0.16, { breite: 0.012, laenge: 0.22, hoch: 0.35 });
   ladung.visible = false;
-  hand.add(ladung);
-  // Behälter: Eimer links unten, Heubündel in den Armen
+  ladung.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.renderOrder = 6; } });
+  const LADUNG_AM = {
+    heugabel: { p: [0, 0.075, -0.83], s: 1 },
+    spaten: { p: [0, 0.05, -0.72], s: 0.8 },
+    sandschaufel: { p: [0, 0.03, -0.31], s: 0.62 },
+  };
+  // Behälter: Eimer links neben der Werkzeugleiste, Heubündel in den Armen
   const eimer = eimerModell();
   eimer.scale.setScalar(0.75);
-  eimer.position.set(-0.38, -0.44, -0.6);
+  eimer.position.set(-0.52, -0.33, -0.62);
   eimer.rotation.set(0.25, 0.3, 0.12);
   kamera.add(eimer);
   const armHeu = heuBueschel(26, 0.1);
   armHeu.position.set(-0.28, -0.36, -0.45);
   kamera.add(armHeu);
+  // Die Schubkarre schiebt man vor sich her: sie folgt Standort und Blickrichtung,
+  // aber nicht dem Nicken. Schaut man nach unten, sieht man Mulde, Rad und Griffe.
+  const koerper = new THREE.Group();
+  koerper.name = 'koerper';
+  szene.add(koerper);
   const karre = schubkarreModell();
-  karre.position.set(0, -1.12, -1.05);
-  kamera.add(karre);
+  koerper.add(karre);
+  const blickVec = new THREE.Vector3();
   // Ein Stück in beiden Händen (Pressballen, Knäuel, Ziegel …)
   const stueckGeos = gegenstandGeometrien();
   const STUECK_GEO = {
     roh: stueckGeos.buendel, knaeuel: stueckGeos.knaeuel, ballen: stueckGeos.ballen, pellet: stueckGeos.pellet,
     brei: stueckGeos.brei, silage: stueckGeos.silage, papier: stueckGeos.papier, brikett: stueckGeos.ziegel,
   };
-  const gehalten = new THREE.Mesh(STUECK_GEO.roh, new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN.roh, roughness: 0.9 }));
+  const gehaltenMat = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN.roh, roughness: 0.9 });
+  const gehalten = new THREE.Mesh(STUECK_GEO.roh, heuStueckMaterial());
   gehalten.visible = false;
   gehalten.renderOrder = 5;
   kamera.add(gehalten);
@@ -111,17 +125,29 @@ export function ansichtBauen(szene, kamera) {
   const glanzTextur = glanzSprite();
   const nadelObjekte = new Map();
 
-  // fliegende Halme beim Stechen
-  const MAX_T = 240;
-  const teilchenGeo = new THREE.BoxGeometry(0.008, 0.008, 0.16);
-  const teilchenMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  // Fliegende Halme beim Stechen: flache Streifen, die herumwirbeln, liegen bleiben und
+  // dann vergehen („digging throws hundreds of straws around“). Eine Instanzgruppe.
+  const MAX_T = 600;
+  const teilchenGeo = new THREE.PlaneGeometry(0.009, 0.2);
+  teilchenGeo.rotateX(-Math.PI / 2);
+  const teilchenMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, emissive: 0x3a2610 });
+  teilchenMat.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = normalize( vNormal );');
+  };
+  teilchenMat.customProgramCacheKey = () => 'halmOhneFlip';
   const teilchen = new THREE.InstancedMesh(teilchenGeo, teilchenMat, MAX_T);
   teilchen.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   teilchen.frustumCulled = false;
+  teilchen.count = 0;
   const farbe = new THREE.Color();
-  for (let i = 0; i < MAX_T; i++) { farbe.setHex(HALM_TOENE[i % HALM_TOENE.length]); teilchen.setColorAt(i, farbe); }
+  for (let i = 0; i < MAX_T; i++) { farbe.setHex(HALM_TOENE[(i * 7) % HALM_TOENE.length]); teilchen.setColorAt(i, farbe); }
   szene.add(teilchen);
-  const flug = []; // {x,y,z,vx,vy,vz,rx,ry,leben}
+  const flug = []; // {x,y,z,vx,vy,vz,rx,ry,leben,liegt}
+  // Staubwolke an der Stichstelle
+  const staub = new THREE.Sprite(new THREE.SpriteMaterial({ map: staubSprite(), color: 0xd8c29a, transparent: true, opacity: 0, depthWrite: false }));
+  staub.visible = false;
+  szene.add(staub);
+  let staubZeit = 1;
 
   const m4 = new THREE.Matrix4();
   const q = new THREE.Quaternion();
@@ -138,23 +164,36 @@ export function ansichtBauen(szene, kamera) {
   function werkzeugZeigen(id) {
     if (id === aktuell) return;
     aktuell = id;
-    for (const [k, m] of Object.entries(modelle)) m.visible = k === id;
+    for (const [k, m] of Object.entries(modelle)) m.visible = k === id && k !== 'hand';
+    const am = LADUNG_AM[id];
+    if (am) {
+      modelle[id].add(ladung);
+      ladung.position.set(...am.p);
+      ladung.scale.setScalar(am.s);
+    } else if (ladung.parent) ladung.parent.remove(ladung);
   }
 
   return {
     stich(ev) {
       stoss = 1;
-      if (ev.menge > 0 && ev.werkzeug !== 'hand') { ladungZeit = 0.32; }
+      if (ev.menge > 0 && ev.werkzeug !== 'hand') { ladungZeit = 0.7; }
       // Halme fliegen an der Stichstelle hoch
-      const n = Math.min(26, 8 + Math.round((ev.menge || 1) / 2));
+      const n = ev.menge > 0 ? Math.min(80, 40 + Math.round(ev.menge / 3)) : 12;
       for (let i = 0; i < n; i++) {
         if (flug.length >= MAX_T) flug.shift();
         const a = Math.random() * Math.PI * 2;
-        const v = 1 + Math.random() * 2.2;
+        const v = 0.5 + Math.random() * 1.6;
         flug.push({
-          x: ev.x, y: ev.y + 0.05, z: ev.z, vx: Math.cos(a) * v * 0.6, vy: 1.2 + Math.random() * 2.2, vz: Math.sin(a) * v * 0.6,
-          rx: Math.random() * 6, ry: Math.random() * 6, leben: 0.8 + Math.random() * 0.5,
+          x: ev.x + (Math.random() - 0.5) * 0.2, y: ev.y + 0.05, z: ev.z + (Math.random() - 0.5) * 0.2,
+          vx: Math.cos(a) * v, vy: 1.4 + Math.random() * 2.4, vz: Math.sin(a) * v,
+          rx: Math.random() * 6, ry: Math.random() * 6, wx: 4 + Math.random() * 8, wy: 2 + Math.random() * 6,
+          leben: 1.5 + Math.random() + 2, liegt: false,
         });
+      }
+      if (ev.menge > 0) {
+        staub.position.set(ev.x, ev.y + 0.25, ev.z);
+        staub.visible = true;
+        staubZeit = 0;
       }
     },
     schwung() { stoss = 1; },
@@ -171,7 +210,8 @@ export function ansichtBauen(szene, kamera) {
         if (art !== gehaltenArt) {
           gehaltenArt = art;
           gehalten.geometry = STUECK_GEO[art] || STUECK_GEO.roh;
-          gehalten.material.color.setHex(GEGENSTAND_FARBEN[art] || GEGENSTAND_FARBEN.roh);
+          if (art === 'roh' || art === 'knaeuel' || !GEGENSTAND_FARBEN[art]) gehalten.material = heuStueckMaterial();
+          else { gehaltenMat.color.setHex(GEGENSTAND_FARBEN[art]); gehalten.material = gehaltenMat; }
         }
         const wippen = Math.min(1, (info.tempo || 0) / 4);
         gehalten.position.set(0.02, -0.34 - Math.abs(Math.cos(zeit * 7.5)) * 0.012 * wippen, -0.62);
@@ -181,21 +221,25 @@ export function ansichtBauen(szene, kamera) {
       const gehen = Math.min(1, (info.tempo || 0) / 4);
       const wx = Math.sin(zeit * 7.5) * 0.012 * gehen;
       const wy = Math.abs(Math.cos(zeit * 7.5)) * 0.014 * gehen;
+      stoss = Math.max(0, stoss - dt * 4.2);
       if (!weg) {
         const ruhe = RUHE[sp.werkzeug] || RUHE.hand;
         const m = modelle[sp.werkzeug];
-        stoss = Math.max(0, stoss - dt * 4.2);
         const st = Math.sin(stoss * Math.PI);
         const saugZittern = sp.sauger.an ? (Math.random() - 0.5) * 0.006 : 0;
-        m.position.set(ruhe.p[0] + wx + saugZittern, ruhe.p[1] - wy - st * 0.05, ruhe.p[2] - st * 0.22);
-        m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
+        if (sp.werkzeug === 'hand') {
+          // Die Hand ist nur beim Zupfen zu sehen (Vorbild: keine Hand im Bild); sie kommt von unten rechts.
+          m.visible = stoss > 0.001;
+          m.position.set(ruhe.p[0] + wx - (1 - st) * 0.04, ruhe.p[1] - (1 - st) * 0.16, ruhe.p[2] - st * 0.12);
+          m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
+        } else {
+          m.position.set(ruhe.p[0] + wx + saugZittern, ruhe.p[1] - wy - st * 0.05, ruhe.p[2] - st * 0.22);
+          m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
+        }
         // Heu auf dem Blatt kurz sichtbar, dann in den Behälter
         ladungZeit = Math.max(0, ladungZeit - dt);
-        ladung.visible = ladungZeit > 0 && ['spaten', 'heugabel', 'sandschaufel'].includes(sp.werkzeug);
-        if (ladung.visible) {
-          const lz = sp.werkzeug === 'sandschaufel' ? -0.62 : -0.86;
-          ladung.position.set(m.position.x, m.position.y + 0.05 + Math.sin(ruhe.r[0]) * 0.25, m.position.z + lz * Math.cos(ruhe.r[0]) * 0.55);
-        }
+        ladung.visible = ladungZeit > 0 && !!LADUNG_AM[sp.werkzeug];
+        if (ladung.visible) ladung.rotation.y = zeit * 0.3;
         // Detektoranzeige färbt sich
         if (sp.werkzeug === 'detektor') {
           const anzeige = modelle.detektor.getObjectByName('anzeige');
@@ -212,12 +256,18 @@ export function ansichtBauen(szene, kamera) {
       eimer.visible = b === 'eimer' && sp.werkzeug !== 'besen';
       const f = eimer.getObjectByName('fuellung');
       if (f) { f.position.y = -0.14 + fuell * 0.26; f.visible = fuell > 0.01; }
-      eimer.position.y = -0.44 - wy * 0.6;
+      eimer.position.y = -0.33 - wy * 0.6;
       armHeu.visible = b === 'arme' && sp.last > 0 && sp.werkzeug !== 'besen';
       armHeu.scale.setScalar(0.4 + fuell * 0.9);
-      karre.visible = b === 'schubkarre';
-      const kf = karre.getObjectByName('fuellung');
-      if (kf) { kf.scale.y = Math.max(0.02, fuell); kf.visible = fuell > 0.01; }
+      koerper.visible = b === 'schubkarre' && !info.bauen;
+      if (koerper.visible) {
+        kamera.getWorldDirection(blickVec);
+        koerper.position.set(kamera.position.x, sp.y || 0, kamera.position.z);
+        koerper.rotation.set(0, Math.atan2(-blickVec.x, -blickVec.z), 0);
+        karre.position.y = wy * 0.3;
+        const kf = karre.getObjectByName('fuellung');
+        if (kf) { kf.scale.y = Math.max(0.02, fuell); kf.visible = fuell > 0.01; }
+      }
 
       // lose Büschel am Boden (nur neu setzen, wenn sich etwas geändert hat)
       const lose = s.lose;
@@ -265,61 +315,114 @@ export function ansichtBauen(szene, kamera) {
         glanz.material.opacity = 0.45 + puls * 0.55;
       }
       for (const [n, o] of nadelObjekte) {
-        if (!sichtbar.has(n)) { nadelGruppe.remove(o); nadelObjekte.delete(n); }
+        if (!sichtbar.has(n)) { nadelGruppe.remove(o); o.traverse((x) => { if (x.isSprite) x.material.dispose(); }); nadelObjekte.delete(n); }
       }
 
-      // fliegende Halme
+      // Staub
+      if (staub.visible) {
+        staubZeit += dt;
+        const u = staubZeit / 0.6;
+        if (u >= 1) staub.visible = false;
+        else {
+          staub.scale.setScalar(0.3 + u * 0.9);
+          staub.material.opacity = 0.35 * (1 - u);
+          staub.position.y += dt * 0.25;
+        }
+      }
+      // fliegende Halme: flattern (Luftwiderstand), landen, bleiben liegen, vergehen
+      const bremse = Math.max(0, 1 - 1.6 * dt);
       for (let i = flug.length - 1; i >= 0; i--) {
         const p = flug[i];
         p.leben -= dt;
         if (p.leben <= 0) { flug.splice(i, 1); continue; }
-        p.vy -= 9 * dt;
+        if (p.liegt) continue;
+        p.vy -= 7 * dt;
+        p.vx *= bremse; p.vz *= bremse; if (p.vy < 0) p.vy *= bremse;
         p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+        p.rx += dt * p.wx; p.ry += dt * p.wy;
         const bodenH = info.boden ? info.boden(p.x, p.z) : 0;
-        if (p.y < bodenH) { p.y = bodenH; p.vx *= 0.3; p.vz *= 0.3; p.vy = 0; }
-        p.rx += dt * 7; p.ry += dt * 5;
+        if (p.y < bodenH + 0.01) {
+          p.y = bodenH + 0.01;
+          p.liegt = true;
+          p.rx = 0;
+          p.leben = Math.min(p.leben, 2 + Math.random() * 0.5);
+        }
       }
-      for (let i = 0; i < MAX_T; i++) {
+      const anzahl = Math.min(flug.length, MAX_T);
+      for (let i = 0; i < anzahl; i++) {
         const p = flug[i];
-        if (!p) { teilchen.setMatrixAt(i, unsichtbar); continue; }
         v3.set(p.x, p.y, p.z);
         q.setFromEuler(e3.set(p.rx, p.ry, 0));
-        s3.setScalar(Math.min(1, p.leben * 2));
+        s3.setScalar(Math.min(1, p.leben * 1.5));
         m4.compose(v3, q, s3);
         teilchen.setMatrixAt(i, m4);
       }
-      teilchen.instanceMatrix.needsUpdate = true;
+      teilchen.count = anzahl;
+      if (anzahl) teilchen.instanceMatrix.needsUpdate = true;
     },
   };
 }
 
-/** Schubkarre, von vorn unten gesehen: Mulde, Rad, zwei Griffe. */
+/** Schubkarre (Blick nach -z, Boden bei y = 0): rote Mulde, Rad vorn, zwei Griffe zum Spieler. */
 function schubkarreModell() {
   const g = new THREE.Group();
-  const rot = new THREE.MeshStandardMaterial({ color: 0x9a3a28, roughness: 0.65, metalness: 0.3 });
+  const rot = new THREE.MeshStandardMaterial({ color: 0xa83a28, roughness: 0.6, metalness: 0.3, side: THREE.DoubleSide });
   const schwarz = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.8 });
-  const mulde = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.3, 0.3, 4, 1, true), rot);
+  const stahl = new THREE.MeshStandardMaterial({ color: 0x6a6f74, roughness: 0.5, metalness: 0.5 });
+  const mulde = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.28, 0.32, 4, 1, true), rot);
   mulde.rotation.y = Math.PI / 4;
-  mulde.scale.set(1.2, 1, 1.6);
-  mulde.material.side = THREE.DoubleSide;
+  mulde.scale.set(1.15, 1, 1.5);
+  mulde.position.set(0, 0.58, -1.05);
   g.add(mulde);
-  const fuellung = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.28, 0.9), new THREE.MeshLambertMaterial({ color: 0xe6b456 }));
+  const boden = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.6), rot);
+  boden.rotation.x = -Math.PI / 2;
+  boden.position.set(0, 0.425, -1.05);
+  g.add(boden);
+  const fuellung = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.3, 0.86), heuStueckMaterial());
   fuellung.name = 'fuellung';
-  fuellung.position.y = -0.1;
-  fuellung.geometry.translate(0, 0.14, 0);
+  fuellung.geometry.translate(0, 0.15, 0);
+  fuellung.position.set(0, 0.43, -1.05);
   g.add(fuellung);
-  const rad = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.05, 8, 16), schwarz);
+  const rad = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.05, 8, 16), schwarz);
   rad.rotation.y = Math.PI / 2;
-  rad.position.set(0, -0.25, -0.62);
+  rad.position.set(0, 0.2, -1.72);
   g.add(rad);
-  for (const x of [-0.3, 0.3]) {
-    const griff = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 6), schwarz);
-    griff.rotation.x = Math.PI / 2 + 0.25;
-    griff.position.set(x, 0.05, 0.55);
+  for (const x of [-1, 1]) {
+    // Holm von der Radachse unter der Mulde durch bis zum Griff (Griffe ~0,7 m hoch)
+    const a = new THREE.Vector3(x * 0.06, 0.2, -1.72);
+    const b = new THREE.Vector3(x * 0.3, 0.72, -0.25);
+    const l = a.distanceTo(b);
+    const holm = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, l, 6), stahl);
+    holm.position.copy(a).add(b).multiplyScalar(0.5);
+    holm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    g.add(holm);
+    const griff = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.2, 8), schwarz);
+    griff.position.set(x * 0.31, 0.745, -0.17);
+    griff.rotation.x = Math.PI / 2 - 0.34;
     g.add(griff);
+    const stuetze = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.4, 6), stahl);
+    stuetze.position.set(x * 0.2, 0.22, -0.8);
+    g.add(stuetze);
   }
-  g.traverse((o) => { if (o.isMesh) o.renderOrder = 4; });
+  g.traverse((o) => { if (o.isMesh) o.castShadow = false; });
   return g;
+}
+
+/** Weicher Staubfleck für die Wolke beim Stechen. */
+function staubSprite() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const x = c.getContext('2d');
+  for (const [px, py, r] of [[32, 34, 26], [22, 30, 16], [42, 28, 17], [32, 22, 14]]) {
+    const g = x.createRadialGradient(px, py, 0, px, py, r);
+    g.addColorStop(0, 'rgba(255,255,255,0.8)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 64, 64);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
 /** Weicher Stern für das Glitzern der Nadeln. */

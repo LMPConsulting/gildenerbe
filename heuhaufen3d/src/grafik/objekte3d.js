@@ -6,34 +6,33 @@
 
 import * as THREE from '../../vendor/three.module.min.js';
 import { BAU_BY_ID, BAND_Y, lauf, lokalZuWelt } from '../welt.js';
-import { bandGeometrie, bandBahn, bandNaechster } from '../baender.js';
+import { bandGeometrie, bandNaechster } from '../baender.js';
 import { GROESSE } from '../gegenstaende.js';
 import { greiferPunkt, innenPunkt, BRENN_MAX } from '../maschinen.js';
 import { lasterLage, LASTER_BETT } from '../laster.js';
 import { drohnenListe } from '../drohnen.js';
 import { bauVersion, auflageBei } from '../bauen.js';
 import { werte } from '../wirtschaft.js';
-import { gegenstandGeometrien, GEGENSTAND_FARBEN } from './modelle.js';
-import { strohTexturen } from './texturen.js';
+import { gegenstandGeometrien, GEGENSTAND_FARBEN, heuStueckMaterial } from './modelle.js';
 import { maschinenModell, lasterModell, drohnenModell } from './maschinenmodelle.js';
 import { skizzeMalen } from '../ui/skizze.js';
 
 /* ------------------------------------------------------------ Hilfen */
 
-/** Gummiband mit Querrippen; läuft über den Versatz der Textur. */
+/** Gummiband mit Querrippen (fast schwarzes Gummi, feine Rippen); läuft über den Versatz der Textur. */
 function objBandTextur() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 128;
   const g = c.getContext('2d');
-  g.fillStyle = '#4a4442';
+  g.fillStyle = '#2e2b29';
   g.fillRect(0, 0, 64, 128);
-  for (let i = 0; i < 4; i++) {
-    g.fillStyle = '#554e4b';
-    g.fillRect(4, i * 32 + 4, 56, 7);
-    g.fillStyle = '#3a3533';
-    g.fillRect(4, i * 32 + 11, 56, 2);
+  for (let i = 0; i < 8; i++) {
+    g.fillStyle = '#3a3633';
+    g.fillRect(4, i * 16 + 4, 56, 2);
+    g.fillStyle = '#242120';
+    g.fillRect(4, i * 16 + 6, 56, 1);
   }
-  g.fillStyle = '#2e2a28';
+  g.fillStyle = '#1f1d1c';
   g.fillRect(0, 0, 4, 128);
   g.fillRect(60, 0, 4, 128);
   const t = new THREE.CanvasTexture(c);
@@ -59,18 +58,91 @@ function objWarnTextur() {
   return t;
 }
 
+/** Rauchwolke (Puff): drei, vier überlagerte weiche Kreise statt eines Verlaufs. */
 function objRauchTextur() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 64;
   const g = c.getContext('2d');
-  const r = g.createRadialGradient(32, 32, 2, 32, 32, 30);
-  r.addColorStop(0, 'rgba(236,234,228,0.85)');
-  r.addColorStop(1, 'rgba(236,234,228,0)');
-  g.fillStyle = r;
-  g.fillRect(0, 0, 64, 64);
+  for (const [x, y, r, a] of [[32, 36, 20, 0.9], [22, 30, 13, 0.8], [42, 28, 14, 0.85], [31, 22, 12, 0.75]]) {
+    const v = g.createRadialGradient(x, y, 0, x, y, r);
+    v.addColorStop(0, `rgba(244,243,238,${a})`);
+    v.addColorStop(0.65, `rgba(236,234,228,${a * 0.75})`);
+    v.addColorStop(1, 'rgba(230,228,222,0)');
+    g.fillStyle = v;
+    g.fillRect(0, 0, 64, 64);
+  }
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+
+/* Bandkurven für die Anzeige: weite Kreisbögen (Radius 0,8 m, wie S2) statt der
+ * engen Logik-Rundung. Die Logik (bandBahn) bleibt unverändert; Stücke auf dem Band
+ * werden in stueckeZeichnen anteilig auf diese Bahn umgerechnet. */
+const ANZEIGE_RADIUS = 0.8;
+const anzeigeCache = new WeakMap();
+function objAnzeigeBahn(punkte, radius = ANZEIGE_RADIUS) {
+  if (punkte.length < 3) return punkte.map((p) => [...p]);
+  const aus = [[...punkte[0]]];
+  for (let i = 1; i < punkte.length - 1; i++) {
+    const p0 = punkte[i - 1]; const p1 = punkte[i]; const p2 = punkte[i + 1];
+    const l1 = Math.hypot(p1[0] - p0[0], p1[2] - p0[2]);
+    const l2 = Math.hypot(p2[0] - p1[0], p2[2] - p1[2]);
+    if (l1 < 1e-6 || l2 < 1e-6) continue;
+    const u1x = (p1[0] - p0[0]) / l1; const u1z = (p1[2] - p0[2]) / l1;
+    const u2x = (p2[0] - p1[0]) / l2; const u2z = (p2[2] - p1[2]) / l2;
+    const cos = Math.max(-1, Math.min(1, u1x * u2x + u1z * u2z));
+    const phi = Math.acos(cos);
+    if (phi < 0.02) { aus.push([...p1]); continue; }
+    // Tangentenlänge T = R·tan(φ/2), höchstens die halbe Nachbarstrecke
+    let T = radius * Math.tan(phi / 2);
+    T = Math.min(T, l1 * 0.5, l2 * 0.5);
+    const R = T / Math.tan(phi / 2);
+    const a = [p1[0] - u1x * T, p0[1] + (p1[1] - p0[1]) * (1 - T / l1), p1[2] - u1z * T];
+    const b = [p1[0] + u2x * T, p1[1] + (p2[1] - p1[1]) * (T / l2), p1[2] + u2z * T];
+    const seite = u1x * u2z - u1z * u2x > 0 ? 1 : -1;
+    // Mittelpunkt: von a aus senkrecht zur Laufrichtung zur Kurveninnenseite
+    const cx = a[0] - u1z * R * seite;
+    const cz = a[2] + u1x * R * seite;
+    const n = Math.max(3, Math.ceil((phi / (Math.PI / 2)) * 10));
+    const vx = a[0] - cx; const vz = a[2] - cz;
+    for (let k = 0; k <= n; k++) {
+      const t = k / n;
+      const w = phi * t * seite;
+      const c = Math.cos(w); const sn = Math.sin(w);
+      aus.push([cx + vx * c - vz * sn, a[1] + (b[1] - a[1]) * t, cz + vx * sn + vz * c]);
+    }
+  }
+  aus.push([...punkte[punkte.length - 1]]);
+  return aus;
+}
+/** Anzeigebahn eines Bandes mit Längen (zwischengespeichert je Punktliste). */
+function objAnzeige(bau) {
+  let a = anzeigeCache.get(bau.punkte);
+  if (!a) {
+    const bahn = objAnzeigeBahn(bau.punkte);
+    const kum = [0];
+    for (let i = 1; i < bahn.length; i++) {
+      const p = bahn[i - 1]; const q = bahn[i];
+      kum.push(kum[i - 1] + Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]));
+    }
+    a = { bahn, kum, laenge: kum[kum.length - 1], logik: bandGeometrie(bau).laenge };
+    anzeigeCache.set(bau.punkte, a);
+  }
+  return a;
+}
+/** Punkt auf der Anzeigebahn zum Logik-Weg t (anteilig). Schreibt in ziel [x, y, z]. */
+function objAnzeigePunkt(bau, t, ziel) {
+  const a = objAnzeige(bau);
+  const s = a.logik > 0 ? Math.max(0, Math.min(a.laenge, (t / a.logik) * a.laenge)) : 0;
+  const { kum, bahn } = a;
+  let lo = 0; let hi = kum.length - 1;
+  while (lo < hi - 1) { const m = (lo + hi) >> 1; if (kum[m] <= s) lo = m; else hi = m; }
+  const l = kum[hi] - kum[lo];
+  const u = l > 1e-6 ? (s - kum[lo]) / l : 0;
+  const p = bahn[lo]; const q = bahn[hi];
+  ziel[0] = p[0] + (q[0] - p[0]) * u; ziel[1] = p[1] + (q[1] - p[1]) * u; ziel[2] = p[2] + (q[2] - p[2]) * u;
+  return ziel;
 }
 
 /**
@@ -253,9 +325,10 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   const MAX_STUECKE = 700;
   const stueckMeshes = {};
   for (const [art, geo] of Object.entries(GEO_FUER)) {
-    const m = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN[art], roughness: art === 'silage' ? 0.35 : 0.95 });
+    let m = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN[art], roughness: art === 'silage' ? 0.35 : 0.95 });
     // Die Heubündel leuchten im Vorbild leicht orange-golden
-    if (art === 'roh' || art === 'knaeuel') { m.map = strohTexturen(256, 700, 13).farbe; m.map.repeat.set(3, 2); m.color.setHex(0xfff0dc); m.emissive.setHex(0x6a3a0a); m.emissiveIntensity = 0.45; }
+    // Heubündel leuchten orange-golden (S2: #D0964E): gemeinsames Material aus modelle.js
+    if (art === 'roh' || art === 'knaeuel') { m.dispose(); m = heuStueckMaterial(); }
     const im = new THREE.InstancedMesh(geo, m, MAX_STUECKE);
     im.count = 0;
     im.castShadow = schatten;
@@ -295,7 +368,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   /* -------------------------------- Warnmarken, Rauch */
   const warnMat = new THREE.SpriteMaterial({ map: objWarnTextur(), transparent: true, depthWrite: false });
   const rauchMat = new THREE.SpriteMaterial({ map: objRauchTextur(), transparent: true, depthWrite: false });
-  const rauch = Array.from({ length: 36 }, () => {
+  const rauch = Array.from({ length: 20 }, () => {
     const sp = new THREE.Sprite(rauchMat.clone());
     sp.visible = false;
     wurzel.add(sp);
@@ -388,7 +461,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   function bandObjekt(bau, s) {
     const g = new THREE.Group();
     const darunter = baenderDarunter(bau, s);
-    const { bahn, laenge } = bandGeometrie(bau);
+    const { bahn, laenge } = objAnzeige(bau);
     const gurt = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_GURT, 0.5), MAT.gurt);
     gurt.receiveShadow = schatten;
     g.add(gurt);
@@ -610,7 +683,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
           if (teile.feuer.material && teile.feuer.material.emissive) teile.feuer.material.emissiveIntensity = brennt ? 1.2 * f : 0;
         }
         if (teile.heufuellung) teile.heufuellung.scale.y = 0.1 + 0.9 * Math.min(1, (bau.brenn || 0) / BRENN_MAX);
-        if (brennt && teile.rauchPunkt && Math.random() < dt * 5) {
+        if (brennt && teile.rauchPunkt && Math.random() < dt * 1.6) {
           teile.rauchPunkt.getWorldPosition(vec);
           rauchAusstossen(vec.x, vec.y, vec.z);
         }
@@ -732,9 +805,11 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     r.sp.visible = true;
     r.sp.position.set(x, y, z);
     r.t = 0;
-    r.leben = 2.4 + Math.random();
-    r.vx = (Math.random() - 0.5) * 0.3;
-    r.vz = (Math.random() - 0.5) * 0.3;
+    r.leben = 2.5 + Math.random() * 0.6;
+    // seitliche Drift ~0,3 m/s in eine Richtung (Wind)
+    r.vx = 0.22 + (Math.random() - 0.5) * 0.16;
+    r.vz = 0.18 + (Math.random() - 0.5) * 0.16;
+    r.sp.material.rotation = Math.random() * Math.PI * 2;
   }
 
   /* -------------------------------- Stücke zeichnen */
@@ -752,6 +827,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     zaehler[art] = i + 1;
   }
 
+  const anzeigeP = [0, 0, 0];
   function stueckeZeichnen(s, netz, zeit) {
     for (const art of Object.keys(stueckMeshes)) zaehler[art] = 0;
     let glanz = 0;
@@ -760,7 +836,15 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
       const sk = g.art === 'roh' ? Math.max(0.75, Math.min(1.8, Math.cbrt(g.halme / 20))) : 1;
       const hoehe = g.art === 'roh' ? 0.11 * sk : GROESSE[g.art] * 0.75;
       const kippen = g.ort === 'flug' ? (g.dreh || 0) : 0;
-      stueckSetzen(g.art, g.x, g.y + hoehe, g.z, (g.dreh || 0) + (g.id % 7) * 0.9, kippen, sk);
+      let gx = g.x; let gy = g.y; let gz = g.z;
+      if (g.ort === 'band' && netz.bauNachId) {
+        const band = netz.bauNachId.get(g.band);
+        if (band && band.punkte && band.punkte.length > 2) {
+          objAnzeigePunkt(band, g.t, anzeigeP);
+          gx = anzeigeP[0]; gy = anzeigeP[1]; gz = anzeigeP[2];
+        }
+      }
+      stueckSetzen(g.art, gx, gy + hoehe, gz, (g.dreh || 0) + (g.id % 7) * 0.9, kippen, sk);
       if (g.nadel >= 0 && g.ort === 'boden' && glanz < glanzPool.length) {
         const sp = glanzPool[glanz++];
         sp.visible = true;
@@ -821,6 +905,8 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   const matNein = objHologramm(false);
   let bandGeist = null;
   let linienGeist = null;
+  let bandGeistSchluessel = '';
+  let linienGeistSchluessel = '';
   const ankerMat = new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.8, depthWrite: false });
   const ankerZiel = new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.95, depthWrite: false });
   const anker = Array.from({ length: 24 }, () => {
@@ -941,9 +1027,9 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
         if (u >= 1) { r.sp.visible = false; continue; }
         r.sp.position.x += r.vx * dt;
         r.sp.position.z += r.vz * dt;
-        r.sp.position.y += dt * (0.9 - u * 0.3);
-        r.sp.scale.setScalar(0.6 + u * 2.4);
-        r.sp.material.opacity = 0.7 * (1 - u);
+        r.sp.position.y += dt * (0.8 - u * 0.35);
+        r.sp.scale.setScalar(0.4 + Math.sqrt(u) * 0.8);
+        r.sp.material.opacity = 0.7 * (1 - u) * Math.min(1, r.t * 8);
       }
       // Radar
       if (netz.radar) {
@@ -1024,17 +1110,29 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
 
     /** Vorschau eines Bandes entlang der Eckpunkte. punkte null: weg. */
     bandVorschau(punkte, ok) {
+      // Nur neu bauen, wenn sich Punkte oder Farbe ändern (wird jedes Bild aufgerufen)
+      const schluessel = punkte && punkte.length >= 2 ? `${ok ? 1 : 0}|${punkte.map((p) => p.map((v) => v.toFixed(3)).join(',')).join(';')}` : '';
+      if (schluessel === bandGeistSchluessel) return;
+      bandGeistSchluessel = schluessel;
       if (bandGeist) { vorschauGruppe.remove(bandGeist); bandGeist.geometry.dispose(); bandGeist = null; }
-      if (!punkte || punkte.length < 2) return;
-      const bahn = bandBahn(punkte);
+      if (!schluessel) return;
+      const bahn = objAnzeigeBahn(punkte);
       bandGeist = new THREE.Mesh(objExtrudieren(bahn.map((p) => [p[0], p[1] + 0.02, p[2]]), BAND_PROFIL_RAHMEN, 1), ok ? matOk : matNein);
       vorschauGruppe.add(bandGeist);
     },
 
     /** Vorschau eines Linienbaus (Wand, Geländer, Leitung) von a nach b. */
     linienVorschau(typ, a, b, ok, y = 0) {
-      if (linienGeist) { vorschauGruppe.remove(linienGeist); linienGeist = null; }
-      if (!typ || !a || !b) return;
+      // Nur neu bauen, wenn sich Typ, Enden, Höhe oder Farbe ändern; alte Geometrien freigeben
+      const schluessel = typ && a && b ? `${typ}|${ok ? 1 : 0}|${a.map((v) => v.toFixed(3)).join(',')}|${b.map((v) => v.toFixed(3)).join(',')}|${(+y || 0).toFixed(3)}` : '';
+      if (schluessel === linienGeistSchluessel) return;
+      linienGeistSchluessel = schluessel;
+      if (linienGeist) {
+        vorschauGruppe.remove(linienGeist);
+        linienGeist.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+        linienGeist = null;
+      }
+      if (!schluessel) return;
       linienGeist = linienObjekt({ typ, a, b, y });
       objEinfaerben(linienGeist, ok ? matOk : matNein);
       vorschauGruppe.add(linienGeist);

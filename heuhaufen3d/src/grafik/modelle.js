@@ -3,6 +3,7 @@
 // hinten unten und mit dem Kopf nach vorn (-z), wie man sie vor sich hält.
 
 import * as THREE from '../../vendor/three.module.min.js';
+import { strohTexturen } from './texturen.js';
 
 const MAT = {};
 function mat(name) {
@@ -65,26 +66,49 @@ export function heugabelModell() {
   quer.rotation.y = Math.PI / 2;
   quer.position.z = -0.66;
   g.add(quer);
+  // Sechs Zinken, nach vorn und deutlich nach oben gebogen (S3: sechs Striche über dem Querbalken)
+  const zinkeGeo = new THREE.CylinderGeometry(0.0085, 0.005, 0.3, 6);
   for (let i = 0; i < 6; i++) {
     const x = -0.15 + i * 0.06;
-    const zinke = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.006, 0.26, 6), mat('stahl'));
-    zinke.rotation.x = Math.PI / 2 - 0.18;
-    zinke.position.set(x, 0.02, -0.8);
+    const zinke = new THREE.Mesh(zinkeGeo, mat('stahl'));
+    // das vordere Ende (-y der Zylinderachse) zeigt nach vorn oben
+    zinke.rotation.x = Math.PI / 2 + 0.5;
+    zinke.position.set(x, 0.07, -0.79);
     g.add(zinke);
   }
   return g;
 }
 
+/** Gelbe Kinderschaufel: Kehrblech mit Seitenwänden, kurzer Stiel, D-Griff. Blatt vorn (-z). */
 export function sandschaufelModell() {
   const g = new THREE.Group();
-  const s = zyl(0.016, 0.34, mat('gelb'), 8);
-  s.position.z = 0.1;
+  const gelb = mat('gelb');
+  const boden = box(0.24, 0.01, 0.26, gelb);
+  boden.position.set(0, 0, -0.3);
+  boden.rotation.x = -0.08; // Vorderkante etwas tiefer
+  g.add(boden);
+  for (const x of [-0.12, 0.12]) {
+    const wand = box(0.01, 0.05, 0.26, gelb);
+    wand.position.set(x, 0.022, -0.3);
+    wand.rotation.x = -0.08;
+    g.add(wand);
+  }
+  const rueck = box(0.25, 0.06, 0.012, gelb);
+  rueck.position.set(0, 0.026, -0.17);
+  g.add(rueck);
+  const s = zyl(0.018, 0.35, gelb, 8);
+  s.position.set(0, 0.035, 0.005);
   g.add(s);
-  const kopf = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat('gelb'));
-  kopf.scale.set(1, 0.55, 1.3);
-  kopf.rotation.x = Math.PI;
-  kopf.position.z = -0.14;
-  g.add(kopf);
+  // D-Griff: Querholm und Bogen
+  const quer = zyl(0.012, 0.1, gelb, 6);
+  quer.rotation.y = Math.PI / 2;
+  quer.position.set(0, 0.035, 0.18);
+  g.add(quer);
+  const bogen = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 12, Math.PI), gelb);
+  bogen.rotation.x = Math.PI / 2;
+  bogen.scale.set(1, 1.3, 1);
+  bogen.position.set(0, 0.035, 0.18);
+  g.add(bogen);
   return g;
 }
 
@@ -184,20 +208,39 @@ export function eimerModell() {
   return g;
 }
 
-/** Heu, das auf einem Werkzeug liegt: ein Büschel aus Halmen. */
-export function heuBueschel(anzahl = 40, radius = 0.12) {
-  const g = new THREE.Group();
-  const halmGeo = new THREE.BoxGeometry(0.007, 0.007, 0.2);
-  const farben = [0xf6cf6a, 0xeeb94c, 0xe2a338, 0xf9de90, 0xd58f2c];
-  const mats = farben.map((c) => new THREE.MeshLambertMaterial({ color: c }));
+/**
+ * Heu, das auf einem Werkzeug liegt: ein Büschel aus flachen Halmen, zu einer
+ * Geometrie mit Vertexfarben vereint (ein Zeichenaufruf statt einer je Halm).
+ * breite: Halmbreite in m (flach, 4 mm dick), laenge: Halmlänge.
+ */
+export function heuBueschel(anzahl = 40, radius = 0.12, { breite = 0.007, laenge = 0.2, hoch = 0.6 } = {}) {
+  const farben = [0xf6cf6a, 0xeeb94c, 0xe2a338, 0xf9de90, 0xd58f2c, 0xe8b85a];
+  const teile = [];
+  const farbe = new THREE.Color();
+  const cols = [];
+  const m4 = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const e = new THREE.Euler();
+  const v = new THREE.Vector3();
+  const eins = new THREE.Vector3(1, 1, 1);
   for (let i = 0; i < anzahl; i++) {
-    const h = new THREE.Mesh(halmGeo, mats[i % mats.length]);
+    const halm = new THREE.BoxGeometry(breite, Math.min(breite, 0.004), laenge * (0.8 + Math.random() * 0.4));
     const a = Math.random() * Math.PI * 2;
     const r = Math.sqrt(Math.random()) * radius;
-    h.position.set(Math.cos(a) * r, Math.random() * radius * 0.6, Math.sin(a) * r);
-    h.rotation.set((Math.random() - 0.5) * 0.9, Math.random() * Math.PI, (Math.random() - 0.5) * 0.9);
-    g.add(h);
+    v.set(Math.cos(a) * r, Math.random() * radius * hoch, Math.sin(a) * r);
+    e.set((Math.random() - 0.5) * 0.9, Math.random() * Math.PI, (Math.random() - 0.5) * 0.9);
+    q.setFromEuler(e);
+    m4.compose(v, q, eins);
+    halm.applyMatrix4(m4);
+    farbe.setHex(farben[i % farben.length]);
+    for (let k = 0; k < halm.attributes.position.count; k++) cols.push(farbe.r, farbe.g, farbe.b);
+    teile.push(halm);
   }
+  const geo = geoVereinen(teile);
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  if (!MAT.heuBueschel) MAT.heuBueschel = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x3a2610 });
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(geo, MAT.heuBueschel));
   return g;
 }
 
@@ -217,16 +260,64 @@ export function nadelModell(gold = false) {
   return g;
 }
 
+/** Mehrere Geometrien zu einer (Position, Normale, UV; alle mit Index). */
+export function geoVereinen(liste) {
+  let n = 0;
+  for (const g of liste) n += g.attributes.position.count;
+  const pos = new Float32Array(n * 3);
+  const nor = new Float32Array(n * 3);
+  const uv = new Float32Array(n * 2);
+  const idx = [];
+  let v = 0;
+  for (const g of liste) {
+    const gi = g;
+    pos.set(gi.attributes.position.array, v * 3);
+    nor.set(gi.attributes.normal.array, v * 3);
+    if (gi.attributes.uv) uv.set(gi.attributes.uv.array, v * 2);
+    if (gi.index) for (const i of gi.index.array) idx.push(i + v);
+    else for (let i = 0; i < gi.attributes.position.count; i++) idx.push(i + v);
+    v += gi.attributes.position.count;
+    g.dispose();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  return geo;
+}
+
+/** Heubündel wie im Vorbild: flauschiger, stark verbeulter Knäuel mit abstehenden Halmen. */
+function buendelGeometrie() {
+  const kern = new THREE.SphereGeometry(0.13, 12, 8);
+  // kräftig verbeult (stetig in der Position, damit die Naht zu bleibt)
+  const p = kern.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i); const y = p.getY(i); const z = p.getZ(i);
+    const f = 0.84 + 0.13 * Math.sin(x * 61 + z * 47) * Math.sin(y * 53 + x * 29) + 0.09 * Math.sin(z * 83 - y * 37);
+    p.setXYZ(i, x * f, y * f * 0.8, z * f);
+  }
+  kern.computeVertexNormals();
+  const teile = [kern];
+  // abstehende Halme ringsum (fest verteilt, damit alle Bündel gleich sind: eine Geometrie, ein Zeichenaufruf)
+  const m4 = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const e = new THREE.Euler();
+  for (let i = 0; i < 7; i++) {
+    const w = (i / 7) * Math.PI * 2 + (i % 2) * 0.4;
+    const halm = new THREE.BoxGeometry(0.014, 0.005, 0.15);
+    e.set(0.25 * Math.sin(i * 2.3), -w + Math.PI / 2 + 0.5 * Math.cos(i * 1.7), 0.3 * Math.sin(i * 3.1));
+    q.setFromEuler(e);
+    m4.compose(new THREE.Vector3(Math.cos(w) * 0.1, 0.02 * Math.sin(i * 1.3) - 0.01, Math.sin(w) * 0.1), q, new THREE.Vector3(1, 1, 1));
+    halm.applyMatrix4(m4);
+    teile.push(halm);
+  }
+  return geoVereinen(teile);
+}
+
 /** Geometrien für Gegenstände auf Bändern und am Boden (als Instanzen gezeichnet). */
 export function gegenstandGeometrien() {
-  const buendel = new THREE.SphereGeometry(0.13, 14, 10);
-  // leicht verbeult wie ein Heuknäuel (stetig, damit die Naht zu bleibt)
-  const p = buendel.attributes.position;
-  for (let i = 0; i < p.count; i++) {
-    const f = 0.9 + 0.1 * Math.sin(p.getX(i) * 61 + p.getZ(i) * 47) * Math.sin(p.getY(i) * 53 + p.getX(i) * 29);
-    p.setXYZ(i, p.getX(i) * f, p.getY(i) * f * 0.85, p.getZ(i) * f);
-  }
-  buendel.computeVertexNormals();
+  const buendel = buendelGeometrie();
   const knaeuel = new THREE.SphereGeometry(0.11, 10, 8);
   const ballen = new THREE.BoxGeometry(0.5, 0.32, 0.36);
   const pellet = new THREE.CylinderGeometry(0.1, 0.1, 0.08, 10);
@@ -236,6 +327,20 @@ export function gegenstandGeometrien() {
   const papier = new THREE.BoxGeometry(0.34, 0.08, 0.26);
   const ziegel = new THREE.BoxGeometry(0.3, 0.12, 0.16);
   return { buendel, knaeuel, ballen, pellet, brei, silage, papier, ziegel };
+}
+
+/**
+ * Material der losen Heubündel (Band, Boden, in den Händen): helle Strohtextur und
+ * orange-goldenes Eigenleuchten wie im Vorbild (S2 #D0964E). Einmal für alle.
+ */
+export function heuStueckMaterial() {
+  if (MAT.heuStueck) return MAT.heuStueck;
+  const map = strohTexturen(256, 700, 13, '#d9a55a').farbe;
+  map.repeat.set(2, 2);
+  MAT.heuStueck = new THREE.MeshStandardMaterial({
+    map, color: 0xffffff, roughness: 0.95, emissive: 0xc86a1e, emissiveIntensity: 0.6,
+  });
+  return MAT.heuStueck;
 }
 
 export const GEGENSTAND_FARBEN = {
