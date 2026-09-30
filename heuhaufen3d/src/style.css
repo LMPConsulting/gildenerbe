@@ -538,3 +538,33 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .fortschritt { margin-bottom: 6px; }
   .modal .tafelhinweis { margin-bottom: 6px; }
 }
+
+/* ---------------- Staffelei mit Skizzenbuch ---------------- */
+.modal.skizzentafel { width: min(760px, calc(100vw - 24px)); padding-bottom: 14px; }
+.skizzeninhalt { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.skizzenflaeche { min-width: 0; }
+.skizzenblatt {
+  display: block; width: 100%; height: min(46vh, 400px); object-fit: contain; touch-action: none;
+  background: transparent; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+}
+.skizzenwerkzeug { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.skizzenhinweis { color: var(--dim); }
+.skizzenfarben { display: flex; flex-wrap: wrap; gap: 8px; }
+.skizzenleiste { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.skizzenwerkzeug .knopf.klein { min-height: 44px; padding: 0 12px; }
+.farbknopf {
+  width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); padding: 0;
+}
+.farbknopf.gewaehlt { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(255, 219, 87, 0.45); }
+@media (orientation: landscape) {
+  .skizzeninhalt { grid-template-columns: minmax(0, 1fr) minmax(190px, 240px); align-items: start; }
+  .skizzenblatt { height: min(70vh, 420px); }
+}
+@media (max-height: 420px) {
+  .modal.skizzentafel { padding-top: 10px; max-height: 100%; }
+  .modal.skizzentafel h2 { margin: 0 0 6px; font-size: 20px; }
+  .skizzenblatt { height: calc(100vh - 120px); }
+  .farbknopf { width: 34px; height: 34px; }
+  .skizzenwerkzeug { gap: 6px; }
+  .skizzenwerkzeug .knopf.klein { min-height: 38px; }
+}

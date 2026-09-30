@@ -55,6 +55,7 @@ export const MODULE = [
   'src/ui/bauen.js',
   'src/ui/maschine.js',
   'src/ui/auftrag.js',
+  'src/ui/skizze.js',
   'src/baumodus.js',
   'src/main.js',
 ];

@@ -53,6 +53,7 @@ export function standNeu(seed = (Date.now() % 2147483647) || 7) {
     bauten: [],
     gegenstaende: [],
     geschenke: {},
+    skizzen: [],
     naechsteId: 1,
     mission: 0,
     missionErledigt: [],
@@ -192,6 +193,13 @@ export function laden(text) {
     if (n.zustand === 'lose' && !Number.isFinite(n.zeit)) n.zeit = 0;
   }
   if (!['weg', 'kommt', 'steht', 'faehrt'].includes(s.laster.zustand)) s.laster = lasterNeu();
+  const strichOk = (st) => Array.isArray(st) && st.length >= 4 && st.every(Number.isFinite);
+  s.skizzen = s.skizzen.filter((k) => istObjekt(k) && Array.isArray(k.striche) && k.striche.every(strichOk)).slice(-12);
+  for (const b of s.bauten) {
+    if (b.typ !== 'staffelei') continue;
+    if (!Array.isArray(b.striche) || !b.striche.every(strichOk)) b.striche = [];
+    if (!Number.isInteger(b.bild) || b.bild >= s.skizzen.length) b.bild = -1;
+  }
   s.geschenke = Object.fromEntries(Object.entries(s.geschenke).filter(([id, n]) => BAU_NACH_ID[id] && n > 0));
   const sp = s.spieler;
   if (!WERKZEUG_NACH_ID[sp.werkzeug]) sp.werkzeug = 'hand';

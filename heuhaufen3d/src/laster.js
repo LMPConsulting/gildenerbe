@@ -27,7 +27,8 @@ export function lasterLage(s) {
   const strasseZ = WELT.zMin - 8.5;
   const glatt = (t) => t * t * (3 - 2 * t);
   if (!L || L.zustand === 'weg') return { sichtbar: false, x: parkX + 40, z: strasseZ, rot: Math.PI, fahrt: 0 };
-  if (L.zustand === 'steht') return { sichtbar: true, x: parkX, z: parkZ, rot: -Math.PI / 2, fahrt: 0 };
+  // Fahrerhaus zeigt vom Tor weg, die Ladefläche (lokal -x) zum Tor
+  if (L.zustand === 'steht') return { sichtbar: true, x: parkX, z: parkZ, rot: Math.PI / 2, fahrt: 0 };
   const u = Math.min(1, L.t / LASTER_FAHRT);
   if (L.zustand === 'kommt') {
     // die Straße entlang, dann rückwärts ans Tor
@@ -41,10 +42,10 @@ export function lasterLage(s) {
   // fährt ab: vorwärts vom Tor weg, dann die Straße hinunter
   if (u < 0.35) {
     const k = glatt(u / 0.35);
-    return { sichtbar: true, x: parkX, z: parkZ + (strasseZ - parkZ) * k, rot: -Math.PI / 2 - (Math.PI / 2) * k, fahrt: 1 };
+    return { sichtbar: true, x: parkX, z: parkZ + (strasseZ - parkZ) * k, rot: Math.PI / 2 + (Math.PI / 2) * k, fahrt: 1 };
   }
   const k = glatt((u - 0.35) / 0.65);
-  return { sichtbar: true, x: parkX - 40 * k, z: strasseZ, rot: 0, fahrt: 1 };
+  return { sichtbar: true, x: parkX - 40 * k, z: strasseZ, rot: Math.PI, fahrt: 1 };
 }
 
 export function lasterSchritt(s, dt, ereignisse) {

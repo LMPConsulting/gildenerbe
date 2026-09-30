@@ -46,6 +46,7 @@ export function bauZustand(typ) {
     case 'heutreppe': case 'heulift': return { innen: [] };
     case 'radar': return { rest: 5 };
     case 'lampe': return { hell: 1 };
+    case 'staffelei': return { striche: [], bild: -1 };
     case 'pellet': return { lager: {}, fort: 0, fertig: [], nadeln: [], weite: 3 };
     case 'silo': case 'presse': case 'wickler': case 'pulper': case 'papier': case 'brikett':
       return { lager: {}, fort: 0, fertig: [], nadeln: [] };
@@ -599,8 +600,8 @@ export function innenPunkt(bau, t) {
   }
   // Heulift: senkrecht hoch, oben hinüber
   const hoch = 2.2 / 3.4;
-  if (u < hoch) { const [x, z] = lokalZuWelt(bau, -0.6, 0); return [x, y0 + 2.2 * (u / hoch), z]; }
-  const [x, z] = lokalZuWelt(bau, -0.6 + 1.2 * ((u - hoch) / (1 - hoch)), 0);
+  if (u < hoch) { const [x, z] = lokalZuWelt(bau, -0.33, 0); return [x, y0 + 2.2 * (u / hoch), z]; }
+  const [x, z] = lokalZuWelt(bau, -0.33 + 0.93 * ((u - hoch) / (1 - hoch)), 0);
   return [x, y0 + 2.2, z];
 }
 

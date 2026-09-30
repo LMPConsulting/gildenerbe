@@ -45,6 +45,7 @@ import { baumodusBauen } from './baumodus.js';
 import { baukatalogZeigen, bauHudBauen } from './ui/bauen.js';
 import { maschinePanelZeigen } from './ui/maschine.js';
 import { auftragstafelZeigen } from './ui/auftrag.js';
+import { skizzeZeigen } from './ui/skizze.js';
 
 const EINSTELLUNGEN_KEY = 'heuhaufen3d-einstellungen';
 
@@ -167,6 +168,10 @@ function hauptStart() {
   }
   function maschineZeigen(bau) {
     st.zeigerFreigeben();
+    if (bau.typ === 'staffelei') {
+      skizzeZeigen(ui, s, bau, { geaendert: () => objekte.bildNeu(bau) });
+      return;
+    }
     maschinePanelZeigen(ui, s, bau, {
       netz: () => netzHolen(s),
       schalten: (b) => { b.aus = !b.aus; klang.klick(); },
@@ -494,6 +499,7 @@ function hauptStart() {
         const name = BAU_BY_ID[b.typ].name;
         if (b.typ === 'mast') return ['Schalten', `${name} · Netz ${b.aus ? 'aus' : 'an'}`];
         if (b.typ === 'scanner' && (b.nadeln || []).length) return ['Nehmen', 'Der Scanner hält eine Nadel fest!'];
+        if (b.typ === 'staffelei') return ['Malen', 'Staffelei mit Skizzenbuch'];
         if (sp.last > 0 && heuZiel(b)) return ['Werfen', `Heu ${b.typ === 'band' ? 'aufs Band' : `in ${name}`} werfen`];
         return ['Ansehen', name];
       }
@@ -681,8 +687,9 @@ function hauptStart() {
       } else ui.detektorZeigen(false);
 
       // Welt
-      const erg = spielTakt(s, zustand.laeuft ? dt : 0, [automatikSchritt]);
-      ereignisPuffer.push(...erg);
+      // Zeitraffer nur für Tests (window.__heuhaufen3d.zustand.zeitraffer = 10)
+      const raffer = zustand.laeuft ? Math.max(1, Math.min(40, Math.floor(zustand.zeitraffer || 1))) : 1;
+      for (let i = 0; i < raffer; i++) ereignisPuffer.push(...spielTakt(s, zustand.laeuft ? dt : 0, [automatikSchritt]));
       if (ereignisPuffer.length) { ereignisseZeigen(ereignisPuffer.splice(0)); }
       zustand.rechenZeit -= dt;
       zustand.verkaufZeit -= dt;

@@ -15,6 +15,7 @@ import { bauVersion } from '../bauen.js';
 import { werte } from '../wirtschaft.js';
 import { gegenstandGeometrien, GEGENSTAND_FARBEN } from './modelle.js';
 import { maschinenModell, lasterModell, drohnenModell } from './maschinenmodelle.js';
+import { skizzeMalen } from '../ui/skizze.js';
 
 /* ------------------------------------------------------------ Hilfen */
 
@@ -619,6 +620,27 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
       case 'heulift':
         if (teile.korb && laeuft) teile.korb.position.y = 0.3 + ((zeit * 0.6) % 1) * 2.2;
         break;
+      case 'staffelei': {
+        // Das Bild an der Staffelei: neu malen, wenn sich etwas geändert hat
+        const striche = bau.bild >= 0 && s.skizzen[bau.bild] ? s.skizzen[bau.bild].striche : (bau.striche || []);
+        const letzter = striche[striche.length - 1];
+        const schluessel = `${bau.bild}|${striche.length}|${letzter ? letzter.length : 0}`;
+        if (teile.bild && e.bildSchluessel !== schluessel) {
+          e.bildSchluessel = schluessel;
+          if (!e.bildLeinwand) {
+            e.bildLeinwand = document.createElement('canvas');
+            e.bildLeinwand.width = 256; e.bildLeinwand.height = 192;
+            e.bildTextur = new THREE.CanvasTexture(e.bildLeinwand);
+            e.bildTextur.colorSpace = THREE.SRGBColorSpace;
+            teile.bild.material = teile.bild.material.clone();
+            teile.bild.material.map = e.bildTextur;
+            teile.bild.material.color.setHex(0xffffff);
+          }
+          skizzeMalen(e.bildLeinwand.getContext('2d'), striche, 256, 192);
+          e.bildTextur.needsUpdate = true;
+        }
+        break;
+      }
       case 'lampe': {
         e.hell = (bau.aus ? 0 : (l.strom || 0)) * (bau.hell ?? 1);
         if (teile.schirm && teile.schirm.material && teile.schirm.material.emissive) teile.schirm.material.emissiveIntensity = e.hell * 1.5;
@@ -725,12 +747,25 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   }
 
   /* -------------------------------- Leitungen */
+  /** Anschlusspunkt einer Leitung am Modell (userData.leitung), sonst der aus der Logik. */
+  const ankerVec = new THREE.Vector3();
+  function leitungsAnker(bauId, punkt) {
+    const e = bauId != null ? eintraege.get(bauId) : null;
+    const lp = e && e.obj.userData.leitung;
+    if (!lp) return punkt;
+    e.obj.updateMatrixWorld(true);
+    ankerVec.set(lp[0], lp[1], lp[2]);
+    e.obj.localToWorld(ankerVec);
+    return [ankerVec.x, ankerVec.y, ankerVec.z];
+  }
+
   function leitungenZeichnen(netz) {
     if (netz.leitungen === leitungsQuelle) return;
     leitungsQuelle = netz.leitungen;
     if (leitungen) { wurzel.remove(leitungen); leitungen.geometry.dispose(); }
     const geos = [];
-    for (const l of netz.leitungen) {
+    for (const roh of netz.leitungen) {
+      const l = { ...roh, a: leitungsAnker(roh.aBau, roh.a), b: leitungsAnker(roh.bBau, roh.b) };
       const lang = Math.hypot(l.b[0] - l.a[0], l.b[2] - l.a[2]);
       const pts = objDurchhang(l.a, l.b, Math.min(0.9, 0.04 * lang + (l.fall ? 0.05 : 0.15)));
       const kurve = new THREE.CatmullRomCurve3(pts);
@@ -923,6 +958,12 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
       markierung.box.setFromObject(e.obj);
       markierung.material.color.setHex(farbe);
       markierung.visible = true;
+    },
+
+    /** Das Bild einer Staffelei beim nächsten Bild neu malen. */
+    bildNeu(bau) {
+      const e = eintraege.get(bau.id);
+      if (e) e.bildSchluessel = null;
     },
 
     vorschauWeg() {

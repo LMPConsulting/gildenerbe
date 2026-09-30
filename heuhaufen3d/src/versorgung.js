@@ -70,7 +70,7 @@ export function stromNetzBauen(s, netz) {
       if (!reicht) continue;
       if (uf.finde(i) !== uf.finde(j) || !erd) {
         uf.vereine(i, j);
-        if (!erd) leitungen.push({ a: a.punkt, b: b.punkt });
+        if (!erd) leitungen.push({ a: a.punkt, b: b.punkt, aBau: a.bau ? a.bau.id : null, bBau: b.bau ? b.bau.id : null });
       }
     }
   }
@@ -85,7 +85,7 @@ export function stromNetzBauen(s, netz) {
     });
     if (beste >= 0) {
       anschluss.set(v, beste);
-      leitungen.push({ a: knoten[beste].punkt, b: leitungsPunkt(v), fall: true });
+      leitungen.push({ a: knoten[beste].punkt, b: leitungsPunkt(v), fall: true, aBau: knoten[beste].bau ? knoten[beste].bau.id : null, bBau: v.id });
     }
   }
   // Netze zusammenstellen
