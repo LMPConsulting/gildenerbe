@@ -2,7 +2,8 @@
 // Handy: linke Bildhälfte ist ein Stick (erscheint, wo der Daumen aufsetzt),
 // rechte Hälfte zum Umsehen; Knöpfe für Aktion, Springen und Werkzeuge legt die
 // Oberfläche darüber. Rechner: WASD, Maus (Zeiger sperren per Klick), Leertaste,
-// Umschalt zum Rennen, E benutzen, B bauen, Q fallenlassen, 1–9 Werkzeuge.
+// Umschalt zum Rennen, Strg halten oder C zum Ducken, E benutzen, B bauen,
+// 1–9 Werkzeuge.
 
 import { SPIELER } from './daten.js';
 
@@ -12,6 +13,8 @@ export function steuerungBauen(flaeche, { beiTaste = () => {}, beiAktion = () =>
     blickX: 0, blickY: 0, // aufgesammelte Drehung seit dem letzten Bild (Radiant)
     springen: false,
     rennen: false,
+    ducken: false, // in diesem Bild geduckt (Knopf umgeschaltet oder Strg gehalten)
+    duckenAn: false, // Umschalter vom Knopf bzw. von der Taste C
     aktion: false, // gehalten
     aktionNeu: false, // in diesem Bild gedrückt
     empfindlichkeit: 1,
@@ -133,6 +136,7 @@ export function steuerungBauen(flaeche, { beiTaste = () => {}, beiAktion = () =>
       if (tasten.has('d') || tasten.has('arrowright')) seit += 1;
       if (tasten.has('a') || tasten.has('arrowleft')) seit -= 1;
       z.rennen = tasten.has('shift');
+      z.ducken = z.duckenAn || tasten.has('control');
       if (stick) {
         const dx = stick.x - stick.x0;
         const dy = stick.y - stick.y0;
@@ -165,6 +169,8 @@ export function steuerungBauen(flaeche, { beiTaste = () => {}, beiAktion = () =>
       beiAktion(an);
     },
     springenDruecken() { z.springen = true; },
+    /** Ducken ein/aus (Knopf am Handy, Taste C). Liefert den neuen Zustand. */
+    duckenUmschalten(an = !z.duckenAn) { z.duckenAn = an; return an; },
     zeigerFreigeben() { if (document.exitPointerLock) document.exitPointerLock(); },
   };
 }

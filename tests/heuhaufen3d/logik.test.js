@@ -260,3 +260,30 @@ describe('Spielstand', () => {
     expect(s.nadeln.every((n) => n.zustand === 'versteckt')).toBe(true);
   });
 });
+
+describe('Ducken', () => {
+  it('senkt den Blick um 0,63 m, macht langsamer und passt unter eine Plattform', async () => {
+    const { spielerNeu, spielerBewegen, augenHoehe } = await import('../../heuhaufen3d/src/spieler.js');
+    const sp = { ...spielerNeu(), x: 0, z: 0, y: 0, gier: 0 };
+    // Plattformkante: Unterseite 1,15 m, direkt vor dem Spieler (Blick nach -z)
+    const umgebung = { kollider: [{ x0: -2, x1: 2, z0: -12, z1: -1, h: 1.5, unten: 1.15 }], flaechen: [], haufen: null };
+    for (let i = 0; i < 60; i++) spielerBewegen(sp, { vor: 1, seit: 0, blickX: 0, blickY: 0 }, 1 / 30, umgebung);
+    expect(sp.z).toBeGreaterThan(-0.75); // stehend kommt man nicht drunter
+    for (let i = 0; i < 90; i++) spielerBewegen(sp, { vor: 1, seit: 0, blickX: 0, blickY: 0, ducken: true }, 1 / 30, umgebung);
+    expect(sp.duck).toBe(1);
+    expect(augenHoehe(sp)).toBeCloseTo(1.03, 2);
+    expect(sp.z).toBeLessThan(-1.5); // geduckt drunter durch
+    // Loslassen unter der Plattform: man bleibt unten
+    spielerBewegen(sp, { vor: 0, seit: 0, blickX: 0, blickY: 0, ducken: false }, 1 / 30, umgebung);
+    expect(sp.duck).toBeGreaterThan(0.9);
+    // geduckt halb so schnell
+    const a = { ...spielerNeu(), x: 0, z: 10, y: 0, gier: 0, duck: 1 };
+    const b = { ...spielerNeu(), x: 0, z: 10, y: 0, gier: 0 };
+    const leer = { kollider: [], flaechen: [], haufen: null };
+    for (let i = 0; i < 30; i++) {
+      spielerBewegen(a, { vor: 1, seit: 0, blickX: 0, blickY: 0, ducken: true }, 1 / 30, leer);
+      spielerBewegen(b, { vor: 1, seit: 0, blickX: 0, blickY: 0 }, 1 / 30, leer);
+    }
+    expect((10 - a.z) / (10 - b.z)).toBeCloseTo(0.5, 1);
+  });
+});

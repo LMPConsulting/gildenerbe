@@ -48,6 +48,7 @@ const ICON = {
   eimer: '<path d="M5 8h14l-2 12H7Z"/><path d="M5 8c0-3 3-5 7-5s7 2 7 5"/>',
   puste: '<path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.65-7 10-7 10Z"/>',
   sprung: '<path d="M12 20V6M6 11l6-6 6 6"/>',
+  ducken: '<path d="M12 4v11M6 10l6 6 6-6M5 20h14"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.5"/>',
 };
 
@@ -115,6 +116,10 @@ export function oberflaecheBauen(wurzel, rueckruf) {
   el.aktion.addEventListener('lostpointercapture', los);
   el.sprung = h('button', { class: 'sprungknopf', 'aria-label': 'Springen' }, icon('sprung'));
   el.sprung.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); rueckruf.sprung(); });
+  // Ducken schaltet um (am Handy kann man nicht nebenher einen Knopf halten)
+  el.ducken = h('button', { class: 'duckknopf', 'aria-label': 'Ducken', 'aria-pressed': 'false' }, icon('ducken'));
+  el.ducken.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); if (rueckruf.ducken) duckenZeigen(rueckruf.ducken()); });
+  function duckenZeigen(an) { el.ducken.classList.toggle('an', !!an); el.ducken.setAttribute('aria-pressed', an ? 'true' : 'false'); }
   // Kleiner Knopf „Ansehen“: öffnet die Tafel einer Maschine, auch wenn man Heu trägt
   el.info = h('button', { class: 'infoknopf', 'aria-label': 'Ansehen', hidden: true }, icon('info'));
   el.info.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); if (rueckruf.info) rueckruf.info(); });
@@ -124,7 +129,7 @@ export function oberflaecheBauen(wurzel, rueckruf) {
   el.schwebe = h('div', { class: 'schwebetexte' });
 
   const hud = h('div', { class: 'hud' }, kasse, leiste, el.mission, el.fadenkreuz, el.hinweis, el.detektor,
-    status, el.leiste, el.aktion, el.sprung, el.info, el.schwebe, el.toasts, el.modal);
+    status, el.leiste, el.aktion, el.sprung, el.ducken, el.info, el.schwebe, el.toasts, el.modal);
   wurzel.append(hud);
 
   /* ------------------------------ Toasts und Einblendungen */
@@ -220,7 +225,7 @@ export function oberflaecheBauen(wurzel, rueckruf) {
   }
 
   return {
-    el, toast, modal, modalOffen, modalSchliessen, schwebeText, leisteSetzen, missionZeigen,
+    el, toast, modal, modalOffen, modalSchliessen, schwebeText, leisteSetzen, missionZeigen, duckenZeigen,
     kasseZeigen({ geldBetrag, schulden, rest, rate }) {
       setzeText(el.geld, geld(geldBetrag));
       setzeText(el.schulden, schulden > 0 ? `Schulden ${geld(schulden)}` : '');

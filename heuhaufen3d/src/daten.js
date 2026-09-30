@@ -42,10 +42,12 @@ export const LADUNGEN_3D = [
 /* ------------------------------------------------------------ Spieler */
 
 export const SPIELER = {
-  augenHoehe: 1.62,
+  augenHoehe: 1.66, // wie im Vorbild (EYE)
+  duckTiefe: 0.63, // Ducken senkt den Blick auf gut einen Meter
+  duckTempo: 0.5, // geduckt halb so schnell
   radius: 0.32,
   gehen: 4.2, // m/s
-  rennen: 6.6,
+  rennen: 7.0,
   sprung: 4.6, // m/s nach oben
   schwerkraft: 14,
   stufe: 0.65, // so hoch kommt man ohne Springen (über Bänder hinweg, wie am Handy nötig)
@@ -120,7 +122,7 @@ export const WERKZEUGE = [
   { id: 'spaten', name: 'Spaten', kurz: 'Spaten', frei: 'spaten', faktor: 1, puste: true, laenge: 1.1,
     text: 'Sticht doppelt so viel wie die Kinderschaufel.' },
   { id: 'heugabel', name: 'Heugabel', kurz: 'Gabel', frei: 'heugabel', faktor: 'heugabel', puste: true, laenge: 1.35,
-    text: 'Fünf Zinken. Doppelt so viel wie der Spaten.' },
+    text: 'Sechs Zinken. Doppelt so viel wie der Spaten.' },
   { id: 'besen', name: 'Besen', kurz: 'Besen', frei: 'besen', faktor: 0, puste: false, laenge: 1.3,
     text: 'Fegt lose Halme vom Boden in den Eimer.' },
   { id: 'detektor', name: 'Metalldetektor', kurz: 'Detektor', frei: null, faktor: 0, puste: false, laenge: 0.55,
@@ -264,7 +266,7 @@ export const TECH = [
   k('spaten', 'hand', 'Spaten', 1, 12, 1, ['scheune'], [['frei', 'spaten']],
     'Der Spaten vom Werkzeugstand. Sticht doppelt so viel wie die Kinderschaufel, kostet aber Puste.'),
   k('heugabel', 'hand', 'Heugabel', 1, 45, 1, ['spaten'], [['frei', 'heugabel']],
-    'Fünf Zinken. Holt doppelt so viel pro Stich wie der Spaten.'),
+    'Sechs Zinken. Holt doppelt so viel pro Stich wie der Spaten.'),
   k('zinken', 'hand', 'Mehr Zinken', 4, 12, 2, ['heugabel'], [['heugabel', '+', 0.25]],
     'Die Heugabel greift ein Viertel mehr.', 'Heugabel-Upgrades'),
   k('sauger', 'hand', 'Hofsauger', 1, 15, 1, ['heugabel'], [['frei', 'sauger']],

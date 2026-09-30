@@ -207,6 +207,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
   width: 58px; height: 58px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3);
   background: rgba(8, 9, 11, 0.5); display: flex; align-items: center; justify-content: center; color: var(--text); touch-action: none;
 }
+/* Ducken über dem Sprungknopf, schaltet um */
+.duckknopf {
+  position: absolute; right: calc(var(--safe-r) + 133px); bottom: calc(var(--safe-b) + 98px);
+  width: 48px; height: 48px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(8, 9, 11, 0.5); display: flex; align-items: center; justify-content: center; color: var(--text); touch-action: none;
+}
+.duckknopf .ic { width: 22px; height: 22px; }
+.duckknopf.an { border-color: rgba(255, 219, 87, 0.85); background: rgba(90, 70, 20, 0.7); color: var(--gold); }
 /* „Ansehen“ über dem Aktionsknopf: Maschinentafel auch mit Heu im Arm */
 .infoknopf {
   position: absolute; right: calc(var(--safe-r) + 40px); bottom: calc(var(--safe-b) + 150px);
@@ -343,6 +351,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .mhilfe { font-size: 11px; }
   .aktionsknopf { width: 84px; height: 84px; }
   .sprungknopf { right: calc(var(--safe-r) + 114px); }
+  .duckknopf { right: calc(var(--safe-r) + 119px); }
   /* Zwei einzeilige Toasts passen zwischen Zielhinweis und Behälterzeile */
   .toasts { gap: 4px; }
   .toast { padding: 4px 10px; font-size: 13px; line-height: 1.2; }
@@ -365,6 +374,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   /* Hochkant steht über dem Aktionsknopf die Werkzeugleiste: „Ansehen“ rückt über die
      Behälterzeile an den Rand, die Toast-Spur bleibt links davon. */
   .infoknopf { right: calc(var(--safe-r) + 8px); bottom: calc(var(--safe-b) + 228px); }
+  /* über dem Sprungknopf liegt hochkant die Werkzeugleiste: Ducken links daneben */
+  .duckknopf { right: calc(var(--safe-r) + 194px); bottom: calc(var(--safe-b) + 35px); }
   .toasts { width: min(70vw, calc(100vw - 128px)); }
   .toast { padding: 6px 10px; font-size: 13px; }
 }
@@ -735,10 +746,12 @@ const LADUNGEN_3D = [
 /* ------------------------------------------------------------ Spieler */
 
 const SPIELER = {
-  augenHoehe: 1.62,
+  augenHoehe: 1.66, // wie im Vorbild (EYE)
+  duckTiefe: 0.63, // Ducken senkt den Blick auf gut einen Meter
+  duckTempo: 0.5, // geduckt halb so schnell
   radius: 0.32,
   gehen: 4.2, // m/s
-  rennen: 6.6,
+  rennen: 7.0,
   sprung: 4.6, // m/s nach oben
   schwerkraft: 14,
   stufe: 0.65, // so hoch kommt man ohne Springen (über Bänder hinweg, wie am Handy nötig)
@@ -813,7 +826,7 @@ const WERKZEUGE = [
   { id: 'spaten', name: 'Spaten', kurz: 'Spaten', frei: 'spaten', faktor: 1, puste: true, laenge: 1.1,
     text: 'Sticht doppelt so viel wie die Kinderschaufel.' },
   { id: 'heugabel', name: 'Heugabel', kurz: 'Gabel', frei: 'heugabel', faktor: 'heugabel', puste: true, laenge: 1.35,
-    text: 'Fünf Zinken. Doppelt so viel wie der Spaten.' },
+    text: 'Sechs Zinken. Doppelt so viel wie der Spaten.' },
   { id: 'besen', name: 'Besen', kurz: 'Besen', frei: 'besen', faktor: 0, puste: false, laenge: 1.3,
     text: 'Fegt lose Halme vom Boden in den Eimer.' },
   { id: 'detektor', name: 'Metalldetektor', kurz: 'Detektor', frei: null, faktor: 0, puste: false, laenge: 0.55,
@@ -957,7 +970,7 @@ const TECH = [
   k('spaten', 'hand', 'Spaten', 1, 12, 1, ['scheune'], [['frei', 'spaten']],
     'Der Spaten vom Werkzeugstand. Sticht doppelt so viel wie die Kinderschaufel, kostet aber Puste.'),
   k('heugabel', 'hand', 'Heugabel', 1, 45, 1, ['spaten'], [['frei', 'heugabel']],
-    'Fünf Zinken. Holt doppelt so viel pro Stich wie der Spaten.'),
+    'Sechs Zinken. Holt doppelt so viel pro Stich wie der Spaten.'),
   k('zinken', 'hand', 'Mehr Zinken', 4, 12, 2, ['heugabel'], [['heugabel', '+', 0.25]],
     'Die Heugabel greift ein Viertel mehr.', 'Heugabel-Upgrades'),
   k('sauger', 'hand', 'Hofsauger', 1, 15, 1, ['heugabel'], [['frei', 'sauger']],
@@ -5270,8 +5283,8 @@ function automatikSchritt(s, dt, ereignisse) {
 }
 
 // ---- src/spieler.js
-// Die Spielfigur in der Ich-Perspektive: Gehen, Rennen, Springen, Stoßen an
-// Wände und Maschinen, Laufen auf dem Haufen, solange er nicht zu steil ist.
+// Die Spielfigur in der Ich-Perspektive: Gehen, Rennen, Springen, Ducken, Stoßen
+// an Wände und Maschinen, Laufen auf dem Haufen, solange er nicht zu steil ist.
 
 
 function spielerNeu() {
@@ -5280,7 +5293,13 @@ function spielerNeu() {
     gier: WELT.startBlick, nick: -0.12,
     vx: 0, vz: 0, vy: 0, amBoden: true,
     schritt: 0, // für das Wippen der Kamera
+    duck: 0, // 0 = steht, 1 = ganz geduckt (weich dazwischen)
   };
+}
+
+/** Augenhöhe über den Füßen, geduckt bis zu 0,63 m tiefer. */
+function augenHoehe(sp) {
+  return SPIELER.augenHoehe - SPIELER.duckTiefe * (sp.duck || 0);
 }
 
 /** Bodenhöhe an (x, z): Hallenboden, Haufen, begehbare Flächen (Plattformen). */
@@ -5333,15 +5352,29 @@ function kreisGegenKasten(x, z, r, k) {
   return [0, hinten + r];
 }
 
+/** Hängt über (x, z) etwas tiefer als die Augen im Stehen (Plattform, Band)? Dann nicht aufstehen. */
+function kopfStoesst(umgebung, x, z, y, r) {
+  for (const kasten of kaestenNahe(umgebung, x, z, r)) {
+    if (kasten.unten === undefined || kasten.unten <= y + 0.3 || kasten.unten > y + SPIELER.augenHoehe) continue;
+    if (x > kasten.x0 - r && x < kasten.x1 + r && z > kasten.z0 - r && z < kasten.z1 + r) return true;
+  }
+  return false;
+}
+
 /**
- * Ein Zeitschritt. e: Eingabe (vor, seit, blickX, blickY, springen, rennen).
+ * Ein Zeitschritt. e: Eingabe (vor, seit, blickX, blickY, springen, rennen, ducken).
  * umgebung: { kollider: [{x0,x1,z0,z1,h}], flaechen: [...], haufen }.
  */
 function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
   sp.gier += e.blickX;
   sp.nick = Math.max(-1.48, Math.min(1.48, sp.nick + e.blickY));
 
-  const tempo = (e.rennen ? SPIELER.rennen : SPIELER.gehen) * tempoFaktor;
+  // Ducken weich in gut 0,2 s; unter einer Plattform bleibt man unten
+  const duckZiel = e.ducken || (sp.duck > 0.05 && kopfStoesst(umgebung, sp.x, sp.z, sp.y, SPIELER.radius * 0.9)) ? 1 : 0;
+  sp.duck = (sp.duck || 0) + (duckZiel - (sp.duck || 0)) * (1 - Math.exp(-dt / 0.07));
+  if (Math.abs(sp.duck - duckZiel) < 0.002) sp.duck = duckZiel;
+  const geduckt = sp.duck > 0.5;
+  const tempo = (e.rennen && !geduckt ? SPIELER.rennen : SPIELER.gehen) * tempoFaktor * (1 - (1 - SPIELER.duckTempo) * sp.duck);
   const vorX = -Math.sin(sp.gier);
   const vorZ = -Math.cos(sp.gier);
   const rechtsX = Math.cos(sp.gier);
@@ -5382,7 +5415,7 @@ function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
     let geschoben = false;
     for (const kasten of kaestenNahe(umgebung, nx, nz, r)) {
       if (kasten.h !== undefined && kasten.h <= sp.y + SPIELER.stufe) continue; // darüber steigen
-      if (kasten.unten !== undefined && kasten.unten > sp.y + SPIELER.augenHoehe) continue; // darunter durch
+      if (kasten.unten !== undefined && kasten.unten > sp.y + augenHoehe(sp)) continue; // darunter durch (geduckt tiefer)
       const s = kreisGegenKasten(nx, nz, r, kasten);
       if (s) { nx += s[0]; nz += s[1]; geschoben = true; }
     }
@@ -5397,7 +5430,7 @@ function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
 
   // Senkrecht: Springen, Schwerkraft, Boden
   const boden = bodenHoehe(umgebung, sp.x, sp.z, sp.y);
-  if (e.springen && sp.amBoden) { sp.vy = SPIELER.sprung; sp.amBoden = false; }
+  if (e.springen && sp.amBoden && !kopfStoesst(umgebung, sp.x, sp.z, sp.y, SPIELER.radius * 0.9)) { sp.vy = SPIELER.sprung; sp.amBoden = false; }
   sp.vy -= SPIELER.schwerkraft * dt;
   sp.y += sp.vy * dt;
   if (sp.y <= boden) {
@@ -5418,8 +5451,8 @@ function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
 
 /** Kamera auf Augenhöhe setzen, mit leichtem Wippen beim Gehen. */
 function spielerKamera(sp, kamera, tempo) {
-  const wippen = Math.sin(sp.schritt * 2.2) * 0.035 * Math.min(1, tempo / 4);
-  kamera.position.set(sp.x, sp.y + SPIELER.augenHoehe + wippen, sp.z);
+  const wippen = Math.sin(sp.schritt * 2.2) * 0.035 * Math.min(1, tempo / 4) * (1 - 0.6 * (sp.duck || 0));
+  kamera.position.set(sp.x, sp.y + augenHoehe(sp) + wippen, sp.z);
   kamera.rotation.set(sp.nick, sp.gier, 0, 'YXZ');
 }
 
@@ -5639,7 +5672,7 @@ function laden(text) {
   const sp = s.spieler;
   if (!WERKZEUG_NACH_ID[sp.werkzeug]) sp.werkzeug = 'hand';
   for (const k of ['x', 'y', 'z', 'gier', 'nick', 'last', 'puste']) sp[k] = zahlOder(sp[k], k === 'puste' ? GRUND.ausdauer : 0);
-  sp.vx = 0; sp.vz = 0; sp.vy = 0;
+  sp.vx = 0; sp.vz = 0; sp.vy = 0; sp.duck = 0;
   sp.x = Math.max(WELT.xMin + 0.5, Math.min(WELT.xMax + 30, sp.x));
   sp.z = Math.max(WELT.zMin + 0.5, Math.min(WELT.zMax - 0.5, sp.z));
   sp.sauger = { an: false, hitze: zahlOder(sp.sauger && sp.sauger.hitze, 0), heiss: !!(sp.sauger && sp.sauger.heiss), rest: 0 };
@@ -10726,7 +10759,8 @@ function objekteBauen(szene, qualitaet = 'mittel') {
 // Handy: linke Bildhälfte ist ein Stick (erscheint, wo der Daumen aufsetzt),
 // rechte Hälfte zum Umsehen; Knöpfe für Aktion, Springen und Werkzeuge legt die
 // Oberfläche darüber. Rechner: WASD, Maus (Zeiger sperren per Klick), Leertaste,
-// Umschalt zum Rennen, E benutzen, B bauen, Q fallenlassen, 1–9 Werkzeuge.
+// Umschalt zum Rennen, Strg halten oder C zum Ducken, E benutzen, B bauen,
+// 1–9 Werkzeuge.
 
 
 function steuerungBauen(flaeche, { beiTaste = () => {}, beiAktion = () => {} } = {}) {
@@ -10735,6 +10769,8 @@ function steuerungBauen(flaeche, { beiTaste = () => {}, beiAktion = () => {} } =
     blickX: 0, blickY: 0, // aufgesammelte Drehung seit dem letzten Bild (Radiant)
     springen: false,
     rennen: false,
+    ducken: false, // in diesem Bild geduckt (Knopf umgeschaltet oder Strg gehalten)
+    duckenAn: false, // Umschalter vom Knopf bzw. von der Taste C
     aktion: false, // gehalten
     aktionNeu: false, // in diesem Bild gedrückt
     empfindlichkeit: 1,
@@ -10856,6 +10892,7 @@ function steuerungBauen(flaeche, { beiTaste = () => {}, beiAktion = () => {} } =
       if (tasten.has('d') || tasten.has('arrowright')) seit += 1;
       if (tasten.has('a') || tasten.has('arrowleft')) seit -= 1;
       z.rennen = tasten.has('shift');
+      z.ducken = z.duckenAn || tasten.has('control');
       if (stick) {
         const dx = stick.x - stick.x0;
         const dy = stick.y - stick.y0;
@@ -10888,6 +10925,8 @@ function steuerungBauen(flaeche, { beiTaste = () => {}, beiAktion = () => {} } =
       beiAktion(an);
     },
     springenDruecken() { z.springen = true; },
+    /** Ducken ein/aus (Knopf am Handy, Taste C). Liefert den neuen Zustand. */
+    duckenUmschalten(an = !z.duckenAn) { z.duckenAn = an; return an; },
     zeigerFreigeben() { if (document.exitPointerLock) document.exitPointerLock(); },
   };
 }
@@ -10941,6 +10980,7 @@ const ICON = {
   eimer: '<path d="M5 8h14l-2 12H7Z"/><path d="M5 8c0-3 3-5 7-5s7 2 7 5"/>',
   puste: '<path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.65-7 10-7 10Z"/>',
   sprung: '<path d="M12 20V6M6 11l6-6 6 6"/>',
+  ducken: '<path d="M12 4v11M6 10l6 6 6-6M5 20h14"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.5"/>',
 };
 
@@ -11008,6 +11048,10 @@ function oberflaecheBauen(wurzel, rueckruf) {
   el.aktion.addEventListener('lostpointercapture', los);
   el.sprung = h('button', { class: 'sprungknopf', 'aria-label': 'Springen' }, icon('sprung'));
   el.sprung.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); rueckruf.sprung(); });
+  // Ducken schaltet um (am Handy kann man nicht nebenher einen Knopf halten)
+  el.ducken = h('button', { class: 'duckknopf', 'aria-label': 'Ducken', 'aria-pressed': 'false' }, icon('ducken'));
+  el.ducken.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); if (rueckruf.ducken) duckenZeigen(rueckruf.ducken()); });
+  function duckenZeigen(an) { el.ducken.classList.toggle('an', !!an); el.ducken.setAttribute('aria-pressed', an ? 'true' : 'false'); }
   // Kleiner Knopf „Ansehen“: öffnet die Tafel einer Maschine, auch wenn man Heu trägt
   el.info = h('button', { class: 'infoknopf', 'aria-label': 'Ansehen', hidden: true }, icon('info'));
   el.info.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); if (rueckruf.info) rueckruf.info(); });
@@ -11017,7 +11061,7 @@ function oberflaecheBauen(wurzel, rueckruf) {
   el.schwebe = h('div', { class: 'schwebetexte' });
 
   const hud = h('div', { class: 'hud' }, kasse, leiste, el.mission, el.fadenkreuz, el.hinweis, el.detektor,
-    status, el.leiste, el.aktion, el.sprung, el.info, el.schwebe, el.toasts, el.modal);
+    status, el.leiste, el.aktion, el.sprung, el.ducken, el.info, el.schwebe, el.toasts, el.modal);
   wurzel.append(hud);
 
   /* ------------------------------ Toasts und Einblendungen */
@@ -11113,7 +11157,7 @@ function oberflaecheBauen(wurzel, rueckruf) {
   }
 
   return {
-    el, toast, modal, modalOffen, modalSchliessen, schwebeText, leisteSetzen, missionZeigen,
+    el, toast, modal, modalOffen, modalSchliessen, schwebeText, leisteSetzen, missionZeigen, duckenZeigen,
     kasseZeigen({ geldBetrag, schulden, rest, rate }) {
       setzeText(el.geld, geld(geldBetrag));
       setzeText(el.schulden, schulden > 0 ? `Schulden ${geld(schulden)}` : '');
@@ -12725,14 +12769,30 @@ function hauptStart() {
       else if (k === 'escape') { if (zustand.tafel) zustand.tafel.schliessen(); else if (bm.aktiv()) bm.abbrechen(); }
       else if (k === 'q' && bm.aktiv()) bm.drehen();
       else if (k === 'f' && bm.aktiv()) bm.einrasten();
+      // C und V schieben den Geist näher und weiter weg wie im Vorbild; sonst duckt C
+      else if (k === 'c' && bm.aktiv()) bm.naeher();
+      else if (k === 'v' && bm.aktiv()) bm.weiter();
+      else if (k === 'c') ui.duckenZeigen(st.duckenUmschalten());
     },
   });
   st.zustand.empfindlichkeit = einst.empfindlichkeit;
+  // Mausrad im Baumodus: Geist weiter weg (hoch) oder näher (runter)
+  let radRest = 0;
+  flaeche.addEventListener('wheel', (ev) => {
+    if (!bm.aktiv()) return;
+    ev.preventDefault();
+    radRest += ev.deltaY;
+    while (Math.abs(radRest) >= 80) {
+      if (radRest < 0) { bm.weiter(); radRest += 80; } else { bm.naeher(); radRest -= 80; }
+    }
+  }, { passive: false });
 
   const ui = oberflaecheBauen(app, {
     werkzeug: (id) => werkzeugKlick(id),
     aktion: (an) => { klangWecken(); st.aktionDruecken(an); },
-    sprung: () => st.springenDruecken(),
+    // Springen steht aus dem Ducken erst auf
+    sprung: () => { if (st.zustand.duckenAn) ui.duckenZeigen(st.duckenUmschalten(false)); else st.springenDruecken(); },
+    ducken: () => st.duckenUmschalten(),
     bauen: () => bauenAuf(),
     forschung: () => forschungAuf(),
     nadeln: () => nadelnAuf(),
@@ -13392,7 +13452,7 @@ function hauptStart() {
         s3.kamera.position.set(WELT.haufenX + Math.cos(startWinkel) * r, 7.5, WELT.haufenZ + Math.sin(startWinkel) * r * 0.7);
         s3.kamera.lookAt(WELT.haufenX, 2.5, WELT.haufenZ);
       } else if (!blockiert()) {
-        const rennt = e.rennen && s.spieler.puste > 0.5;
+        const rennt = e.rennen && s.spieler.puste > 0.5 && !(s.spieler.duck > 0.5);
         const eingabe = { ...e, rennen: rennt };
         const vorX = s.spieler.x; const vorZ = s.spieler.z;
         tempo = spielerBewegen(s.spieler, eingabe, dt, umgebung, gehFaktor(w));

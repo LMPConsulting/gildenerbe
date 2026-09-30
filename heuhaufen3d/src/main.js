@@ -112,14 +112,30 @@ function hauptStart() {
       else if (k === 'escape') { if (zustand.tafel) zustand.tafel.schliessen(); else if (bm.aktiv()) bm.abbrechen(); }
       else if (k === 'q' && bm.aktiv()) bm.drehen();
       else if (k === 'f' && bm.aktiv()) bm.einrasten();
+      // C und V schieben den Geist näher und weiter weg wie im Vorbild; sonst duckt C
+      else if (k === 'c' && bm.aktiv()) bm.naeher();
+      else if (k === 'v' && bm.aktiv()) bm.weiter();
+      else if (k === 'c') ui.duckenZeigen(st.duckenUmschalten());
     },
   });
   st.zustand.empfindlichkeit = einst.empfindlichkeit;
+  // Mausrad im Baumodus: Geist weiter weg (hoch) oder näher (runter)
+  let radRest = 0;
+  flaeche.addEventListener('wheel', (ev) => {
+    if (!bm.aktiv()) return;
+    ev.preventDefault();
+    radRest += ev.deltaY;
+    while (Math.abs(radRest) >= 80) {
+      if (radRest < 0) { bm.weiter(); radRest += 80; } else { bm.naeher(); radRest -= 80; }
+    }
+  }, { passive: false });
 
   const ui = oberflaecheBauen(app, {
     werkzeug: (id) => werkzeugKlick(id),
     aktion: (an) => { klangWecken(); st.aktionDruecken(an); },
-    sprung: () => st.springenDruecken(),
+    // Springen steht aus dem Ducken erst auf
+    sprung: () => { if (st.zustand.duckenAn) ui.duckenZeigen(st.duckenUmschalten(false)); else st.springenDruecken(); },
+    ducken: () => st.duckenUmschalten(),
     bauen: () => bauenAuf(),
     forschung: () => forschungAuf(),
     nadeln: () => nadelnAuf(),
@@ -779,7 +795,7 @@ function hauptStart() {
         s3.kamera.position.set(WELT.haufenX + Math.cos(startWinkel) * r, 7.5, WELT.haufenZ + Math.sin(startWinkel) * r * 0.7);
         s3.kamera.lookAt(WELT.haufenX, 2.5, WELT.haufenZ);
       } else if (!blockiert()) {
-        const rennt = e.rennen && s.spieler.puste > 0.5;
+        const rennt = e.rennen && s.spieler.puste > 0.5 && !(s.spieler.duck > 0.5);
         const eingabe = { ...e, rennen: rennt };
         const vorX = s.spieler.x; const vorZ = s.spieler.z;
         tempo = spielerBewegen(s.spieler, eingabe, dt, umgebung, gehFaktor(w));

@@ -221,7 +221,7 @@ export function laden(text) {
   const sp = s.spieler;
   if (!WERKZEUG_NACH_ID[sp.werkzeug]) sp.werkzeug = 'hand';
   for (const k of ['x', 'y', 'z', 'gier', 'nick', 'last', 'puste']) sp[k] = zahlOder(sp[k], k === 'puste' ? GRUND.ausdauer : 0);
-  sp.vx = 0; sp.vz = 0; sp.vy = 0;
+  sp.vx = 0; sp.vz = 0; sp.vy = 0; sp.duck = 0;
   sp.x = Math.max(WELT.xMin + 0.5, Math.min(WELT.xMax + 30, sp.x));
   sp.z = Math.max(WELT.zMin + 0.5, Math.min(WELT.zMax - 0.5, sp.z));
   sp.sauger = { an: false, hitze: zahlOder(sp.sauger && sp.sauger.hitze, 0), heiss: !!(sp.sauger && sp.sauger.heiss), rest: 0 };

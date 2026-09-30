@@ -1,5 +1,5 @@
-// Die Spielfigur in der Ich-Perspektive: Gehen, Rennen, Springen, Stoßen an
-// Wände und Maschinen, Laufen auf dem Haufen, solange er nicht zu steil ist.
+// Die Spielfigur in der Ich-Perspektive: Gehen, Rennen, Springen, Ducken, Stoßen
+// an Wände und Maschinen, Laufen auf dem Haufen, solange er nicht zu steil ist.
 
 import { SPIELER, WELT } from './daten.js';
 import { haufenHoehe } from './haufen.js';
@@ -11,7 +11,13 @@ export function spielerNeu() {
     gier: WELT.startBlick, nick: -0.12,
     vx: 0, vz: 0, vy: 0, amBoden: true,
     schritt: 0, // für das Wippen der Kamera
+    duck: 0, // 0 = steht, 1 = ganz geduckt (weich dazwischen)
   };
+}
+
+/** Augenhöhe über den Füßen, geduckt bis zu 0,63 m tiefer. */
+export function augenHoehe(sp) {
+  return SPIELER.augenHoehe - SPIELER.duckTiefe * (sp.duck || 0);
 }
 
 /** Bodenhöhe an (x, z): Hallenboden, Haufen, begehbare Flächen (Plattformen). */
@@ -64,15 +70,29 @@ function kreisGegenKasten(x, z, r, k) {
   return [0, hinten + r];
 }
 
+/** Hängt über (x, z) etwas tiefer als die Augen im Stehen (Plattform, Band)? Dann nicht aufstehen. */
+function kopfStoesst(umgebung, x, z, y, r) {
+  for (const kasten of kaestenNahe(umgebung, x, z, r)) {
+    if (kasten.unten === undefined || kasten.unten <= y + 0.3 || kasten.unten > y + SPIELER.augenHoehe) continue;
+    if (x > kasten.x0 - r && x < kasten.x1 + r && z > kasten.z0 - r && z < kasten.z1 + r) return true;
+  }
+  return false;
+}
+
 /**
- * Ein Zeitschritt. e: Eingabe (vor, seit, blickX, blickY, springen, rennen).
+ * Ein Zeitschritt. e: Eingabe (vor, seit, blickX, blickY, springen, rennen, ducken).
  * umgebung: { kollider: [{x0,x1,z0,z1,h}], flaechen: [...], haufen }.
  */
 export function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
   sp.gier += e.blickX;
   sp.nick = Math.max(-1.48, Math.min(1.48, sp.nick + e.blickY));
 
-  const tempo = (e.rennen ? SPIELER.rennen : SPIELER.gehen) * tempoFaktor;
+  // Ducken weich in gut 0,2 s; unter einer Plattform bleibt man unten
+  const duckZiel = e.ducken || (sp.duck > 0.05 && kopfStoesst(umgebung, sp.x, sp.z, sp.y, SPIELER.radius * 0.9)) ? 1 : 0;
+  sp.duck = (sp.duck || 0) + (duckZiel - (sp.duck || 0)) * (1 - Math.exp(-dt / 0.07));
+  if (Math.abs(sp.duck - duckZiel) < 0.002) sp.duck = duckZiel;
+  const geduckt = sp.duck > 0.5;
+  const tempo = (e.rennen && !geduckt ? SPIELER.rennen : SPIELER.gehen) * tempoFaktor * (1 - (1 - SPIELER.duckTempo) * sp.duck);
   const vorX = -Math.sin(sp.gier);
   const vorZ = -Math.cos(sp.gier);
   const rechtsX = Math.cos(sp.gier);
@@ -113,7 +133,7 @@ export function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
     let geschoben = false;
     for (const kasten of kaestenNahe(umgebung, nx, nz, r)) {
       if (kasten.h !== undefined && kasten.h <= sp.y + SPIELER.stufe) continue; // darüber steigen
-      if (kasten.unten !== undefined && kasten.unten > sp.y + SPIELER.augenHoehe) continue; // darunter durch
+      if (kasten.unten !== undefined && kasten.unten > sp.y + augenHoehe(sp)) continue; // darunter durch (geduckt tiefer)
       const s = kreisGegenKasten(nx, nz, r, kasten);
       if (s) { nx += s[0]; nz += s[1]; geschoben = true; }
     }
@@ -128,7 +148,7 @@ export function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
 
   // Senkrecht: Springen, Schwerkraft, Boden
   const boden = bodenHoehe(umgebung, sp.x, sp.z, sp.y);
-  if (e.springen && sp.amBoden) { sp.vy = SPIELER.sprung; sp.amBoden = false; }
+  if (e.springen && sp.amBoden && !kopfStoesst(umgebung, sp.x, sp.z, sp.y, SPIELER.radius * 0.9)) { sp.vy = SPIELER.sprung; sp.amBoden = false; }
   sp.vy -= SPIELER.schwerkraft * dt;
   sp.y += sp.vy * dt;
   if (sp.y <= boden) {
@@ -149,8 +169,8 @@ export function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
 
 /** Kamera auf Augenhöhe setzen, mit leichtem Wippen beim Gehen. */
 export function spielerKamera(sp, kamera, tempo) {
-  const wippen = Math.sin(sp.schritt * 2.2) * 0.035 * Math.min(1, tempo / 4);
-  kamera.position.set(sp.x, sp.y + SPIELER.augenHoehe + wippen, sp.z);
+  const wippen = Math.sin(sp.schritt * 2.2) * 0.035 * Math.min(1, tempo / 4) * (1 - 0.6 * (sp.duck || 0));
+  kamera.position.set(sp.x, sp.y + augenHoehe(sp) + wippen, sp.z);
   kamera.rotation.set(sp.nick, sp.gier, 0, 'YXZ');
 }
 
