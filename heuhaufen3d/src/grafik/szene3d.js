@@ -106,9 +106,26 @@ export function szeneBauen(leinwand, qualitaet = 'mittel') {
   }
   groesseAnpassen();
 
+  /** Pixeldichte ändern (dynamische Auflösung), höchstens die des Geräts. */
+  function pixelSetzen(v) {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, v));
+    groesseAnpassen();
+  }
+  /** Schattenbereich an die Halle anpassen (wächst mit der Verlängerung). */
+  function schattenAnpassen(x0, x1, z0, z1) {
+    const mx = (x0 + x1) / 2;
+    const mz = (z0 + z1) / 2;
+    const rx = (x1 - x0) / 2 + 12;
+    const rz = (z1 - z0) / 2 + 12;
+    sonne.target.position.set(mx, 0, mz);
+    sonne.position.set(mx + 26, 44, mz + 18);
+    sk.left = -rx; sk.right = rx; sk.top = rz; sk.bottom = -rz;
+    sk.updateProjectionMatrix();
+  }
+
   return {
     renderer, szene, kamera, sonne, halbkugel, qualitaet: q,
-    groesseAnpassen,
+    groesseAnpassen, pixelSetzen, schattenAnpassen,
     schritt(dt) {
       for (const w of wolken) {
         const p = w.s.position;

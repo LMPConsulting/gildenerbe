@@ -74,6 +74,7 @@ function hauptStart() {
   if (!s) s = standNeu();
   hof = hofBauen(s3.szene, s3.qualitaet, werte(s).hallenFelder);
   let hofFelder = werte(s).hallenFelder;
+  { const gr = hallenGrenzen(hofFelder); s3.schattenAnpassen(gr.xMin, gr.xMax, gr.zMin, gr.zMax); }
   const hAnsicht = haufenAnsichtBauen(s3.szene, s.hf, s3.qualitaet);
   const ansicht = ansichtBauen(s3.szene, s3.kamera);
   const objekte = objekteBauen(s3.szene, s3.qualitaet);
@@ -230,6 +231,8 @@ function hauptStart() {
     hof = hofBauen(s3.szene, s3.qualitaet, felder);
     stationenSetzen();
     zustand.umgebungVersion = -1;
+    const gr = hallenGrenzen(felder);
+    s3.schattenAnpassen(gr.xMin, gr.xMax, gr.zMin, gr.zMax);
   }
   const v = new THREE.Vector3();
 
@@ -606,6 +609,22 @@ function hauptStart() {
     }
   }
 
+  /* ------------------------------------------------ Dynamische Auflösung */
+  // Ruckelt es, sinkt die Pixeldichte in Stufen; läuft es flüssig, steigt sie
+  // wieder bis zur gewählten Grafikstufe. (Nicht in automatisierten Tests.)
+  const aufloesung = { ema: 1 / 60, zeit: 0, pixel: s3.qualitaet.pixel, aus: !!navigator.webdriver };
+  function aufloesungAnpassen(echt) {
+    if (aufloesung.aus || !zustand.laeuft || echt > 0.5) return;
+    aufloesung.ema = aufloesung.ema * 0.95 + echt * 0.05;
+    aufloesung.zeit += echt;
+    if (aufloesung.zeit < 2.5) return;
+    aufloesung.zeit = 0;
+    if (aufloesung.ema > 1 / 30 && aufloesung.pixel > 0.6) aufloesung.pixel = Math.max(0.6, aufloesung.pixel - 0.15);
+    else if (aufloesung.ema < 1 / 55 && aufloesung.pixel < s3.qualitaet.pixel) aufloesung.pixel = Math.min(s3.qualitaet.pixel, aufloesung.pixel + 0.1);
+    else return;
+    s3.pixelSetzen(aufloesung.pixel);
+  }
+
   /* ------------------------------------------------ Schleife */
   const umgebung = { kollider: hof.kollider, flaechen: [], haufen: s.hf };
   const bodenBei = (x, z) => haufenHoehe(s.hf, x, z);
@@ -616,8 +635,10 @@ function hauptStart() {
   function schleife(jetzt) {
     requestAnimationFrame(schleife);
     try {
-      const dt = Math.min(0.05, Math.max(0, (jetzt - letzte) / 1000));
+      const echt = Math.max(0, (jetzt - letzte) / 1000);
+      const dt = Math.min(0.05, echt);
       letzte = jetzt;
+      aufloesungAnpassen(echt);
       const e = st.lesen();
       const w = werte(s);
       umgebung.haufen = s.hf;

@@ -368,10 +368,9 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     const { bahn, laenge } = bandGeometrie(bau);
     const gurt = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_GURT, 0.5), MAT.gurt);
     gurt.receiveShadow = schatten;
-    const rahmen = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_RAHMEN, 1), MAT.rahmen);
-    rahmen.castShadow = schatten;
-    rahmen.receiveShadow = schatten;
-    g.add(gurt, rahmen);
+    g.add(gurt);
+    // Rahmen, Beine und Rollen teilen sich ein Material: ein Zeichenaufruf statt drei
+    const stahlTeile = [objExtrudieren(bahn, BAND_PROFIL_RAHMEN, 1)];
     // Beine alle 1,6 m, Rollen an beiden Enden
     const beine = [];
     const rollen = [];
@@ -409,12 +408,10 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
       rg.translate(p[0], p[1] - 0.06, p[2]);
       rollen.push(rg);
     }
-    if (beine.length) {
-      const bm = new THREE.Mesh(objVereinen(beine), MAT.bein);
-      bm.castShadow = schatten;
-      g.add(bm);
-    }
-    g.add(new THREE.Mesh(objVereinen(rollen), MAT.rolle));
+    const rahmen = new THREE.Mesh(objVereinen([...stahlTeile, ...beine, ...rollen]), MAT.rahmen);
+    rahmen.castShadow = schatten;
+    rahmen.receiveShadow = schatten;
+    g.add(rahmen);
     return g;
   }
 
