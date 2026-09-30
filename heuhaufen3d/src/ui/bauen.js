@@ -91,7 +91,7 @@ export function baukatalogZeigen(ui, s, rueck) {
         rueck.waehlen(b.id);
       },
     }, h('b', { class: 'bkname' }, b.name), h('span', { class: 'bktext' }, b.text || ''),
-    h('span', { class: 'bkfuss' }, preis, anzahl), strom ? h('span', { class: 'bkstrom' }, strom) : null, plan);
+    strom ? h('span', { class: 'bkstrom' }, strom) : null, plan, h('span', { class: 'bkfuss' }, preis, anzahl));
     const aktualisieren = () => {
       const frei = bauFrei(s, b.id);
       const geschenke = s.geschenke[b.id] || 0;

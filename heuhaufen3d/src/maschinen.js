@@ -124,7 +124,7 @@ export function annehmenMoeglich(s, bau, art, port = -1) {
   switch (bau.typ) {
     case 'generator': return !!BRENNBAR[art] && (bau.brenn || 0) < BRENN_MAX;
     case 'scanner': return port !== -1 && (bau.schlange || []).length < 3;
-    case 'weiche': case 'vereiniger': return port !== -1 && !bau.puffer;
+    case 'weiche': case 'vereiniger': return port !== -1 && !bau.puffer && !bau.aus;
     case 'rohrwerfer': return (bau.schlange || []).length < 4;
     case 'heutreppe': case 'heulift': return port === 0 && !(bau.innen || []).some((r) => r.t < 0.55);
     default: {
@@ -408,7 +408,7 @@ function generatorSchritt(s, netz, bau, dt) {
   const l = lauf(bau);
   const w = werte(s);
   if (bau.aus || !(bau.brenn > 0)) {
-    l.leistung = 0; l.brennt = false; l.status = bau.aus ? 'aus' : 'leer';
+    l.leistung = 0; l.brennt = false; l.status = bau.aus ? 'aus' : 'brennstoff';
     return;
   }
   l.leistung = -d.kw * w.generatorMul * w.stromMul;
@@ -482,8 +482,11 @@ export function scannerLeeren(s, bau, ereignisse) {
 }
 
 function weicheSchritt(s, netz, bau, dt, ereignisse) {
+  const l = lauf(bau);
   const p = bau.puffer;
-  if (!p) return;
+  if (bau.aus) { l.status = 'aus'; return; }
+  if (!p) { l.status = 'bereit'; return; }
+  l.status = 'laeuft';
   p.zeit += dt;
   if (p.zeit < 0.25) return;
   const modus = bau.modus || 'wechsel';
@@ -497,14 +500,18 @@ function weicheSchritt(s, netz, bau, dt, ereignisse) {
     if (modus === 'wechsel') bau.seite = 1 - port;
     return;
   }
-  lauf(bau).status = 'stau';
+  l.status = 'stau';
 }
 
 function vereinigerSchritt(s, netz, bau, dt, ereignisse) {
+  const l = lauf(bau);
   const p = bau.puffer;
-  if (!p) return;
+  if (bau.aus) { l.status = 'aus'; return; }
+  if (!p) { l.status = 'bereit'; return; }
   p.zeit += dt;
-  if (p.zeit < 0.25 || !ausgangFrei(s, netz, bau, 0, p.art)) return;
+  if (p.zeit < 0.25) { l.status = 'laeuft'; return; }
+  if (!ausgangFrei(s, netz, bau, 0, p.art)) { l.status = 'stau'; return; }
+  l.status = 'laeuft';
   bau.puffer = null;
   ausgeben(s, netz, bau, 0, p, ereignisse);
 }
@@ -685,6 +692,7 @@ export function haeltNadel(s, bau) {
 export const STATUS_TEXT = {
   laeuft: 'Läuft', strom: 'Kein Strom', leer: 'Kein Heu in Reichweite', wartet: 'Wartet auf Heu', voll: 'Ausgang voll',
   stau: 'Stau am Ausgang', aus: 'Ausgeschaltet', wasser: 'Kein Wasser', bereit: 'Bereit', prueft: 'Prüft',
+  brennstoff: 'Kein Brennstoff',
 };
 
 /** Zeilen für die Maschinentafel. */

@@ -143,6 +143,8 @@ export function oberflaecheBauen(wurzel, rueckruf) {
     el.modal.classList.remove('offen');
     el.modal.innerHTML = '';
     if (rueckruf.modalZu) rueckruf.modalZu();
+    // Was inzwischen gewartet hat (etwa eine Nadel), kommt jetzt dran
+    setTimeout(naechstesModal, 0);
   }
   function naechstesModal() { if (!modalOffen() && warteschlange.length) modal(warteschlange.shift()); }
   function modal(o) {
