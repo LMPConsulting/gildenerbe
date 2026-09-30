@@ -6,7 +6,7 @@ import * as THREE from '../vendor/three.module.min.js';
 import { WELT, SPIELER, PRODUKTE } from './daten.js';
 import { haufenStrahl, haufenHoehe } from './haufen.js';
 import {
-  werte, techStatus, proMinute, gehFaktor, taschePlatz, TECH_NACH_ID, techStufe, missionStand,
+  werte, techStatus, proMinute, gehFaktor, taschePlatz, TECH_NACH_ID, techStufe, missionStand, preisRoh,
 } from './wirtschaft.js';
 import { TECH } from './daten.js';
 import {
@@ -285,8 +285,7 @@ function hauptStart() {
     const felder = werte(s).hallenFelder;
     if (felder === hofFelder) return;
     hofFelder = felder;
-    s3.szene.remove(hof.gruppe);
-    hof.gruppe.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); } });
+    hof.entsorgen(); // nimmt die alte Halle aus der Szene und gibt Geometrien, Materialien, Texturen frei
     hof = hofBauen(s3.szene, s3.qualitaet, felder);
     stationenSetzen();
     zustand.umgebungVersion = -1;
@@ -658,6 +657,7 @@ function hauptStart() {
       } else if (e.typ === 'verkauft') {
         if (e.wo === 'stand' && !e.art) {
           klang.kasse();
+          klang.muenzen();
           const t = hof.standTrichter;
           const p = bildschirmPunkt(t.x, t.y + 1.2, t.z) || [leinwand.clientWidth / 2, leinwand.clientHeight / 2];
           ui.schwebeText(`+${geld(e.betrag)}`, p[0], p[1]);
@@ -924,7 +924,7 @@ function hauptStart() {
         const p = bildschirmPunkt(o[0], o[1], o[2]);
         if (p) ui.schwebeText(`+${geld(zustand.verkaufSumme)}`, p[0], p[1]);
         const sp = s.spieler;
-        if (Math.hypot(o[0] - sp.x, o[2] - sp.z) < 14) klang.kasse();
+        if (Math.hypot(o[0] - sp.x, o[2] - sp.z) < 14) { klang.kasse(); klang.muenzen(0.18, 2); }
         zustand.verkaufSumme = 0;
         zustand.verkaufZeit = 0.6;
       }
@@ -944,6 +944,7 @@ function hauptStart() {
       const torRest = Math.max(0.07, 1 - zustand.torOffen);
       hof.tor.scale.y = torRest;
       hof.tor.position.y = WELT.torHoehe - (WELT.torHoehe * torRest) / 2;
+      hof.preisSetzen(preisRoh(werte(s)));
       hof.uhr.setze(m >= 100 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}` : `${m}:${String(Math.floor(s.zeit % 60)).padStart(2, '0')}`);
 
       // Anzeigen

@@ -689,6 +689,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .skizzenwerkzeug .knopf.klein { min-height: 38px; }
 }
 
+/* Menü: Einstellungen oben sichtbar, Knöpfe fließen mit (nicht klebend), quer zweispaltig */
+.modal.menue .modalknoepfe { position: static; box-shadow: none; }
+.modal.menue .modalknoepfe .knopf { flex: 1 1 45%; }
+.zeile.umsehen { flex-wrap: wrap; }
+.zeile.umsehen > div:first-child { flex: 1 1 100%; }
+.zeile.umsehen .reglerzeile { display: flex; align-items: center; gap: 10px; flex: 1 1 100%; }
+.zeile.umsehen .regler { flex: 1; }
+
 </style>
 </head>
 <body>
@@ -897,26 +905,25 @@ const GESCHICHTE = {
   anfang: [
     'Du stehst in einer Lagerhalle. Das Dach ist offen, darüber blauer Himmel. '
       + 'Das Tor ist zu, und du weißt nicht, wie du hergekommen bist.',
-    'Vor dir ein Heuhaufen, höher als die Wände. Auf einem Zettel am Pfosten steht: '
+    'Vor dir ein Heuhaufen, fast so hoch wie die Wände. Auf einem Zettel am Stand steht: '
       + '„Rund sechs Millionen Halme. Sechs Nadeln. Finde sie.“',
-    'Auf der Werkbank liegen eine gelbe Kinderschaufel und ein Metalldetektor. Am Stand '
+    'Auf der Werkbank lagen eine gelbe Kinderschaufel und ein Metalldetektor. Am Stand '
       + 'hinten links steht „Heu verkaufen“. Wer dort bezahlt, sieht man nicht.',
   ],
+  // Nach der Reihenfolge der Funde erzählt, darum ohne Nadelart (die steht im Titel)
   nadeln: [
-    'Etwas glitzert im Heu. Eine Nähnadel, rostig, völlig wertlos. '
-      + 'Auf der Rückseite des Zettels steht plötzlich: „Eine.“',
-    'Die zweite Nadel ist dicker, eine Stopfnadel. Irgendwo hinter dem Haufen klackt ein Schloss. '
-      + 'Das Tor bleibt trotzdem zu.',
-    'Eine Stecknadel mit rotem Kopf. Jemand hat sie mit Absicht hier versteckt, '
-      + 'da bist du dir jetzt sicher. Am Stand liegt ein neuer Zettel: „Weiter.“',
-    'Die Sticknadel liegt in einem Bett aus besonders ordentlichem Heu. '
-      + 'Hat hier jemand vor dir gesucht? Auf dem Boden: Kratzspuren, die zum Haufen führen.',
-    'Eine Kompassnadel. Sie zeigt nicht nach Norden, sondern stur auf den Verkaufsstand. '
+    'Etwas glitzert im Heu. Die erste Nadel. Auf der Rückseite des Zettels steht plötzlich: „Eine.“',
+    'Die zweite. Irgendwo hinter dem Haufen klackt ein Schloss. Das Tor bleibt trotzdem zu.',
+    'Die dritte. Jemand hat sie mit Absicht hier versteckt, da bist du dir jetzt sicher. '
+      + 'Am Stand liegt ein neuer Zettel: „Weiter.“',
+    'Die vierte lag in einem Bett aus besonders ordentlichem Heu. Hat hier jemand vor dir gesucht? '
+      + 'Auf dem Boden: Kratzspuren, die zum Haufen führen.',
+    'Die fünfte. Auf der flachen Hand dreht sie sich stur zum Verkaufsstand. '
       + 'Von drüben hörst du jemanden lachen.',
-    'Die sechste Nadel ist aus Gold. Das Tor rollt hoch, draußen ist heller Tag. '
-      + 'Auf dem Zettel steht nur noch: „Danke. Die nächste Ladung kommt, wenn du sie bestellst.“',
+    'Die sechste. Draußen hupt ein Laster. Auf dem Zettel steht nur noch: '
+      + '„Danke. Die nächste Ladung kommt, wenn du sie am Lieferschalter bestellst.“',
   ],
-  ladung: 'Ein Laster setzt rückwärts ans Tor, kippt, fährt wieder. Neue Ladung, neue Nadeln.',
+  ladung: 'Kurz darauf liegt ein neuer Haufen in der Halle. Neue Halme, neue Nadeln.',
 };
 
 /* ------------------------------------------------------------ Ladungen */
@@ -962,8 +969,8 @@ const TECH = [
   k('scheune', null, 'Bloße Hände', 1, 0, 1, [], [], 'Zwei Hände, eine gelbe Kinderschaufel, ein Metalldetektor und sehr viel Heu.'),
 
   // Handarbeit
-  k('eimer', 'hand', 'Eimer', 1, 3, 1, ['scheune'], [['tasche', '+', 70], ['frei', 'eimer']],
-    'Ein Holzeimer. Trägt 100 statt 30 Halme.'),
+  k('eimer', 'hand', 'Eimer', 1, 3, 1, ['scheune'], [['tasche', '+', 72], ['frei', 'eimer']],
+    'Ein Holzeimer. Trägt gut hundert statt 30 Halme.'),
   k('eimer2', 'hand', 'Größerer Eimer', 6, 2, 1.7, ['eimer'], [['tasche', '+', 83]],
     'Dreiundachtzig Halme mehr pro Gang. Voll ausgebaut fasst der Eimer 600.', 'Eimer-Upgrades'),
   k('schubkarre', 'hand', 'Schubkarre', 1, 15, 1, ['eimer'], [['tasche', '*', 2], ['frei', 'schubkarre']],
@@ -980,15 +987,15 @@ const TECH = [
     'Die Heugabel greift ein Viertel mehr.', 'Heugabel-Upgrades'),
   k('sauger', 'hand', 'Hofsauger', 1, 15, 1, ['heugabel'], [['frei', 'sauger']],
     'Gedrückt halten: saugt 40 Halme pro Sekunde, bis er zu heiß wird.'),
-  k('sauger2', 'hand', 'Stärkerer Motor', 6, 110, 2, ['sauger'], [['saugerRate', '*', 1.2]],
+  k('sauger2', 'hand', 'Stärkerer Motor', 5, 110, 2, ['sauger'], [['saugerRate', '*', 1.2]],
     '20 % mehr Sog.', 'Sauger-Upgrades'),
-  k('kuehlung', 'hand', 'Kühlrippen', 5, 130, 2, ['sauger'], [['saugerHitze', '*', 1.3]],
+  k('kuehlung', 'hand', 'Kühlrippen', 4, 130, 2, ['sauger'], [['saugerHitze', '*', 1.3]],
     'Hält 30 % länger durch.', 'Sauger-Upgrades'),
   k('industriesauger', 'hand', 'Industriesauger', 1, 8100, 1, ['sauger'], [['saugerRate', '*', 1.5], ['saugerHitze', '*', 1.5]],
     '50 % mehr Sog, länger kühl.'),
   k('besen', 'hand', 'Besen', 1, 8, 1, ['scheune'], [['frei', 'besen']],
     'Bei jedem Stich fällt etwas daneben. Der Besen fegt lose Halme vom Boden in den Eimer.'),
-  k('besen2', 'hand', 'Breiterer Besen', 4, 30, 2, ['besen'], [['besen', '*', 1.6]],
+  k('besen2', 'hand', 'Breiterer Besen', 3, 30, 2, ['besen'], [['besen', '*', 1.6]],
     'Fegt 60 % mehr pro Strich.', 'Besen-Upgrades'),
 
   // Hofbau
@@ -1043,9 +1050,9 @@ const TECH = [
   // Verarbeitung
   k('silo', 'verarbeitung', 'Silo-Pläne', 1, 720, 1, ['foerderband'], [['frei', 'silo']],
     'Presst loses Heu zu Heuknäueln. Knäuel bringen 25 % mehr pro Halm.'),
-  k('silo2', 'verarbeitung', 'Größeres Silo', 5, 60, 1.8, ['silo'], [['silo', '*', 1.3]],
+  k('silo2', 'verarbeitung', 'Größeres Silo', 6, 60, 1.8, ['silo'], [['silo', '*', 1.3]],
     'Silos 30 % schneller.', 'Silo-Upgrades'),
-  k('knaeuel', 'verarbeitung', 'Festere Knäuel', 5, 80, 1.8, ['silo'], [['preis_knaeuel', '*', 1.1]],
+  k('knaeuel', 'verarbeitung', 'Festere Knäuel', 6, 80, 1.8, ['silo'], [['preis_knaeuel', '*', 1.1]],
     'Knäuel 10 % mehr wert.', 'Silo-Upgrades'),
   k('presse', 'verarbeitung', 'Kompressor-Pläne', 1, 1600, 1, ['silo'], [['frei', 'presse']],
     'Presst lose Halme zu Pressballen. Ballen bringen 50 % mehr pro Halm.'),
@@ -1097,25 +1104,25 @@ const TECH = [
     'Rechen schieben 30 % mehr.', 'Rechen-Upgrades'),
   k('greifarm', 'auto', 'Greifarm-Pläne', 1, 1600, 1, ['kolbenrechen', 'elektrizitaet'], [['frei', 'arm']],
     'Orange Roboterarme greifen Heu vom Haufen und legen es aufs Band.'),
-  k('servos', 'auto', 'Stärkere Servos', 8, 2700, 2.1, ['greifarm'], [['armTempo', '*', 1.15]],
+  k('servos', 'auto', 'Stärkere Servos', 6, 2700, 2.1, ['greifarm'], [['armTempo', '*', 1.15]],
     'Greifarme 15 % schneller.', 'Arm-Upgrades'),
   k('doppelgreifer', 'auto', 'Doppelgreifer', 5, 19800, 2.5, ['greifarm'], [['armTempo', '*', 1.15]],
     'Zwei Greifer an jedem Arm.'),
-  k('robotik', 'auto', 'Robotik', 5, 198000, 3, ['doppelgreifer'], [['armTempo', '*', 1.2]],
+  k('robotik', 'auto', 'Robotik', 4, 198000, 3, ['doppelgreifer'], [['armTempo', '*', 1.2]],
     'Greifarme 20 % schneller.'),
-  k('serie', 'auto', 'Serienfertigung', 5, 8100, 2.3, ['greifarm'], [['maschinenKosten', '*', 0.9]],
+  k('serie', 'auto', 'Serienfertigung', 4, 8100, 2.3, ['greifarm'], [['maschinenKosten', '*', 0.9]],
     'Alle Maschinen 10 % billiger.'),
-  k('sparmotor', 'auto', 'Sparmotoren', 5, 5900, 2.2, ['greifarm'], [['verbrauch', '*', 0.9]],
+  k('sparmotor', 'auto', 'Sparmotoren', 4, 5900, 2.2, ['greifarm'], [['verbrauch', '*', 0.9]],
     'Maschinen brauchen 10 % weniger Strom.'),
-  k('kran', 'auto', 'Hallenkran', 3, 16200, 2.5, ['greifarm'], [['maschinenKosten', '*', 0.9]],
+  k('kran', 'auto', 'Hallenkran', 2, 16200, 2.5, ['greifarm'], [['maschinenKosten', '*', 0.9]],
     'Aufbauen wird 10 % billiger.'),
   k('ordnung', 'auto', 'Ordnung muss sein', 3, 81000, 3, ['greifarm'], [['maschinenTempo', '*', 1.1]],
     'Alle Maschinen 10 % schneller.'),
   k('drohne', 'auto', 'Heudrohne', 1, 25, 1, ['scheune'], [['frei', 'drohne'], ['drohnenMax', '+', 3]],
     'Kleine Drohnen sammeln lose Halme und liegengebliebenes Heu ein und fliegen es zum Stand. Bis zu drei.'),
-  k('schwarm', 'auto', 'Drohnenschwarm', 5, 330, 2, ['drohne'], [['drohnenMax', '+', 2]],
+  k('schwarm', 'auto', 'Drohnenschwarm', 4, 330, 2, ['drohne'], [['drohnenMax', '+', 2]],
     'Zwei Drohnen mehr.', 'Drohnen-Upgrades'),
-  k('rotoren', 'auto', 'Leichtbaurotoren', 5, 810, 2.2, ['drohne'], [['drohnenRate', '*', 1.2]],
+  k('rotoren', 'auto', 'Leichtbaurotoren', 4, 810, 2.2, ['drohne'], [['drohnenRate', '*', 1.2]],
     'Drohnen tragen 20 % mehr.', 'Drohnen-Upgrades'),
   k('drohnenhafen', 'auto', 'Drohnenhafen', 1, 8100, 1, ['drohne', 'foerderband'], [['drohnenRate', '*', 2]],
     'Ein besserer Landeplatz. Drohnen tragen doppelt.'),
@@ -1135,7 +1142,7 @@ const TECH = [
     'Sauberes Wasser, feinerer Brei.'),
 
   // Suche
-  k('spule', 'suche', 'Empfindliche Spule', 5, 5, 2.2, ['scheune'], [['detektor', '*', 1.35]],
+  k('spule', 'suche', 'Empfindliche Spule', 4, 5, 2.2, ['scheune'], [['detektor', '*', 1.35]],
     'Der Metalldetektor reicht 35 % weiter.', 'Detektor-Upgrades'),
   k('piepser', 'suche', 'Lauter Piepser', 1, 25, 1, ['scheune'], [['frei', 'piepser']],
     'Der Detektor zeigt die Entfernung zur Nadel in Metern.'),
@@ -1147,7 +1154,7 @@ const TECH = [
     'Doppelte Scanleistung.'),
   k('radar', 'suche', 'Nadelradar-Pläne', 1, 16200, 1, ['scanner'], [['frei', 'radar']],
     'Ein Radar, das in Abständen die nächste Nadel im Haufen aufleuchten lässt.'),
-  k('radar2', 'suche', 'Schnellerer Radar', 5, 21600, 2.2, ['radar'], [['radarCD', '*', 0.8]],
+  k('radar2', 'suche', 'Schnellerer Radar', 4, 21600, 2.2, ['radar'], [['radarCD', '*', 0.8]],
     'Der Radar pingt 20 % öfter.', 'Radar-Upgrades'),
 
   // Verkauf
@@ -1157,17 +1164,17 @@ const TECH = [
     'Mit dem Stand lässt sich reden. +8 % auf loses Heu.'),
   k('auftraege', 'verkauf', 'Auftragsbuch', 1, 1300, 1, ['feilschen', 'foerderband'], [['frei', 'auftraege']],
     'Ein Laster setzt ans Tor und will eine bestimmte Ware. Was auf seine Ladefläche fällt, zählt.'),
-  k('laster', 'verkauf', 'Größerer Laster', 5, 5400, 2.2, ['auftraege'], [['auftragLohn', '*', 1.1]],
+  k('laster', 'verkauf', 'Größerer Laster', 3, 5400, 2.2, ['auftraege'], [['auftragLohn', '*', 1.1]],
     'Aufträge bringen 10 % mehr.', 'Auftrags-Upgrades'),
   k('stand', 'verkauf', 'Verkaufsstand ausbauen', 1, 2300, 1, ['feilschen'], [['preisAlle', '*', 1.1]],
     'Ein richtiger Tresen mit Registrierkasse. Alles 10 % mehr wert.'),
-  k('markt', 'verkauf', 'Wochenmarkt', 5, 9900, 2.2, ['stand'], [['preisAlle', '*', 1.1]],
+  k('markt', 'verkauf', 'Wochenmarkt', 4, 9900, 2.2, ['stand'], [['preisAlle', '*', 1.1]],
     'Jeden Samstag. +10 % auf alle Preise.'),
   k('kredit', 'verkauf', 'Heu auf Rechnung', 1, 3600, 1, ['stand'], [['frei', 'kredit']],
     'Wer auf Rechnung bestellt, zahlt nur noch 10 % Aufschlag statt 50 %.'),
-  k('nachtschicht', 'verkauf', 'Nachtschicht', 5, 3200, 2.2, ['stand'], [['offlineStunden', '+', 2]],
+  k('nachtschicht', 'verkauf', 'Nachtschicht', 3, 3200, 2.2, ['stand'], [['offlineStunden', '+', 2]],
     'Die Halle läuft 2 Stunden länger weiter, während du weg bist.', 'Nacht-Upgrades'),
-  k('nachtwaechter', 'verkauf', 'Nachtwächter', 5, 11900, 2.2, ['stand'], [['offlineEff', '+', 0.05]],
+  k('nachtwaechter', 'verkauf', 'Nachtwächter', 3, 11900, 2.2, ['stand'], [['offlineEff', '+', 0.05]],
     'Nachts wird 9 % mehr geschafft.', 'Nacht-Upgrades'),
 
   // Fitness
@@ -1181,21 +1188,21 @@ const TECH = [
     'Die Ausdauer kommt 30 % schneller zurück.', 'Ausdauer'),
   k('zweiter_atem', 'fitness', 'Zweiter Atem', 4, 60, 2, ['scheune'], [['erschoepft', '+', 0.1]],
     'Auch erschöpft schaffst du 10 % mehr.', 'Ausdauer'),
-  k('blatt', 'fitness', 'Breiteres Blatt', 5, 35, 2, ['scheune'], [['griff', '+', 2]],
+  k('blatt', 'fitness', 'Breiteres Blatt', 4, 35, 2, ['scheune'], [['griff', '+', 2]],
     'Zwei Halme mehr pro Stich.'),
   k('handschuh', 'fitness', 'Arbeitshandschuhe', 3, 90, 2.5, ['blatt'], [['krit', '+', 0.03]],
     '3 % Chance auf einen Glücksstich mit fünffacher Menge.'),
-  k('staerke', 'fitness', 'Kräftiger Stich', 5, 2000, 2.2, ['handschuh'], [['griff', '+', 2]],
+  k('staerke', 'fitness', 'Kräftiger Stich', 4, 2000, 2.2, ['handschuh'], [['griff', '+', 2]],
     'Zwei Halme mehr pro Stich.'),
-  k('fluesterer', 'fitness', 'Heuflüsterer', 5, 39600, 2.5, ['staerke'], [['griff', '+', 2]],
+  k('fluesterer', 'fitness', 'Heuflüsterer', 3, 39600, 2.5, ['staerke'], [['griff', '+', 2]],
     'Das Heu kommt dir entgegen. Zwei Halme mehr pro Stich.'),
-  k('tempo1', 'fitness', 'Flinke Füße', 5, 2, 1.8, ['scheune'], [['laufzeit', '*', 0.93]],
+  k('tempo1', 'fitness', 'Flinke Füße', 3, 2, 1.8, ['scheune'], [['laufzeit', '*', 0.93]],
     'Du gehst 7 % schneller.', 'Tempo'),
-  k('tempo2', 'fitness', 'Lange Beine', 5, 180, 2, ['scheune'], [['laufzeit', '*', 0.9]],
+  k('tempo2', 'fitness', 'Lange Beine', 3, 180, 2, ['scheune'], [['laufzeit', '*', 0.9]],
     'Noch einmal 10 % schneller, und Rennen kostet weniger Puste.', 'Tempo'),
-  k('autotipp', 'fitness', 'Muskelgedächtnis', 3, 810, 2.5, ['blatt'], [['autotipp', '+', 0.5]],
+  k('autotipp', 'fitness', 'Muskelgedächtnis', 2, 810, 2.5, ['blatt'], [['autotipp', '+', 0.5]],
     'Wer die Aktion gedrückt hält, sticht einen halben Stich pro Sekunde schneller.'),
-  k('autotipp2', 'fitness', 'Rhythmus', 3, 23400, 2.5, ['autotipp'], [['autotipp', '+', 0.5]],
+  k('autotipp2', 'fitness', 'Rhythmus', 2, 23400, 2.5, ['autotipp'], [['autotipp', '+', 0.5]],
     'Noch ein halber Stich pro Sekunde.'),
 ];
 
@@ -1359,6 +1366,11 @@ const AUFTRAG_PAUSE = 20;
 // art: umgesehen, gelaufen, tipps, verkauft, tech, werkzeug, verdient, gefegt,
 // gebaut [typ, n], nadeln, auftraege, produziert [p, n], abgetragen, haelfte,
 // ladungen, forschung, arten, strom (ein Rechen läuft).
+/** Fassung des Missionsbuchs: Stände mit älterer Fassung werden beim Laden umgerechnet. */
+const MISSIONEN_FASSUNG = 2;
+/** Alte Nummer (Fassung 1, 35 Schritte) → neue Nummer. */
+const MISSIONEN_ALT = [0, 1, 2, 3, 4, 5, 6, 7, 9, 11, 15, 16, 17, 19, 20, 21, 22, 23, 26, 27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
+
 const MISSIONEN = [
   { text: 'Schau dich um', hilfe: 'Rechts über den Bildschirm wischen.', art: 'umgesehen', ziel: 2, geld: 0 },
   { text: 'Geh zum Haufen', hilfe: 'Links den Daumen aufsetzen und schieben.', art: 'gelaufen', ziel: 5, geld: 0 },
@@ -1367,19 +1379,29 @@ const MISSIONEN = [
   { text: 'Kauf einen Eimer', hilfe: 'Am Werkzeugstand oder in der Forschung.', art: 'tech', ziel: 'eimer', geld: 2 },
   { text: 'Kauf den Spaten', hilfe: 'Am Werkzeugstand: 12 $.', art: 'tech', ziel: 'spaten', geld: 3 },
   { text: 'Halte den Detektor an den Haufen', hilfe: 'Den Detektor unten in der Leiste wählen und auf den Haufen zielen.', art: 'werkzeug', ziel: 'detektor', geld: 2 },
-  { text: 'Verdiene 30 $', art: 'verdient', ziel: 30, geld: 5 },
+  { text: 'Verdiene 30 $', hilfe: 'Heu zum Stand bringen. Größerer Eimer und Spaten machen jeden Gang lohnender.', art: 'verdient', ziel: 30, geld: 5 },
+  { text: 'Verkauf 1.000 Halme', hilfe: 'Heu in den Trichter am Stand oder auf die Rampe daneben werfen.', art: 'verkauft', ziel: 1000, geld: 5 },
   { text: 'Kauf den Besen und feg verschüttetes Heu zusammen', hilfe: 'Beim Graben fällt Heu daneben und rollt an den Fuß des Haufens. Dort zusammenfegen.', art: 'gefegt', ziel: 20, geld: 10 },
+  { text: 'Kauf die Heugabel', hilfe: 'Am Werkzeugstand. Sticht doppelt so viel wie der Spaten.', art: 'tech', ziel: 'heugabel', geld: 10 },
   { text: 'Kauf die Förderband-Pläne', hilfe: 'In der Forschung unter Heulinien.', art: 'tech', ziel: 'foerderband', geschenk: 'rechen' },
+  { text: 'Öffne den Baukatalog', hilfe: 'Unten auf BAUEN tippen.', art: 'zaehler', ziel: ['katalog', 1], geld: 2 },
+  { text: 'Schieb den Geist weiter weg und wieder heran', hilfe: 'Etwas aus dem Katalog wählen, dann Weiter und Näher tippen.', art: 'zaehler', ziel: ['geistAbstand', 2], geld: 2 },
+  { text: 'Dreh den Geist', hilfe: 'Im Baumodus auf Drehen tippen.', art: 'zaehler', ziel: ['gedreht', 1], geld: 2 },
   { text: 'Leg ein Band vom Haufen zum Stand', hilfe: 'Unten auf BAUEN tippen, Förderband wählen, Anfang beim Haufen und Ende am Stand setzen.', art: 'gebaut', ziel: ['band', 1], geschenk: 'mast' },
   { text: 'Stell den Kolbenrechen an den Haufen', hilfe: 'Im Baukatalog liegt er als Geschenk bereit.', art: 'gebaut', ziel: ['rechen', 1], geschenk: 'mast' },
   { text: 'Bring den Rechen ans Netz', hilfe: 'Der Hausanschluss hängt an der linken Wand. Masten verlängern die Leitung.', art: 'strom', ziel: 1, geld: 40 },
+  { text: 'Schalte das Netz aus und wieder an', hilfe: 'Einen Mast antippen: das ganze Netz geht aus oder an.', art: 'zaehler', ziel: ['netzGeschaltet', 2], geld: 20 },
   { text: 'Finde die erste Nadel', hilfe: 'Der Detektor piept, je näher sie ist. Dort graben.', art: 'nadeln', ziel: 1, geld: 120 },
   { text: 'Stell einen zweiten Kolbenrechen auf', art: 'gebaut', ziel: ['rechen', 2], geld: 150 },
   { text: 'Kauf Elektrizität', art: 'tech', ziel: 'elektrizitaet', geschenkTech: 'strommast' },
   { text: 'Bau einen Heu-Generator', hilfe: 'Ein Band hinein, dann brennt er.', art: 'gebaut', ziel: ['generator', 1], geschenk: 'mast' },
   { text: 'Bau einen Scanner', hilfe: 'Das Band zum Stand durch den Scanner führen.', art: 'gebaut', ziel: ['scanner', 1], geld: 600 },
+  { text: 'Stell eine Weiche auf', hilfe: 'In der Forschung unter Heulinien. Sie verteilt ein Band abwechselnd auf zwei.', art: 'gebaut', ziel: ['weiche', 1], geld: 400 },
+  { text: 'Heb ein Bandende an', hilfe: 'Beim Förderband auf Höher tippen. So kreuzt ein Band über ein anderes.', art: 'zaehler', ziel: ['hochBand', 1], geld: 300 },
   { text: 'Bau ein Silo', art: 'gebaut', ziel: ['silo', 1], geld: 800 },
   { text: 'Kauf die Plattform-Pläne', art: 'tech', ziel: 'plattform', geschenk: 'schrank' },
+  { text: 'Stell eine Treppe auf', hilfe: 'Eine Plattform mit Treppe trägt Maschinen über den Bändern.', art: 'gebaut', ziel: ['treppe', 1], geld: 1000 },
+  { text: 'Bau etwas ab', hilfe: 'Im Baukatalog auf Abbauen, dann den Bau anschauen. Die Hälfte kommt zurück.', art: 'zaehler', ziel: ['abgebaut', 1], geld: 500 },
   { text: 'Bau einen Greifarm', art: 'gebaut', ziel: ['arm', 1], geld: 3000 },
   { text: 'Erfülle einen Auftrag', hilfe: 'Der Laster steht am Tor. Was auf seine Ladefläche fällt, zählt.', art: 'auftraege', ziel: 1, geld: 3000 },
   { text: 'Presse 100 Pressballen', art: 'produziert', ziel: ['ballen', 100], geld: 4000 },
@@ -1650,6 +1672,21 @@ function haufenAbtragen(hf, x, z, halme, radius = 0.6) {
   schmutzMelden(hf, ci - rz - 1, cj - rz - 1, ci + rz + 1, cj + rz + 1);
   hf.aenderung++;
   return genommen * hf.dichte;
+}
+
+/**
+ * Gleichmäßig abtragen: alle Säulen im selben Verhältnis niedriger, bis `halme` weg
+ * sind (für geschätzte Abwesenheit, wenn die Greifstellen nicht genug hergeben).
+ * Liefert, was genommen wurde.
+ */
+function haufenSchrumpfen(hf, halme) {
+  const vorher = haufenRest(hf);
+  if (halme <= 0 || vorher <= 0) return 0;
+  const f = Math.max(0, 1 - halme / vorher);
+  for (let k = 0; k < hf.h.length; k++) if (hf.h[k] > 0) hf.h[k] *= f;
+  schmutzMelden(hf, 0, 0, hf.n - 1, hf.n - 1);
+  hf.aenderung++;
+  return vorher - haufenRest(hf);
 }
 
 /**
@@ -2173,6 +2210,7 @@ function missionStand(s) {
     case 'verdient': ist = s.verdient; break;
     case 'gefegt': ist = st.gefegt; break;
     case 'gebaut': ist = bauAnzahl(s, m.ziel[0]); ziel = m.ziel[1]; break;
+    case 'zaehler': ist = st[m.ziel[0]] || 0; ziel = m.ziel[1]; break;
     case 'strom': ist = st.rechenMitStrom ? 1 : 0; break;
     case 'nadeln': ist = s.nadelnGesamt; break;
     case 'auftraege': ist = st.auftraege; break;
@@ -2402,13 +2440,17 @@ function nadelStelle(hf, lage, zufall) {
  * Liefert die Nadeln, die mit dem weggenommenen Heu mitgehen (bei Maschinen und
  * der Kinderschaufel); die übrigen werden 'lose' und liegen obenauf.
  */
+/** So tief unter der neuen Oberfläche hebt ein Werkzeug beim Stich eine Nadel mit heraus (Vorbild: „the shovel does“). */
+const HEBT = { hand: 0.08, sandschaufel: 0.3, spaten: 0.3, heugabel: 0.35 };
+
 function nadelnFreilegen(s, hf, quelle, ereignisse) {
   const mit = [];
   for (const n of s.nadeln) {
     if (n.zustand !== 'versteckt') continue;
     const oben = haufenHoehe(hf, n.x, n.z);
-    if (oben > n.y + 0.03) continue;
     const nahe = quelle && Math.hypot(n.x - quelle.x, n.z - quelle.z) <= (quelle.radius || 0.8) + 0.25;
+    const hebt = nahe && quelle.art === 'spieler' && oben - n.y <= (HEBT[quelle.werkzeug] || 0);
+    if (oben > n.y + 0.03 && !hebt) continue;
     if (nahe && quelle.art === 'maschine') {
       n.zustand = 'unterwegs';
       mit.push(n);
@@ -2945,6 +2987,24 @@ function landen(s, g, unten, welt, zufall) {
     g.y = welt.boden(g.x, g.z, 99);
     return;
   }
+  // Liegt dort schon ein Stück, rollt das neue ein Stück weiter (kein Stapel auf einem Punkt)
+  if (unten < 0.25) {
+    let belegt = 0;
+    for (const o of s.gegenstaende) {
+      if (o !== g && o.ort === 'boden' && Math.abs(o.x - g.x) < 0.25 && Math.abs(o.z - g.z) < 0.25) belegt++;
+      if (belegt > 6) break;
+    }
+    if (belegt) {
+      const w = (zufall ? zufall() : Math.random()) * Math.PI * 2;
+      const r = 0.22 + 0.08 * Math.min(6, belegt);
+      g.x += Math.cos(w) * r; g.z += Math.sin(w) * r;
+      if (welt.grenzen) {
+        g.x = Math.max(welt.grenzen.xMin + 0.2, Math.min(welt.grenzen.xMax - 0.2, g.x));
+        g.z = Math.max(welt.grenzen.zMin + 0.2, Math.min(welt.grenzen.zMax - 0.2, g.z));
+      }
+      g.y = welt.boden(g.x, g.z, unten + 0.3);
+    }
+  }
   // Auf dem Haufen rollt ein Stück den Hang hinunter bis an den Fuß.
   const hf = s.hf;
   if (hf && unten > 0.25 && Math.abs(unten - haufenHoehe(hf, g.x, g.z)) < 0.05) {
@@ -3225,14 +3285,37 @@ function baenderSchritt(s, dt, netz, ereignisse) {
     if (!items.length) { l.voll = false; continue; }
     items.sort((a, b) => b.t - a.t);
     const L = bandLaenge(band);
+    // Reißverschluss: wartet ein seitlich einspeisendes Band schon eine Weile, halten
+    // die eigenen Stücke vor der Einfädelstelle an, bis es seins losgeworden ist
+    const sperren = [];
+    if (l.einfaedeln) {
+      for (const [id, w] of l.einfaedeln) {
+        if (s.zeit - w.stempel > 0.25) l.einfaedeln.delete(id);
+        else if (w.zeit > 0.5) sperren.push(w.t);
+      }
+    }
     let vorne = null;
     const bleiben = [];
     for (const g of items) {
       let nt = g.t + v * dt;
       if (vorne) nt = Math.min(nt, vorne.t - abstand(vorne.art, g.art));
+      for (const mt of sperren) {
+        const grenze = mt - abstand(g.art, 'roh') - 0.05;
+        if (g.t <= grenze + 1e-6) nt = Math.min(nt, grenze);
+      }
       if (!vorne && nt >= L) {
         const ziel = l.ziel;
-        if (ziel && netz.abgeben(s, band, ziel, g, ereignisse)) continue;
+        if (ziel && netz.abgeben(s, band, ziel, g, ereignisse)) {
+          if (ziel.art === 'band' && lauf(ziel.band).einfaedeln) lauf(ziel.band).einfaedeln.delete(band.id);
+          continue;
+        }
+        if (ziel && ziel.art === 'band' && ziel.t > 0.05) {
+          const zl = lauf(ziel.band);
+          if (!zl.einfaedeln) zl.einfaedeln = new Map();
+          const w = zl.einfaedeln.get(band.id) || { t: ziel.t, zeit: 0, stempel: s.zeit };
+          w.zeit += dt; w.stempel = s.zeit; w.t = ziel.t;
+          zl.einfaedeln.set(band.id, w);
+        }
         // Will die Maschine am Ende diese Ware nie (Ballen vor dem Silo), fällt sie nach 2 s herunter
         let abwerfen = !ziel;
         if (ziel && ziel.art === 'bau' && netz.nimmtNie && netz.nimmtNie(ziel.bau, g.art)) {
@@ -3451,7 +3534,7 @@ function sperrRaster(s, { frei = [], ohne = [], fest = [] } = {}) {
  * Anschlüssen die Richtung, in die das Band dort laufen muss. gerade: ohne
  * Raster, direkt (Einrasten aus). Liefert { punkte, laenge } oder { fehler }.
  */
-function bandWeg(s, von, nach, { ohne = [], fest = [], gerade = false, maxSchritte = 60000 } = {}) {
+function bandWeg(s, von, nach, { ohne = [], fest = [], gerade = false, maxSchritte = 60000, aufDeck = null } = {}) {
   const frei = [[von.x, von.z, 0.75], [nach.x, nach.z, 0.75]];
   const raster = sperrRaster(s, { frei, ohne, fest });
   const { sperre, oben, unten, nx, nz, x0, z0, mitte } = raster;
@@ -3480,23 +3563,48 @@ function bandWeg(s, von, nach, { ohne = [], fest = [], gerade = false, maxSchrit
     }
     return true;
   };
-  const hoehe = (punkte) => {
-    // Höhe gleichmäßig von von.y nach nach.y über die Länge
+  const hoehe = (punkte0) => {
+    // Steht ein Ende auf einer Plattform (aufDeck), bleibt das Band über ihr auf Deckhöhe
+    // und neigt sich erst hinter der Kante; dort kommt ein Stützpunkt hinzu.
+    let punkte = punkte0;
+    let kanteA = null;
+    let kanteB = null;
+    const deckA = aufDeck && aufDeck(von.x, von.z, von.y);
+    const deckB = aufDeck && aufDeck(nach.x, nach.z, nach.y);
+    if (deckA || deckB) {
+      const dicht = [];
+      const ecke = [];
+      for (let i = 0; i < punkte0.length; i++) {
+        if (i === 0) { dicht.push(punkte0[0]); ecke.push(true); continue; }
+        const a = punkte0[i - 1]; const b = punkte0[i];
+        const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.1));
+        for (let j = 1; j <= n; j++) { dicht.push(j === n ? b : [a[0] + ((b[0] - a[0]) * j) / n, a[1] + ((b[1] - a[1]) * j) / n]); ecke.push(j === n); }
+      }
+      let ia = 0; let ib = dicht.length - 1;
+      if (deckA) while (ia < dicht.length - 1 && aufDeck(dicht[ia + 1][0], dicht[ia + 1][1], von.y) === deckA) ia++;
+      if (deckB) while (ib > ia && aufDeck(dicht[ib - 1][0], dicht[ib - 1][1], nach.y) === deckB) ib--;
+      if (deckA) kanteA = dicht[ia];
+      if (deckB) kanteB = dicht[ib];
+      punkte = dicht.filter((p, i) => ecke[i] || i === ia || i === ib);
+    }
     let laenge = 0;
     const abschnitte = [0];
     for (let i = 1; i < punkte.length; i++) {
       laenge += Math.hypot(punkte[i][0] - punkte[i - 1][0], punkte[i][1] - punkte[i - 1][1]);
       abschnitte.push(laenge);
     }
+    const sA = kanteA ? abschnitte[punkte.indexOf(kanteA)] : 0;
+    const sB = kanteB ? abschnitte[punkte.indexOf(kanteB)] : laenge;
+    const y = (sp) => (sp <= sA ? von.y : sp >= sB ? nach.y : lerp(von.y, nach.y, (sp - sA) / Math.max(1e-6, sB - sA)));
     return {
-      laenge,
-      punkte: punkte.map((p, i) => [p[0], lerp(von.y, nach.y, laenge > 0 ? abschnitte[i] / laenge : 0), p[1]]),
+      laenge, rampe: Math.max(1e-6, sB - sA),
+      punkte: punkte.map((p, i) => [p[0], y(abschnitte[i]), p[1]]),
     };
   };
   const fertig = (flach) => {
     const r = hoehe(flach);
     if (r.laenge < 0.6) return { fehler: 'kurz' };
-    if (Math.abs(nach.y - von.y) / r.laenge > 0.6) return { fehler: 'steil' };
+    if (Math.abs(nach.y - von.y) / r.rampe > 0.6) return { fehler: 'steil' };
     if (r.laenge > 80) return { fehler: 'lang' };
     if (!kreuzungenOk(r.punkte)) return { fehler: 'kreuzt' };
     return r;
@@ -4538,6 +4646,13 @@ function maschinenZeilen(s, bau) {
   if (bau.typ === 'scanner') z.push(['In der Schlange', String(bau.schlange.length)]);
   if ((bau.nadeln || []).length) z.push(['Nadeln', `${bau.nadeln.length} wartet`]);
   if (bau.typ === 'radar') z.push(['Nächster Ping', `${Math.ceil(Math.max(0, bau.rest || 0))} s`]);
+  // Brunnen, Leitung, Wasserweiche: Bilanz des Wassernetzes wie beim Strommast
+  const wn = l.wasserNetz;
+  if (wn && (bau.typ === 'brunnen' || bau.typ === 'leitung' || bau.typ === 'wasserweiche')) {
+    const r1 = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
+    z.push(['Wassernetz', `${r1(Math.abs(wn.angebot || 0))} geliefert, ${r1(wn.bedarf || 0)} gebraucht`]);
+    z.push(['Angeschlossen', `${wn.brunnen.length} Brunnen, ${wn.verbraucher.length} Maschinen`]);
+  }
   return z;
 }
 
@@ -4670,6 +4785,7 @@ function stromSchritt(s, netz) {
 
 /** Tippen am Mast: das ganze Netz ein- oder ausschalten. Liefert den neuen Zustand (true = an). */
 function netzSchalten(s, netz, mast) {
+  if (s.stat) s.stat.netzGeschaltet = (s.stat.netzGeschaltet || 0) + 1;
   const n = netz.strom.find((x) => x.masten.includes(mast));
   if (!n) { mast.aus = !mast.aus; return !mast.aus; }
   const jetztAus = !n.masten.some((m) => m.aus);
@@ -4784,7 +4900,7 @@ function plattformBei(s, x, z, y) {
 }
 
 /** Bauten, die nur auf dem Hallenboden stehen dürfen. */
-const NUR_BODEN = new Set(['plattform', 'treppe', 'dach', 'rechen', 'brunnen', 'heutreppe', 'klappe']);
+const NUR_BODEN = new Set(['plattform', 'treppe', 'dach', 'rechen', 'brunnen', 'heutreppe']);
 
 /**
  * Passt der Bau typ bei (x, z) mit Drehung rot? Liefert { ok, grund, kosten, geschenk }.
@@ -4800,6 +4916,8 @@ function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
   const k = fussabdruck(typ, x, z, rot);
   const gr = hallenGrenzen(werte(s).hallenFelder);
   if (k.x0 < gr.xMin + 0.05 || k.x1 > gr.xMax - 0.05 || k.z0 < gr.zMin + 0.05 || k.z1 > gr.zMax - 0.05) return aus('wand');
+  // Die Abwurfklappe sitzt im Deck einer Plattform, nirgends sonst
+  if (typ === 'klappe' && y < 0.1) return aus('nurPlattform');
   if (y > 0.1) {
     // Auf einer Plattform: ganz darauf, und nicht alles darf hinauf
     if (NUR_BODEN.has(typ)) return aus('boden');
@@ -4826,7 +4944,15 @@ function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
       }
       continue;
     }
-    if (b.typ === 'dach' || typ === 'dach') continue;
+    // Unter ein Dach passt nur, was niedriger ist als das Dach
+    if (b.typ === 'dach' || typ === 'dach') {
+      const dach = b.typ === 'dach' ? b : { typ, x, z, rot, y };
+      const drunter = b.typ === 'dach' ? { typ, y, h: d.h } : { typ: b.typ, y: b.y || 0, h: bd.h };
+      const dachUnten = (dach.y || 0) + BAU_BY_ID.dach.h - 0.25;
+      if (drunter.typ !== 'dach' && drunter.y + drunter.h > dachUnten
+        && kastenUeberlapp(eng, fussabdruck(b.typ, b.x, b.z, b.rot || 0))) return aus('hoch');
+      continue;
+    }
     // Unter eine Plattform passt, was niedriger ist als ihr Deck; oben steht man auf ihr
     if (b.typ === 'plattform' && (y > 0.1 || d.h < BAU_BY_ID.plattform.h - 0.1)) continue;
     if (Math.abs((b.y || 0) - y) > 1.5) continue;
@@ -4923,7 +5049,9 @@ function bandPlanen(s, von, nach, { gerade = false } = {}) {
     if (von.art === 'aus' && Math.hypot(A[0] - von.x, A[2] - von.z) < 0.3 && Math.abs(A[1] - von.y) < 0.45) return { ok: false, grund: 'belegt' };
   }
   const fest = [von.bau, nach.bau].filter(Boolean);
-  const weg = bandWeg(s, von, nach, { fest, gerade, maxSchritte: 20000 });
+  // Bandenden auf einer Plattform: über dem Deck bleibt das Band auf Deckhöhe
+  const aufDeck = (x, z, y) => plattformBei(s, x, z, y - BAND_Y);
+  const weg = bandWeg(s, von, nach, { fest, gerade, maxSchritte: 20000, aufDeck });
   if (weg.fehler) return { ok: false, grund: weg.fehler };
   const kosten = bauKosten(s, 'band', weg.laenge);
   const r = { ok: s.geld >= kosten, punkte: weg.punkte, laenge: weg.laenge, kosten };
@@ -4940,6 +5068,8 @@ function bandSetzen(s, plan) {
   const p0 = plan.punkte[0];
   const bau = { id: s.naechsteId++, typ: 'band', x: p0[0], z: p0[2], y: p0[1] - BAND_Y, rot: 0, punkte: plan.punkte, bezahlt: kosten };
   s.bauten.push(bau);
+  // ein angehobenes Bandende (ohne Plattform darunter) zählt für die Mission
+  if (plan.punkte.some((p) => p[1] - BAND_Y > 0.4 && !plattformBei(s, p[0], p[2], p[1] - BAND_Y))) s.stat.hochBand = (s.stat.hochBand || 0) + 1;
   bauGeaendert(s);
   return { ok: true, bau };
 }
@@ -5030,6 +5160,7 @@ function bauAbbauen(s, bau, ereignisse = []) {
   }
   s.bauten.splice(i, 1);
   bauGeaendert(s);
+  s.stat.abgebaut = (s.stat.abgebaut || 0) + 1;
   return { ok: true, erstattung, geschenk: !!bau.geschenk };
 }
 
@@ -5145,7 +5276,7 @@ const GRUND_TEXT = {
   band: 'Ein Band ist im Weg', geld: 'Nicht genug Geld', 'kein Weg': 'Kein Weg frei', kurz: 'Zu kurz', steil: 'Zu steil',
   lang: 'Zu lang', blockiert: 'Weg versperrt', draussen: 'Außerhalb der Halle', unbekannt: 'Geht nicht',
   kante: 'Steht nicht ganz auf der Plattform', boden: 'Nur auf dem Hallenboden',
-  kreuzt: 'Zum Kreuzen höher legen', traegt: 'Erst abbauen, was darauf steht', platz: 'Der Landeplatz ist nicht frei',
+  kreuzt: 'Zum Kreuzen höher legen', nurPlattform: 'Nur in einer Plattform', hoch: 'Zu hoch für das Dach', traegt: 'Erst abbauen, was darauf steht', platz: 'Der Landeplatz ist nicht frei',
 };
 
 
@@ -5611,7 +5742,7 @@ function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
 
 /** Kamera auf Augenhöhe setzen, mit leichtem Wippen beim Gehen. */
 function spielerKamera(sp, kamera, tempo) {
-  const wippen = Math.sin(sp.schritt * 2.2) * 0.035 * Math.min(1, tempo / 4) * (1 - 0.6 * (sp.duck || 0));
+  const wippen = Math.sin(sp.schritt * 2.2) * 0.015 * Math.min(1, tempo / 4) * (1 - 0.6 * (sp.duck || 0));
   kamera.position.set(sp.x, sp.y + augenHoehe(sp) + wippen, sp.z);
   kamera.rotation.set(sp.nick, sp.gier, 0, 'YXZ');
 }
@@ -5636,6 +5767,8 @@ function statNeu() {
     tipps: 0, verkauft: 0, gefegt: 0, abgetragen: 0, hand: 0, maschine: 0, drohne: 0, gaenge: 0,
     auftraege: 0, besterVerkauf: 0, besterVerkaufHalme: 0, maxGeld: 0, werkzeug: {}, produziert: {},
     umgesehen: 0, gelaufen: 0, ersteNadel: null, ersteLadung: null, rechenMitStrom: 0, nadelnZurueck: 0,
+    // Lernschritte im Baumodus (Missionen)
+    katalog: 0, geistAbstand: 0, gedreht: 0, abgebaut: 0, netzGeschaltet: 0, hochBand: 0,
   };
 }
 
@@ -5680,6 +5813,7 @@ function standNeu(seed = (Date.now() % 2147483647) || 7) {
     naechsteId: 2,
     mission: 0,
     missionErledigt: [],
+    missionFassung: MISSIONEN_FASSUNG,
     auftrag: { nr: 0, skip: 0, geliefert: 0, pause: 0 },
     laster: lasterNeu(),
     stat: statNeu(),
@@ -5895,6 +6029,13 @@ function laden(text) {
   s.stat = { ...statNeu(), ...(istObjekt(s.stat) ? s.stat : {}) };
   if (!istObjekt(s.stat.werkzeug)) s.stat.werkzeug = {};
   if (!istObjekt(s.stat.produziert)) s.stat.produziert = {};
+  // Ältere Stände zählten ein kürzeres Missionsbuch: Nummern umrechnen
+  if (roh.missionFassung !== MISSIONEN_FASSUNG) {
+    const um = (i) => (Number.isInteger(i) && i >= 0 && i < MISSIONEN_ALT.length ? MISSIONEN_ALT[i] : i);
+    s.mission = um(Math.floor(zahlOder(s.mission, 0)));
+    s.missionErledigt = (s.missionErledigt || []).map(um);
+    s.missionFassung = MISSIONEN_FASSUNG;
+  }
   s.mission = Math.max(0, Math.min(MISSIONEN.length, Math.floor(s.mission)));
   s.missionErledigt = (s.missionErledigt || []).filter((i) => Number.isInteger(i) && i > s.mission && i < MISSIONEN.length);
   s.ladung = Math.max(1, Math.floor(s.ladung));
@@ -5945,8 +6086,10 @@ function abwesenheitWeiter(s, job, schritte = 1000, bisMs = Infinity) {
     if (halmeRate > 0) rest = Math.min(rest, s.haufenRest / halmeRate);
     else rest = 0;
     if (rate > 0 && rest > 0) {
-      einnahme(s, rate * rest);
-      offlineAbtragen(s, halmeRate * rest, job.ereignisse);
+      // Erst abtragen, dann nur bezahlen, was wirklich aus dem Haufen kam
+      const soll = halmeRate * rest;
+      const genommen = offlineAbtragen(s, soll, job.ereignisse);
+      einnahme(s, rate * rest * Math.min(1, genommen / Math.max(1, soll)));
     }
     job.ergebnis = {
       kurz: job.sek < 30, sekunden: job.sek, abwesend: job.weg, ereignisse: job.ereignisse,
@@ -5959,7 +6102,7 @@ function abwesenheitWeiter(s, job, schritte = 1000, bisMs = Infinity) {
 /** Heu, das die Maschinen in der geschätzten Zeit weggenommen hätten, an ihren Greifstellen abtragen. */
 function offlineAbtragen(s, menge, ereignisse) {
   const hf = s.hf;
-  if (!hf || menge < 1) return;
+  if (!hf || menge < 1) return 0;
   const stellen = [];
   for (const b of s.bauten) {
     if (b.typ === 'rechen' && lauf(b).kamm) stellen.push(lauf(b).kamm);
@@ -5987,11 +6130,14 @@ function offlineAbtragen(s, menge, ereignisse) {
     genommen += haufenAbtragen(hf, x, z, Math.min(menge - genommen, 4000), 1.0);
     if (i % 8 === 7) haufenSetzen(hf, 6);
   }
+  // Geben die Greifstellen nicht genug her, schrumpft der ganze Haufen um den Rest
+  if (genommen < menge - 1) genommen += haufenSchrumpfen(hf, menge - genommen);
   haufenSetzen(hf, 12);
   s.stat.abgetragen += genommen;
   s.stat.maschine += genommen;
   nadelnFreilegen(s, hf, null, ereignisse);
   s.haufenRest = haufenRest(hf);
+  return genommen;
 }
 
 /** Alles auf einmal (für Tests und Werkzeuge). */
@@ -6011,6 +6157,7 @@ let master = null;
 let rauschPuffer = null;
 let stumm = false;
 let saugerTon = null;
+let muenzenZuletzt = -1e9;
 
 function klangStumm(wert) {
   if (wert !== undefined) {
@@ -6087,6 +6234,26 @@ const klang = {
     rauschen(0.03, { frequenz: 5000, q: 2, laut: 0.15 });
     ton(1046, 0.12, { laut: 0.16, start: 0.02 });
     ton(1568, 0.25, { laut: 0.14, start: 0.09 });
+  },
+  /**
+   * Münzen nach dem Kassenklang (Vorbild: coins 0,18 s nach sell_register): 4–6 kurze,
+   * helle Dreieckstöne, zufällig versetzt. verzoegerung in s; abstand: Mindestabstand in s
+   * zum letzten Münzklang (für gesammelte Maschinenverkäufe), sonst wird nichts gespielt.
+   */
+  muenzen(verzoegerung = 0.18, abstand = 0) {
+    if (!bereit()) return;
+    const jetzt = ctx.currentTime;
+    if (abstand > 0 && jetzt - muenzenZuletzt < abstand) return;
+    muenzenZuletzt = jetzt;
+    const n = 4 + Math.floor(Math.random() * 3);
+    let t = verzoegerung;
+    for (let i = 0; i < n; i++) {
+      const f = 2000 + Math.random() * 1000;
+      ton(f, 0.07 + Math.random() * 0.05, { typ: 'triangle', laut: 0.05 + Math.random() * 0.03, start: t });
+      ton(f * 1.5, 0.04, { typ: 'sine', laut: 0.025, start: t + 0.003 });
+      t += 0.03 + Math.random() * 0.03;
+    }
+    rauschen(0.05, { frequenz: 6500, q: 1.5, laut: 0.05, start: verzoegerung });
   },
   piep(staerke) {
     if (!bereit()) return;
@@ -6332,13 +6499,13 @@ const STROH_FARBEN = ['#d0a14d', '#d9a263', '#e8c98a', '#c8923f', '#dcaa5c', '#e
  * Stroh: dicht gekreuzte Halme in Heutönen. Liefert Farb- und Relieftextur,
  * beide kachelbar. dichte ~ Halme pro Kachel.
  */
-function strohTexturen(groesse = 512, dichte = 2600, seed = 7) {
+function strohTexturen(groesse = 512, dichte = 2600, seed = 7, grund = '#b07c3c') {
   const z = texturZufall(seed);
   const farbe = leinwandNeu(groesse);
   const relief = leinwandNeu(groesse);
   const f = farbe.getContext('2d');
   const r = relief.getContext('2d');
-  f.fillStyle = '#b07c3c';
+  f.fillStyle = grund;
   f.fillRect(0, 0, groesse, groesse);
   r.fillStyle = '#000';
   r.fillRect(0, 0, groesse, groesse);
@@ -6392,7 +6559,7 @@ function bodenTextur(groesse = 512, seed = 11) {
     const hell = z() < 0.5;
     kachelLinie(x, 0, groesse, (x2) => {
       const g = x2.createRadialGradient(px, py, 0, px, py, rad);
-      g.addColorStop(0, hell ? 'rgba(214,196,164,0.28)' : 'rgba(120,98,70,0.12)');
+      g.addColorStop(0, hell ? 'rgba(214,196,164,0.28)' : 'rgba(120,98,70,0.05)');
       g.addColorStop(1, 'rgba(0,0,0,0)');
       x2.fillStyle = g;
       x2.fillRect(px - rad, py - rad, rad * 2, rad * 2);
@@ -6407,10 +6574,10 @@ function bodenTextur(groesse = 512, seed = 11) {
   }
   x.putImageData(bild, 0, 0);
   // Kiesel
-  for (let i = 0; i < 900; i++) {
+  for (let i = 0; i < 1800; i++) {
     const px = z() * groesse;
     const py = z() * groesse;
-    const rr = 0.6 + z() * 1.8;
+    const rr = 0.5 + z() * 1.6;
     x.fillStyle = z() < 0.5 ? 'rgba(90,72,52,0.45)' : 'rgba(235,222,196,0.4)';
     x.beginPath(); x.arc(px, py, rr, 0, Math.PI * 2); x.fill();
   }
@@ -6433,17 +6600,17 @@ function bodenTextur(groesse = 512, seed = 11) {
 }
 
 /** Senkrechte, dunkle Holzplanken mit Maserung und Fugen. */
-function plankenTextur(groesse = 512, planken = 8, seed = 23) {
+function plankenTextur(groesse = 512, planken = 8, seed = 23, maserung = 26) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
   const b = groesse / planken;
   for (let i = 0; i < planken; i++) {
-    const ton = 96 + z() * 24;
+    const ton = 112 + z() * 24;
     x.fillStyle = `rgb(${ton + 26},${ton + 2},${ton - 18})`;
     x.fillRect(i * b, 0, b, groesse);
     // Maserung
-    for (let k = 0; k < 26; k++) {
+    for (let k = 0; k < maserung; k++) {
       const px = i * b + z() * b;
       x.strokeStyle = `rgba(${z() < 0.5 ? '30,18,8' : '140,100,65'},${0.12 + z() * 0.18})`;
       x.lineWidth = 0.6 + z() * 1.4;
@@ -6481,8 +6648,8 @@ function plankenTextur(groesse = 512, planken = 8, seed = 23) {
   return alsTextur(c);
 }
 
-/** Wellblech in Rostbraun für das obere Wandband und Dächer. */
-function wellblechTextur(groesse = 256, seed = 31) {
+/** Wellblech in Rostbraun für das obere Wandband und Dächer; hell: verzinktes Grau mit Rostschlieren. */
+function wellblechTextur(groesse = 256, seed = 31, { hell = false } = {}) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
@@ -6490,26 +6657,31 @@ function wellblechTextur(groesse = 256, seed = 31) {
   for (let i = 0; i < groesse; i++) {
     const p = (i / groesse) * wellen * Math.PI * 2;
     const l = 0.5 + 0.5 * Math.sin(p);
-    const ton = 70 + l * 60;
-    x.fillStyle = `rgb(${ton + 25},${ton * 0.72 + 10},${ton * 0.55})`;
+    if (hell) {
+      const ton = 118 + l * 62; // um #9A9690, Rippen deutlich
+      x.fillStyle = `rgb(${ton + 4},${ton},${ton - 6})`;
+    } else {
+      const ton = 70 + l * 60;
+      x.fillStyle = `rgb(${ton + 25},${ton * 0.72 + 10},${ton * 0.55})`;
+    }
     x.fillRect(i, 0, 1, groesse);
   }
   // Rostschlieren
   for (let i = 0; i < 60; i++) {
     const px = z() * groesse;
     const py = z() * groesse;
-    x.fillStyle = `rgba(${120 + z() * 60},${50 + z() * 30},20,${0.08 + z() * 0.12})`;
+    x.fillStyle = `rgba(${120 + z() * 60},${50 + z() * 30},20,${(hell ? 0.05 : 0.08) + z() * 0.12})`;
     x.fillRect(px, py, 1 + z() * 4, 10 + z() * 60);
   }
   return alsTextur(c);
 }
 
 /** Rostiger Stahl für Bögen und Pfosten. */
-function rostTextur(groesse = 128, seed = 41) {
+function rostTextur(groesse = 128, seed = 41, grund = '#8a6a50') {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
-  x.fillStyle = '#8a6a50';
+  x.fillStyle = grund;
   x.fillRect(0, 0, groesse, groesse);
   for (let i = 0; i < 400; i++) {
     x.fillStyle = `rgba(${90 + z() * 80},${40 + z() * 40},${20 + z() * 20},${0.2 + z() * 0.3})`;
@@ -6559,42 +6731,69 @@ function wolkenTextur(seed = 3) {
   const z = texturZufall(seed);
   const c = leinwandNeu(512, 256);
   const x = c.getContext('2d');
-  for (let i = 0; i < 46; i++) {
+  for (let i = 0; i < 70; i++) {
     const px = 70 + z() * 372;
-    const py = 118 + z() * 70 - Math.abs(px - 256) * 0.22;
-    const rad = 34 + z() * 64;
+    const py = 124 + z() * 64 - Math.abs(px - 256) * 0.22;
+    const rad = 28 + z() * 58;
     const g = x.createRadialGradient(px, py, 0, px, py, rad);
-    g.addColorStop(0, 'rgba(255,255,255,0.97)');
-    g.addColorStop(0.6, 'rgba(250,250,252,0.62)');
-    g.addColorStop(1, 'rgba(245,247,250,0)');
+    // bauschig mit klarem Rand (S3/S6): fast deckend bis kurz vor den Rand
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.75, 'rgba(252,252,253,0.95)');
+    g.addColorStop(1, 'rgba(248,249,251,0)');
     x.fillStyle = g;
     x.fillRect(px - rad, py - rad, rad * 2, rad * 2);
   }
   // Schattenseite unten
   x.globalCompositeOperation = 'source-atop';
-  const unten = x.createLinearGradient(0, 120, 0, 230);
-  unten.addColorStop(0, 'rgba(150,165,185,0)');
-  unten.addColorStop(1, 'rgba(150,165,185,0.55)');
+  const unten = x.createLinearGradient(0, 118, 0, 230);
+  unten.addColorStop(0, 'rgba(154,168,186,0)');
+  unten.addColorStop(1, 'rgba(170,182,198,0.32)');
   x.fillStyle = unten;
   x.fillRect(0, 0, 512, 256);
   x.globalCompositeOperation = 'source-over';
   return alsTextur(c, { kachel: false });
 }
 
-/** Feld aus Heu draußen: Streifen und Bündel, aus der Ferne gesehen. */
+/** Stoppelfeld draußen: blass, mit feinen Stoppelreihen und losem Heu (S0/S2 #987855…#998B67). */
 function feldTextur(groesse = 256, seed = 51) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
-  x.fillStyle = '#c9a55a';
+  x.fillStyle = '#cdbb8e';
   x.fillRect(0, 0, groesse, groesse);
-  for (let i = 0; i < 1400; i++) {
-    x.fillStyle = STROH_FARBEN[Math.floor(z() * STROH_FARBEN.length)];
-    x.globalAlpha = 0.5;
+  // Stoppelreihen
+  x.globalAlpha = 0.4;
+  x.fillStyle = '#b3a07a';
+  for (let y = 0; y < groesse; y += 8) x.fillRect(0, y + Math.floor(z() * 2), groesse, 1);
+  // Stoppeln und loses Heu
+  const toene = ['#b8a47c', '#a89468', '#d8c79c', '#9c8a62', '#c2ad80'];
+  x.globalAlpha = 0.5;
+  for (let i = 0; i < 1600; i++) {
+    x.fillStyle = toene[Math.floor(z() * toene.length)];
     x.fillRect(z() * groesse, z() * groesse, 1 + z() * 3, 1);
   }
   x.globalAlpha = 1;
   return alsTextur(c);
+}
+
+/** Weicher, runder Fleck (weiß mit Alpha) für Wiesen draußen, randlos auslaufend. */
+function fleckTextur(groesse = 128, seed = 61) {
+  const z = texturZufall(seed);
+  const c = leinwandNeu(groesse);
+  const x = c.getContext('2d');
+  const m = groesse / 2;
+  for (let i = 0; i < 9; i++) {
+    const px = m + (z() - 0.5) * groesse * 0.35;
+    const py = m + (z() - 0.5) * groesse * 0.35;
+    const r = groesse * (0.2 + z() * 0.18);
+    const g = x.createRadialGradient(px, py, 0, px, py, r);
+    g.addColorStop(0, 'rgba(255,255,255,0.75)');
+    g.addColorStop(0.6, 'rgba(255,255,255,0.45)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, groesse, groesse);
+  }
+  return alsTextur(c, { kachel: false });
 }
 
 /** LED-Anzeige wie die Digitaluhr über dem Tor; wird jede Sekunde neu gemalt. */
@@ -6690,26 +6889,49 @@ function heugabelModell() {
   quer.rotation.y = Math.PI / 2;
   quer.position.z = -0.66;
   g.add(quer);
+  // Sechs Zinken, nach vorn und deutlich nach oben gebogen (S3: sechs Striche über dem Querbalken)
+  const zinkeGeo = new THREE.CylinderGeometry(0.0085, 0.005, 0.3, 6);
   for (let i = 0; i < 6; i++) {
     const x = -0.15 + i * 0.06;
-    const zinke = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.006, 0.26, 6), mat('stahl'));
-    zinke.rotation.x = Math.PI / 2 - 0.18;
-    zinke.position.set(x, 0.02, -0.8);
+    const zinke = new THREE.Mesh(zinkeGeo, mat('stahl'));
+    // das vordere Ende (-y der Zylinderachse) zeigt nach vorn oben
+    zinke.rotation.x = Math.PI / 2 + 0.5;
+    zinke.position.set(x, 0.07, -0.79);
     g.add(zinke);
   }
   return g;
 }
 
+/** Gelbe Kinderschaufel: Kehrblech mit Seitenwänden, kurzer Stiel, D-Griff. Blatt vorn (-z). */
 function sandschaufelModell() {
   const g = new THREE.Group();
-  const s = zyl(0.016, 0.34, mat('gelb'), 8);
-  s.position.z = 0.1;
+  const gelb = mat('gelb');
+  const boden = box(0.24, 0.01, 0.26, gelb);
+  boden.position.set(0, 0, -0.3);
+  boden.rotation.x = -0.08; // Vorderkante etwas tiefer
+  g.add(boden);
+  for (const x of [-0.12, 0.12]) {
+    const wand = box(0.01, 0.05, 0.26, gelb);
+    wand.position.set(x, 0.022, -0.3);
+    wand.rotation.x = -0.08;
+    g.add(wand);
+  }
+  const rueck = box(0.25, 0.06, 0.012, gelb);
+  rueck.position.set(0, 0.026, -0.17);
+  g.add(rueck);
+  const s = zyl(0.018, 0.35, gelb, 8);
+  s.position.set(0, 0.035, 0.005);
   g.add(s);
-  const kopf = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat('gelb'));
-  kopf.scale.set(1, 0.55, 1.3);
-  kopf.rotation.x = Math.PI;
-  kopf.position.z = -0.14;
-  g.add(kopf);
+  // D-Griff: Querholm und Bogen
+  const quer = zyl(0.012, 0.1, gelb, 6);
+  quer.rotation.y = Math.PI / 2;
+  quer.position.set(0, 0.035, 0.18);
+  g.add(quer);
+  const bogen = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 12, Math.PI), gelb);
+  bogen.rotation.x = Math.PI / 2;
+  bogen.scale.set(1, 1.3, 1);
+  bogen.position.set(0, 0.035, 0.18);
+  g.add(bogen);
   return g;
 }
 
@@ -6809,20 +7031,39 @@ function eimerModell() {
   return g;
 }
 
-/** Heu, das auf einem Werkzeug liegt: ein Büschel aus Halmen. */
-function heuBueschel(anzahl = 40, radius = 0.12) {
-  const g = new THREE.Group();
-  const halmGeo = new THREE.BoxGeometry(0.007, 0.007, 0.2);
-  const farben = [0xf6cf6a, 0xeeb94c, 0xe2a338, 0xf9de90, 0xd58f2c];
-  const mats = farben.map((c) => new THREE.MeshLambertMaterial({ color: c }));
+/**
+ * Heu, das auf einem Werkzeug liegt: ein Büschel aus flachen Halmen, zu einer
+ * Geometrie mit Vertexfarben vereint (ein Zeichenaufruf statt einer je Halm).
+ * breite: Halmbreite in m (flach, 4 mm dick), laenge: Halmlänge.
+ */
+function heuBueschel(anzahl = 40, radius = 0.12, { breite = 0.007, laenge = 0.2, hoch = 0.6 } = {}) {
+  const farben = [0xf6cf6a, 0xeeb94c, 0xe2a338, 0xf9de90, 0xd58f2c, 0xe8b85a];
+  const teile = [];
+  const farbe = new THREE.Color();
+  const cols = [];
+  const m4 = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const e = new THREE.Euler();
+  const v = new THREE.Vector3();
+  const eins = new THREE.Vector3(1, 1, 1);
   for (let i = 0; i < anzahl; i++) {
-    const h = new THREE.Mesh(halmGeo, mats[i % mats.length]);
+    const halm = new THREE.BoxGeometry(breite, Math.min(breite, 0.004), laenge * (0.8 + Math.random() * 0.4));
     const a = Math.random() * Math.PI * 2;
     const r = Math.sqrt(Math.random()) * radius;
-    h.position.set(Math.cos(a) * r, Math.random() * radius * 0.6, Math.sin(a) * r);
-    h.rotation.set((Math.random() - 0.5) * 0.9, Math.random() * Math.PI, (Math.random() - 0.5) * 0.9);
-    g.add(h);
+    v.set(Math.cos(a) * r, Math.random() * radius * hoch, Math.sin(a) * r);
+    e.set((Math.random() - 0.5) * 0.9, Math.random() * Math.PI, (Math.random() - 0.5) * 0.9);
+    q.setFromEuler(e);
+    m4.compose(v, q, eins);
+    halm.applyMatrix4(m4);
+    farbe.setHex(farben[i % farben.length]);
+    for (let k = 0; k < halm.attributes.position.count; k++) cols.push(farbe.r, farbe.g, farbe.b);
+    teile.push(halm);
   }
+  const geo = geoVereinen(teile);
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  if (!MAT.heuBueschel) MAT.heuBueschel = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x3a2610 });
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(geo, MAT.heuBueschel));
   return g;
 }
 
@@ -6842,16 +7083,64 @@ function nadelModell(gold = false) {
   return g;
 }
 
+/** Mehrere Geometrien zu einer (Position, Normale, UV; alle mit Index). */
+function geoVereinen(liste) {
+  let n = 0;
+  for (const g of liste) n += g.attributes.position.count;
+  const pos = new Float32Array(n * 3);
+  const nor = new Float32Array(n * 3);
+  const uv = new Float32Array(n * 2);
+  const idx = [];
+  let v = 0;
+  for (const g of liste) {
+    const gi = g;
+    pos.set(gi.attributes.position.array, v * 3);
+    nor.set(gi.attributes.normal.array, v * 3);
+    if (gi.attributes.uv) uv.set(gi.attributes.uv.array, v * 2);
+    if (gi.index) for (const i of gi.index.array) idx.push(i + v);
+    else for (let i = 0; i < gi.attributes.position.count; i++) idx.push(i + v);
+    v += gi.attributes.position.count;
+    g.dispose();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  return geo;
+}
+
+/** Heubündel wie im Vorbild: flauschiger, stark verbeulter Knäuel mit abstehenden Halmen. */
+function buendelGeometrie() {
+  const kern = new THREE.SphereGeometry(0.13, 12, 8);
+  // kräftig verbeult (stetig in der Position, damit die Naht zu bleibt)
+  const p = kern.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i); const y = p.getY(i); const z = p.getZ(i);
+    const f = 0.84 + 0.13 * Math.sin(x * 61 + z * 47) * Math.sin(y * 53 + x * 29) + 0.09 * Math.sin(z * 83 - y * 37);
+    p.setXYZ(i, x * f, y * f * 0.8, z * f);
+  }
+  kern.computeVertexNormals();
+  const teile = [kern];
+  // abstehende Halme ringsum (fest verteilt, damit alle Bündel gleich sind: eine Geometrie, ein Zeichenaufruf)
+  const m4 = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const e = new THREE.Euler();
+  for (let i = 0; i < 7; i++) {
+    const w = (i / 7) * Math.PI * 2 + (i % 2) * 0.4;
+    const halm = new THREE.BoxGeometry(0.014, 0.005, 0.15);
+    e.set(0.25 * Math.sin(i * 2.3), -w + Math.PI / 2 + 0.5 * Math.cos(i * 1.7), 0.3 * Math.sin(i * 3.1));
+    q.setFromEuler(e);
+    m4.compose(new THREE.Vector3(Math.cos(w) * 0.1, 0.02 * Math.sin(i * 1.3) - 0.01, Math.sin(w) * 0.1), q, new THREE.Vector3(1, 1, 1));
+    halm.applyMatrix4(m4);
+    teile.push(halm);
+  }
+  return geoVereinen(teile);
+}
+
 /** Geometrien für Gegenstände auf Bändern und am Boden (als Instanzen gezeichnet). */
 function gegenstandGeometrien() {
-  const buendel = new THREE.SphereGeometry(0.13, 14, 10);
-  // leicht verbeult wie ein Heuknäuel (stetig, damit die Naht zu bleibt)
-  const p = buendel.attributes.position;
-  for (let i = 0; i < p.count; i++) {
-    const f = 0.9 + 0.1 * Math.sin(p.getX(i) * 61 + p.getZ(i) * 47) * Math.sin(p.getY(i) * 53 + p.getX(i) * 29);
-    p.setXYZ(i, p.getX(i) * f, p.getY(i) * f * 0.85, p.getZ(i) * f);
-  }
-  buendel.computeVertexNormals();
+  const buendel = buendelGeometrie();
   const knaeuel = new THREE.SphereGeometry(0.11, 10, 8);
   const ballen = new THREE.BoxGeometry(0.5, 0.32, 0.36);
   const pellet = new THREE.CylinderGeometry(0.1, 0.1, 0.08, 10);
@@ -6861,6 +7150,20 @@ function gegenstandGeometrien() {
   const papier = new THREE.BoxGeometry(0.34, 0.08, 0.26);
   const ziegel = new THREE.BoxGeometry(0.3, 0.12, 0.16);
   return { buendel, knaeuel, ballen, pellet, brei, silage, papier, ziegel };
+}
+
+/**
+ * Material der losen Heubündel (Band, Boden, in den Händen): helle Strohtextur und
+ * orange-goldenes Eigenleuchten wie im Vorbild (S2 #D0964E). Einmal für alle.
+ */
+function heuStueckMaterial() {
+  if (MAT.heuStueck) return MAT.heuStueck;
+  const map = strohTexturen(256, 700, 13, '#d9a55a').farbe;
+  map.repeat.set(2, 2);
+  MAT.heuStueck = new THREE.MeshStandardMaterial({
+    map, color: 0xffffff, roughness: 0.95, emissive: 0xc86a1e, emissiveIntensity: 0.6,
+  });
+  return MAT.heuStueck;
 }
 
 const GEGENSTAND_FARBEN = {
@@ -6902,7 +7205,8 @@ function szeneBauen(leinwand, qualitaet = 'mittel') {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.pixel));
 
   const szene = new THREE.Scene();
-  szene.fog = new THREE.Fog(HIMMEL_HORIZONT.clone(), 70, 320);
+  // Nebel erst ab 120 m: die Nähe bleibt klar, die Ferne wird blau (Dunst wie S0/S2)
+  szene.fog = new THREE.Fog(HIMMEL_HORIZONT.clone(), 120, 320);
 
   const kamera = new THREE.PerspectiveCamera(72, 1, 0.05, 900);
   kamera.position.set(0, 1.65, 12);
@@ -6961,7 +7265,7 @@ function szeneBauen(leinwand, qualitaet = 'mittel') {
     const winkel = (i / 10) * Math.PI * 2 + Math.random() * 0.4;
     const weite = 250 + Math.random() * 150;
     s.position.set(Math.cos(winkel) * weite, 90 + Math.random() * 70, Math.sin(winkel) * weite);
-    const g = 180 + Math.random() * 120;
+    const g = 260 + Math.random() * 120;
     s.scale.set(g, g * 0.5, 1);
     s.renderOrder = -9;
     wolken.push({ s, geschw: 0.6 + Math.random() * 1.2 });
@@ -7015,63 +7319,94 @@ function szeneBauen(leinwand, qualitaet = 'mittel') {
   };
 }
 
-/** Hügel, Felsen und Heufelder um die Halle, einfach gehalten und im Nebel verblassend. */
+/**
+ * Stoppelfeld, weiche Wiesenflecken, runde Grashügel mit Felsflanken und dunkle
+ * Ballen draußen (S0/S2). Alles zu wenigen Meshes zusammengefasst: Wiesen, Hügel und
+ * Ballen sind je ein Zeichenaufruf.
+ */
 function landschaftBauen(szene, q) {
   const feld = feldTextur(256, 51);
   feld.repeat.set(40, 40);
   const boden = new THREE.Mesh(
     new THREE.CircleGeometry(700, 48),
-    new THREE.MeshLambertMaterial({ color: 0xd8ccb0, map: feld }),
+    new THREE.MeshLambertMaterial({ color: 0xa89a82, map: feld }),
   );
   boden.rotation.x = -Math.PI / 2;
   boden.position.y = -0.02;
   boden.receiveShadow = false;
   szene.add(boden);
 
-  // Grüne Wiesenflecken
-  const wiese = new THREE.MeshLambertMaterial({ color: 0x7f9a4a });
-  for (let i = 0; i < 14; i++) {
+  // Grüne Wiesenflecken: weich auslaufend (Alpha-Verlauf), eine Geometrie
+  const flecken = [];
+  for (let i = 0; i < 16; i++) {
     const a = Math.random() * Math.PI * 2;
     const r = 70 + Math.random() * 200;
-    const m = new THREE.Mesh(new THREE.CircleGeometry(20 + Math.random() * 40, 16), wiese);
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(Math.cos(a) * r, -0.01, Math.sin(a) * r);
-    szene.add(m);
+    const g = (40 + Math.random() * 80);
+    const pg = new THREE.PlaneGeometry(g, g * (0.6 + Math.random() * 0.5));
+    pg.rotateZ(Math.random() * Math.PI);
+    pg.rotateX(-Math.PI / 2);
+    pg.translate(Math.cos(a) * r, -0.01 + i * 0.001, Math.sin(a) * r);
+    flecken.push(pg);
   }
+  const wiese = new THREE.Mesh(geoVereinen(flecken), new THREE.MeshLambertMaterial({
+    color: 0x5f7440, map: fleckTextur(128, 61), transparent: true, depthWrite: false,
+  }));
+  wiese.renderOrder = -1;
+  szene.add(wiese);
 
-  // Hügelkette und Berge als verbeulte Kegel
-  const hang = new THREE.MeshLambertMaterial({ color: 0x8c9a62, flatShading: true });
-  const fels = new THREE.MeshLambertMaterial({ color: 0x9a948a, flatShading: true });
+  // Hügel und Berge: gestauchte Kugeln, weich schattiert; steile Flanken felsgrau (Vertexfarben)
+  const huegel = [];
+  const gras = new THREE.Color(0x6f8a45);
+  const fels = new THREE.Color(0x8a857c);
+  const tmp = new THREE.Color();
   for (let i = 0; i < 26; i++) {
     const a = (i / 26) * Math.PI * 2 + Math.random() * 0.1;
     const r = 260 + Math.random() * 180;
     const hoch = 30 + Math.random() * 70;
-    const geo = new THREE.ConeGeometry(60 + Math.random() * 60, hoch, 7, 3);
+    const breit = 60 + Math.random() * 60;
+    const geo = new THREE.SphereGeometry(1, 18, 9, 0, Math.PI * 2, 0, Math.PI / 2);
     const pos = geo.attributes.position;
+    const felsig = i % 3 === 0;
     for (let k = 0; k < pos.count; k++) {
-      pos.setX(k, pos.getX(k) * (0.85 + Math.random() * 0.3));
-      pos.setZ(k, pos.getZ(k) * (0.85 + Math.random() * 0.3));
-      if (pos.getY(k) < hoch / 2 - 1) pos.setY(k, pos.getY(k) + (Math.random() - 0.5) * 6);
+      const x = pos.getX(k); const y = pos.getY(k); const z = pos.getZ(k);
+      const beule = 1 + 0.12 * Math.sin(x * 5 + i) * Math.cos(z * 4 + i * 2);
+      pos.setXYZ(k, x * breit * beule, y * hoch * (0.95 + 0.1 * Math.sin(x * 7 + z * 3)), z * breit * beule * (0.8 + 0.2 * Math.cos(i)));
     }
     geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, i % 3 === 0 ? fels : hang);
-    m.position.set(Math.cos(a) * r, hoch / 2 - 4, Math.sin(a) * r);
-    szene.add(m);
+    const farben = new Float32Array(pos.count * 3);
+    const nor = geo.attributes.normal;
+    for (let k = 0; k < pos.count; k++) {
+      const steil = 1 - nor.getY(k);
+      tmp.copy(gras).lerp(fels, Math.min(1, Math.max(0, (steil - (felsig ? 0.25 : 0.45)) * 2.5)));
+      farben[k * 3] = tmp.r; farben[k * 3 + 1] = tmp.g; farben[k * 3 + 2] = tmp.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(farben, 3));
+    geo.translate(Math.cos(a) * r, -4, Math.sin(a) * r);
+    huegel.push(geo);
   }
+  const farbListe = huegel.map((g) => g.attributes.color.array);
+  const berge = geoVereinen(huegel);
+  const alle = new Float32Array(berge.attributes.position.count * 3);
+  let o = 0;
+  for (const f of farbListe) { alle.set(f, o); o += f.length; }
+  berge.setAttribute('color', new THREE.BufferAttribute(alle, 3));
+  szene.add(new THREE.Mesh(berge, new THREE.MeshLambertMaterial({ vertexColors: true })));
 
-  // Draußen liegen Heuballen in Reihen auf den Feldern
-  const ballenGeo = new THREE.CylinderGeometry(0.75, 0.75, 1.3, 12);
-  ballenGeo.rotateZ(Math.PI / 2);
-  const ballenMat = new THREE.MeshLambertMaterial({ color: 0xd9b25e });
+  // Draußen liegen kleine dunkle Ballen auf den Feldern
+  const ballenGeo = new THREE.BoxGeometry(0.9, 0.5, 0.5);
+  const ballenMat = new THREE.MeshLambertMaterial({ color: 0x6e5a3c });
   const anzahl = q.halme > 5000 ? 90 : 40;
   const ballen = new THREE.InstancedMesh(ballenGeo, ballenMat, anzahl);
   const m4 = new THREE.Matrix4();
   const quat = new THREE.Quaternion();
+  const achse = new THREE.Vector3(0, 1, 0);
+  const eins = new THREE.Vector3(1, 1, 1);
+  const v = new THREE.Vector3();
   for (let i = 0; i < anzahl; i++) {
     const a = Math.random() * Math.PI * 2;
     const r = 45 + Math.random() * 160;
-    quat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.random() * Math.PI);
-    m4.compose(new THREE.Vector3(Math.cos(a) * r, 0.7, Math.sin(a) * r), quat, new THREE.Vector3(1, 1, 1));
+    quat.setFromAxisAngle(achse, Math.random() * Math.PI);
+    m4.compose(v.set(Math.cos(a) * r, 0.25, Math.sin(a) * r), quat, eins);
     ballen.setMatrixAt(i, m4);
   }
   szene.add(ballen);
@@ -7082,6 +7417,13 @@ function landschaftBauen(szene, q) {
 // über dem offenen Dach, Rolltor mit Digitaluhr, der Verkaufsstand mit Schild
 // und Preisaufsteller. Liefert auch die Kollisionskästen für den Spieler.
 
+
+/** Modell aus modelle.js mit eigenen Materialkopien (die Halle gibt ihre Materialien beim Neubau frei). */
+function eigenesModell(m, skala = 1) {
+  m.traverse((o) => { if (o.isMesh) o.material = o.material.clone(); });
+  m.scale.setScalar(skala);
+  return m;
+}
 
 const STAHL = 0x3a3836;
 
@@ -7114,7 +7456,7 @@ function hofBauen(szene, qualitaet, felder = 0) {
 
   // --- Boden
   const bt = bodenTextur(512, 11);
-  bt.repeat.set(breite / 5, tiefe / 5);
+  bt.repeat.set(breite / 8, tiefe / 8);
   bt.anisotropy = qualitaet.aniso;
   const boden = new THREE.Mesh(
     new THREE.PlaneGeometry(breite + 1, tiefe + 1),
@@ -7128,11 +7470,13 @@ function hofBauen(szene, qualitaet, felder = 0) {
 
   // --- Wände
   const planken = plankenTextur(512, 20, 23);
+  const sockelPlanken = plankenTextur(256, 10, 29, 6); // Sockel: ruhiger, weniger Maserung
   planken.anisotropy = qualitaet.aniso;
   const blech = wellblechTextur(256, 31);
-  const rost = rostTextur(128, 41);
+  const blechHell = wellblechTextur(256, 33, { hell: true });
+  const rost = rostTextur(128, 41, '#a88a6c');
   const stahlMat = new THREE.MeshStandardMaterial({ color: STAHL, roughness: 0.6, metalness: 0.5 });
-  const rostMat = new THREE.MeshStandardMaterial({ map: rost, color: 0xf0d2b0, roughness: 0.62, metalness: 0.15 });
+  const rostMat = new THREE.MeshStandardMaterial({ map: rost, color: 0xffffff, roughness: 0.62, metalness: 0.1 });
   const dicke = 0.16;
   const H = W.wandHoehe;
   const B = W.bandHoehe;
@@ -7151,7 +7495,7 @@ function hofBauen(szene, qualitaet, felder = 0) {
     oben.rotation.y = -winkel;
     gruppe.add(unten, oben);
     // graues Sockelband unten wie im Vorbild
-    const sockelMat = new THREE.MeshStandardMaterial({ map: gekachelt(planken, laenge, 1.1, 2.2, H), color: 0xa8a29a, roughness: 0.95 });
+    const sockelMat = new THREE.MeshStandardMaterial({ map: gekachelt(sockelPlanken, laenge, 1.1, 2.2, H), color: 0xd9d4ca, roughness: 0.95 });
     const sockel = kasten(laenge, 1.1, dicke + 0.04, sockelMat, cx, 0.55, cz);
     sockel.rotation.y = -winkel;
     gruppe.add(sockel);
@@ -7220,23 +7564,13 @@ function hofBauen(szene, qualitaet, felder = 0) {
     bogen.castShadow = true;
     gruppe.add(bogen);
   }
-  // Längsstreben zwischen den Bögen
-  for (const t of [0.25, 0.5, 0.75]) {
-    const winkel = Math.PI * t;
-    const y = oben + Math.sin(winkel) * W.bogenHoehe;
-    const z = mz + Math.cos(winkel) * (tiefe / 2);
-    const strebe = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, boegen[boegen.length - 1] - boegen[0], 6), rostMat);
-    strebe.rotation.z = Math.PI / 2;
-    strebe.position.set((boegen[0] + boegen[boegen.length - 1]) / 2, y, z);
-    strebe.castShadow = true;
-    gruppe.add(strebe);
-  }
+  // Keine Längsstreben: im Vorbild stehen nur die Bögen (S3, S6).
 
   // --- Rolltor mit Warnstreifen und Digitaluhr
   const torCanvas = document.createElement('canvas');
   torCanvas.width = 256; torCanvas.height = 256;
   const tx = torCanvas.getContext('2d');
-  tx.fillStyle = '#4d5650'; tx.fillRect(0, 0, 256, 256);
+  tx.fillStyle = '#66735f'; tx.fillRect(0, 0, 256, 256);
   for (let y = 0; y < 256; y += 12) {
     tx.fillStyle = 'rgba(0,0,0,0.35)'; tx.fillRect(0, y, 256, 2);
     tx.fillStyle = 'rgba(255,255,255,0.06)'; tx.fillRect(0, y + 2, 256, 2);
@@ -7253,7 +7587,7 @@ function hofBauen(szene, qualitaet, felder = 0) {
   tx.fillStyle = '#1b1b1b'; tx.fillRect(0, 220, 256, 6);
   const torTextur = new THREE.CanvasTexture(torCanvas);
   torTextur.colorSpace = THREE.SRGBColorSpace;
-  const torMat = new THREE.MeshStandardMaterial({ map: torTextur, roughness: 0.55, metalness: 0.4 });
+  const torMat = new THREE.MeshStandardMaterial({ map: torTextur, roughness: 0.55, metalness: 0.3, emissive: 0x101410 });
   const tor = new THREE.Mesh(new THREE.PlaneGeometry(W.torBreite, W.torHoehe), torMat);
   tor.position.set(W.torX, W.torHoehe / 2, W.zMin + 0.1);
   tor.receiveShadow = true;
@@ -7263,29 +7597,28 @@ function hofBauen(szene, qualitaet, felder = 0) {
   gruppe.add(kasten(0.18, W.torHoehe + 0.2, 0.3, torRahmenMat, t0 - 0.05, (W.torHoehe + 0.2) / 2, W.zMin + 0.1));
   gruppe.add(kasten(0.18, W.torHoehe + 0.2, 0.3, torRahmenMat, t1 + 0.05, (W.torHoehe + 0.2) / 2, W.zMin + 0.1));
   gruppe.add(kasten(W.torBreite + 0.4, 0.2, 0.3, torRahmenMat, W.torX, W.torHoehe + 0.1, W.zMin + 0.1));
-  // Uhrkasten
+  // Uhrkasten oben, darunter das breite dunkle Schild „VERSAND“ mit zwei runden Lampen (s0_clock, s0_door)
   const uhr = ledAnzeige(256, 96);
   uhr.setze('0:00');
-  const uhrKasten = kasten(1.1, 0.46, 0.14, new THREE.MeshStandardMaterial({ color: 0x2a2724, roughness: 0.5, metalness: 0.4 }), W.torX, W.torHoehe + 0.5, W.zMin + 0.15);
+  const uhrY = W.torHoehe + 0.95;
+  const uhrKasten = kasten(1.1, 0.46, 0.14, new THREE.MeshStandardMaterial({ color: 0x2a2724, roughness: 0.5, metalness: 0.4 }), W.torX, uhrY, W.zMin + 0.15);
   gruppe.add(uhrKasten);
   const uhrFeld = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.32), new THREE.MeshBasicMaterial({ map: uhr.textur, toneMapped: false }));
-  uhrFeld.position.set(W.torX, W.torHoehe + 0.5, W.zMin + 0.23);
+  uhrFeld.position.set(W.torX, uhrY, W.zMin + 0.23);
   gruppe.add(uhrFeld);
-  // zwei kleine Lampen neben der Uhr
-  const lampeMat = new THREE.MeshBasicMaterial({ color: 0xffe9a8, toneMapped: false });
-  for (const dx of [-0.42, 0.42]) {
-    const l = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), lampeMat);
-    l.position.set(W.torX + dx, W.torHoehe + 0.3, W.zMin + 0.24);
+  const versand = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.5, 0.3),
+    new THREE.MeshStandardMaterial({ map: schildTextur('VERSAND', { breite: 512, hoehe: 104, grund: '#4a4744', schrift: '#26231f', rahmen: '#3a3734', groesse: 0.62, font: '800 {g}px "Arial Narrow", Arial, sans-serif' }), roughness: 0.6, metalness: 0.3 }),
+  );
+  versand.position.set(W.torX, W.torHoehe + 0.45, W.zMin + 0.12);
+  gruppe.add(versand);
+  const lampeMat = new THREE.MeshBasicMaterial({ color: 0xfff4d6, toneMapped: false });
+  const lampeGeo = new THREE.SphereGeometry(0.08, 12, 8);
+  for (const dx of [-0.84, 0.84]) {
+    const l = new THREE.Mesh(lampeGeo, lampeMat);
+    l.position.set(W.torX + dx, W.torHoehe + 0.45, W.zMin + 0.18);
     gruppe.add(l);
   }
-
-  // Schild „VERSAND“ über dem Tor, Poller davor
-  const versand = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.4, 0.3),
-    new THREE.MeshStandardMaterial({ map: schildTextur('VERSAND', { breite: 512, hoehe: 110, grund: '#d8d4c8', schrift: '#2a2a2a', rahmen: '#2a2a2a', groesse: 0.62 }), roughness: 0.7 }),
-  );
-  versand.position.set(W.torX, W.torHoehe + 0.95, W.zMin + 0.12);
-  gruppe.add(versand);
   const pollerMat = new THREE.MeshStandardMaterial({ color: 0xe0a12a, roughness: 0.55, metalness: 0.2 });
   const pollerBand = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 });
   for (const dx of [-2.0, 2.0]) {
@@ -7310,13 +7643,14 @@ function hofBauen(szene, qualitaet, felder = 0) {
     const laenge = W.xMax - W.xMin;
     const neigung = Math.atan2(oben - unten, tief);
     const vdMat = new THREE.MeshStandardMaterial({
-      map: gekachelt(blech, laenge, Math.hypot(tief, oben - unten), 1.6, 1.6), color: 0x8a8278, roughness: 0.7, metalness: 0.25, side: THREE.DoubleSide,
+      map: gekachelt(blechHell, laenge, Math.hypot(tief, oben - unten), 1.6, 1.6), color: 0xc9c0b4, roughness: 0.7, metalness: 0.2, side: THREE.DoubleSide,
+      emissive: 0x2e2b27, // Unterseite graubraun statt schwarz (S6)
     });
     const vordach = new THREE.Mesh(new THREE.PlaneGeometry(laenge, Math.hypot(tief, oben - unten)), vdMat);
     vordach.rotation.x = -Math.PI / 2 + neigung;
     vordach.position.set((W.xMin + W.xMax) / 2, (oben + unten) / 2, W.zMin + tief / 2);
     vordach.castShadow = true;
-    vordach.receiveShadow = true;
+    vordach.receiveShadow = false;
     gruppe.add(vordach);
     // Konsolen an den Pfosten
     for (let x = W.xMin + 2; x < W.xMax - 1; x += W.pfostenAbstand) {
@@ -7346,7 +7680,8 @@ function hofBauen(szene, qualitaet, felder = 0) {
     z0: W.standZ - W.standBreite / 2 - 0.1, z1: W.standZ + W.standBreite / 2 + 0.1, h: 2.4,
   });
   // Aufsteller vor dem Stand
-  const aufsteller = aufstellerBauen();
+  const preisTafel = preisTafelBauen();
+  const aufsteller = aufstellerBauen(preisTafel.textur);
   aufsteller.position.set(W.standX + 2.3, 0, W.standZ + 1.7);
   aufsteller.rotation.y = Math.PI / 2 - 0.35;
   gruppe.add(aufsteller);
@@ -7357,6 +7692,10 @@ function hofBauen(szene, qualitaet, felder = 0) {
   szene.add(gruppe);
   return {
     gruppe, kollider, uhr, boden, tor, torMat,
+    /** Preis auf dem Aufsteller: Zahl ($ je Halm) oder fertiger Text. Malt nur bei Änderung neu. */
+    preisSetzen: preisTafel.setze,
+    /** Halle abbauen: aus der Szene nehmen, Geometrien, Materialien und Texturen freigeben. */
+    entsorgen() { hofEntsorgen(gruppe); },
     stand: stand.gruppe, standTresen: stand.tresen,
     // Trichter vorn am Stand: hier rasten Bänder ein, hier wird verkauft
     standTrichter: { x: W.standX + W.standTiefe / 2 + 0.45, y: 0.9, z: W.standZ },
@@ -7382,17 +7721,18 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
   const dach = kasten(3.4, 0.08, 1.9, new THREE.MeshStandardMaterial({ color: 0x3b2a1c, roughness: 0.8 }), 0, 2.45, -0.1);
   dach.rotation.x = 0.1;
   ws.add(dach);
+  // Durchgehende rote Blende mit weißer Oberkante (farmer-eye-level.jpg, shop.png)
   const rotMat = new THREE.MeshStandardMaterial({ color: 0xa8342a, roughness: 0.7 });
   const weissMat = new THREE.MeshStandardMaterial({ color: 0xefe6d4, roughness: 0.7 });
-  for (let i = 0; i < 12; i++) {
-    const zacke = kasten(0.28, 0.24, 0.03, i % 2 ? weissMat : rotMat, -1.54 + i * 0.28, 2.28, -1.05);
-    ws.add(zacke);
-  }
-  // Werkzeuge an der Wand
+  ws.add(kasten(3.4, 0.24, 0.03, rotMat, 0, 2.26, -1.05));
+  ws.add(kasten(3.4, 0.06, 0.035, weissMat, 0, 2.41, -1.05));
+  // Werkzeuge an der Wand: dieselben Modelle wie in der Hand, senkrecht aufgehängt (Kopf unten)
   const haken = [[-0.9, 'spaten'], [-0.3, 'heugabel'], [0.35, 'besen'], [0.95, 'sauger']];
   for (const [x, art] of haken) {
-    const m = art === 'spaten' ? spatenWand() : art === 'heugabel' ? gabelWand() : art === 'besen' ? besenWand() : saugerWand();
-    m.position.set(x, 1.55, 0.6);
+    let m;
+    if (art === 'spaten') { m = eigenesModell(spatenModell()); m.rotation.set(-Math.PI / 2, 0, 0); m.position.set(x, 1.45, 0.58); }
+    else if (art === 'heugabel') { m = eigenesModell(heugabelModell()); m.rotation.set(-Math.PI / 2, 0, 0); m.position.set(x, 1.4, 0.56); }
+    else { m = art === 'besen' ? besenWand() : saugerWand(); m.position.set(x, 1.55, 0.6); }
     ws.add(m);
   }
   // Preisschilder auf dem Tresen
@@ -7419,8 +7759,9 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
     roughness: 0.95,
   }));
   tafel.name = 'bestenliste';
-  tafel.position.set(1.56, 1.5, -0.3);
-  tafel.rotation.y = Math.PI / 2;
+  // innen an der rechten Seitenwand, von vorn zu sehen
+  tafel.position.set(1.44, 1.55, 0.05);
+  tafel.rotation.y = -Math.PI / 2;
   ws.add(tafel);
   ws.position.set(W.werkzeugX, 0, W.werkzeugZ);
   ws.rotation.y = 0; // Tresen zeigt nach −z (in die Halle)
@@ -7428,21 +7769,23 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
   gruppe.add(ws);
   kollider.push({ x0: W.werkzeugX - 1.6, x1: W.werkzeugX + 1.6, z0: W.werkzeugZ - 0.8, z1: W.werkzeugZ + 0.8, h: 2.4 });
 
-  // Werkbank mit Kinderschaufel und Detektor darauf
+  // Werkbank: verwitterte Holzbank mit gelber Kinderschaufel, Eimer und Detektor (avatar.png)
   const bank = new THREE.Group();
   bank.name = 'werkbank';
-  bank.add(kasten(1.8, 0.08, 0.8, holzHell, 0, 0.9, 0));
-  for (const [x, z] of [[-0.8, -0.32], [0.8, -0.32], [-0.8, 0.32], [0.8, 0.32]]) bank.add(kasten(0.08, 0.9, 0.08, holzHell, x, 0.45, z));
-  bank.add(kasten(1.7, 0.05, 0.7, holzHell, 0, 0.25, 0));
-  const schaufel = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf2c417, roughness: 0.45 }));
-  schaufel.scale.set(1, 0.35, 1.3);
-  schaufel.position.set(-0.4, 0.96, 0);
+  const bankHolz = new THREE.MeshStandardMaterial({ map: gekachelt(planken, 1.8, 0.8, 0.9, 2.2), color: 0x9a8a7a, roughness: 0.9 });
+  const platte = kasten(1.8, 0.08, 0.8, bankHolz, 0, 0.9, 0);
+  bank.add(platte);
+  for (const [x, z] of [[-0.8, -0.32], [0.8, -0.32], [-0.8, 0.32], [0.8, 0.32]]) bank.add(kasten(0.08, 0.9, 0.08, bankHolz, x, 0.45, z));
+  bank.add(kasten(1.7, 0.05, 0.7, bankHolz, 0, 0.25, 0));
+  const schaufel = eigenesModell(sandschaufelModell());
+  schaufel.position.set(-0.45, 0.955, 0.05);
+  schaufel.rotation.set(0, 1.2, 0);
   bank.add(schaufel);
-  const stiel = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.34, 6), schaufel.material);
-  stiel.rotation.z = Math.PI / 2;
-  stiel.position.set(-0.15, 0.96, 0);
-  bank.add(stiel);
-  const det = kasten(0.3, 0.06, 0.1, new THREE.MeshStandardMaterial({ color: 0x8d949a, roughness: 0.5, metalness: 0.4 }), 0.4, 0.97, 0.1);
+  const eimer = eigenesModell(eimerModell());
+  eimer.position.set(0.15, 1.09, -0.12);
+  eimer.getObjectByName('fuellung').visible = false;
+  bank.add(eimer);
+  const det = kasten(0.3, 0.06, 0.1, new THREE.MeshStandardMaterial({ color: 0x8d949a, roughness: 0.5, metalness: 0.4 }), 0.55, 0.97, 0.15);
   bank.add(det);
   bank.position.set(W.bankX, 0, W.bankZ);
   bank.rotation.y = 0.3;
@@ -7506,15 +7849,28 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
   const hinten = kasten(0.05, 1.7, 0.05, holzHell, 0, 0.85, -0.35);
   hinten.rotation.x = -0.25;
   tafelG.add(hinten);
-  const kork = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.04), new THREE.MeshStandardMaterial({ color: 0xb0875a, roughness: 1 }));
+  const kork = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.04), new THREE.MeshStandardMaterial({ color: 0xb0703a, roughness: 1 }));
   kork.position.set(0, 1.25, 0.14);
   tafelG.add(kork);
+  tafelG.add(kasten(0.95, 0.06, 0.06, new THREE.MeshStandardMaterial({ color: 0x2a1f18, roughness: 0.8 }), 0, 1.63, 0.15));
+  // mehrere angepinnte Zettel (s0_door.png): Hauptzettel und drei kleine, leicht gedreht
   const zettelTextur = schildTextur(['AUFTRÄGE', '—'], { breite: 256, hoehe: 200, grund: '#f3eee2', schrift: '#2a1c10', rahmen: null, font: '700 {g}px "Arial Narrow", Arial, sans-serif', groesse: 0.42 });
-  const zettel = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.4), new THREE.MeshStandardMaterial({ map: zettelTextur, roughness: 0.95 }));
+  const zettel = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.32), new THREE.MeshStandardMaterial({ map: zettelTextur, roughness: 0.95 }));
   zettel.name = 'auftragszettel';
-  zettel.position.set(0, 1.26, 0.165);
+  zettel.position.set(-0.14, 1.3, 0.165);
   zettel.rotation.z = 0.04;
   tafelG.add(zettel);
+  const nadelMat = new THREE.MeshStandardMaterial({ color: 0xc8342a, roughness: 0.5 });
+  const nadelGeo = new THREE.SphereGeometry(0.012, 6, 4);
+  for (const [x, y, b, h2, farbe, dreh] of [[0.24, 1.42, 0.2, 0.16, 0xf2d98a, -0.12], [0.26, 1.1, 0.22, 0.2, 0xffffff, 0.09], [-0.2, 1.02, 0.18, 0.13, 0xe9b7a0, -0.06]]) {
+    const z2 = new THREE.Mesh(new THREE.PlaneGeometry(b, h2), new THREE.MeshStandardMaterial({ color: farbe, roughness: 0.95 }));
+    z2.position.set(x, y, 0.163);
+    z2.rotation.z = dreh;
+    tafelG.add(z2);
+    const pin = new THREE.Mesh(nadelGeo, nadelMat);
+    pin.position.set(x, y + h2 / 2 - 0.02, 0.17);
+    tafelG.add(pin);
+  }
   tafelG.position.set(W.tafelX, 0, W.tafelZ);
   schatten(tafelG);
   gruppe.add(tafelG);
@@ -7525,33 +7881,6 @@ function stationenBauen(gruppe, kollider, planken, stahlMat) {
   };
 }
 
-function spatenWand() {
-  const g = new THREE.Group();
-  const holz = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.7 });
-  const stahl = new THREE.MeshStandardMaterial({ color: 0x8a8480, roughness: 0.5, metalness: 0.7 });
-  const s = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.0, 6), holz);
-  g.add(s);
-  const b = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.26, 0.012), stahl);
-  b.position.y = -0.6;
-  g.add(b);
-  return g;
-}
-function gabelWand() {
-  const g = new THREE.Group();
-  const holz = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.7 });
-  const stahl = new THREE.MeshStandardMaterial({ color: 0xb9c0c6, roughness: 0.35, metalness: 0.85 });
-  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.1, 6), holz));
-  for (let i = 0; i < 5; i++) {
-    const z = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.28, 5), stahl);
-    z.position.set(-0.12 + i * 0.06, -0.7, 0);
-    g.add(z);
-  }
-  const q = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.26, 5), stahl);
-  q.rotation.z = Math.PI / 2;
-  q.position.y = -0.56;
-  g.add(q);
-  return g;
-}
 function besenWand() {
   const g = new THREE.Group();
   g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.1, 6), new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.7 })));
@@ -7570,7 +7899,7 @@ function saugerWand() {
   return g;
 }
 
-/** Holzbude mit Tresen, Kasse, Schild „HEU VERKAUFEN“ und hängendem Ballen. Blick nach +x. */
+/** Holzbude mit Tresen, Kasse, Waage, Schild „HEU VERKAUFEN“ und Trichter davor. Blick nach +x. */
 function standBauen(qualitaet, planken) {
   const W = WELT;
   const g = new THREE.Group();
@@ -7619,56 +7948,127 @@ function standBauen(qualitaet, planken) {
   for (const dz of [-0.9, 0.9]) {
     g.add(kasten(0.05, 0.3, 0.05, new THREE.MeshStandardMaterial({ color: STAHL, metalness: 0.5, roughness: 0.5 }), tt / 2 + 0.05, 2.3, dz));
   }
-  // Registrierkasse
+  // Alte Registrierkasse (schwarz mit Messingtasten, ohne Leuchtfeld) und davor eine Waage (S1, s0_stand)
   const kasse = new THREE.Group();
   const kasseMat = new THREE.MeshStandardMaterial({ color: 0x3d3a36, metalness: 0.6, roughness: 0.35 });
+  const messing = new THREE.MeshStandardMaterial({ color: 0xb08d57, metalness: 0.7, roughness: 0.35 });
   kasse.add(kasten(0.34, 0.16, 0.4, kasseMat, 0, 0.08, 0));
   const kopf = kasten(0.2, 0.18, 0.34, kasseMat, -0.06, 0.25, 0);
   kopf.rotation.z = 0.25;
   kasse.add(kopf);
-  const anzeige = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.08), new THREE.MeshBasicMaterial({ color: 0x7cf29a, toneMapped: false }));
-  anzeige.rotation.y = Math.PI / 2;
-  anzeige.position.set(0.05, 0.3, 0);
-  kasse.add(anzeige);
+  const tasten = kasten(0.14, 0.03, 0.3, messing, 0.1, 0.175, 0);
+  tasten.rotation.z = 0.35;
+  kasse.add(tasten);
+  kasse.add(kasten(0.05, 0.06, 0.26, messing, 0.03, 0.37, 0)); // Preisfenster oben
   kasse.position.set(tt / 2 - 0.25, 1.06, 0.7);
   g.add(kasse);
-  // Hängender Ballen neben dem Schild
-  const ballen = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.28, 0.55, 14),
-    new THREE.MeshStandardMaterial({ color: 0xd8b778, roughness: 0.95 }),
-  );
-  ballen.rotation.z = Math.PI / 2 + 0.3;
-  ballen.position.set(-tt / 2 + 0.35, 2.05, -bt / 2 + 0.35); // hinten in der Ecke, nicht vor dem Gesicht
-  ballen.castShadow = true;
-  g.add(ballen);
+  const waage = new THREE.Group();
+  waage.add(kasten(0.3, 0.05, 0.3, kasseMat, 0, 0.025, 0));
+  waage.add(kasten(0.34, 0.012, 0.34, new THREE.MeshStandardMaterial({ color: 0x9ea3a6, metalness: 0.6, roughness: 0.4 }), 0, 0.056, 0));
+  waage.add(kasten(0.05, 0.22, 0.05, kasseMat, -0.1, 0.16, 0));
+  const skala = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.03, 20), new THREE.MeshStandardMaterial({ color: 0xedebe4, roughness: 0.5 }));
+  skala.rotation.z = Math.PI / 2;
+  skala.position.set(-0.08, 0.3, 0);
+  waage.add(skala);
+  const zeiger = kasten(0.005, 0.1, 0.012, kasseMat, -0.06, 0.33, 0.01);
+  zeiger.rotation.x = 0.4;
+  waage.add(zeiger);
+  waage.position.set(tt / 2 - 0.25, 1.06, -0.55);
+  g.add(waage);
+  // Blechtrichter auf vier Beinen vorn am Stand: hier rasten Bänder ein (standTrichter)
+  const trichterMat = new THREE.MeshStandardMaterial({ color: 0x9ea3a6, metalness: 0.55, roughness: 0.45, side: THREE.DoubleSide });
+  const trichter = new THREE.Group();
+  const tg = new THREE.CylinderGeometry(0.35 * Math.SQRT2, 0.15 * Math.SQRT2, 0.4, 4, 1, true);
+  tg.rotateY(Math.PI / 4);
+  const tr = new THREE.Mesh(tg, trichterMat);
+  tr.position.y = 0.8;
+  trichter.add(tr);
+  const randMat = new THREE.MeshStandardMaterial({ color: 0x5a5f64, metalness: 0.5, roughness: 0.5 });
+  for (const sgn of [-1, 1]) {
+    trichter.add(kasten(0.73, 0.03, 0.03, randMat, 0, 1.0, sgn * 0.35));
+    trichter.add(kasten(0.03, 0.03, 0.73, randMat, sgn * 0.35, 1.0, 0));
+  }
+  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const bein = kasten(0.04, 1.0, 0.04, randMat, x * 0.33, 0.5, z * 0.33);
+    trichter.add(bein);
+  }
+  trichter.position.set(tt / 2 + 0.45, 0, 0);
+  trichter.name = 'trichter';
+  g.add(trichter);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return { gruppe: g, tresen };
 }
 
-/** A-Aufsteller mit Kreidetafel: „0,0222 $ PRO HALM“. Tafel zeigt nach +z der Gruppe. */
-function aufstellerBauen() {
+/** Schwarze Preistafel für den Aufsteller, neu malbar (aktueller Preis je Halm, S1: „$0.0222 PER STRAND“). */
+function preisTafelBauen() {
+  const c = document.createElement('canvas');
+  c.width = 384; c.height = 640;
+  const x = c.getContext('2d');
+  const textur = new THREE.CanvasTexture(c);
+  textur.colorSpace = THREE.SRGBColorSpace;
+  textur.anisotropy = 4;
+  let zuletzt = null;
+  function setze(wert) {
+    let text = wert;
+    if (typeof wert === 'number' && Number.isFinite(wert)) text = `${wert.toFixed(4).replace('.', ',')} $`;
+    text = String(text == null ? '' : text);
+    if (text === zuletzt) return;
+    zuletzt = text;
+    x.fillStyle = '#151515';
+    x.fillRect(0, 0, c.width, c.height);
+    x.strokeStyle = '#2a2a28';
+    x.lineWidth = 10;
+    x.strokeRect(5, 5, c.width - 10, c.height - 10);
+    x.fillStyle = '#f4f4ee';
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.font = '900 46px "Arial Narrow", Arial, sans-serif';
+    x.fillText('HEU', c.width / 2, 110, c.width * 0.86);
+    x.font = '900 86px "Arial Narrow", Arial, sans-serif';
+    x.fillText(text, c.width / 2, 300, c.width * 0.9);
+    x.font = '800 54px "Arial Narrow", Arial, sans-serif';
+    x.fillText('PRO HALM', c.width / 2, 420, c.width * 0.86);
+    textur.needsUpdate = true;
+  }
+  setze(0.0222);
+  return { textur, setze };
+}
+
+/** A-Aufsteller (schwarzes Brett ~1,25 m) mit der Preistafel. Tafel zeigt nach +z der Gruppe. */
+function aufstellerBauen(tafelTextur) {
   const g = new THREE.Group();
-  const holz = new THREE.MeshStandardMaterial({ color: 0x5a3c22, roughness: 0.85 });
-  const tafelMat = new THREE.MeshStandardMaterial({
-    map: schildTextur(['0,0222 $', 'PRO HALM'], {
-      breite: 512, hoehe: 640, grund: '#1e2320', schrift: '#f4f4ee', rahmen: '#6b4a2d',
-      font: '700 {g}px "Arial Narrow", Arial, sans-serif', groesse: 0.36, kreide: true,
-    }),
-    roughness: 0.95,
-  });
+  const holz = new THREE.MeshStandardMaterial({ color: 0x2a2622, roughness: 0.8 });
+  const tafelMat = new THREE.MeshStandardMaterial({ map: tafelTextur, roughness: 0.9 });
   for (const seite of [1, -1]) {
     const bein = new THREE.Group();
-    const rahmen = kasten(0.62, 0.9, 0.035, holz, 0, 0.45, 0);
-    const tafel = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.78), seite > 0 ? tafelMat : holz);
-    tafel.position.set(0, 0.46, 0.02);
+    const rahmen = kasten(0.75, 1.25, 0.035, holz, 0, 0.625, 0);
+    const tafel = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 1.1), seite > 0 ? tafelMat : holz);
+    tafel.position.set(0, 0.64, 0.02);
     bein.add(rahmen, tafel);
-    bein.rotation.x = -seite * 0.22;
+    bein.rotation.x = -seite * 0.2;
     bein.position.z = seite * 0.2;
     if (seite < 0) bein.rotation.y = Math.PI;
     g.add(bein);
   }
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
+}
+
+/** Gibt Geometrien, Materialien und Texturen einer Gruppe frei (jedes nur einmal). */
+function hofEntsorgen(gruppe) {
+  if (gruppe.parent) gruppe.parent.remove(gruppe);
+  const geos = new Set();
+  const mats = new Set();
+  const texs = new Set();
+  gruppe.traverse((o) => {
+    if (o.geometry) geos.add(o.geometry);
+    if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) mats.add(m);
+    if (o.isInstancedMesh) o.dispose();
+  });
+  for (const m of mats) for (const v of Object.values(m)) if (v && v.isTexture) texs.add(v);
+  for (const g of geos) g.dispose();
+  for (const m of mats) m.dispose();
+  for (const t of texs) t.dispose();
 }
 
 // ---- src/grafik/haufen3d.js
@@ -7807,13 +8207,25 @@ function haufenAnsichtBauen(szene, hf, qualitaet) {
   }
 
   function halmeBauen(h) {
-    if (halme) { gruppe.remove(halme); halme.dispose(); }
+    if (halme) { gruppe.remove(halme); halme.geometry.dispose(); halme.material.dispose(); halme.dispose(); halme = null; }
     const anzahl = qualitaet.halme;
     const halmMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, emissive: 0x3a2610 });
+    // three.js dreht bei Rückseiten die Normale um (DoubleSide). Die flachen Streifen
+    // sieht man von oben meist von hinten: dann zeigte die Normale nach unten und die
+    // Halme wurden dunkelbraun. Die Normale des Halms gilt hier für beide Seiten.
+    halmMat.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = normalize( vNormal );');
+    };
+    halmMat.customProgramCacheKey = () => 'halmOhneFlip';
     halme = new THREE.InstancedMesh(halmGeometrie(), halmMat, anzahl);
     halme.castShadow = false;
     halme.receiveShadow = true;
-    halme.frustumCulled = false;
+    // Feste Hüllkugel um den Haufen: so fallen die Halme weg, wenn man nicht hinsieht
+    // (sonst rechnet three.js sie aus allen Instanzen nach oder zeichnet immer).
+    halme.frustumCulled = true;
+    const hh = h.hoehe > 0 ? h.hoehe : 8;
+    const hr = h.radius > 0 ? h.radius : 12;
+    halme.boundingSphere = new THREE.Sphere(new THREE.Vector3(h.mitteX || 0, hh * 0.4, h.mitteZ || 0), Math.hypot(hr * 1.12 + 0.5, hh * 0.7 + 0.5));
     halmDaten = new Float32Array(anzahl * 5); // u, v (polar), yaw, neigung, länge
     const farbe = new THREE.Color();
     for (let i = 0; i < anzahl; i++) {
@@ -7944,14 +8356,16 @@ function ansichtBauen(szene, kamera) {
   kamera.add(hand);
   // Werkzeuge liegen in der Ruhelage mittig unten, der Stiel steigt von unten ins Bild.
   const modelle = {
-    hand: handModell(), sandschaufel: (() => { const m = sandschaufelModell(); m.scale.setScalar(1.3); return m; })(), spaten: spatenModell(), heugabel: heugabelModell(),
+    hand: (() => { const m = handModell(); m.scale.setScalar(0.72); return m; })(),
+    sandschaufel: sandschaufelModell(), spaten: spatenModell(), heugabel: heugabelModell(),
     besen: besenModell(), detektor: detektorModell(), sauger: saugerModell(),
   };
+  // Köpfe liegen bei 62–68 % Bildhöhe (über Status- und Werkzeugleiste, S3/S4: Stiel füllt die Bildmitte unten).
   const RUHE = {
-    hand: { p: [0.2, -0.26, -0.42], r: [0.25, 0.1, 0] },
-    sandschaufel: { p: [0, -0.13, -0.42], r: [0.5, 0, 0] },
-    spaten: { p: [0.03, -0.12, -0.01], r: [-0.12, 0, 0] },
-    heugabel: { p: [0, -0.124, 0.037], r: [-0.1, 0, 0] },
+    hand: { p: [0.3, -0.33, -0.5], r: [0.25, 0.1, 0] },
+    sandschaufel: { p: [0.02, -0.26, -0.46], r: [0.28, 0, 0] },
+    spaten: { p: [0.03, -0.085, -0.01], r: [-0.12, 0, 0] },
+    heugabel: { p: [0, -0.112, 0.037], r: [-0.1, 0, 0] },
     besen: { p: [0.1, -0.7, -0.35], r: [0.85, 0.05, 0] },
     detektor: { p: [0.2, -0.28, -0.42], r: [0.55, 0.12, 0] },
     sauger: { p: [0.16, -0.34, -0.36], r: [0.35, 0.08, 0] },
@@ -7961,29 +8375,41 @@ function ansichtBauen(szene, kamera) {
     m.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.renderOrder = 5; } });
     hand.add(m);
   }
-  // Heu, das auf dem Werkzeug liegt
-  const ladung = heuBueschel(34, 0.11);
+  // Heu, das auf dem Werkzeug liegt (S4: dicke Ladung flacher Halme auf den Zinken).
+  // Hängt am Werkzeugkopf und macht Stoß und Wippen mit.
+  const ladung = heuBueschel(64, 0.16, { breite: 0.012, laenge: 0.22, hoch: 0.55 });
   ladung.visible = false;
-  hand.add(ladung);
-  // Behälter: Eimer links unten, Heubündel in den Armen
+  ladung.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.renderOrder = 6; } });
+  const LADUNG_AM = {
+    heugabel: { p: [0, 0.075, -0.83], s: 1 },
+    spaten: { p: [0, 0.05, -0.72], s: 0.8 },
+    sandschaufel: { p: [0, 0.03, -0.31], s: 0.62 },
+  };
+  // Behälter: Eimer links neben der Werkzeugleiste, Heubündel in den Armen
   const eimer = eimerModell();
-  eimer.scale.setScalar(0.75);
-  eimer.position.set(-0.38, -0.44, -0.6);
+  eimer.scale.setScalar(0.6);
+  eimer.position.set(-0.74, -0.28, -0.64);
   eimer.rotation.set(0.25, 0.3, 0.12);
   kamera.add(eimer);
   const armHeu = heuBueschel(26, 0.1);
   armHeu.position.set(-0.28, -0.36, -0.45);
   kamera.add(armHeu);
+  // Die Schubkarre schiebt man vor sich her: sie folgt Standort und Blickrichtung,
+  // aber nicht dem Nicken. Schaut man nach unten, sieht man Mulde, Rad und Griffe.
+  const koerper = new THREE.Group();
+  koerper.name = 'koerper';
+  szene.add(koerper);
   const karre = schubkarreModell();
-  karre.position.set(0, -1.12, -1.05);
-  kamera.add(karre);
+  koerper.add(karre);
+  const blickVec = new THREE.Vector3();
   // Ein Stück in beiden Händen (Pressballen, Knäuel, Ziegel …)
   const stueckGeos = gegenstandGeometrien();
   const STUECK_GEO = {
     roh: stueckGeos.buendel, knaeuel: stueckGeos.knaeuel, ballen: stueckGeos.ballen, pellet: stueckGeos.pellet,
     brei: stueckGeos.brei, silage: stueckGeos.silage, papier: stueckGeos.papier, brikett: stueckGeos.ziegel,
   };
-  const gehalten = new THREE.Mesh(STUECK_GEO.roh, new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN.roh, roughness: 0.9 }));
+  const gehaltenMat = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN.roh, roughness: 0.9 });
+  const gehalten = new THREE.Mesh(STUECK_GEO.roh, heuStueckMaterial());
   gehalten.visible = false;
   gehalten.renderOrder = 5;
   kamera.add(gehalten);
@@ -8005,17 +8431,29 @@ function ansichtBauen(szene, kamera) {
   const glanzTextur = glanzSprite();
   const nadelObjekte = new Map();
 
-  // fliegende Halme beim Stechen
-  const MAX_T = 240;
-  const teilchenGeo = new THREE.BoxGeometry(0.008, 0.008, 0.16);
-  const teilchenMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  // Fliegende Halme beim Stechen: flache Streifen, die herumwirbeln, liegen bleiben und
+  // dann vergehen („digging throws hundreds of straws around“). Eine Instanzgruppe.
+  const MAX_T = 600;
+  const teilchenGeo = new THREE.PlaneGeometry(0.012, 0.24);
+  teilchenGeo.rotateX(-Math.PI / 2);
+  const teilchenMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, emissive: 0x4a3214 });
+  teilchenMat.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = normalize( vNormal );');
+  };
+  teilchenMat.customProgramCacheKey = () => 'halmOhneFlip';
   const teilchen = new THREE.InstancedMesh(teilchenGeo, teilchenMat, MAX_T);
   teilchen.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   teilchen.frustumCulled = false;
+  teilchen.count = 0;
   const farbe = new THREE.Color();
-  for (let i = 0; i < MAX_T; i++) { farbe.setHex(HALM_TOENE[i % HALM_TOENE.length]); teilchen.setColorAt(i, farbe); }
+  for (let i = 0; i < MAX_T; i++) { farbe.setHex(HALM_TOENE[(i * 7) % HALM_TOENE.length]); teilchen.setColorAt(i, farbe); }
   szene.add(teilchen);
-  const flug = []; // {x,y,z,vx,vy,vz,rx,ry,leben}
+  const flug = []; // {x,y,z,vx,vy,vz,rx,ry,leben,liegt}
+  // Staubwolke an der Stichstelle
+  const staub = new THREE.Sprite(new THREE.SpriteMaterial({ map: staubSprite(), color: 0xd8c29a, transparent: true, opacity: 0, depthWrite: false }));
+  staub.visible = false;
+  szene.add(staub);
+  let staubZeit = 1;
 
   const m4 = new THREE.Matrix4();
   const q = new THREE.Quaternion();
@@ -8025,6 +8463,7 @@ function ansichtBauen(szene, kamera) {
   const unsichtbar = new THREE.Matrix4().makeScale(0, 0, 0);
   let aktuell = null;
   let stoss = 0; // 1 → 0 nach einem Stich
+  let handZeit = 0; // wie lange die Hand beim Zupfen noch zu sehen ist
   let ladungZeit = 0;
   let zeit = 0;
   let loseSchluessel = '';
@@ -8032,26 +8471,40 @@ function ansichtBauen(szene, kamera) {
   function werkzeugZeigen(id) {
     if (id === aktuell) return;
     aktuell = id;
-    for (const [k, m] of Object.entries(modelle)) m.visible = k === id;
+    for (const [k, m] of Object.entries(modelle)) m.visible = k === id && k !== 'hand';
+    const am = LADUNG_AM[id];
+    if (am) {
+      modelle[id].add(ladung);
+      ladung.position.set(...am.p);
+      ladung.scale.setScalar(am.s);
+    } else if (ladung.parent) ladung.parent.remove(ladung);
   }
 
   return {
     stich(ev) {
       stoss = 1;
-      if (ev.menge > 0 && ev.werkzeug !== 'hand') { ladungZeit = 0.32; }
+      handZeit = 0.5;
+      if (ev.menge > 0 && ev.werkzeug !== 'hand') { ladungZeit = 0.7; }
       // Halme fliegen an der Stichstelle hoch
-      const n = Math.min(26, 8 + Math.round((ev.menge || 1) / 2));
+      const n = ev.menge > 0 ? Math.min(80, 40 + Math.round(ev.menge / 3)) : 12;
       for (let i = 0; i < n; i++) {
         if (flug.length >= MAX_T) flug.shift();
         const a = Math.random() * Math.PI * 2;
-        const v = 1 + Math.random() * 2.2;
+        const v = 0.5 + Math.random() * 1.6;
         flug.push({
-          x: ev.x, y: ev.y + 0.05, z: ev.z, vx: Math.cos(a) * v * 0.6, vy: 1.2 + Math.random() * 2.2, vz: Math.sin(a) * v * 0.6,
-          rx: Math.random() * 6, ry: Math.random() * 6, leben: 0.8 + Math.random() * 0.5,
+          x: ev.x + (Math.random() - 0.5) * 0.2, y: ev.y + 0.05, z: ev.z + (Math.random() - 0.5) * 0.2,
+          vx: Math.cos(a) * v, vy: 1.4 + Math.random() * 2.4, vz: Math.sin(a) * v,
+          rx: Math.random() * 6, ry: Math.random() * 6, wx: 4 + Math.random() * 8, wy: 2 + Math.random() * 6,
+          leben: 1.5 + Math.random() + 2, liegt: false,
         });
       }
+      if (ev.menge > 0) {
+        staub.position.set(ev.x, ev.y + 0.25, ev.z);
+        staub.visible = true;
+        staubZeit = 0;
+      }
     },
-    schwung() { stoss = 1; },
+    schwung() { stoss = 1; handZeit = 0.5; },
 
     schritt(s, dt, info) {
       zeit += dt;
@@ -8065,7 +8518,8 @@ function ansichtBauen(szene, kamera) {
         if (art !== gehaltenArt) {
           gehaltenArt = art;
           gehalten.geometry = STUECK_GEO[art] || STUECK_GEO.roh;
-          gehalten.material.color.setHex(GEGENSTAND_FARBEN[art] || GEGENSTAND_FARBEN.roh);
+          if (art === 'roh' || art === 'knaeuel' || !GEGENSTAND_FARBEN[art]) gehalten.material = heuStueckMaterial();
+          else { gehaltenMat.color.setHex(GEGENSTAND_FARBEN[art]); gehalten.material = gehaltenMat; }
         }
         const wippen = Math.min(1, (info.tempo || 0) / 4);
         gehalten.position.set(0.02, -0.34 - Math.abs(Math.cos(zeit * 7.5)) * 0.012 * wippen, -0.62);
@@ -8075,21 +8529,27 @@ function ansichtBauen(szene, kamera) {
       const gehen = Math.min(1, (info.tempo || 0) / 4);
       const wx = Math.sin(zeit * 7.5) * 0.012 * gehen;
       const wy = Math.abs(Math.cos(zeit * 7.5)) * 0.014 * gehen;
+      stoss = Math.max(0, stoss - dt * 4.2);
+      handZeit = Math.max(0, handZeit - dt);
       if (!weg) {
         const ruhe = RUHE[sp.werkzeug] || RUHE.hand;
         const m = modelle[sp.werkzeug];
-        stoss = Math.max(0, stoss - dt * 4.2);
         const st = Math.sin(stoss * Math.PI);
         const saugZittern = sp.sauger.an ? (Math.random() - 0.5) * 0.006 : 0;
-        m.position.set(ruhe.p[0] + wx + saugZittern, ruhe.p[1] - wy - st * 0.05, ruhe.p[2] - st * 0.22);
-        m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
+        if (sp.werkzeug === 'hand') {
+          // Die Hand ist nur beim Zupfen zu sehen (Vorbild: keine Hand im Bild); sie kommt von unten rechts.
+          m.visible = handZeit > 0;
+          const rein = Math.max(0, Math.min(1, handZeit / 0.12, (0.5 - handZeit) / 0.08));
+          m.position.set(ruhe.p[0] + wx - (1 - rein) * 0.04, ruhe.p[1] - (1 - rein) * 0.16, ruhe.p[2] - st * 0.12);
+          m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
+        } else {
+          m.position.set(ruhe.p[0] + wx + saugZittern, ruhe.p[1] - wy - st * 0.05, ruhe.p[2] - st * 0.22);
+          m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
+        }
         // Heu auf dem Blatt kurz sichtbar, dann in den Behälter
         ladungZeit = Math.max(0, ladungZeit - dt);
-        ladung.visible = ladungZeit > 0 && ['spaten', 'heugabel', 'sandschaufel'].includes(sp.werkzeug);
-        if (ladung.visible) {
-          const lz = sp.werkzeug === 'sandschaufel' ? -0.62 : -0.86;
-          ladung.position.set(m.position.x, m.position.y + 0.05 + Math.sin(ruhe.r[0]) * 0.25, m.position.z + lz * Math.cos(ruhe.r[0]) * 0.55);
-        }
+        ladung.visible = ladungZeit > 0 && !!LADUNG_AM[sp.werkzeug];
+        if (ladung.visible) ladung.rotation.y = zeit * 0.3;
         // Detektoranzeige färbt sich
         if (sp.werkzeug === 'detektor') {
           const anzeige = modelle.detektor.getObjectByName('anzeige');
@@ -8106,12 +8566,18 @@ function ansichtBauen(szene, kamera) {
       eimer.visible = b === 'eimer' && sp.werkzeug !== 'besen';
       const f = eimer.getObjectByName('fuellung');
       if (f) { f.position.y = -0.14 + fuell * 0.26; f.visible = fuell > 0.01; }
-      eimer.position.y = -0.44 - wy * 0.6;
+      eimer.position.y = -0.28 - wy * 0.6;
       armHeu.visible = b === 'arme' && sp.last > 0 && sp.werkzeug !== 'besen';
       armHeu.scale.setScalar(0.4 + fuell * 0.9);
-      karre.visible = b === 'schubkarre';
-      const kf = karre.getObjectByName('fuellung');
-      if (kf) { kf.scale.y = Math.max(0.02, fuell); kf.visible = fuell > 0.01; }
+      koerper.visible = b === 'schubkarre' && !info.bauen;
+      if (koerper.visible) {
+        kamera.getWorldDirection(blickVec);
+        koerper.position.set(kamera.position.x, sp.y || 0, kamera.position.z);
+        koerper.rotation.set(0, Math.atan2(-blickVec.x, -blickVec.z), 0);
+        karre.position.y = wy * 0.3;
+        const kf = karre.getObjectByName('fuellung');
+        if (kf) { kf.scale.y = Math.max(0.02, fuell); kf.visible = fuell > 0.01; }
+      }
 
       // lose Büschel am Boden (nur neu setzen, wenn sich etwas geändert hat)
       const lose = s.lose;
@@ -8159,61 +8625,115 @@ function ansichtBauen(szene, kamera) {
         glanz.material.opacity = 0.45 + puls * 0.55;
       }
       for (const [n, o] of nadelObjekte) {
-        if (!sichtbar.has(n)) { nadelGruppe.remove(o); nadelObjekte.delete(n); }
+        if (!sichtbar.has(n)) { nadelGruppe.remove(o); o.traverse((x) => { if (x.isSprite) x.material.dispose(); }); nadelObjekte.delete(n); }
       }
 
-      // fliegende Halme
+      // Staub
+      if (staub.visible) {
+        staubZeit += dt;
+        const u = staubZeit / 0.6;
+        if (u >= 1) staub.visible = false;
+        else {
+          staub.scale.setScalar(0.3 + u * 0.9);
+          staub.material.opacity = 0.35 * (1 - u);
+          staub.position.y += dt * 0.25;
+        }
+      }
+      // fliegende Halme: flattern (Luftwiderstand), landen, bleiben liegen, vergehen
+      const bremse = Math.max(0, 1 - 1.6 * dt);
       for (let i = flug.length - 1; i >= 0; i--) {
         const p = flug[i];
         p.leben -= dt;
         if (p.leben <= 0) { flug.splice(i, 1); continue; }
-        p.vy -= 9 * dt;
+        if (p.liegt) continue;
+        p.vy -= 7 * dt;
+        p.vx *= bremse; p.vz *= bremse; if (p.vy < 0) p.vy *= bremse;
         p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+        p.rx += dt * p.wx; p.ry += dt * p.wy;
         const bodenH = info.boden ? info.boden(p.x, p.z) : 0;
-        if (p.y < bodenH) { p.y = bodenH; p.vx *= 0.3; p.vz *= 0.3; p.vy = 0; }
-        p.rx += dt * 7; p.ry += dt * 5;
+        if (p.y < bodenH + 0.01) {
+          p.y = bodenH + 0.01;
+          p.liegt = true;
+          p.rx = 0;
+          p.leben = Math.min(p.leben, 2 + Math.random() * 0.5);
+        }
       }
-      for (let i = 0; i < MAX_T; i++) {
+      const anzahl = Math.min(flug.length, MAX_T);
+      for (let i = 0; i < anzahl; i++) {
         const p = flug[i];
-        if (!p) { teilchen.setMatrixAt(i, unsichtbar); continue; }
         v3.set(p.x, p.y, p.z);
         q.setFromEuler(e3.set(p.rx, p.ry, 0));
-        s3.setScalar(Math.min(1, p.leben * 2));
+        s3.setScalar(Math.min(1, p.leben * 1.5));
         m4.compose(v3, q, s3);
         teilchen.setMatrixAt(i, m4);
       }
-      teilchen.instanceMatrix.needsUpdate = true;
+      teilchen.count = anzahl;
+      if (anzahl) teilchen.instanceMatrix.needsUpdate = true;
     },
   };
 }
 
-/** Schubkarre, von vorn unten gesehen: Mulde, Rad, zwei Griffe. */
+/** Schubkarre (Blick nach -z, Boden bei y = 0): rote Mulde, Rad vorn, zwei Griffe zum Spieler. */
 function schubkarreModell() {
   const g = new THREE.Group();
-  const rot = new THREE.MeshStandardMaterial({ color: 0x9a3a28, roughness: 0.65, metalness: 0.3 });
+  const rot = new THREE.MeshStandardMaterial({ color: 0xa83a28, roughness: 0.6, metalness: 0.3, side: THREE.DoubleSide });
   const schwarz = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.8 });
-  const mulde = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.3, 0.3, 4, 1, true), rot);
+  const stahl = new THREE.MeshStandardMaterial({ color: 0x6a6f74, roughness: 0.5, metalness: 0.5 });
+  const mulde = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.28, 0.32, 4, 1, true), rot);
   mulde.rotation.y = Math.PI / 4;
-  mulde.scale.set(1.2, 1, 1.6);
-  mulde.material.side = THREE.DoubleSide;
+  mulde.scale.set(1.15, 1, 1.5);
+  mulde.position.set(0, 0.58, -1.05);
   g.add(mulde);
-  const fuellung = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.28, 0.9), new THREE.MeshLambertMaterial({ color: 0xe6b456 }));
+  const boden = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.6), rot);
+  boden.rotation.x = -Math.PI / 2;
+  boden.position.set(0, 0.425, -1.05);
+  g.add(boden);
+  // Heu als flacher Hügel in der Mulde
+  const fuellung = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), heuStueckMaterial());
   fuellung.name = 'fuellung';
-  fuellung.position.y = -0.1;
-  fuellung.geometry.translate(0, 0.14, 0);
+  fuellung.geometry.scale(0.3, 0.2, 0.46);
+  fuellung.position.set(0, 0.43, -1.05);
   g.add(fuellung);
-  const rad = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.05, 8, 16), schwarz);
+  const rad = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.05, 8, 16), schwarz);
   rad.rotation.y = Math.PI / 2;
-  rad.position.set(0, -0.25, -0.62);
+  rad.position.set(0, 0.2, -1.72);
   g.add(rad);
-  for (const x of [-0.3, 0.3]) {
-    const griff = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 6), schwarz);
-    griff.rotation.x = Math.PI / 2 + 0.25;
-    griff.position.set(x, 0.05, 0.55);
+  for (const x of [-1, 1]) {
+    // Holm von der Radachse unter der Mulde durch bis zum Griff (Griffe ~0,7 m hoch)
+    const a = new THREE.Vector3(x * 0.06, 0.2, -1.72);
+    const b = new THREE.Vector3(x * 0.3, 0.72, -0.25);
+    const l = a.distanceTo(b);
+    const holm = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, l, 6), stahl);
+    holm.position.copy(a).add(b).multiplyScalar(0.5);
+    holm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    g.add(holm);
+    const griff = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.2, 8), schwarz);
+    griff.position.set(x * 0.31, 0.745, -0.17);
+    griff.rotation.x = Math.PI / 2 - 0.34;
     g.add(griff);
+    const stuetze = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.4, 6), stahl);
+    stuetze.position.set(x * 0.2, 0.22, -0.8);
+    g.add(stuetze);
   }
-  g.traverse((o) => { if (o.isMesh) o.renderOrder = 4; });
+  g.traverse((o) => { if (o.isMesh) o.castShadow = false; });
   return g;
+}
+
+/** Weicher Staubfleck für die Wolke beim Stechen. */
+function staubSprite() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const x = c.getContext('2d');
+  for (const [px, py, r] of [[32, 34, 26], [22, 30, 16], [42, 28, 17], [32, 22, 14]]) {
+    const g = x.createRadialGradient(px, py, 0, px, py, r);
+    g.addColorStop(0, 'rgba(255,255,255,0.8)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 64, 64);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
 /** Weicher Stern für das Glitzern der Nadeln. */
@@ -9938,20 +10458,20 @@ function mmDrohne() {
 
 /* ------------------------------------------------------------ Hilfen */
 
-/** Gummiband mit Querrippen; läuft über den Versatz der Textur. */
+/** Gummiband mit Querrippen (fast schwarzes Gummi, feine Rippen); läuft über den Versatz der Textur. */
 function objBandTextur() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 128;
   const g = c.getContext('2d');
-  g.fillStyle = '#4a4442';
+  g.fillStyle = '#2e2b29';
   g.fillRect(0, 0, 64, 128);
-  for (let i = 0; i < 4; i++) {
-    g.fillStyle = '#554e4b';
-    g.fillRect(4, i * 32 + 4, 56, 7);
-    g.fillStyle = '#3a3533';
-    g.fillRect(4, i * 32 + 11, 56, 2);
+  for (let i = 0; i < 8; i++) {
+    g.fillStyle = '#3a3633';
+    g.fillRect(4, i * 16 + 4, 56, 2);
+    g.fillStyle = '#242120';
+    g.fillRect(4, i * 16 + 6, 56, 1);
   }
-  g.fillStyle = '#2e2a28';
+  g.fillStyle = '#1f1d1c';
   g.fillRect(0, 0, 4, 128);
   g.fillRect(60, 0, 4, 128);
   const t = new THREE.CanvasTexture(c);
@@ -9977,18 +10497,91 @@ function objWarnTextur() {
   return t;
 }
 
+/** Rauchwolke (Puff): drei, vier überlagerte weiche Kreise statt eines Verlaufs. */
 function objRauchTextur() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 64;
   const g = c.getContext('2d');
-  const r = g.createRadialGradient(32, 32, 2, 32, 32, 30);
-  r.addColorStop(0, 'rgba(236,234,228,0.85)');
-  r.addColorStop(1, 'rgba(236,234,228,0)');
-  g.fillStyle = r;
-  g.fillRect(0, 0, 64, 64);
+  for (const [x, y, r, a] of [[32, 36, 20, 0.9], [22, 30, 13, 0.8], [42, 28, 14, 0.85], [31, 22, 12, 0.75]]) {
+    const v = g.createRadialGradient(x, y, 0, x, y, r);
+    v.addColorStop(0, `rgba(244,243,238,${a})`);
+    v.addColorStop(0.65, `rgba(236,234,228,${a * 0.75})`);
+    v.addColorStop(1, 'rgba(230,228,222,0)');
+    g.fillStyle = v;
+    g.fillRect(0, 0, 64, 64);
+  }
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+
+/* Bandkurven für die Anzeige: weite Kreisbögen (Radius 0,8 m, wie S2) statt der
+ * engen Logik-Rundung. Die Logik (bandBahn) bleibt unverändert; Stücke auf dem Band
+ * werden in stueckeZeichnen anteilig auf diese Bahn umgerechnet. */
+const ANZEIGE_RADIUS = 0.8;
+const anzeigeCache = new WeakMap();
+function objAnzeigeBahn(punkte, radius = ANZEIGE_RADIUS) {
+  if (punkte.length < 3) return punkte.map((p) => [...p]);
+  const aus = [[...punkte[0]]];
+  for (let i = 1; i < punkte.length - 1; i++) {
+    const p0 = punkte[i - 1]; const p1 = punkte[i]; const p2 = punkte[i + 1];
+    const l1 = Math.hypot(p1[0] - p0[0], p1[2] - p0[2]);
+    const l2 = Math.hypot(p2[0] - p1[0], p2[2] - p1[2]);
+    if (l1 < 1e-6 || l2 < 1e-6) continue;
+    const u1x = (p1[0] - p0[0]) / l1; const u1z = (p1[2] - p0[2]) / l1;
+    const u2x = (p2[0] - p1[0]) / l2; const u2z = (p2[2] - p1[2]) / l2;
+    const cos = Math.max(-1, Math.min(1, u1x * u2x + u1z * u2z));
+    const phi = Math.acos(cos);
+    if (phi < 0.02) { aus.push([...p1]); continue; }
+    // Tangentenlänge T = R·tan(φ/2), höchstens die halbe Nachbarstrecke
+    let T = radius * Math.tan(phi / 2);
+    T = Math.min(T, l1 * 0.5, l2 * 0.5);
+    const R = T / Math.tan(phi / 2);
+    const a = [p1[0] - u1x * T, p0[1] + (p1[1] - p0[1]) * (1 - T / l1), p1[2] - u1z * T];
+    const b = [p1[0] + u2x * T, p1[1] + (p2[1] - p1[1]) * (T / l2), p1[2] + u2z * T];
+    const seite = u1x * u2z - u1z * u2x > 0 ? 1 : -1;
+    // Mittelpunkt: von a aus senkrecht zur Laufrichtung zur Kurveninnenseite
+    const cx = a[0] - u1z * R * seite;
+    const cz = a[2] + u1x * R * seite;
+    const n = Math.max(3, Math.ceil((phi / (Math.PI / 2)) * 10));
+    const vx = a[0] - cx; const vz = a[2] - cz;
+    for (let k = 0; k <= n; k++) {
+      const t = k / n;
+      const w = phi * t * seite;
+      const c = Math.cos(w); const sn = Math.sin(w);
+      aus.push([cx + vx * c - vz * sn, a[1] + (b[1] - a[1]) * t, cz + vx * sn + vz * c]);
+    }
+  }
+  aus.push([...punkte[punkte.length - 1]]);
+  return aus;
+}
+/** Anzeigebahn eines Bandes mit Längen (zwischengespeichert je Punktliste). */
+function objAnzeige(bau) {
+  let a = anzeigeCache.get(bau.punkte);
+  if (!a) {
+    const bahn = objAnzeigeBahn(bau.punkte);
+    const kum = [0];
+    for (let i = 1; i < bahn.length; i++) {
+      const p = bahn[i - 1]; const q = bahn[i];
+      kum.push(kum[i - 1] + Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]));
+    }
+    a = { bahn, kum, laenge: kum[kum.length - 1], logik: bandGeometrie(bau).laenge };
+    anzeigeCache.set(bau.punkte, a);
+  }
+  return a;
+}
+/** Punkt auf der Anzeigebahn zum Logik-Weg t (anteilig). Schreibt in ziel [x, y, z]. */
+function objAnzeigePunkt(bau, t, ziel) {
+  const a = objAnzeige(bau);
+  const s = a.logik > 0 ? Math.max(0, Math.min(a.laenge, (t / a.logik) * a.laenge)) : 0;
+  const { kum, bahn } = a;
+  let lo = 0; let hi = kum.length - 1;
+  while (lo < hi - 1) { const m = (lo + hi) >> 1; if (kum[m] <= s) lo = m; else hi = m; }
+  const l = kum[hi] - kum[lo];
+  const u = l > 1e-6 ? (s - kum[lo]) / l : 0;
+  const p = bahn[lo]; const q = bahn[hi];
+  ziel[0] = p[0] + (q[0] - p[0]) * u; ziel[1] = p[1] + (q[1] - p[1]) * u; ziel[2] = p[2] + (q[2] - p[2]) * u;
+  return ziel;
 }
 
 /**
@@ -10171,9 +10764,10 @@ function objekteBauen(szene, qualitaet = 'mittel') {
   const MAX_STUECKE = 700;
   const stueckMeshes = {};
   for (const [art, geo] of Object.entries(GEO_FUER)) {
-    const m = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN[art], roughness: art === 'silage' ? 0.35 : 0.95 });
+    let m = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN[art], roughness: art === 'silage' ? 0.35 : 0.95 });
     // Die Heubündel leuchten im Vorbild leicht orange-golden
-    if (art === 'roh' || art === 'knaeuel') { m.map = strohTexturen(256, 700, 13).farbe; m.map.repeat.set(3, 2); m.color.setHex(0xfff0dc); m.emissive.setHex(0x6a3a0a); m.emissiveIntensity = 0.45; }
+    // Heubündel leuchten orange-golden (S2: #D0964E): gemeinsames Material aus modelle.js
+    if (art === 'roh' || art === 'knaeuel') { m.dispose(); m = heuStueckMaterial(); }
     const im = new THREE.InstancedMesh(geo, m, MAX_STUECKE);
     im.count = 0;
     im.castShadow = schatten;
@@ -10213,7 +10807,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
   /* -------------------------------- Warnmarken, Rauch */
   const warnMat = new THREE.SpriteMaterial({ map: objWarnTextur(), transparent: true, depthWrite: false });
   const rauchMat = new THREE.SpriteMaterial({ map: objRauchTextur(), transparent: true, depthWrite: false });
-  const rauch = Array.from({ length: 36 }, () => {
+  const rauch = Array.from({ length: 20 }, () => {
     const sp = new THREE.Sprite(rauchMat.clone());
     sp.visible = false;
     wurzel.add(sp);
@@ -10306,7 +10900,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
   function bandObjekt(bau, s) {
     const g = new THREE.Group();
     const darunter = baenderDarunter(bau, s);
-    const { bahn, laenge } = bandGeometrie(bau);
+    const { bahn, laenge } = objAnzeige(bau);
     const gurt = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_GURT, 0.5), MAT.gurt);
     gurt.receiveShadow = schatten;
     g.add(gurt);
@@ -10528,7 +11122,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
           if (teile.feuer.material && teile.feuer.material.emissive) teile.feuer.material.emissiveIntensity = brennt ? 1.2 * f : 0;
         }
         if (teile.heufuellung) teile.heufuellung.scale.y = 0.1 + 0.9 * Math.min(1, (bau.brenn || 0) / BRENN_MAX);
-        if (brennt && teile.rauchPunkt && Math.random() < dt * 5) {
+        if (brennt && teile.rauchPunkt && Math.random() < dt * 1.6) {
           teile.rauchPunkt.getWorldPosition(vec);
           rauchAusstossen(vec.x, vec.y, vec.z);
         }
@@ -10650,9 +11244,11 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     r.sp.visible = true;
     r.sp.position.set(x, y, z);
     r.t = 0;
-    r.leben = 2.4 + Math.random();
-    r.vx = (Math.random() - 0.5) * 0.3;
-    r.vz = (Math.random() - 0.5) * 0.3;
+    r.leben = 2.5 + Math.random() * 0.6;
+    // seitliche Drift ~0,3 m/s in eine Richtung (Wind)
+    r.vx = 0.22 + (Math.random() - 0.5) * 0.16;
+    r.vz = 0.18 + (Math.random() - 0.5) * 0.16;
+    r.sp.material.rotation = Math.random() * Math.PI * 2;
   }
 
   /* -------------------------------- Stücke zeichnen */
@@ -10670,6 +11266,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     zaehler[art] = i + 1;
   }
 
+  const anzeigeP = [0, 0, 0];
   function stueckeZeichnen(s, netz, zeit) {
     for (const art of Object.keys(stueckMeshes)) zaehler[art] = 0;
     let glanz = 0;
@@ -10678,7 +11275,15 @@ function objekteBauen(szene, qualitaet = 'mittel') {
       const sk = g.art === 'roh' ? Math.max(0.75, Math.min(1.8, Math.cbrt(g.halme / 20))) : 1;
       const hoehe = g.art === 'roh' ? 0.11 * sk : GROESSE[g.art] * 0.75;
       const kippen = g.ort === 'flug' ? (g.dreh || 0) : 0;
-      stueckSetzen(g.art, g.x, g.y + hoehe, g.z, (g.dreh || 0) + (g.id % 7) * 0.9, kippen, sk);
+      let gx = g.x; let gy = g.y; let gz = g.z;
+      if (g.ort === 'band' && netz.bauNachId) {
+        const band = netz.bauNachId.get(g.band);
+        if (band && band.punkte && band.punkte.length > 2) {
+          objAnzeigePunkt(band, g.t, anzeigeP);
+          gx = anzeigeP[0]; gy = anzeigeP[1]; gz = anzeigeP[2];
+        }
+      }
+      stueckSetzen(g.art, gx, gy + hoehe, gz, (g.dreh || 0) + (g.id % 7) * 0.9, kippen, sk);
       if (g.nadel >= 0 && g.ort === 'boden' && glanz < glanzPool.length) {
         const sp = glanzPool[glanz++];
         sp.visible = true;
@@ -10739,6 +11344,8 @@ function objekteBauen(szene, qualitaet = 'mittel') {
   const matNein = objHologramm(false);
   let bandGeist = null;
   let linienGeist = null;
+  let bandGeistSchluessel = '';
+  let linienGeistSchluessel = '';
   const ankerMat = new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.8, depthWrite: false });
   const ankerZiel = new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.95, depthWrite: false });
   const anker = Array.from({ length: 24 }, () => {
@@ -10859,9 +11466,9 @@ function objekteBauen(szene, qualitaet = 'mittel') {
         if (u >= 1) { r.sp.visible = false; continue; }
         r.sp.position.x += r.vx * dt;
         r.sp.position.z += r.vz * dt;
-        r.sp.position.y += dt * (0.9 - u * 0.3);
-        r.sp.scale.setScalar(0.6 + u * 2.4);
-        r.sp.material.opacity = 0.7 * (1 - u);
+        r.sp.position.y += dt * (0.8 - u * 0.35);
+        r.sp.scale.setScalar(0.4 + Math.sqrt(u) * 0.8);
+        r.sp.material.opacity = 0.7 * (1 - u) * Math.min(1, r.t * 8);
       }
       // Radar
       if (netz.radar) {
@@ -10942,17 +11549,29 @@ function objekteBauen(szene, qualitaet = 'mittel') {
 
     /** Vorschau eines Bandes entlang der Eckpunkte. punkte null: weg. */
     bandVorschau(punkte, ok) {
+      // Nur neu bauen, wenn sich Punkte oder Farbe ändern (wird jedes Bild aufgerufen)
+      const schluessel = punkte && punkte.length >= 2 ? `${ok ? 1 : 0}|${punkte.map((p) => p.map((v) => v.toFixed(3)).join(',')).join(';')}` : '';
+      if (schluessel === bandGeistSchluessel) return;
+      bandGeistSchluessel = schluessel;
       if (bandGeist) { vorschauGruppe.remove(bandGeist); bandGeist.geometry.dispose(); bandGeist = null; }
-      if (!punkte || punkte.length < 2) return;
-      const bahn = bandBahn(punkte);
+      if (!schluessel) return;
+      const bahn = objAnzeigeBahn(punkte);
       bandGeist = new THREE.Mesh(objExtrudieren(bahn.map((p) => [p[0], p[1] + 0.02, p[2]]), BAND_PROFIL_RAHMEN, 1), ok ? matOk : matNein);
       vorschauGruppe.add(bandGeist);
     },
 
     /** Vorschau eines Linienbaus (Wand, Geländer, Leitung) von a nach b. */
     linienVorschau(typ, a, b, ok, y = 0) {
-      if (linienGeist) { vorschauGruppe.remove(linienGeist); linienGeist = null; }
-      if (!typ || !a || !b) return;
+      // Nur neu bauen, wenn sich Typ, Enden, Höhe oder Farbe ändern; alte Geometrien freigeben
+      const schluessel = typ && a && b ? `${typ}|${ok ? 1 : 0}|${a.map((v) => v.toFixed(3)).join(',')}|${b.map((v) => v.toFixed(3)).join(',')}|${(+y || 0).toFixed(3)}` : '';
+      if (schluessel === linienGeistSchluessel) return;
+      linienGeistSchluessel = schluessel;
+      if (linienGeist) {
+        vorschauGruppe.remove(linienGeist);
+        linienGeist.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+        linienGeist = null;
+      }
+      if (!schluessel) return;
       linienGeist = linienObjekt({ typ, a, b, y });
       objEinfaerben(linienGeist, ok ? matOk : matNein);
       vorschauGruppe.add(linienGeist);
@@ -11210,7 +11829,7 @@ const ICON = {
   hand: '<path d="M8 21c-2-3-3-6-3-9V8a1.5 1.5 0 0 1 3 0v4M8 11V5a1.5 1.5 0 0 1 3 0v6M11 10V4a1.5 1.5 0 0 1 3 0v6M14 10V5.5a1.5 1.5 0 0 1 3 0V14c0 4-2 7-6 7H8"/>',
   sandschaufel: '<path d="M12 3v9"/><path d="M7 14c0-2 2-3 5-3s5 1 5 3c0 4-2 7-5 7s-5-3-5-7Z" fill="currentColor" fill-opacity=".35"/>',
   spaten: '<path d="M12 2v11"/><path d="M9 2h6"/><path d="M8 13h8l-1 7c-1 2-5 2-6 0Z"/>',
-  heugabel: '<path d="M12 11v11"/><path d="M6 3v5c0 2 2 3 6 3s6-1 6-3V3M9 3v6M12 3v7M15 3v6"/>',
+  heugabel: '<path d="M12 11v11"/><path d="M6 3v5c0 2 2 3 6 3s6-1 6-3V3M8.4 3v6.3M10.8 3v7M13.2 3v7M15.6 3v6.3"/>',
   besen: '<path d="M16 3 9 14"/><path d="M5 13l6 3-2 6c-2 0-5-2-6-4Z"/>',
   detektor: '<path d="M6 21 12 9"/><circle cx="15" cy="6" r="3"/><path d="M4 17l3 1"/>',
   sauger: '<path d="M4 20l7-7"/><rect x="11" y="5" width="9" height="8" rx="2"/><path d="M13 5V3h5v2"/>',
@@ -11347,6 +11966,10 @@ function oberflaecheBauen(wurzel, rueckruf) {
 
   /** Kurzer Text, der an einer Bildschirmstelle aufsteigt (Verkaufsbetrag, „+6“). */
   function schwebeText(text, x, y, art = '') {
+    // Im sichtbaren Bereich halten (nah am Trichter liegt der Verkaufspunkt oft über dem Bildrand)
+    const w = wurzel.clientWidth || innerWidth; const hoehe = wurzel.clientHeight || innerHeight;
+    x = Math.max(50, Math.min(w - 50, x));
+    y = Math.max(90, Math.min(hoehe - 140, y));
     const t = h('div', { class: `schwebetext ${art}`, style: { left: `${x}px`, top: `${y}px` } }, text);
     el.schwebe.append(t);
     while (el.schwebe.children.length > 12) el.schwebe.firstChild.remove();
@@ -11467,6 +12090,63 @@ const RAND_O = 36;
 const UEBERSICHT = 0.6;
 const schritteName = (n) => (n === 0 ? 'Start' : n === 1 ? '1 Schritt' : `${n} Schritte`);
 
+// Kleine graue Symbole links auf den Karten (Vorbild: research_cards.png). Linien-Icons 24×24.
+const SYMBOL = {
+  hand: '<path d="M8 21c-2-3-3-6-3-9V8a1.5 1.5 0 0 1 3 0v4M8 11V5a1.5 1.5 0 0 1 3 0v6M11 10V4a1.5 1.5 0 0 1 3 0v6M14 10V5.5a1.5 1.5 0 0 1 3 0V14c0 4-2 7-6 7H8"/>',
+  eimer: '<path d="M5 8h14l-2 12H7Z"/><path d="M5 8c0-3 3-5 7-5s7 2 7 5"/>',
+  spaten: '<path d="M12 2v11"/><path d="M9 2h6"/><path d="M8 13h8l-1 7c-1 2-5 2-6 0Z"/>',
+  heugabel: '<path d="M12 11v11"/><path d="M6 3v5c0 2 2 3 6 3s6-1 6-3V3M9 3v6M12 3v7M15 3v6"/>',
+  besen: '<path d="M16 3 9 14"/><path d="M5 13l6 3-2 6c-2 0-5-2-6-4Z"/>',
+  sauger: '<path d="M4 20l7-7"/><rect x="11" y="5" width="9" height="8" rx="2"/><path d="M13 5V3h5v2"/>',
+  detektor: '<path d="M6 21 12 9"/><circle cx="15" cy="6" r="3"/><path d="M4 17l3 1"/>',
+  haus: '<path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/>',
+  wand: '<rect x="3" y="5" width="18" height="14"/><path d="M3 12h18M9 5v7M15 12v7"/>',
+  dach: '<path d="M2 13 12 5l10 8"/><path d="M5 11v9h14v-9"/>',
+  treppe: '<path d="M3 20h5v-5h5v-5h5V5h3"/>',
+  lampe: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3Z"/>',
+  band: '<rect x="2" y="9" width="20" height="6" rx="3"/><circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/><path d="M6 15v5M18 15v5"/>',
+  weiche: '<path d="M3 12h7l4-6h7M10 12l4 6h7"/>',
+  blitz: '<path d="M13 2 4 14h7l-1 8 9-12h-7Z"/>',
+  mast: '<path d="M12 3v18M7 21h10M5 7h14M7 7l5 5 5-5"/>',
+  kessel: '<rect x="5" y="8" width="14" height="12" rx="2"/><path d="M9 8V4h3v4M9 14h6"/>',
+  zahnrad: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+  ballen: '<rect x="3" y="7" width="18" height="11" rx="1"/><path d="M8 7v11M16 7v11"/>',
+  silo: '<path d="M6 21V8a6 4 0 0 1 12 0v13M6 21h12M6 12h12"/>',
+  arm: '<path d="M4 21h8M8 21v-5l5-7 5 3"/><circle cx="13" cy="9" r="1.5"/><path d="M18 12l2 3M18 12l3 0"/>',
+  rechen: '<path d="M3 6h18M5 6v6M9 6v6M13 6v6M17 6v6M12 6V2M8 16h8v4H8Z"/>',
+  drohne: '<rect x="9" y="10" width="6" height="4" rx="1"/><path d="M9 11 5 7M15 11l4-4M9 13l-4 4M15 13l4 4"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="5" cy="17" r="2"/><circle cx="19" cy="17" r="2"/>',
+  tropfen: '<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11Z"/>',
+  lupe: '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
+  radar: '<path d="M12 12 19 5"/><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/>',
+  nadel: '<path d="M4 20 17 7"/><ellipse cx="18.5" cy="5.5" rx="2.2" ry="1.2" transform="rotate(-45 18.5 5.5)"/>',
+  muenze: '<circle cx="12" cy="12" r="9"/><path d="M15 9c-.5-1-1.6-1.5-3-1.5-1.8 0-3 .9-3 2.2 0 3 6 1.6 6 4.6 0 1.3-1.3 2.2-3 2.2-1.5 0-2.6-.6-3.1-1.6M12 6v1.5M12 16.5V18"/>',
+  laster: '<path d="M2 16V7h11v9M13 10h4l3 3v3h-7"/><circle cx="6" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
+  herz: '<path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.65-7 10-7 10Z"/>',
+  schuh: '<path d="M3 17h17c1 0 1.5-1.5.5-2.2L15 12l-2-5H8v5l-5 2Z"/>',
+};
+const SYMBOL_AST = {
+  hand: 'hand', hofbau: 'haus', linien: 'band', strom: 'blitz', verarbeitung: 'zahnrad', auto: 'arm',
+  wasser: 'tropfen', suche: 'lupe', verkauf: 'muenze', fitness: 'herz',
+};
+const SYMBOL_TECH = {
+  eimer: 'eimer', eimer2: 'eimer', schubkarre: 'eimer', mulde: 'eimer', sack: 'eimer', spaten: 'spaten',
+  heugabel: 'heugabel', zinken: 'heugabel', sauger: 'sauger', sauger2: 'sauger', kuehlung: 'sauger', industriesauger: 'sauger',
+  besen: 'besen', besen2: 'besen', waende: 'wand', schuppen: 'haus', daecher: 'dach', heutreppe: 'treppe', heulift: 'treppe',
+  arbeitslampen: 'lampe', weiche: 'weiche', vereiniger: 'weiche', vorrangarm: 'arm', kessel: 'kessel', feuerbox: 'kessel',
+  strommast: 'mast', spannweite: 'mast', abspannung: 'mast', erdkabel: 'mast', silo: 'silo', silo2: 'silo',
+  presse: 'ballen', ballenkammer: 'ballen', ballenpresse: 'ballen', ballenqualitaet: 'ballen', kolbenrechen: 'rechen', hub: 'rechen',
+  drohne: 'drohne', schwarm: 'drohne', rotoren: 'drohne', drohnenhafen: 'drohne', spule: 'detektor', piepser: 'detektor',
+  radar: 'radar', radar2: 'radar', laster: 'laster', tempo1: 'schuh', tempo2: 'schuh', kraft: 'hand', handschuh: 'hand',
+};
+function kartenSymbol(t) {
+  const name = SYMBOL_TECH[t.id] || SYMBOL_AST[t.ast] || 'haus';
+  return h('span', {
+    class: 'ksymbol', 'aria-hidden': 'true',
+    style: { flex: 'none', width: '22px', height: '22px', alignSelf: 'center', color: '#8a8f94', display: 'inline-flex' },
+    html: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${SYMBOL[name]}</svg>`,
+  });
+}
+
 let BAUM = null;
 const forschungZustand = { suche: '', wahl: null, zoom: false, scroll: null };
 
@@ -11561,12 +12241,17 @@ function forschungOeffnen(wurzel, s, rueck) {
     const preis = h('span', { class: 'preis num' });
     const stufe = h('span', { class: 'stufe num' });
     const kompakt = !!t.gruppe;
+    const stil = { left: `${p.x}px`, top: `${p.y}px`, width: `${KARTE_B}px`, height: `${p.h - (kompakt ? 2 : 0)}px`, '--astfarbe': ast.farbe };
+    // Große Karten: Symbolspalte links (30 px), rechts Ast, Name, Preis und Stufe
+    if (!kompakt) Object.assign(stil, { flexDirection: 'row', alignItems: 'stretch', gap: '6px', paddingLeft: '4px' });
     const karte = h('button', {
       class: kompakt ? 'karte kompakt' : 'karte',
-      style: { left: `${p.x}px`, top: `${p.y}px`, width: `${KARTE_B}px`, height: `${p.h - (kompakt ? 2 : 0)}px`, '--astfarbe': ast.farbe },
+      style: stil,
       onclick: () => { rueck.klick && rueck.klick(); ui.wahl = t.id; blattZeigen(); zuKarte(t.id); },
     }, kompakt ? [h('b', {}, t.name), preis, stufe]
-      : [h('span', { class: 'astname' }, ast.name), h('b', {}, t.name), h('span', { class: 'kartenfuss' }, preis, stufe)]);
+      : [kartenSymbol(t), h('span', {
+        style: { display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: '1', minWidth: '0' },
+      }, h('span', { class: 'astname' }, ast.name), h('b', {}, t.name), h('span', { class: 'kartenfuss' }, preis, stufe))]);
     karten[t.id] = { karte, preis, stufe };
   }
 
@@ -11672,7 +12357,7 @@ function forschungOeffnen(wurzel, s, rueck) {
           onclick: () => { ui.wahl = b; blattZeigen(); zuKarte(b); },
         }, `${techStufe(s, b) ? '✓' : '✕'} braucht ${TECH_NACH_ID[b].name}`))));
       }
-      if (st === 'max') { setzeText(knopf, t.stufen > 1 ? 'Voll ausgebaut' : 'Erforscht'); knopf.disabled = true; }
+      if (st === 'max') { setzeText(knopf, t.stufen > 1 ? 'Voll ausgebaut' : 'Besitzt'); knopf.disabled = true; }
       else if (st === 'gesperrt') { setzeText(knopf, `Gesperrt · ${geld(techKosten(s, id))}`); knopf.disabled = true; }
       else {
         setzeText(knopf, `${techStufe(s, id) ? 'Ausbauen' : 'Erforschen'} · ${geld(techKosten(s, id))}`);
@@ -11693,7 +12378,7 @@ function forschungOeffnen(wurzel, s, rueck) {
       if (st === 'kaufbar' && t.ast) bereit[t.ast] = (bereit[t.ast] || 0) + 1;
       for (const z of ['max', 'kaufbar', 'teuer', 'gesperrt']) k.karte.classList.toggle(z, st === z);
       k.karte.classList.toggle('begonnen', techStufe(s, t.id) > 0);
-      setzeText(k.preis, t.id === 'scheune' ? '' : st === 'max' ? (t.stufen > 1 ? 'FERTIG' : 'ERFORSCHT') : geld(techKosten(s, t.id)));
+      setzeText(k.preis, t.id === 'scheune' ? '' : st === 'max' ? (t.stufen > 1 ? 'FERTIG' : 'BESITZT') : geld(techKosten(s, t.id)));
       setzeText(k.stufe, t.id === 'scheune' ? '' : `${techStufe(s, t.id)}/${t.stufen}`);
     }
     for (const a of AESTE) {
@@ -11752,6 +12437,9 @@ function werkzeugstandZeigen(ui, s, { gekauft, fehler }) {
         knopf.disabled = true;
       } else { setzeText(knopf, geld(techKosten(s, t.id))); knopf.disabled = st !== 'kaufbar'; }
     }
+    // die Kasse oben mitführen
+    const ober = liste.closest && liste.closest('.modal') ? liste.closest('.modal').querySelector('.ober') : null;
+    if (ober) setzeText(ober, `Kasse: ${geld(s.geld)}`);
   }
   aktualisieren();
   ui.modal({
@@ -11836,14 +12524,14 @@ function menueZeigen(ui, einstellungen, { aendern, anleitung, herunterladen, loe
   empf.addEventListener('pointerdown', (ev) => ev.stopPropagation());
   zeige();
   ui.modal({
-    ober: 'Heuhaufen 3D', titel: 'Menü',
+    klasse: 'menue', ober: 'Heuhaufen 3D', titel: 'Menü',
     inhalt: h('div', { class: 'liste' },
       ton, beben,
-      h('div', { class: 'zeile ohneicon' }, h('div', {}, h('b', {}, 'Umsehen'), h('small', {}, 'Wie schnell sich der Blick beim Wischen dreht.')), h('div', {}, empf, empfText)),
+      h('div', { class: 'zeile ohneicon umsehen' }, h('div', {}, h('b', {}, 'Umsehen'), h('small', {}, 'Wie schnell sich der Blick beim Wischen dreht.')), h('div', { class: 'reglerzeile' }, empf, empfText)),
       h('div', {}, h('p', { class: 'ober' }, 'Grafik (lädt neu)'), grafik)),
     knoepfe: [
       { text: 'Anleitung', aktion: anleitung },
-      { text: 'Spiel mit Spielstand herunterladen', aktion: herunterladen },
+      ...(herunterladen ? [{ text: 'Spiel mit Spielstand herunterladen', aktion: herunterladen }] : []),
       { text: 'Spielstand löschen', klasse: 'gefahr', aktion: loeschen },
       { text: 'Weiter', klasse: 'primaer' },
     ],
@@ -11871,13 +12559,14 @@ function nadelModal(ui, ev, s) {
 function anleitungZeigen(ui) {
   ui.modal({
     ober: 'Rund sechs Millionen Halme', titel: 'Finde die Nadel',
-    absaetze: GESCHICHTE.anfang,
-    inhalt: h('ul', { class: 'anleitung' },
+    // Erst die Steuerung (ohne Scrollen sichtbar), dann die Geschichte
+    inhalt: h('div', {}, h('ul', { class: 'anleitung' },
       h('li', {}, 'Links den Daumen aufsetzen und schieben: gehen. Ganz nach außen: rennen.'),
       h('li', {}, 'Rechts wischen: umsehen. Tippen oder der runde Knopf: die Aktion (graben, verkaufen, aufheben).'),
       h('li', {}, 'Unten wählst du das Werkzeug. Heu kommt in die Arme, später in Eimer und Schubkarre.'),
       h('li', {}, 'Am Stand „Heu verkaufen“ kippst du alles in den Trichter. Am Werkzeugstand gibt es Spaten, Heugabel, Besen.'),
       h('li', {}, 'Der Metalldetektor piept, je näher eine Nadel ist. Oben links steht immer der nächste Schritt.')),
+      GESCHICHTE.anfang.map((p) => h('p', {}, p))),
     knoepfe: [{ text: 'Los geht’s', klasse: 'primaer' }],
   });
 }
@@ -12585,7 +13274,15 @@ function skizzeZeigen(ui, s, bau, rueck) {
     }),
     knopf('Behalten', () => {
       if (!striche.length) { ui.toast('Das Blatt ist noch leer.'); return; }
-      if (s.skizzen.length >= SKIZZEN_MAX) s.skizzen.shift();
+      if (s.skizzen.length >= SKIZZEN_MAX) {
+        // Das älteste Blatt fällt heraus: Staffeleien, die es zeigten, bekommen es als eigenes Bild,
+        // alle anderen rücken eine Nummer vor
+        const alt = s.skizzen.shift();
+        for (const b of s.bauten) {
+          if (b.typ !== 'staffelei' || !(b.bild >= 0)) continue;
+          if (b.bild === 0) { b.striche = alt.striche.map((x) => [...x]); b.bild = -1; } else b.bild--;
+        }
+      }
       s.skizzen.push({ striche: striche.map((x) => [...x]), zeit: Math.round(s.zeit) });
       bau.bild = s.skizzen.length - 1;
       bau.striche = striche.map((x) => [...x]);
@@ -12615,6 +13312,8 @@ function skizzeZeigen(ui, s, bau, rueck) {
 
 const RASTER_BAU = 0.25;
 const HUB_MAX = 3;
+/** Bauten ohne Richtung: kein Drehen-Knopf. */
+const RUND = new Set(['mast', 'lampe']);
 const WEITE_MIN = 1.2;
 const WEITE_MAX = 12;
 const rastern = (v, r = RASTER_BAU) => Math.round(v / r) * r;
@@ -12638,10 +13337,32 @@ function baumodusBauen(ctx) {
     ctx.hud.verstecken();
   };
 
-  /** Wohin der Blick trifft: Oberkante einer Plattform, sonst der Boden (oder ein Punkt vor dir). [x, z, y] */
-  function blickPunkt(k, blick, weite) {
+  /** Oberkante einer Plattform unter (x, z), die tiefer als die Kamera liegt, sonst 0. */
+  function auflageUnter(x, z, kameraY) {
+    const hp = BAU_BY_ID.plattform.h;
+    let y = 0;
+    for (const b of stand().bauten) {
+      if (b.typ !== 'plattform') continue;
+      const oben = (b.y || 0) + hp;
+      if (oben < kameraY - 0.05 && oben > y && imFussabdruck(b, x, z, 0)) y = oben;
+    }
+    return y;
+  }
+
+  /**
+   * Wohin der Geist kommt: Oberkante einer Plattform, sonst der Boden, wo der Blick
+   * trifft (oder ein Punkt vor dir). Mit festem Abstand (nach Näher/Weiter, wie Rad
+   * und C/V im Vorbild) steht er so weit vor dir in Blickrichtung. [x, z, y]
+   */
+  function blickPunkt(k, blick, weite, fest = null) {
     const [dx, dy, dz] = blick;
     const flach = Math.hypot(dx, dz) || 1;
+    if (fest != null) {
+      const gr0 = hallenGrenzen(werte(stand()).hallenFelder);
+      const fx = Math.max(gr0.xMin + 0.2, Math.min(gr0.xMax - 0.2, k.x + (dx / flach) * fest));
+      const fz = Math.max(gr0.zMin + 0.2, Math.min(gr0.zMax - 0.2, k.z + (dz / flach) * fest));
+      return [fx, fz, auflageUnter(fx, fz, k.y)];
+    }
     if (dy < -0.02) {
       let beste = null;
       const hp = BAU_BY_ID.plattform.h;
@@ -12740,6 +13461,12 @@ function baumodusBauen(ctx) {
   }
   const kommaMeter = (m) => `${String(Math.round(m * 10) / 10).replace('.', ',')} m`;
 
+  function abstandGezaehlt() {
+    const st = stand().stat;
+    st.geistAbstand = (st.geistAbstand || 0) + 1;
+    ctx.klang.klick();
+  }
+
   const api = {
     aktiv: () => !!modus,
     /** Ist die gerade gezeigte Stelle gültig? (Der große Knopf wird sonst matt.) */
@@ -12780,9 +13507,10 @@ function baumodusBauen(ctx) {
       beenden();
     },
 
-    drehen() { if (modus && modus.art === 'bau') { modus.dreh += Math.PI / 4; ctx.klang.klick(); } },
-    naeher() { if (modus) modus.weite = Math.max(WEITE_MIN, modus.weite - 1); },
-    weiter() { if (modus) modus.weite = Math.min(WEITE_MAX, modus.weite + 1); },
+    drehen() { if (modus && modus.art === 'bau') { modus.dreh += Math.PI / 4; stand().stat.gedreht = (stand().stat.gedreht || 0) + 1; ctx.klang.klick(); } },
+    // Ab dem ersten Druck steht der Geist in festem Abstand vor dir (zählt für die Mission)
+    naeher() { if (modus && modus.art === 'bau') { modus.fest = Math.max(WEITE_MIN, (modus.fest ?? modus.abstandJetzt ?? 5) - 1); abstandGezaehlt(); } },
+    weiter() { if (modus && modus.art === 'bau') { modus.fest = Math.min(WEITE_MAX, (modus.fest ?? modus.abstandJetzt ?? 5) + 1); abstandGezaehlt(); } },
     /** Freie Bandenden anheben oder absenken (0 bis 3 m in halben Metern), für Rampen und Kreuzungen. */
     hoeher() { if (modus && modus.art === 'band' && modus.hub < HUB_MAX) { modus.hub = Math.min(HUB_MAX, modus.hub + 0.5); modus.plan = null; ctx.klang.klick(); } },
     tiefer() { if (modus && modus.art === 'band' && modus.hub > 0) { modus.hub = Math.max(0, modus.hub - 0.5); modus.plan = null; ctx.klang.klick(); } },
@@ -12796,6 +13524,7 @@ function baumodusBauen(ctx) {
       if (modus.art === 'bau') {
         const l = modus.lage;
         if (!l) return;
+        if (modus.lageOk === false && modus.typ === 'rechen') { ctx.klang.fehler(); ctx.ui.toast('Der Kamm muss ins Heu zeigen.', 'warn'); return; }
         const r = bauSetzen(s, modus.typ, l.x, l.z, l.rot, { y: l.y || 0 });
         if (!r.ok) { ctx.klang.fehler(); ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht hier nicht.', 'warn'); return; }
         ctx.klang.bauen();
@@ -12856,8 +13585,9 @@ function baumodusBauen(ctx) {
         });
         return true;
       }
-      const [px, pz, py] = blickPunkt(k, blick, modus.weite);
+      const [px, pz, py] = blickPunkt(k, blick, modus.weite, modus.art === 'bau' ? modus.fest ?? null : null);
       if (modus.art === 'bau') {
+        modus.abstandJetzt = Math.round(Math.hypot(px - k.x, pz - k.z));
         const d = BAU_BY_ID[modus.typ];
         const x = rastern(px);
         const z = rastern(pz);
@@ -12873,18 +13603,21 @@ function baumodusBauen(ctx) {
         const p = bauPruefen(s, modus.typ, x, z, rot, { y: py });
         modus.lage = { x, z, rot, y: py };
         const mast = modus.typ === 'mast' ? mastVorschau(s, x, z) : null;
-        ctx.objekte.geist(modus.typ, { x, y: py, z, rot }, p.ok, mast ? { ringe: mast.ringe, leitungen: mast.leitungen } : null);
-        zuletztOk = p.ok;
         let grund = p.ok ? (mast ? mast.grund : null) : GRUND_TEXT[p.grund] || 'Geht hier nicht';
+        // Ein Rechen, dessen Kamm nicht ins Heu zeigt, täte nichts: dann gilt die Stelle als ungültig
+        let ok = p.ok;
         if (p.ok && modus.typ === 'rechen') {
           const [kx, kz] = [x + Math.cos(rot) * (d.b / 2 + 0.45), z - Math.sin(rot) * (d.b / 2 + 0.45)];
-          if (haufenHoehe(s.hf, kx, kz) < 0.06) grund = 'Der Kamm muss ins Heu zeigen';
+          if (haufenHoehe(s.hf, kx, kz) < 0.06) { grund = 'Der Kamm muss ins Heu zeigen'; ok = false; }
         }
+        modus.lageOk = ok;
+        ctx.objekte.geist(modus.typ, { x, y: py, z, rot }, ok, mast ? { ringe: mast.ringe, leitungen: mast.leitungen } : null);
+        zuletztOk = ok;
         const kw = d.kw > 0 ? ` · braucht ${d.kw} kW` : d.kw < 0 ? ` · liefert ${-d.kw} kW` : '';
         const extra = mast && mast.text ? ` · ${mast.text}` : '';
         ctx.hud.zeigen({
-          titel: d.name, zeile: `${kostenText(s, modus.typ)}${kw}${extra}`, grund, ok: p.ok,
-          schritt: 'setzen', einrasten: null, drehen: true, abstand: false,
+          titel: d.name, zeile: `${kostenText(s, modus.typ)}${kw}${extra}`, grund, ok,
+          schritt: 'setzen', einrasten: null, drehen: !RUND.has(modus.typ), abstand: true,
         });
         return true;
       }
@@ -12911,7 +13644,8 @@ function baumodusBauen(ctx) {
         if ((verschoben || !alt) && planZeit <= 0) {
           modus.anker = a;
           modus.plan = bandPlanen(s, modus.von, a, { gerade: !modus.einrasten });
-          planZeit = 0.12;
+          // Ohne Weg ist die Suche am teuersten: dann seltener neu suchen
+          planZeit = modus.plan.ok || modus.plan.grund === 'geld' ? 0.12 : 0.35;
           ctx.objekte.bandVorschau(modus.plan.punkte || [[modus.von.x, modus.von.y, modus.von.z], [a.x, a.y, a.z]], !!modus.plan.ok);
         }
         const plan = modus.plan;
@@ -13031,6 +13765,7 @@ function hauptStart() {
       else if (k === 'n') nadelnAuf();
       else if (k === 'escape') { if (zustand.tafel) zustand.tafel.schliessen(); else if (bm.aktiv()) bm.abbrechen(); }
       else if (k === 'q' && bm.aktiv()) bm.drehen();
+      else if (k === 'q') ablegen();
       else if (k === 'f' && bm.aktiv()) bm.einrasten();
       // C und V schieben den Geist näher und weiter weg wie im Vorbild; sonst duckt C
       else if (k === 'c' && bm.art() === 'band') bm.tiefer();
@@ -13095,6 +13830,20 @@ function hauptStart() {
     if (werkzeugWaehlen(s, id)) klang.klick();
   }
 
+  /** Q / ABLEGEN wie im Vorbild: was man hält, vor die Füße legen (Heu im Behälter als ein Bündel). */
+  function ablegen() {
+    if (!zustand.laeuft || blockiert() || bm.aktiv()) return;
+    const sp = s.spieler;
+    const [dx, , dz] = blickRichtung(sp);
+    const l = Math.hypot(dx, dz) || 1;
+    const von = [sp.x + (dx / l) * 0.55, sp.y + 1.1, sp.z + (dz / l) * 0.55];
+    const richtung = [dx / l, 0, dz / l];
+    if (gehaltenesStueck(s)) stueckWerfen(s, von, richtung, 0.8);
+    else if (sp.last >= 1) heuWerfen(s, von, richtung, sp.last, 0.8);
+    else { ui.toast('Nichts zum Ablegen.'); return; }
+    klang.klick();
+  }
+
   /* ------------------------------------------------ Tafeln und Menüs */
   const blockiert = () => ui.modalOffen() || !!zustand.tafel || !zustand.laeuft;
 
@@ -13114,10 +13863,19 @@ function hauptStart() {
     });
     zustand.tafel = f;
   }
+  /** Katalog auf jeden Fall öffnen (Geschenk-Tafel): offene Forschung schließen, Baumodus beenden. */
+  function katalogErzwingen() {
+    if (zustand.tafel) zustand.tafel.schliessen();
+    while (bm.aktiv()) bm.abbrechen();
+    // Das Modal schließt erst nach diesem Rückruf: den Katalog danach öffnen
+    setTimeout(() => bauenAuf(), 0);
+  }
+
   function bauenAuf() {
     if (zustand.tafel || !zustand.laeuft) return;
     if (bm.aktiv()) { bm.abbrechen(); if (bm.aktiv()) bm.abbrechen(); return; }
     st.zeigerFreigeben();
+    s.stat.katalog = (s.stat.katalog || 0) + 1;
     baukatalogZeigen(ui, s, {
       waehlen: (typ) => { klang.klick(); bm.starten(typ); },
       abbauen: () => { klang.klick(); bm.abbauStarten(); },
@@ -13149,7 +13907,6 @@ function hauptStart() {
         if ('grafik' in neu) { speichernJetzt(); location.reload(); }
       },
       anleitung: () => anleitungZeigen(ui),
-      herunterladen: () => ui.toast('Kommt noch: die Datei mit Spielstand.', ''),
       loeschen: () => ui.modal({
         titel: 'Spielstand löschen?', absaetze: ['Alles ist weg: Geld, Forschung, Nadeln, Bauten. Das lässt sich nicht rückgängig machen.'],
         knoepfe: [{ text: 'Abbrechen', klasse: 'primaer' }, {
@@ -13182,8 +13939,7 @@ function hauptStart() {
     const felder = werte(s).hallenFelder;
     if (felder === hofFelder) return;
     hofFelder = felder;
-    s3.szene.remove(hof.gruppe);
-    hof.gruppe.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); } });
+    hof.entsorgen(); // nimmt die alte Halle aus der Szene und gibt Geometrien, Materialien, Texturen frei
     hof = hofBauen(s3.szene, s3.qualitaet, felder);
     stationenSetzen();
     zustand.umgebungVersion = -1;
@@ -13428,7 +14184,7 @@ function hauptStart() {
       } else if (ziel.art === 'hausanschluss') {
         ui.modal({ titel: 'Hausanschluss', absaetze: ['Hier kommen 5 kW aus dem Netz. Maschinen in der Nähe hängen direkt dran, weiter weg helfen Strommasten.'], knoepfe: [{ text: 'OK', klasse: 'primaer' }] });
       } else if (ziel.art === 'werkbank') {
-        ui.toast('Die Werkbank. Kinderschaufel und Detektor sind schon in deiner Leiste.');
+        ui.toast('Die Werkbank. Kinderschaufel und Detektor von hier liegen in deiner Leiste.');
       } else if (ziel.art === 'nadel') {
         nadelFinden(s, ziel.nadel, ereignisPuffer);
       }
@@ -13534,7 +14290,7 @@ function hauptStart() {
       ui.modal({
         klasse: 'gold', ober: 'Geschenk', titel: e.belohnung.split(' geschenkt')[0],
         absaetze: [`Für „${e.text}“. Er liegt im Baukatalog bereit und kostet nichts.`],
-        knoepfe: [{ text: 'Zum Baukatalog', klasse: 'primaer', aktion: () => bauenAuf() }, { text: 'Später' }],
+        knoepfe: [{ text: 'Zum Baukatalog', klasse: 'primaer', aktion: katalogErzwingen }, { text: 'Später' }],
       });
     }
     if (missionen.length) {
@@ -13555,6 +14311,7 @@ function hauptStart() {
       } else if (e.typ === 'verkauft') {
         if (e.wo === 'stand' && !e.art) {
           klang.kasse();
+          klang.muenzen();
           const t = hof.standTrichter;
           const p = bildschirmPunkt(t.x, t.y + 1.2, t.z) || [leinwand.clientWidth / 2, leinwand.clientHeight / 2];
           ui.schwebeText(`+${geld(e.betrag)}`, p[0], p[1]);
@@ -13657,13 +14414,16 @@ function hauptStart() {
     const rand = 36;
     const drin = vorn && x > rand && x < b - rand && y > rand && y < hh - rand;
     if (!drin) {
-      // Richtung zum Ziel vom Bildmittelpunkt aus, hinter der Kamera gespiegelt
-      let dx = x - b / 2; let dy = y - hh / 2;
+      // Richtung zum Ziel vom Bildmittelpunkt aus, hinter der Kamera gespiegelt. Der Pfeil
+      // bleibt in einem Band über Werkzeugleiste und Knöpfen und unter der Kopfzeile.
+      const oben = 90; const unten = hh * 0.62;
+      const cy = (oben + unten) / 2; const halb = (unten - oben) / 2;
+      let dx = x - b / 2; let dy = y - cy;
       if (!vorn) { dx = -dx; dy = -dy; }
       const l = Math.hypot(dx, dy) || 1;
-      const k = Math.min((b / 2 - rand) / Math.abs(dx / l || 1e-6), (hh / 2 - rand) / Math.abs(dy / l || 1e-6));
+      const k = Math.min((b / 2 - rand - 60) / Math.abs(dx / l || 1e-6), halb / Math.abs(dy / l || 1e-6));
       x = b / 2 + (dx / l) * k;
-      y = hh / 2 + (dy / l) * k;
+      y = cy + (dy / l) * k;
       zielMarke.style.transform = `rotate(${Math.atan2(dy, dx) + Math.PI / 2}rad)`;
       if (zielMarke.dataset.form !== 'pfeil') {
         zielMarke.dataset.form = 'pfeil';
@@ -13818,7 +14578,7 @@ function hauptStart() {
         const p = bildschirmPunkt(o[0], o[1], o[2]);
         if (p) ui.schwebeText(`+${geld(zustand.verkaufSumme)}`, p[0], p[1]);
         const sp = s.spieler;
-        if (Math.hypot(o[0] - sp.x, o[2] - sp.z) < 14) klang.kasse();
+        if (Math.hypot(o[0] - sp.x, o[2] - sp.z) < 14) { klang.kasse(); klang.muenzen(0.18, 2); }
         zustand.verkaufSumme = 0;
         zustand.verkaufZeit = 0.6;
       }
@@ -13838,6 +14598,7 @@ function hauptStart() {
       const torRest = Math.max(0.07, 1 - zustand.torOffen);
       hof.tor.scale.y = torRest;
       hof.tor.position.y = WELT.torHoehe - (WELT.torHoehe * torRest) / 2;
+      hof.preisSetzen(preisRoh(werte(s)));
       hof.uhr.setze(m >= 100 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}` : `${m}:${String(Math.floor(s.zeit % 60)).padStart(2, '0')}`);
 
       // Anzeigen
@@ -13848,6 +14609,7 @@ function hauptStart() {
         ui.missionZeigen(missionStand(s), s.mission);
         ui.leisteSetzen(werkzeugeInLeiste(s), s.spieler.werkzeug, [
           { id: 'bauen', taste: 'B', kurz: 'BAUEN', name: 'Baukatalog', aktion: bauenAuf },
+          { id: 'ablegen', taste: 'Q', kurz: 'ABLEGEN', name: 'Ablegen', aktion: ablegen },
         ]);
         const platz = taschePlatz(w);
         ui.behaelterZeigen(behaelter(s), s.spieler.last, platz);
@@ -13897,7 +14659,7 @@ function hauptStart() {
     h('div', { class: 'knoepfe' },
       gespeichert ? h('button', { class: 'knopf primaer', onclick: () => losgehen(false) }, 'Weiterspielen') : null,
       h('button', { class: `knopf${gespeichert ? '' : ' primaer'}`, onclick: () => (gespeichert ? neuFragen() : losgehen(true)) }, 'Neues Spiel'),
-      h('button', { class: 'knopf', onclick: () => anleitungZeigen(ui) }, 'Anleitung')),
+      h('button', { class: 'knopf', onclick: () => { zustand.anleitungGelesen = true; anleitungZeigen(ui); } }, 'Anleitung')),
     h('small', {}, 'Sechs Millionen Halme, sechs Nadeln. Am besten quer halten.'));
   app.append(startbild);
   app.classList.add('vorstart');
@@ -13924,12 +14686,22 @@ function hauptStart() {
     }
     s.zuletzt = Date.now();
     spielerKamera(s.spieler, s3.kamera, 0);
-    if (neu && !ui.modalOffen()) anleitungZeigen(ui);
+    // Wer die Anleitung schon auf dem Startbild gelesen hat, bekommt sie nicht noch einmal
+    if (neu && !ui.modalOffen() && !zustand.anleitungGelesen) anleitungZeigen(ui);
     speichernJetzt();
   }
 
   window.addEventListener('resize', () => s3.groesseAnpassen());
-  document.addEventListener('visibilitychange', () => { if (document.hidden && zustand.laeuft) speichernJetzt(); });
+  // Beim Wegschalten speichern; beim Zurückkommen (App-Wechsel ohne Neuladen) die Pause nachholen
+  function zurueck() {
+    if (!zustand.laeuft || zustand.aufholen) return;
+    zustand.aufholen = abwesenheitBeginnen(s, Date.now(), [automatikSchritt]);
+    if (zustand.aufholen && zustand.aufholen.sek >= 30) ui.toast('Die Maschinen holen nach, was in deiner Abwesenheit passiert ist …');
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (zustand.laeuft) speichernJetzt(); } else zurueck();
+  });
+  window.addEventListener('pageshow', (ev) => { if (ev.persisted) zurueck(); });
   // Beim Schließen nur speichern, wenn der letzte Stand älter als eine Sekunde ist
   window.addEventListener('pagehide', () => { if (zustand.laeuft && performance.now() - zustand.zuletztGespeichert > 1000) speichernJetzt(); });
   requestAnimationFrame(schleife);

@@ -235,12 +235,13 @@ export function hofBauen(szene, qualitaet, felder = 0) {
     const neigung = Math.atan2(oben - unten, tief);
     const vdMat = new THREE.MeshStandardMaterial({
       map: gekachelt(blechHell, laenge, Math.hypot(tief, oben - unten), 1.6, 1.6), color: 0xc9c0b4, roughness: 0.7, metalness: 0.2, side: THREE.DoubleSide,
+      emissive: 0x2e2b27, // Unterseite graubraun statt schwarz (S6)
     });
     const vordach = new THREE.Mesh(new THREE.PlaneGeometry(laenge, Math.hypot(tief, oben - unten)), vdMat);
     vordach.rotation.x = -Math.PI / 2 + neigung;
     vordach.position.set((W.xMin + W.xMax) / 2, (oben + unten) / 2, W.zMin + tief / 2);
     vordach.castShadow = true;
-    vordach.receiveShadow = true;
+    vordach.receiveShadow = false;
     gruppe.add(vordach);
     // Konsolen an den Pfosten
     for (let x = W.xMin + 2; x < W.xMax - 1; x += W.pfostenAbstand) {

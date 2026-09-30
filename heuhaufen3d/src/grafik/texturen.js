@@ -297,7 +297,7 @@ export function wolkenTextur(seed = 3) {
   x.globalCompositeOperation = 'source-atop';
   const unten = x.createLinearGradient(0, 118, 0, 230);
   unten.addColorStop(0, 'rgba(154,168,186,0)');
-  unten.addColorStop(1, 'rgba(154,168,186,0.45)');
+  unten.addColorStop(1, 'rgba(170,182,198,0.32)');
   x.fillStyle = unten;
   x.fillRect(0, 0, 512, 256);
   x.globalCompositeOperation = 'source-over';

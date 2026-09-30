@@ -71,7 +71,7 @@ export function ansichtBauen(szene, kamera) {
   }
   // Heu, das auf dem Werkzeug liegt (S4: dicke Ladung flacher Halme auf den Zinken).
   // Hängt am Werkzeugkopf und macht Stoß und Wippen mit.
-  const ladung = heuBueschel(50, 0.16, { breite: 0.012, laenge: 0.22, hoch: 0.35 });
+  const ladung = heuBueschel(64, 0.16, { breite: 0.012, laenge: 0.22, hoch: 0.55 });
   ladung.visible = false;
   ladung.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.renderOrder = 6; } });
   const LADUNG_AM = {
@@ -81,8 +81,8 @@ export function ansichtBauen(szene, kamera) {
   };
   // Behälter: Eimer links neben der Werkzeugleiste, Heubündel in den Armen
   const eimer = eimerModell();
-  eimer.scale.setScalar(0.75);
-  eimer.position.set(-0.52, -0.33, -0.62);
+  eimer.scale.setScalar(0.6);
+  eimer.position.set(-0.74, -0.28, -0.64);
   eimer.rotation.set(0.25, 0.3, 0.12);
   kamera.add(eimer);
   const armHeu = heuBueschel(26, 0.1);
@@ -128,9 +128,9 @@ export function ansichtBauen(szene, kamera) {
   // Fliegende Halme beim Stechen: flache Streifen, die herumwirbeln, liegen bleiben und
   // dann vergehen („digging throws hundreds of straws around“). Eine Instanzgruppe.
   const MAX_T = 600;
-  const teilchenGeo = new THREE.PlaneGeometry(0.009, 0.2);
+  const teilchenGeo = new THREE.PlaneGeometry(0.012, 0.24);
   teilchenGeo.rotateX(-Math.PI / 2);
-  const teilchenMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, emissive: 0x3a2610 });
+  const teilchenMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, emissive: 0x4a3214 });
   teilchenMat.onBeforeCompile = (sh) => {
     sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = normalize( vNormal );');
   };
@@ -157,6 +157,7 @@ export function ansichtBauen(szene, kamera) {
   const unsichtbar = new THREE.Matrix4().makeScale(0, 0, 0);
   let aktuell = null;
   let stoss = 0; // 1 → 0 nach einem Stich
+  let handZeit = 0; // wie lange die Hand beim Zupfen noch zu sehen ist
   let ladungZeit = 0;
   let zeit = 0;
   let loseSchluessel = '';
@@ -176,6 +177,7 @@ export function ansichtBauen(szene, kamera) {
   return {
     stich(ev) {
       stoss = 1;
+      handZeit = 0.5;
       if (ev.menge > 0 && ev.werkzeug !== 'hand') { ladungZeit = 0.7; }
       // Halme fliegen an der Stichstelle hoch
       const n = ev.menge > 0 ? Math.min(80, 40 + Math.round(ev.menge / 3)) : 12;
@@ -196,7 +198,7 @@ export function ansichtBauen(szene, kamera) {
         staubZeit = 0;
       }
     },
-    schwung() { stoss = 1; },
+    schwung() { stoss = 1; handZeit = 0.5; },
 
     schritt(s, dt, info) {
       zeit += dt;
@@ -222,6 +224,7 @@ export function ansichtBauen(szene, kamera) {
       const wx = Math.sin(zeit * 7.5) * 0.012 * gehen;
       const wy = Math.abs(Math.cos(zeit * 7.5)) * 0.014 * gehen;
       stoss = Math.max(0, stoss - dt * 4.2);
+      handZeit = Math.max(0, handZeit - dt);
       if (!weg) {
         const ruhe = RUHE[sp.werkzeug] || RUHE.hand;
         const m = modelle[sp.werkzeug];
@@ -229,8 +232,9 @@ export function ansichtBauen(szene, kamera) {
         const saugZittern = sp.sauger.an ? (Math.random() - 0.5) * 0.006 : 0;
         if (sp.werkzeug === 'hand') {
           // Die Hand ist nur beim Zupfen zu sehen (Vorbild: keine Hand im Bild); sie kommt von unten rechts.
-          m.visible = stoss > 0.001;
-          m.position.set(ruhe.p[0] + wx - (1 - st) * 0.04, ruhe.p[1] - (1 - st) * 0.16, ruhe.p[2] - st * 0.12);
+          m.visible = handZeit > 0;
+          const rein = Math.max(0, Math.min(1, handZeit / 0.12, (0.5 - handZeit) / 0.08));
+          m.position.set(ruhe.p[0] + wx - (1 - rein) * 0.04, ruhe.p[1] - (1 - rein) * 0.16, ruhe.p[2] - st * 0.12);
           m.rotation.set(ruhe.r[0] - st * 0.35, ruhe.r[1], ruhe.r[2]);
         } else {
           m.position.set(ruhe.p[0] + wx + saugZittern, ruhe.p[1] - wy - st * 0.05, ruhe.p[2] - st * 0.22);
@@ -256,7 +260,7 @@ export function ansichtBauen(szene, kamera) {
       eimer.visible = b === 'eimer' && sp.werkzeug !== 'besen';
       const f = eimer.getObjectByName('fuellung');
       if (f) { f.position.y = -0.14 + fuell * 0.26; f.visible = fuell > 0.01; }
-      eimer.position.y = -0.33 - wy * 0.6;
+      eimer.position.y = -0.28 - wy * 0.6;
       armHeu.visible = b === 'arme' && sp.last > 0 && sp.werkzeug !== 'besen';
       armHeu.scale.setScalar(0.4 + fuell * 0.9);
       koerper.visible = b === 'schubkarre' && !info.bauen;
@@ -378,9 +382,10 @@ function schubkarreModell() {
   boden.rotation.x = -Math.PI / 2;
   boden.position.set(0, 0.425, -1.05);
   g.add(boden);
-  const fuellung = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.3, 0.86), heuStueckMaterial());
+  // Heu als flacher Hügel in der Mulde
+  const fuellung = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), heuStueckMaterial());
   fuellung.name = 'fuellung';
-  fuellung.geometry.translate(0, 0.15, 0);
+  fuellung.geometry.scale(0.3, 0.2, 0.46);
   fuellung.position.set(0, 0.43, -1.05);
   g.add(fuellung);
   const rad = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.05, 8, 16), schwarz);

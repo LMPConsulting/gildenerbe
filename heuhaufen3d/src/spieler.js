@@ -182,7 +182,7 @@ export function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
 
 /** Kamera auf Augenhöhe setzen, mit leichtem Wippen beim Gehen. */
 export function spielerKamera(sp, kamera, tempo) {
-  const wippen = Math.sin(sp.schritt * 2.2) * 0.035 * Math.min(1, tempo / 4) * (1 - 0.6 * (sp.duck || 0));
+  const wippen = Math.sin(sp.schritt * 2.2) * 0.015 * Math.min(1, tempo / 4) * (1 - 0.6 * (sp.duck || 0));
   kamera.position.set(sp.x, sp.y + augenHoehe(sp) + wippen, sp.z);
   kamera.rotation.set(sp.nick, sp.gier, 0, 'YXZ');
 }

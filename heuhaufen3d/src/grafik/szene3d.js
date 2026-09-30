@@ -152,7 +152,7 @@ function landschaftBauen(szene, q) {
   feld.repeat.set(40, 40);
   const boden = new THREE.Mesh(
     new THREE.CircleGeometry(700, 48),
-    new THREE.MeshLambertMaterial({ color: 0xffffff, map: feld }),
+    new THREE.MeshLambertMaterial({ color: 0xa89a82, map: feld }),
   );
   boden.rotation.x = -Math.PI / 2;
   boden.position.y = -0.02;
@@ -172,7 +172,7 @@ function landschaftBauen(szene, q) {
     flecken.push(pg);
   }
   const wiese = new THREE.Mesh(geoVereinen(flecken), new THREE.MeshLambertMaterial({
-    color: 0x7d8f55, map: fleckTextur(128, 61), transparent: true, depthWrite: false,
+    color: 0x5f7440, map: fleckTextur(128, 61), transparent: true, depthWrite: false,
   }));
   wiese.renderOrder = -1;
   szene.add(wiese);
