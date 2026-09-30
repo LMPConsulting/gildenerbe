@@ -200,6 +200,16 @@ export function bandPlanen(s, von, nach, { gerade = false } = {}) {
       if (nb.d < 0.45 && Math.abs(nb.y - von.y) < 0.6) return { ok: false, grund: 'band' };
     }
   }
+  // Ein freies Bandende mitten in einer Maschine geht nicht
+  for (const a of [von, nach]) {
+    if (a.art !== 'frei') continue;
+    for (const b of s.bauten) {
+      const d = BAU_BY_ID[b.typ];
+      if (b.typ === 'band' || d.linie || b.typ === 'plattform' || b.typ === 'dach' || b.typ === 'klappe') continue;
+      const y0 = b.y || 0;
+      if (a.y > y0 - 0.1 && a.y < y0 + d.h + 0.1 && imFussabdruck(b, a.x, a.z, 0.1)) return { ok: false, grund: 'belegt' };
+    }
+  }
   // Ein Anschluss nimmt nur ein Band: keine zwei Bänder übereinander am selben Ein- oder Ausgang
   for (const b of s.bauten) {
     if (b.typ !== 'band') continue;

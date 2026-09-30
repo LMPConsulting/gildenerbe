@@ -2,7 +2,7 @@
 // weitgehend aus der 2D-Fassung übernommen und auf die 3D-Welt angepasst.
 
 import {
-  GRUND, TECH, AESTE, NADELN, MISSIONEN, AUFTRAEGE, KUNDEN, AUFTRAG_PAUSE, PRODUKTE, PRODUKTE_2D,
+  GRUND, WELT, TECH, AESTE, NADELN, MISSIONEN, AUFTRAEGE, KUNDEN, AUFTRAG_PAUSE, PRODUKTE, PRODUKTE_2D,
   BAUTEN, LADUNGEN_3D, LADUNG_WACHSTUM, LADUNG_PREIS, LADUNG_PREIS_FAKTOR,
   KREDIT_AUFSCHLAG, KREDIT_AUFSCHLAG_GUT, KREDIT_TILGUNG,
 } from './daten.js';
@@ -381,6 +381,8 @@ export function missionStand(s) {
     case 'gefegt': ist = st.gefegt; break;
     case 'gebaut': ist = bauAnzahl(s, m.ziel[0]); ziel = m.ziel[1]; break;
     case 'zaehler': ist = st[m.ziel[0]] || 0; ziel = m.ziel[1]; break;
+    // ein selbst gebautes Band, das am Stand endet (nicht die Startrampe)
+    case 'standband': ist = s.bauten.some((b) => b.typ === 'band' && !b.start && standNah(b.punkte[b.punkte.length - 1])) ? 1 : 0; break;
     case 'strom': ist = st.rechenMitStrom ? 1 : 0; break;
     case 'nadeln': ist = s.nadelnGesamt; break;
     case 'auftraege': ist = st.auftraege; break;
@@ -394,6 +396,9 @@ export function missionStand(s) {
   }
   return { m, ist: Math.min(ist, ziel), ziel, erfuellt: ist >= ziel };
 }
+
+const STAND_X = WELT.standX + WELT.standTiefe / 2 + 0.45;
+const standNah = (p) => Math.hypot(p[0] - STAND_X, p[2] - WELT.standZ) < 1.0;
 
 /** Erfüllte Missionen der Reihe nach auszahlen. Geschenkte Bauten liegen dann im Baukatalog. */
 export function missionenPruefen(s, ereignisse) {

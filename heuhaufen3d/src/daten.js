@@ -670,7 +670,7 @@ export const MISSIONEN = [
   { text: 'Öffne den Baukatalog', hilfe: 'Unten auf BAUEN tippen.', art: 'zaehler', ziel: ['katalog', 1], geld: 2 },
   { text: 'Schieb den Geist weiter weg und wieder heran', hilfe: 'Etwas aus dem Katalog wählen, dann Weiter und Näher tippen.', art: 'zaehler', ziel: ['geistAbstand', 2], geld: 2 },
   { text: 'Dreh den Geist', hilfe: 'Im Baumodus auf Drehen tippen.', art: 'zaehler', ziel: ['gedreht', 1], geld: 2 },
-  { text: 'Leg ein Band vom Haufen zum Stand', hilfe: 'Unten auf BAUEN tippen, Förderband wählen, Anfang beim Haufen und Ende am Stand setzen.', art: 'gebaut', ziel: ['band', 1], geschenk: 'mast' },
+  { text: 'Leg ein Band vom Haufen zum Stand', hilfe: 'Unten auf BAUEN tippen, Förderband wählen, Anfang beim Haufen und Ende am Stand setzen.', art: 'standband', ziel: 1, geschenk: 'mast' },
   { text: 'Stell den Kolbenrechen an den Haufen', hilfe: 'Im Baukatalog liegt er als Geschenk bereit.', art: 'gebaut', ziel: ['rechen', 1], geschenk: 'mast' },
   { text: 'Bring den Rechen ans Netz', hilfe: 'Der Hausanschluss hängt an der linken Wand. Masten verlängern die Leitung.', art: 'strom', ziel: 1, geld: 40 },
   { text: 'Schalte das Netz aus und wieder an', hilfe: 'Einen Mast antippen: das ganze Netz geht aus oder an.', art: 'zaehler', ziel: ['netzGeschaltet', 2], geld: 20 },

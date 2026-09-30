@@ -161,17 +161,21 @@ describe('Kolbenrechen und Strom', () => {
 
   it('der Generator verbrennt Heu und speist ins Netz', () => {
     const s = hof();
-    const m = bauSetzen(s, 'mast', -11, 4, 0).bau;
-    const gen = bauSetzen(s, 'generator', -11, 6.2, 0).bau;
-    bauSetzen(s, 'scanner', -13, 4, 0); // ein Abnehmer: ohne Bedarf ruht das Feuer
+    // eigenes Netz ohne Hausanschluss: den Bedarf deckt allein der Generator
+    const m = bauSetzen(s, 'mast', -6, 8, 0).bau;
+    const gen = bauSetzen(s, 'generator', -6, 10.2, 0).bau;
+    bauSetzen(s, 'scanner', -8, 8, 0); // ein Abnehmer: ohne Bedarf ruht das Feuer
     const netz = netzHolen(s);
     expect(annehmen(s, netz, gen, gegenstandNeu(s, 'roh', 60, 0, 0, 0))).toBe(true);
     laufen(s, 1);
-    expect(netzVon(netz, m).angebot).toBeCloseTo(5 + 15, 5);
+    expect(netzVon(netz, m).angebot).toBeCloseTo(15, 5);
     expect(gen.brenn).toBeLessThan(60);
+    // verbrannt wird nur, was gebraucht wird (Scanner 3 von 15 kW): das dauert länger
     laufen(s, 40);
+    expect(gen.brenn).toBeGreaterThan(0);
+    laufen(s, 200);
     expect(gen.brenn).toBe(0);
-    expect(netzVon(netz, m).angebot).toBe(5);
+    expect(netzVon(netz, m).angebot).toBe(0);
     // nicht brennbar
     expect(annehmen(s, netz, gen, gegenstandNeu(s, 'brei', 0, 0, 0, 0))).toBe(false);
   });
@@ -538,7 +542,7 @@ describe('Startrampe', () => {
     expect(s.stat.verkauft - vorher).toBe(30);
     // die Mission „Leg ein Band vom Haufen zum Stand“ ist damit nicht erledigt
     const { MISSIONEN } = await import('../../heuhaufen3d/src/daten.js');
-    s.mission = MISSIONEN.findIndex((m) => m.art === 'gebaut' && m.ziel[0] === 'band');
+    s.mission = MISSIONEN.findIndex((m) => m.art === 'standband');
     expect(s.mission).toBeGreaterThan(0);
     expect(missionStand(s).ist).toBe(0);
   });
@@ -609,12 +613,12 @@ describe('Zyklus 2: neue Ladung und Plattformen', () => {
 describe('Zyklus 2: Generator und Netzschalter', () => {
   it('ohne Abnehmer oder bei abgeschaltetem Netz verbrennt der Generator nichts', () => {
     const s = hof();
-    const m = bauSetzen(s, 'mast', -11, 4, 0).bau;
-    const gen = bauSetzen(s, 'generator', -11, 6.2, 0).bau;
+    const m = bauSetzen(s, 'mast', -6, 8, 0).bau;
+    const gen = bauSetzen(s, 'generator', -6, 10.2, 0).bau;
     gen.brenn = 100;
     laufen(s, 5);
     expect(gen.brenn).toBe(100);
-    const sc = bauSetzen(s, 'scanner', -13, 4, 0).bau;
+    const sc = bauSetzen(s, 'scanner', -8, 8, 0).bau;
     laufen(s, 2);
     expect(gen.brenn).toBeLessThan(100);
     netzSchalten(s, netzHolen(s), m);
@@ -689,5 +693,15 @@ describe('Zyklus 2: Klappe und Dach', () => {
     expect(bauPruefen(s, 'klappe', -12, 9, 0, { y: oben }).ok).toBe(true);
     bauSetzen(s, 'silo', -5, 9, 0);
     expect(bauPruefen(s, 'dach', -5, 9, 0).grund).toBe('hoch');
+  });
+});
+
+describe('Zyklus 2: Abschluss-Befunde', () => {
+  it('ein freies Bandende mitten in einer Maschine wird abgelehnt', () => {
+    const s = hof();
+    bauSetzen(s, 'generator', -9, 10, 0);
+    const plan = bandPlanen(s, bandAnker(s, -3, 10, false), { x: -8.9, y: 0.55, z: 10, richtung: null, art: 'frei' });
+    expect(plan.ok).toBe(false);
+    expect(plan.grund).toBe('belegt');
   });
 });

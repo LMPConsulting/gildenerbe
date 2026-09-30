@@ -74,7 +74,7 @@ export function lieferschalterZeigen(ui, s, { bestellen }) {
   const aufschlag = kreditAufschlag(s);
   const knoepfe = [];
   if (s.geld >= preis) knoepfe.push({ text: `Bar bezahlen · ${geld(preis)}`, klasse: 'primaer', aktion: () => bestellen(false) });
-  knoepfe.push({ text: `Auf Rechnung · ${geld((preis - Math.min(s.geld, preis)) * aufschlag)} Schulden`, aktion: () => bestellen(true) });
+  if (s.geld < preis) knoepfe.push({ text: `Auf Rechnung · ${geld((preis - s.geld) * aufschlag)} Schulden`, aktion: () => bestellen(true) });
   knoepfe.push({ text: 'Später' });
   ui.modal({
     ober: `Ladung ${s.ladung + 1}`, titel: 'Neue Ladung bestellen',

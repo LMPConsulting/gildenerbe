@@ -5,7 +5,7 @@
 // Verarbeiter machen aus Heu Waren. Stücke in einer Maschine sind nur noch
 // Einträge { art, halme, nadel }. Reine Logik.
 
-import { PRODUKTE } from './daten.js';
+import { PRODUKTE, HAUSANSCHLUSS_KW } from './daten.js';
 import { haufenHoehe, haufenAbtragen } from './haufen.js';
 import { werte } from './wirtschaft.js';
 import { nadelnFreilegen, nadelZurueck, nadelFinden } from './nadeln.js';
@@ -440,7 +440,7 @@ function armSchritt(s, netz, bau, dt, ereignisse, mitHaufen) {
     job.g.x = p[0]; job.g.y = p[1] - GROESSE[job.g.art] - 0.1; job.g.z = p[2];
     job.haelt += dt;
     l.status = 'zielVoll';
-    if (armAblegen(s, netz, bau, job, ereignisse, job.haelt > 20)) { job.g = null; job.haelt = 0; l.phase = 0.8; }
+    if (armAblegen(s, netz, bau, job, ereignisse)) { job.g = null; job.haelt = 0; l.phase = 0.8; }
     return;
   }
   const takt = d.takt / (w.armTempo * tempo(s, bau) * a);
@@ -480,7 +480,14 @@ function generatorSchritt(s, netz, bau, dt) {
   l.leistung = -d.kw * w.generatorMul * w.stromMul;
   // Verbrannt wird nur, was das Netz braucht: abgeschaltet oder ohne Abnehmer ruht das Feuer
   const n = (netz.strom || []).find((x) => x.id === l.netz);
-  const nutzung = !n || n.aus || n.bedarf <= 0 ? 0 : 1;
+  // Was der Hausanschluss nicht deckt, teilen sich die Generatoren im Netz
+  let nutzung = 0;
+  if (n && !n.aus && n.bedarf > 0) {
+    const gens = n.erzeuger.filter((g) => g.typ === 'generator' && !g.aus && g.brenn > 0).length || 1;
+    const rest = Math.max(0, n.bedarf - (n.haus ? HAUSANSCHLUSS_KW : 0));
+    nutzung = Math.min(1, rest / gens / Math.max(1e-6, Math.abs(l.leistung)));
+  }
+  l.nutzung = nutzung;
   l.brennt = nutzung > 0;
   l.status = nutzung > 0 ? 'laeuft' : 'bereit';
   bau.brenn = Math.max(0, bau.brenn - d.brennstoff * w.brennstoff * nutzung * dt);
@@ -792,7 +799,10 @@ export function maschinenZeilen(s, bau) {
   const l = lauf(bau);
   const z = [];
   if (d.kw > 0) z.push(['Strom', l.netz >= 0 ? `${Math.round((l.strom || 0) * 100)} % von ${d.kw} kW` : 'nicht angeschlossen']);
-  if (d.kw < 0) z.push(['Leistung', `${Math.round((l.leistung || 0) * 10) / 10} kW`]);
+  if (d.kw < 0) {
+    const voll = Math.round(Math.abs(l.leistung || 0) * 10) / 10;
+    z.push(['Leistung', bau.typ === 'generator' ? `${Math.round(voll * (l.nutzung || 0) * 10) / 10} von ${voll} kW` : `${voll} kW`]);
+  }
   if (bau.typ === 'generator') z.push(['Brennstoff', `${Math.round(bau.brenn || 0)} Halme`]);
   if (bau.lager) {
     for (const [zutat, m] of Object.entries(d.rezept || {})) {

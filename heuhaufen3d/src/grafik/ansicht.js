@@ -56,7 +56,7 @@ export function ansichtBauen(szene, kamera) {
   };
   // Köpfe liegen bei 62–68 % Bildhöhe (über Status- und Werkzeugleiste, S3/S4: Stiel füllt die Bildmitte unten).
   const RUHE = {
-    hand: { p: [0.3, -0.33, -0.5], r: [0.25, 0.1, 0] },
+    hand: { p: [0.3, -0.24, -0.5], r: [0.25, 0.1, 0] },
     sandschaufel: { p: [0.02, -0.26, -0.46], r: [0.28, 0, 0] },
     spaten: { p: [0.03, -0.085, -0.01], r: [-0.12, 0, 0] },
     heugabel: { p: [0, -0.112, 0.037], r: [-0.1, 0, 0] },

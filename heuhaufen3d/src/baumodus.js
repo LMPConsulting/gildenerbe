@@ -168,9 +168,12 @@ export function baumodusBauen(ctx) {
   }
   const kommaMeter = (m) => `${String(Math.round(m * 10) / 10).replace('.', ',')} m`;
 
-  function abstandGezaehlt() {
+  // „Weiter weg und wieder heran“: zählt erst, wenn beide Richtungen benutzt wurden
+  function abstandGezaehlt(richtung) {
     const st = stand().stat;
-    st.geistAbstand = (st.geistAbstand || 0) + 1;
+    if (richtung === 'weiter') st.geistWeiter = 1;
+    else st.geistNaeher = 1;
+    st.geistAbstand = (st.geistWeiter || 0) + (st.geistNaeher || 0);
     ctx.klang.klick();
   }
 
@@ -216,8 +219,8 @@ export function baumodusBauen(ctx) {
 
     drehen() { if (modus && modus.art === 'bau') { modus.dreh += Math.PI / 4; stand().stat.gedreht = (stand().stat.gedreht || 0) + 1; ctx.klang.klick(); } },
     // Ab dem ersten Druck steht der Geist in festem Abstand vor dir (zählt für die Mission)
-    naeher() { if (modus && modus.art === 'bau') { modus.fest = Math.max(WEITE_MIN, (modus.fest ?? modus.abstandJetzt ?? 5) - 1); abstandGezaehlt(); } },
-    weiter() { if (modus && modus.art === 'bau') { modus.fest = Math.min(WEITE_MAX, (modus.fest ?? modus.abstandJetzt ?? 5) + 1); abstandGezaehlt(); } },
+    naeher() { if (modus && modus.art === 'bau') { modus.fest = Math.max(WEITE_MIN, (modus.fest ?? modus.abstandJetzt ?? 5) - 1); abstandGezaehlt('naeher'); } },
+    weiter() { if (modus && modus.art === 'bau') { modus.fest = Math.min(WEITE_MAX, (modus.fest ?? modus.abstandJetzt ?? 5) + 1); abstandGezaehlt('weiter'); } },
     /** Freie Bandenden anheben oder absenken (0 bis 3 m in halben Metern), für Rampen und Kreuzungen. */
     hoeher() { if (modus && modus.art === 'band' && modus.hub < HUB_MAX) { modus.hub = Math.min(HUB_MAX, modus.hub + 0.5); modus.plan = null; ctx.klang.klick(); } },
     tiefer() { if (modus && modus.art === 'band' && modus.hub > 0) { modus.hub = Math.max(0, modus.hub - 0.5); modus.plan = null; ctx.klang.klick(); } },

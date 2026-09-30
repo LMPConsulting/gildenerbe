@@ -677,3 +677,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .zeile.umsehen > div:first-child { flex: 1 1 100%; }
 .zeile.umsehen .reglerzeile { display: flex; align-items: center; gap: 10px; flex: 1 1 100%; }
 .zeile.umsehen .regler { flex: 1; }
+
+/* Im Baumodus liegt dort die Bauleiste: kein Ducken-Knopf */
+.bauend .duckknopf { display: none; }

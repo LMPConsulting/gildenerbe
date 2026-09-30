@@ -382,9 +382,9 @@ describe('Maschinentafel', () => {
 
   it('Generator: Vorrat als Balken, Leistung und Brennstoff als Werte', () => {
     const s = hof();
-    setzen(s, 'mast', -11, 4);
-    const gen = setzen(s, 'generator', -11, 6.2);
-    setzen(s, 'scanner', -13, 4);
+    setzen(s, 'mast', -6, 8);
+    const gen = setzen(s, 'generator', -6, 10.2);
+    setzen(s, 'scanner', -8, 8);
     laufen(s, 0.1);
     const ui = uiAttrappe();
     const log = [];
@@ -397,7 +397,7 @@ describe('Maschinentafel', () => {
     vi.advanceTimersByTime(250);
     expect(text(inhalt.querySelector('.tafelstatus'))).toBe('Läuft');
     expect(inhalt.querySelector('.fortschritt.brenn .fuellung').style.width).toBe('50%');
-    expect(teile(inhalt.querySelector('.werte'))).toBe('Leistung 15 kW Brennstoff 120 Halme');
+    expect(teile(inhalt.querySelector('.werte'))).toMatch(/^Leistung 3 von 15 kW Brennstoff 1[12]\d Halme$/);
     knopfMit(inhalt, 'Ausschalten').click();
     expect(log).toEqual([['schalten', 'generator']]);
     expect(text(inhalt.querySelector('.tafelstatus'))).toBe('Ausgeschaltet');

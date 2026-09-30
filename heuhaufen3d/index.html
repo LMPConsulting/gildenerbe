@@ -697,6 +697,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .zeile.umsehen .reglerzeile { display: flex; align-items: center; gap: 10px; flex: 1 1 100%; }
 .zeile.umsehen .regler { flex: 1; }
 
+/* Im Baumodus liegt dort die Bauleiste: kein Ducken-Knopf */
+.bauend .duckknopf { display: none; }
+
 </style>
 </head>
 <body>
@@ -1387,7 +1390,7 @@ const MISSIONEN = [
   { text: 'Öffne den Baukatalog', hilfe: 'Unten auf BAUEN tippen.', art: 'zaehler', ziel: ['katalog', 1], geld: 2 },
   { text: 'Schieb den Geist weiter weg und wieder heran', hilfe: 'Etwas aus dem Katalog wählen, dann Weiter und Näher tippen.', art: 'zaehler', ziel: ['geistAbstand', 2], geld: 2 },
   { text: 'Dreh den Geist', hilfe: 'Im Baumodus auf Drehen tippen.', art: 'zaehler', ziel: ['gedreht', 1], geld: 2 },
-  { text: 'Leg ein Band vom Haufen zum Stand', hilfe: 'Unten auf BAUEN tippen, Förderband wählen, Anfang beim Haufen und Ende am Stand setzen.', art: 'gebaut', ziel: ['band', 1], geschenk: 'mast' },
+  { text: 'Leg ein Band vom Haufen zum Stand', hilfe: 'Unten auf BAUEN tippen, Förderband wählen, Anfang beim Haufen und Ende am Stand setzen.', art: 'standband', ziel: 1, geschenk: 'mast' },
   { text: 'Stell den Kolbenrechen an den Haufen', hilfe: 'Im Baukatalog liegt er als Geschenk bereit.', art: 'gebaut', ziel: ['rechen', 1], geschenk: 'mast' },
   { text: 'Bring den Rechen ans Netz', hilfe: 'Der Hausanschluss hängt an der linken Wand. Masten verlängern die Leitung.', art: 'strom', ziel: 1, geld: 40 },
   { text: 'Schalte das Netz aus und wieder an', hilfe: 'Einen Mast antippen: das ganze Netz geht aus oder an.', art: 'zaehler', ziel: ['netzGeschaltet', 2], geld: 20 },
@@ -2211,6 +2214,8 @@ function missionStand(s) {
     case 'gefegt': ist = st.gefegt; break;
     case 'gebaut': ist = bauAnzahl(s, m.ziel[0]); ziel = m.ziel[1]; break;
     case 'zaehler': ist = st[m.ziel[0]] || 0; ziel = m.ziel[1]; break;
+    // ein selbst gebautes Band, das am Stand endet (nicht die Startrampe)
+    case 'standband': ist = s.bauten.some((b) => b.typ === 'band' && !b.start && standNah(b.punkte[b.punkte.length - 1])) ? 1 : 0; break;
     case 'strom': ist = st.rechenMitStrom ? 1 : 0; break;
     case 'nadeln': ist = s.nadelnGesamt; break;
     case 'auftraege': ist = st.auftraege; break;
@@ -2224,6 +2229,9 @@ function missionStand(s) {
   }
   return { m, ist: Math.min(ist, ziel), ziel, erfuellt: ist >= ziel };
 }
+
+const STAND_X = WELT.standX + WELT.standTiefe / 2 + 0.45;
+const standNah = (p) => Math.hypot(p[0] - STAND_X, p[2] - WELT.standZ) < 1.0;
 
 /** Erfüllte Missionen der Reihe nach auszahlen. Geschenkte Bauten liegen dann im Baukatalog. */
 function missionenPruefen(s, ereignisse) {
@@ -4282,7 +4290,7 @@ function armSchritt(s, netz, bau, dt, ereignisse, mitHaufen) {
     job.g.x = p[0]; job.g.y = p[1] - GROESSE[job.g.art] - 0.1; job.g.z = p[2];
     job.haelt += dt;
     l.status = 'zielVoll';
-    if (armAblegen(s, netz, bau, job, ereignisse, job.haelt > 20)) { job.g = null; job.haelt = 0; l.phase = 0.8; }
+    if (armAblegen(s, netz, bau, job, ereignisse)) { job.g = null; job.haelt = 0; l.phase = 0.8; }
     return;
   }
   const takt = d.takt / (w.armTempo * tempo(s, bau) * a);
@@ -4322,7 +4330,14 @@ function generatorSchritt(s, netz, bau, dt) {
   l.leistung = -d.kw * w.generatorMul * w.stromMul;
   // Verbrannt wird nur, was das Netz braucht: abgeschaltet oder ohne Abnehmer ruht das Feuer
   const n = (netz.strom || []).find((x) => x.id === l.netz);
-  const nutzung = !n || n.aus || n.bedarf <= 0 ? 0 : 1;
+  // Was der Hausanschluss nicht deckt, teilen sich die Generatoren im Netz
+  let nutzung = 0;
+  if (n && !n.aus && n.bedarf > 0) {
+    const gens = n.erzeuger.filter((g) => g.typ === 'generator' && !g.aus && g.brenn > 0).length || 1;
+    const rest = Math.max(0, n.bedarf - (n.haus ? HAUSANSCHLUSS_KW : 0));
+    nutzung = Math.min(1, rest / gens / Math.max(1e-6, Math.abs(l.leistung)));
+  }
+  l.nutzung = nutzung;
   l.brennt = nutzung > 0;
   l.status = nutzung > 0 ? 'laeuft' : 'bereit';
   bau.brenn = Math.max(0, bau.brenn - d.brennstoff * w.brennstoff * nutzung * dt);
@@ -4634,7 +4649,10 @@ function maschinenZeilen(s, bau) {
   const l = lauf(bau);
   const z = [];
   if (d.kw > 0) z.push(['Strom', l.netz >= 0 ? `${Math.round((l.strom || 0) * 100)} % von ${d.kw} kW` : 'nicht angeschlossen']);
-  if (d.kw < 0) z.push(['Leistung', `${Math.round((l.leistung || 0) * 10) / 10} kW`]);
+  if (d.kw < 0) {
+    const voll = Math.round(Math.abs(l.leistung || 0) * 10) / 10;
+    z.push(['Leistung', bau.typ === 'generator' ? `${Math.round(voll * (l.nutzung || 0) * 10) / 10} von ${voll} kW` : `${voll} kW`]);
+  }
   if (bau.typ === 'generator') z.push(['Brennstoff', `${Math.round(bau.brenn || 0)} Halme`]);
   if (bau.lager) {
     for (const [zutat, m] of Object.entries(d.rezept || {})) {
@@ -5039,6 +5057,16 @@ function bandPlanen(s, von, nach, { gerade = false } = {}) {
       if (b.typ !== 'band') continue;
       const nb = bandNaechster(b, von.x, von.z);
       if (nb.d < 0.45 && Math.abs(nb.y - von.y) < 0.6) return { ok: false, grund: 'band' };
+    }
+  }
+  // Ein freies Bandende mitten in einer Maschine geht nicht
+  for (const a of [von, nach]) {
+    if (a.art !== 'frei') continue;
+    for (const b of s.bauten) {
+      const d = BAU_BY_ID[b.typ];
+      if (b.typ === 'band' || d.linie || b.typ === 'plattform' || b.typ === 'dach' || b.typ === 'klappe') continue;
+      const y0 = b.y || 0;
+      if (a.y > y0 - 0.1 && a.y < y0 + d.h + 0.1 && imFussabdruck(b, a.x, a.z, 0.1)) return { ok: false, grund: 'belegt' };
     }
   }
   // Ein Anschluss nimmt nur ein Band: keine zwei Bänder übereinander am selben Ein- oder Ausgang
@@ -8362,7 +8390,7 @@ function ansichtBauen(szene, kamera) {
   };
   // Köpfe liegen bei 62–68 % Bildhöhe (über Status- und Werkzeugleiste, S3/S4: Stiel füllt die Bildmitte unten).
   const RUHE = {
-    hand: { p: [0.3, -0.33, -0.5], r: [0.25, 0.1, 0] },
+    hand: { p: [0.3, -0.24, -0.5], r: [0.25, 0.1, 0] },
     sandschaufel: { p: [0.02, -0.26, -0.46], r: [0.28, 0, 0] },
     spaten: { p: [0.03, -0.085, -0.01], r: [-0.12, 0, 0] },
     heugabel: { p: [0, -0.112, 0.037], r: [-0.1, 0, 0] },
@@ -12513,7 +12541,7 @@ function lieferschalterZeigen(ui, s, { bestellen }) {
   const aufschlag = kreditAufschlag(s);
   const knoepfe = [];
   if (s.geld >= preis) knoepfe.push({ text: `Bar bezahlen · ${geld(preis)}`, klasse: 'primaer', aktion: () => bestellen(false) });
-  knoepfe.push({ text: `Auf Rechnung · ${geld((preis - Math.min(s.geld, preis)) * aufschlag)} Schulden`, aktion: () => bestellen(true) });
+  if (s.geld < preis) knoepfe.push({ text: `Auf Rechnung · ${geld((preis - s.geld) * aufschlag)} Schulden`, aktion: () => bestellen(true) });
   knoepfe.push({ text: 'Später' });
   ui.modal({
     ober: `Ladung ${s.ladung + 1}`, titel: 'Neue Ladung bestellen',
@@ -13508,9 +13536,12 @@ function baumodusBauen(ctx) {
   }
   const kommaMeter = (m) => `${String(Math.round(m * 10) / 10).replace('.', ',')} m`;
 
-  function abstandGezaehlt() {
+  // „Weiter weg und wieder heran“: zählt erst, wenn beide Richtungen benutzt wurden
+  function abstandGezaehlt(richtung) {
     const st = stand().stat;
-    st.geistAbstand = (st.geistAbstand || 0) + 1;
+    if (richtung === 'weiter') st.geistWeiter = 1;
+    else st.geistNaeher = 1;
+    st.geistAbstand = (st.geistWeiter || 0) + (st.geistNaeher || 0);
     ctx.klang.klick();
   }
 
@@ -13556,8 +13587,8 @@ function baumodusBauen(ctx) {
 
     drehen() { if (modus && modus.art === 'bau') { modus.dreh += Math.PI / 4; stand().stat.gedreht = (stand().stat.gedreht || 0) + 1; ctx.klang.klick(); } },
     // Ab dem ersten Druck steht der Geist in festem Abstand vor dir (zählt für die Mission)
-    naeher() { if (modus && modus.art === 'bau') { modus.fest = Math.max(WEITE_MIN, (modus.fest ?? modus.abstandJetzt ?? 5) - 1); abstandGezaehlt(); } },
-    weiter() { if (modus && modus.art === 'bau') { modus.fest = Math.min(WEITE_MAX, (modus.fest ?? modus.abstandJetzt ?? 5) + 1); abstandGezaehlt(); } },
+    naeher() { if (modus && modus.art === 'bau') { modus.fest = Math.max(WEITE_MIN, (modus.fest ?? modus.abstandJetzt ?? 5) - 1); abstandGezaehlt('naeher'); } },
+    weiter() { if (modus && modus.art === 'bau') { modus.fest = Math.min(WEITE_MAX, (modus.fest ?? modus.abstandJetzt ?? 5) + 1); abstandGezaehlt('weiter'); } },
     /** Freie Bandenden anheben oder absenken (0 bis 3 m in halben Metern), für Rampen und Kreuzungen. */
     hoeher() { if (modus && modus.art === 'band' && modus.hub < HUB_MAX) { modus.hub = Math.min(HUB_MAX, modus.hub + 0.5); modus.plan = null; ctx.klang.klick(); } },
     tiefer() { if (modus && modus.art === 'band' && modus.hub > 0) { modus.hub = Math.max(0, modus.hub - 0.5); modus.plan = null; ctx.klang.klick(); } },
