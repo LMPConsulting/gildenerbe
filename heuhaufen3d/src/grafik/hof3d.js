@@ -52,12 +52,12 @@ export function hofBauen(szene, qualitaet, felder = 0) {
   gruppe.add(boden);
 
   // --- Wände
-  const planken = plankenTextur(512, 8, 23);
+  const planken = plankenTextur(512, 20, 23);
   planken.anisotropy = qualitaet.aniso;
   const blech = wellblechTextur(256, 31);
   const rost = rostTextur(128, 41);
   const stahlMat = new THREE.MeshStandardMaterial({ color: STAHL, roughness: 0.6, metalness: 0.5 });
-  const rostMat = new THREE.MeshStandardMaterial({ map: rost, color: 0xd9a27c, roughness: 0.62, metalness: 0.15 });
+  const rostMat = new THREE.MeshStandardMaterial({ map: rost, color: 0xf0d2b0, roughness: 0.62, metalness: 0.15 });
   const dicke = 0.16;
   const H = W.wandHoehe;
   const B = W.bandHoehe;
@@ -67,7 +67,7 @@ export function hofBauen(szene, qualitaet, felder = 0) {
     if (laenge < 0.01) return;
     const winkel = Math.atan2(z1 - z0, x1 - x0);
     const plMat = new THREE.MeshStandardMaterial({ map: gekachelt(planken, laenge, H, 2.2, H), roughness: 0.9 });
-    const blMat = new THREE.MeshStandardMaterial({ map: gekachelt(blech, laenge, B, 1.6, B), roughness: 0.7, metalness: 0.3 });
+    const blMat = new THREE.MeshStandardMaterial({ color: 0x2e2a26, roughness: 0.7 });
     const cx = (x0 + x1) / 2;
     const cz = (z0 + z1) / 2;
     const unten = kasten(laenge, H, dicke, plMat, cx, H / 2, cz);
@@ -75,6 +75,11 @@ export function hofBauen(szene, qualitaet, felder = 0) {
     const oben = kasten(laenge, B, dicke * 0.6, blMat, cx, H + B / 2, cz);
     oben.rotation.y = -winkel;
     gruppe.add(unten, oben);
+    // graues Sockelband unten wie im Vorbild
+    const sockelMat = new THREE.MeshStandardMaterial({ map: gekachelt(planken, laenge, 1.1, 2.2, H), color: 0xa8a29a, roughness: 0.95 });
+    const sockel = kasten(laenge, 1.1, dicke + 0.04, sockelMat, cx, 0.55, cz);
+    sockel.rotation.y = -winkel;
+    gruppe.add(sockel);
   }
   function wandKollider(x0, z0, x1, z1) {
     kollider.push({ x0: Math.min(x0, x1) - dicke, x1: Math.max(x0, x1) + dicke, z0: Math.min(z0, z1) - dicke, z1: Math.max(z0, z1) + dicke, h: H + B });
@@ -136,7 +141,7 @@ export function hofBauen(szene, qualitaet, felder = 0) {
       punkte.push(new THREE.Vector3(x, oben + Math.sin(t) * W.bogenHoehe, mz + Math.cos(t) * (tiefe / 2 + 0.05)));
     }
     const kurve = new THREE.CatmullRomCurve3(punkte);
-    const bogen = new THREE.Mesh(new THREE.TubeGeometry(kurve, 60, 0.14, 8, false), rostMat);
+    const bogen = new THREE.Mesh(new THREE.TubeGeometry(kurve, 60, 0.08, 6, false), rostMat);
     bogen.castShadow = true;
     gruppe.add(bogen);
   }
@@ -162,7 +167,12 @@ export function hofBauen(szene, qualitaet, felder = 0) {
     tx.fillStyle = 'rgba(255,255,255,0.06)'; tx.fillRect(0, y + 2, 256, 2);
   }
   for (let x = -40; x < 300; x += 28) {
-    tx.fillStyle = '#e0b43a';
+    tx.fillStyle = '#d9822b';
+    tx.beginPath(); tx.moveTo(x, 256); tx.lineTo(x + 14, 256); tx.lineTo(x + 34, 226); tx.lineTo(x + 20, 226); tx.fill();
+  }
+  tx.fillStyle = '#141414'; tx.fillRect(0, 226, 256, 30);
+  for (let x = -40; x < 300; x += 28) {
+    tx.fillStyle = '#d9822b';
     tx.beginPath(); tx.moveTo(x, 256); tx.lineTo(x + 14, 256); tx.lineTo(x + 34, 226); tx.lineTo(x + 20, 226); tx.fill();
   }
   tx.fillStyle = '#1b1b1b'; tx.fillRect(0, 220, 256, 6);
@@ -189,9 +199,56 @@ export function hofBauen(szene, qualitaet, felder = 0) {
   // zwei kleine Lampen neben der Uhr
   const lampeMat = new THREE.MeshBasicMaterial({ color: 0xffe9a8, toneMapped: false });
   for (const dx of [-0.42, 0.42]) {
-    const l = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), lampeMat);
+    const l = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), lampeMat);
     l.position.set(W.torX + dx, W.torHoehe + 0.3, W.zMin + 0.24);
     gruppe.add(l);
+  }
+
+  // Schild „VERSAND“ über dem Tor, Poller davor
+  const versand = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.4, 0.3),
+    new THREE.MeshStandardMaterial({ map: schildTextur('VERSAND', { breite: 512, hoehe: 110, grund: '#d8d4c8', schrift: '#2a2a2a', rahmen: '#2a2a2a', groesse: 0.62 }), roughness: 0.7 }),
+  );
+  versand.position.set(W.torX, W.torHoehe + 0.95, W.zMin + 0.12);
+  gruppe.add(versand);
+  const pollerMat = new THREE.MeshStandardMaterial({ color: 0xe0a12a, roughness: 0.55, metalness: 0.2 });
+  const pollerBand = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 });
+  for (const dx of [-2.0, 2.0]) {
+    const x = W.torX + dx;
+    const z = W.zMin + 0.35;
+    const poller = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.0, 12), pollerMat);
+    poller.position.set(x, 0.5, z);
+    poller.castShadow = true;
+    gruppe.add(poller);
+    for (const y of [0.55, 0.8]) {
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.083, 0.083, 0.08, 12), pollerBand);
+      band.position.set(x, y, z);
+      gruppe.add(band);
+    }
+    kollider.push({ x0: x - 0.1, x1: x + 0.1, z0: z - 0.1, z1: z + 0.1, h: 1.0 });
+  }
+  // Schräges Wellblechvordach an der Torwand, wie im Vorbild an einer Längswand
+  {
+    const tief = 3;
+    const oben = H + B;
+    const unten = oben - 0.65;
+    const laenge = W.xMax - W.xMin;
+    const neigung = Math.atan2(oben - unten, tief);
+    const vdMat = new THREE.MeshStandardMaterial({
+      map: gekachelt(blech, laenge, Math.hypot(tief, oben - unten), 1.6, 1.6), color: 0x8a8278, roughness: 0.7, metalness: 0.25, side: THREE.DoubleSide,
+    });
+    const vordach = new THREE.Mesh(new THREE.PlaneGeometry(laenge, Math.hypot(tief, oben - unten)), vdMat);
+    vordach.rotation.x = -Math.PI / 2 + neigung;
+    vordach.position.set((W.xMin + W.xMax) / 2, (oben + unten) / 2, W.zMin + tief / 2);
+    vordach.castShadow = true;
+    vordach.receiveShadow = true;
+    gruppe.add(vordach);
+    // Konsolen an den Pfosten
+    for (let x = W.xMin + 2; x < W.xMax - 1; x += W.pfostenAbstand) {
+      const konsole = kasten(0.08, 0.08, tief, stahlMat, x, unten - 0.05, W.zMin + tief / 2);
+      konsole.rotation.x = neigung;
+      gruppe.add(konsole);
+    }
   }
 
   // Firmenschild an der Rückwand
@@ -216,7 +273,7 @@ export function hofBauen(szene, qualitaet, felder = 0) {
   // Aufsteller vor dem Stand
   const aufsteller = aufstellerBauen();
   aufsteller.position.set(W.standX + 2.3, 0, W.standZ + 1.7);
-  aufsteller.rotation.y = -Math.PI / 2 - 0.35;
+  aufsteller.rotation.y = Math.PI / 2 - 0.35;
   gruppe.add(aufsteller);
   kollider.push({ x0: W.standX + 1.95, x1: W.standX + 2.65, z0: W.standZ + 1.35, z1: W.standZ + 2.05, h: 1.1 });
 
@@ -458,14 +515,21 @@ function standBauen(qualitaet, planken) {
   const platte = kasten(0.62, 0.06, bt + 0.05, holzHell, tt / 2 - 0.22, 1.03, 0);
   g.add(tresen, platte);
   // Dach
-  const dach = kasten(tt + 0.5, 0.08, bt + 0.4, new THREE.MeshStandardMaterial({ color: 0x3b2a1c, roughness: 0.8 }), 0.1, 2.34, 0);
+  // Blechdach wie im Vorbild (grau, leicht glänzend)
+  const dach = kasten(tt + 0.5, 0.08, bt + 0.4, new THREE.MeshStandardMaterial({ color: 0x8c8f90, roughness: 0.55, metalness: 0.3 }), 0.1, 2.34, 0);
   dach.rotation.z = -0.08;
   g.add(dach);
   // Schild über dem Tresen
   const schild = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.52, 2.2));
   // BoxGeometry-Seiten: +x, -x, +y, -y, +z, -z. Das Schild soll nach +x zeigen.
   schild.material = [
-    new THREE.MeshStandardMaterial({ map: schildTextur('HEU VERKAUFEN', { breite: 1024, hoehe: 240, groesse: 0.6 }), roughness: 0.8 }),
+    new THREE.MeshStandardMaterial({
+      map: schildTextur('HEU VERKAUFEN', {
+        breite: 1024, hoehe: 240, groesse: 0.6, grund: '#d8d0c0', schrift: '#1a1a1a', rahmen: '#3a2a1c',
+        font: '700 {g}px Georgia, "Times New Roman", serif',
+      }),
+      roughness: 0.8,
+    }),
     new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
     new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
     new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
@@ -523,8 +587,8 @@ function aufstellerBauen() {
     const tafel = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.78), seite > 0 ? tafelMat : holz);
     tafel.position.set(0, 0.46, 0.02);
     bein.add(rahmen, tafel);
-    bein.rotation.x = -seite * 0.24;
-    bein.position.z = seite * 0.11;
+    bein.rotation.x = -seite * 0.22;
+    bein.position.z = seite * 0.2;
     if (seite < 0) bein.rotation.y = Math.PI;
     g.add(bein);
   }

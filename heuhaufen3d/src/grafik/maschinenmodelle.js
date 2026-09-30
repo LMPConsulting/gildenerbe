@@ -459,7 +459,7 @@ function mmGreifarm(s, dunkel, h) {
   mmQ(bm, 0.07 * s, 0.1 * s, 0.07 * s, mmMat('dunkel'), 0, 0.1 * s, 0);
   mmQ(bm, 0.1 * s, 0.07 * s, 0.07 * s, kappe, 0.03 * s, 1.92 * s, 0);
   mmZ(bm, 0.034 * s, 0.03 * s, mmMat('dunkel'), 'y', 0, 2.0 * s, 0, 10);
-  const bake = mmZ(bm, 0.03 * s, 0.06 * s, mmLeucht('bake'), 'y', 0, 2.045 * s, 0, 10, 0.02 * s);
+  const bake = mmZ(bm, 0.055 * s, 0.1 * s, mmLeucht('bake'), 'y', 0, 2.045 * s, 0, 10, 0.02 * s);
   bake.name = 'bake';
 
   g.userData.leitung = [-0.31 * s, 1.84 * s, -0.31 * s];

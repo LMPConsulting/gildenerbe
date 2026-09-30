@@ -43,7 +43,7 @@ function kachelLinie(x, s, b, zeichne) {
   }
 }
 
-const STROH_FARBEN = ['#f6cf6a', '#eeb94c', '#e2a338', '#f9de90', '#d58f2c', '#c07822', '#f3c455', '#fde6a6', '#e8a940'];
+const STROH_FARBEN = ['#d0a14d', '#d9a263', '#e8c98a', '#c8923f', '#dcaa5c', '#e3b46a', '#b87a38', '#8d521b', '#d9a263'];
 
 /**
  * Stroh: dicht gekreuzte Halme in Heutönen. Liefert Farb- und Relieftextur,
@@ -55,7 +55,7 @@ export function strohTexturen(groesse = 512, dichte = 2600, seed = 7) {
   const relief = leinwandNeu(groesse);
   const f = farbe.getContext('2d');
   const r = relief.getContext('2d');
-  f.fillStyle = '#b07a2a';
+  f.fillStyle = '#b07c3c';
   f.fillRect(0, 0, groesse, groesse);
   r.fillStyle = '#000';
   r.fillRect(0, 0, groesse, groesse);
@@ -66,7 +66,7 @@ export function strohTexturen(groesse = 512, dichte = 2600, seed = 7) {
     const y = z() * groesse;
     const a = z() * Math.PI;
     const l = groesse * (0.03 + z() * 0.07);
-    const breite = groesse * (0.0035 + z() * 0.004);
+    const breite = groesse * (0.005 + z() * 0.006);
     const dx = Math.cos(a) * l / 2;
     const dy = Math.sin(a) * l / 2;
     const tiefe = i / dichte; // später gemalte Halme liegen oben
@@ -99,7 +99,7 @@ export function bodenTextur(groesse = 512, seed = 11) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
-  x.fillStyle = '#b39a78';
+  x.fillStyle = '#d2b392';
   x.fillRect(0, 0, groesse, groesse);
   // große, weiche Flecken
   for (let i = 0; i < 70; i++) {
@@ -109,7 +109,7 @@ export function bodenTextur(groesse = 512, seed = 11) {
     const hell = z() < 0.5;
     kachelLinie(x, 0, groesse, (x2) => {
       const g = x2.createRadialGradient(px, py, 0, px, py, rad);
-      g.addColorStop(0, hell ? 'rgba(214,196,164,0.28)' : 'rgba(120,98,70,0.22)');
+      g.addColorStop(0, hell ? 'rgba(214,196,164,0.28)' : 'rgba(120,98,70,0.12)');
       g.addColorStop(1, 'rgba(0,0,0,0)');
       x2.fillStyle = g;
       x2.fillRect(px - rad, py - rad, rad * 2, rad * 2);
@@ -156,8 +156,8 @@ export function plankenTextur(groesse = 512, planken = 8, seed = 23) {
   const x = c.getContext('2d');
   const b = groesse / planken;
   for (let i = 0; i < planken; i++) {
-    const ton = 52 + z() * 26;
-    x.fillStyle = `rgb(${ton + 30},${ton + 8},${ton - 12})`;
+    const ton = 96 + z() * 24;
+    x.fillStyle = `rgb(${ton + 26},${ton + 2},${ton - 18})`;
     x.fillRect(i * b, 0, b, groesse);
     // Maserung
     for (let k = 0; k < 26; k++) {
@@ -226,7 +226,7 @@ export function rostTextur(groesse = 128, seed = 41) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
-  x.fillStyle = '#6e4a32';
+  x.fillStyle = '#8a6a50';
   x.fillRect(0, 0, groesse, groesse);
   for (let i = 0; i < 400; i++) {
     x.fillStyle = `rgba(${90 + z() * 80},${40 + z() * 40},${20 + z() * 20},${0.2 + z() * 0.3})`;

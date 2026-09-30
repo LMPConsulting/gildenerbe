@@ -6,7 +6,7 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { haufenHoehe, haufenNormale } from '../haufen.js';
 import { strohTexturen } from './texturen.js';
 
-const HALM_FARBEN = [0xf6cf6a, 0xeeb94c, 0xe2a338, 0xf9de90, 0xd58f2c, 0xc98a2e, 0xf3c455, 0xfde6a6, 0xe8a940];
+const HALM_FARBEN = [0xd9a263, 0xd0a14d, 0xe8c98a, 0xc8923f, 0x8d521b, 0xdcaa5c, 0xe3b46a, 0xb87a38, 0xe8c98a];
 
 function strohMaterial(qualitaet) {
   const { farbe } = strohTexturen(qualitaet.halme > 5000 ? 1024 : 512, qualitaet.halme > 5000 ? 9000 : 3200, 7);
@@ -14,7 +14,7 @@ function strohMaterial(qualitaet) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0, vertexColors: true });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.strohMap = { value: farbe };
-    shader.uniforms.strohSkala = { value: 0.72 };
+    shader.uniforms.strohSkala = { value: 0.55 };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWeltPos;\nvarying vec3 vWeltNorm;')
       .replace('#include <project_vertex>', '#include <project_vertex>\nvWeltPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWeltNorm = normalize(mat3(modelMatrix) * objectNormal);');
@@ -27,7 +27,7 @@ function strohMaterial(qualitaet) {
         vec4 sy = texture2D(strohMap, vWeltPos.xz * strohSkala);
         vec4 sz = texture2D(strohMap, vWeltPos.xy * strohSkala + vec2(0.37, 0.11));
         diffuseColor *= sx * gew.x + sy * gew.y + sz * gew.z;
-      `);
+      `).replace('#include <color_fragment>', '#include <color_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * 0.2;');
   };
   return mat;
 }
@@ -138,7 +138,7 @@ export function haufenAnsichtBauen(szene, hf, qualitaet) {
   function halmeBauen(h) {
     if (halme) { gruppe.remove(halme); halme.dispose(); }
     const anzahl = qualitaet.halme;
-    const halmMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    const halmMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, emissive: 0x3a2610 });
     halme = new THREE.InstancedMesh(halmGeometrie(), halmMat, anzahl);
     halme.castShadow = false;
     halme.receiveShadow = true;

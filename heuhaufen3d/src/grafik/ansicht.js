@@ -50,14 +50,14 @@ export function ansichtBauen(szene, kamera) {
   kamera.add(hand);
   // Werkzeuge liegen in der Ruhelage mittig unten, der Stiel steigt von unten ins Bild.
   const modelle = {
-    hand: handModell(), sandschaufel: sandschaufelModell(), spaten: spatenModell(), heugabel: heugabelModell(),
+    hand: handModell(), sandschaufel: (() => { const m = sandschaufelModell(); m.scale.setScalar(1.3); return m; })(), spaten: spatenModell(), heugabel: heugabelModell(),
     besen: besenModell(), detektor: detektorModell(), sauger: saugerModell(),
   };
   const RUHE = {
     hand: { p: [0.2, -0.26, -0.42], r: [0.25, 0.1, 0] },
-    sandschaufel: { p: [0.14, -0.3, -0.5], r: [0.45, 0.05, 0] },
-    spaten: { p: [0.06, -0.52, -0.2], r: [0.62, 0.02, 0] },
-    heugabel: { p: [0.04, -0.52, -0.18], r: [0.6, 0.0, 0] },
+    sandschaufel: { p: [0, -0.13, -0.42], r: [0.5, 0, 0] },
+    spaten: { p: [0.03, -0.12, -0.01], r: [-0.12, 0, 0] },
+    heugabel: { p: [0, -0.124, 0.037], r: [-0.1, 0, 0] },
     besen: { p: [0.1, -0.7, -0.35], r: [0.85, 0.05, 0] },
     detektor: { p: [0.2, -0.28, -0.42], r: [0.55, 0.12, 0] },
     sauger: { p: [0.16, -0.34, -0.36], r: [0.35, 0.08, 0] },

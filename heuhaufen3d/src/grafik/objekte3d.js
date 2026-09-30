@@ -14,6 +14,7 @@ import { drohnenListe } from '../drohnen.js';
 import { bauVersion, auflageBei } from '../bauen.js';
 import { werte } from '../wirtschaft.js';
 import { gegenstandGeometrien, GEGENSTAND_FARBEN } from './modelle.js';
+import { strohTexturen } from './texturen.js';
 import { maschinenModell, lasterModell, drohnenModell } from './maschinenmodelle.js';
 import { skizzeMalen } from '../ui/skizze.js';
 
@@ -24,15 +25,15 @@ function objBandTextur() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 128;
   const g = c.getContext('2d');
-  g.fillStyle = '#2a2a2c';
+  g.fillStyle = '#4a4442';
   g.fillRect(0, 0, 64, 128);
   for (let i = 0; i < 4; i++) {
-    g.fillStyle = '#3b3b3e';
+    g.fillStyle = '#554e4b';
     g.fillRect(4, i * 32 + 4, 56, 7);
-    g.fillStyle = '#1d1d1f';
+    g.fillStyle = '#3a3533';
     g.fillRect(4, i * 32 + 11, 56, 2);
   }
-  g.fillStyle = '#19191a';
+  g.fillStyle = '#2e2a28';
   g.fillRect(0, 0, 4, 128);
   g.fillRect(60, 0, 4, 128);
   const t = new THREE.CanvasTexture(c);
@@ -63,8 +64,8 @@ function objRauchTextur() {
   c.width = 64; c.height = 64;
   const g = c.getContext('2d');
   const r = g.createRadialGradient(32, 32, 2, 32, 32, 30);
-  r.addColorStop(0, 'rgba(120,118,112,0.55)');
-  r.addColorStop(1, 'rgba(120,118,112,0)');
+  r.addColorStop(0, 'rgba(236,234,228,0.85)');
+  r.addColorStop(1, 'rgba(236,234,228,0)');
   g.fillStyle = r;
   g.fillRect(0, 0, 64, 64);
   const t = new THREE.CanvasTexture(c);
@@ -217,8 +218,8 @@ function objDurchhang(a, b, tiefe, n = 12) {
 
 /* ------------------------------------------------------------ Bänder */
 
-const BAND_PROFIL_GURT = [[0.3, 0], [-0.3, 0]];
-const BAND_PROFIL_RAHMEN = [[0.36, 0.06], [0.36, -0.14], [0.3, -0.16], [-0.3, -0.16], [-0.36, -0.14], [-0.36, 0.06]];
+const BAND_PROFIL_GURT = [[-0.3, 0], [0.3, 0]]; // Normale nach oben: von oben sichtbar
+const BAND_PROFIL_RAHMEN = [[0.3, 0.0], [0.3, 0.07], [0.38, 0.07], [0.38, -0.14], [0.3, -0.16], [-0.3, -0.16], [-0.38, -0.14], [-0.38, 0.07], [-0.3, 0.07], [-0.3, 0.0]];
 
 /* ------------------------------------------------------------ Aufbau */
 
@@ -234,7 +235,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   const bandTex = objBandTextur();
   const MAT = {
     gurt: new THREE.MeshStandardMaterial({ map: bandTex, roughness: 0.92, metalness: 0 }),
-    rahmen: new THREE.MeshStandardMaterial({ color: 0x8b9096, roughness: 0.5, metalness: 0.55 }),
+    rahmen: new THREE.MeshStandardMaterial({ color: 0xa5a9ab, roughness: 0.5, metalness: 0.25 }),
     bein: new THREE.MeshStandardMaterial({ color: 0x5b6066, roughness: 0.6, metalness: 0.4 }),
     rolle: new THREE.MeshStandardMaterial({ color: 0x3a3d40, roughness: 0.5, metalness: 0.6 }),
     leitung: new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7 }),
@@ -254,7 +255,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   for (const [art, geo] of Object.entries(GEO_FUER)) {
     const m = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN[art], roughness: art === 'silage' ? 0.35 : 0.95 });
     // Die Heubündel leuchten im Vorbild leicht orange-golden
-    if (art === 'roh' || art === 'knaeuel') { m.emissive.setHex(0x6a3000); m.emissiveIntensity = 0.35; }
+    if (art === 'roh' || art === 'knaeuel') { m.map = strohTexturen(256, 700, 13).farbe; m.map.repeat.set(3, 2); m.color.setHex(0xfff0dc); m.emissive.setHex(0x6a3a0a); m.emissiveIntensity = 0.45; }
     const im = new THREE.InstancedMesh(geo, m, MAX_STUECKE);
     im.count = 0;
     im.castShadow = schatten;
@@ -770,7 +771,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
       const lang = Math.hypot(l.b[0] - l.a[0], l.b[2] - l.a[2]);
       const pts = objDurchhang(l.a, l.b, Math.min(0.9, 0.04 * lang + (l.fall ? 0.05 : 0.15)));
       const kurve = new THREE.CatmullRomCurve3(pts);
-      geos.push(new THREE.TubeGeometry(kurve, 14, 0.014, 4, false));
+      geos.push(new THREE.TubeGeometry(kurve, 14, 0.008, 4, false));
     }
     if (!geos.length) { leitungen = null; return; }
     leitungen = new THREE.Mesh(objVereinen(geos), MAT.leitung);
@@ -874,7 +875,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
         r.sp.position.x += r.vx * dt;
         r.sp.position.z += r.vz * dt;
         r.sp.position.y += dt * (0.9 - u * 0.3);
-        r.sp.scale.setScalar(0.4 + u * 1.6);
+        r.sp.scale.setScalar(0.6 + u * 2.4);
         r.sp.material.opacity = 0.7 * (1 - u);
       }
       // Radar

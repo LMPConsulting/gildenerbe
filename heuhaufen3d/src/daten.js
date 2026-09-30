@@ -10,8 +10,8 @@
 export const WELT = {
   // Innenmaße der Halle
   xMin: -18, xMax: 18, zMin: -14, zMax: 14,
-  wandHoehe: 3.6,
-  bandHoehe: 0.8, // Wellblechband über den Planken
+  wandHoehe: 5.0,
+  bandHoehe: 0.25, // dunkler Abschlussbalken statt Wellblech
   pfostenAbstand: 4,
   boegen: [-14, -7, 0, 7, 14], // x-Lage der Stahlbögen
   bogenHoehe: 11,
@@ -33,7 +33,7 @@ export const WELT = {
 
 /** Größe jeder Ladung: Halme, Radius, Höhe. Spätere Ladungen werden vor allem höher. */
 export const LADUNGEN_3D = [
-  { halme: 6_000_000, radius: 7.2, hoehe: 5.2 },
+  { halme: 6_000_000, radius: 7.2, hoehe: 4.6 },
   { halme: 10_000_000, radius: 8.0, hoehe: 6.8 },
   { halme: 16_000_000, radius: 8.6, hoehe: 9.0 },
   { halme: 26_000_000, radius: 9.2, hoehe: 12.5 },

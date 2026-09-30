@@ -3,8 +3,8 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { wolkenTextur, feldTextur } from './texturen.js';
 
-export const HIMMEL_OBEN = new THREE.Color('#3f7fcf');
-export const HIMMEL_HORIZONT = new THREE.Color('#cfe4f2');
+export const HIMMEL_OBEN = new THREE.Color('#24518a');
+export const HIMMEL_HORIZONT = new THREE.Color('#aebfcc');
 
 /** Qualitätsstufen: Pixeldichte und Schattenauflösung. */
 export const QUALITAET = {
@@ -20,7 +20,7 @@ export function szeneBauen(leinwand, qualitaet = 'mittel') {
   });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Neutral statt ACES: das Heu soll golden bleiben und nicht ins Graue kippen.
-  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMapping = THREE.NoToneMapping;
   renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -50,9 +50,9 @@ export function szeneBauen(leinwand, qualitaet = 'mittel') {
     fragmentShader: `uniform vec3 oben; uniform vec3 horizont; uniform vec3 sonne; varying vec3 vRichtung;
       void main() {
         float h = clamp(vRichtung.y, -0.1, 1.0);
-        vec3 farbe = mix(horizont, oben, pow(max(h, 0.0), 0.55));
+        vec3 farbe = mix(horizont, oben, pow(max(h, 0.0), 0.3));
         float s = max(dot(normalize(vRichtung), sonne), 0.0);
-        farbe += vec3(1.0, 0.92, 0.75) * pow(s, 180.0) * 1.6 + vec3(1.0, 0.85, 0.6) * pow(s, 8.0) * 0.12;
+        farbe += vec3(1.0, 0.92, 0.75) * pow(s, 180.0) * 1.6 + vec3(1.0, 0.85, 0.6) * pow(s, 8.0) * 0.04;
         gl_FragColor = vec4(farbe, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -63,10 +63,10 @@ export function szeneBauen(leinwand, qualitaet = 'mittel') {
   szene.add(himmel);
 
   // Licht: warme Sonne mit Schatten, Himmel und Boden als Grundhelligkeit.
-  const halbkugel = new THREE.HemisphereLight(0xcfe4ff, 0x8a7255, 1.15);
+  const halbkugel = new THREE.HemisphereLight(0xcdd6de, 0xa08a6c, 0.95);
   szene.add(halbkugel);
-  const sonne = new THREE.DirectionalLight(0xfff1dc, 2.6);
-  sonne.position.set(26, 44, 18);
+  const sonne = new THREE.DirectionalLight(0xfff0d8, 3.4);
+  sonne.position.set(-24, 44, 14);
   sonne.castShadow = true;
   sonne.shadow.mapSize.set(q.schatten, q.schatten);
   const sk = sonne.shadow.camera;
@@ -118,7 +118,7 @@ export function szeneBauen(leinwand, qualitaet = 'mittel') {
     const rx = (x1 - x0) / 2 + 12;
     const rz = (z1 - z0) / 2 + 12;
     sonne.target.position.set(mx, 0, mz);
-    sonne.position.set(mx + 26, 44, mz + 18);
+    sonne.position.set(mx - 24, 44, mz + 14);
     sk.left = -rx; sk.right = rx; sk.top = rz; sk.bottom = -rz;
     sk.updateProjectionMatrix();
   }

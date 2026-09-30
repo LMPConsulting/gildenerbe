@@ -36,7 +36,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-l: env(safe-area-inset-left, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
-  --schrift: "Bahnschrift", "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --schrift: "Bahnschrift", "Barlow Semi Condensed", "Avenir Next Condensed", "sans-serif-condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
   color-scheme: dark;
 }
 
@@ -78,10 +78,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
   position: absolute; top: calc(var(--safe-t) + 6px); right: calc(var(--safe-r) + 12px);
   text-align: right; line-height: 1.05; text-shadow: 0 0 2px #000, 0 1px 3px #000, 0 0 6px rgba(0, 0, 0, 0.7);
 }
-.hgeld { font-size: 30px; font-weight: 800; color: var(--geld); letter-spacing: 0.01em; }
+.hgeld { font-size: clamp(24px, 5.6vh, 60px); font-weight: 800; color: var(--geld); letter-spacing: 0.01em; font-stretch: condensed; }
 .hschulden { font-size: 13px; font-weight: 700; color: var(--rot); }
-.hrest { font-size: 13px; font-weight: 700; color: var(--heu); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
-.hrate { font-size: 13px; font-weight: 700; color: var(--rate); }
+.hrest { font-size: clamp(12px, 2vh, 22px); font-weight: 700; color: var(--heu); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
+.hrate { font-size: clamp(12px, 2vh, 22px); font-weight: 700; color: var(--rate); }
 .knopfleiste {
   position: absolute; top: calc(var(--safe-t) + 78px); right: calc(var(--safe-r) + 10px);
   display: flex; gap: 6px;
@@ -301,7 +301,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .sprungknopf { right: calc(var(--safe-r) + 114px); }
 }
 @media (orientation: portrait) {
-  .missionkarte { width: min(260px, 64vw); }
+  /* Hochkant: die Karte darf die Kasse oben rechts nicht verdecken */
+  .missionkarte { width: min(260px, calc(100vw - 196px)); }
   .knopfleiste { top: calc(var(--safe-t) + 82px); }
   .werkzeugleiste { bottom: calc(var(--safe-b) + 128px); }
   .statuszeile { bottom: calc(var(--safe-b) + 196px); }
@@ -615,8 +616,8 @@ return {ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,AdditiveAnimationB
 const WELT = {
   // Innenmaße der Halle
   xMin: -18, xMax: 18, zMin: -14, zMax: 14,
-  wandHoehe: 3.6,
-  bandHoehe: 0.8, // Wellblechband über den Planken
+  wandHoehe: 5.0,
+  bandHoehe: 0.25, // dunkler Abschlussbalken statt Wellblech
   pfostenAbstand: 4,
   boegen: [-14, -7, 0, 7, 14], // x-Lage der Stahlbögen
   bogenHoehe: 11,
@@ -638,7 +639,7 @@ const WELT = {
 
 /** Größe jeder Ladung: Halme, Radius, Höhe. Spätere Ladungen werden vor allem höher. */
 const LADUNGEN_3D = [
-  { halme: 6_000_000, radius: 7.2, hoehe: 5.2 },
+  { halme: 6_000_000, radius: 7.2, hoehe: 4.6 },
   { halme: 10_000_000, radius: 8.0, hoehe: 6.8 },
   { halme: 16_000_000, radius: 8.6, hoehe: 9.0 },
   { halme: 26_000_000, radius: 9.2, hoehe: 12.5 },
@@ -1424,7 +1425,8 @@ function haufenNeu({ halme, radius, hoehe, mitteX = 0, mitteZ = 0, zufall = Math
       const r = Math.hypot(x, z) / radius;
       if (r >= 1) continue;
       const winkel = Math.atan2(z, x);
-      let f = Math.cos((r * Math.PI) / 2);
+      const laib = hoehe <= 5 ? 0.5 : 0; // erste Ladung: breiter Laib mit steilem Rand wie S0
+      let f = laib * (1 - r * r * r) + (1 - laib) * Math.cos((r * Math.PI) / 2);
       // Beulen nur zwischen Mitte und Rand: an der Spitze wäre jede Winkelwelle ein Grat.
       for (const w of wellen) f *= 1 + w.a * Math.sin(winkel * w.f + w.p + r * w.w) * 4 * r * (1 - r);
       h[j * n + i] = Math.max(0, hoehe * f);
@@ -5856,7 +5858,7 @@ function kachelLinie(x, s, b, zeichne) {
   }
 }
 
-const STROH_FARBEN = ['#f6cf6a', '#eeb94c', '#e2a338', '#f9de90', '#d58f2c', '#c07822', '#f3c455', '#fde6a6', '#e8a940'];
+const STROH_FARBEN = ['#d0a14d', '#d9a263', '#e8c98a', '#c8923f', '#dcaa5c', '#e3b46a', '#b87a38', '#8d521b', '#d9a263'];
 
 /**
  * Stroh: dicht gekreuzte Halme in Heutönen. Liefert Farb- und Relieftextur,
@@ -5868,7 +5870,7 @@ function strohTexturen(groesse = 512, dichte = 2600, seed = 7) {
   const relief = leinwandNeu(groesse);
   const f = farbe.getContext('2d');
   const r = relief.getContext('2d');
-  f.fillStyle = '#b07a2a';
+  f.fillStyle = '#b07c3c';
   f.fillRect(0, 0, groesse, groesse);
   r.fillStyle = '#000';
   r.fillRect(0, 0, groesse, groesse);
@@ -5879,7 +5881,7 @@ function strohTexturen(groesse = 512, dichte = 2600, seed = 7) {
     const y = z() * groesse;
     const a = z() * Math.PI;
     const l = groesse * (0.03 + z() * 0.07);
-    const breite = groesse * (0.0035 + z() * 0.004);
+    const breite = groesse * (0.005 + z() * 0.006);
     const dx = Math.cos(a) * l / 2;
     const dy = Math.sin(a) * l / 2;
     const tiefe = i / dichte; // später gemalte Halme liegen oben
@@ -5912,7 +5914,7 @@ function bodenTextur(groesse = 512, seed = 11) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
-  x.fillStyle = '#b39a78';
+  x.fillStyle = '#d2b392';
   x.fillRect(0, 0, groesse, groesse);
   // große, weiche Flecken
   for (let i = 0; i < 70; i++) {
@@ -5922,7 +5924,7 @@ function bodenTextur(groesse = 512, seed = 11) {
     const hell = z() < 0.5;
     kachelLinie(x, 0, groesse, (x2) => {
       const g = x2.createRadialGradient(px, py, 0, px, py, rad);
-      g.addColorStop(0, hell ? 'rgba(214,196,164,0.28)' : 'rgba(120,98,70,0.22)');
+      g.addColorStop(0, hell ? 'rgba(214,196,164,0.28)' : 'rgba(120,98,70,0.12)');
       g.addColorStop(1, 'rgba(0,0,0,0)');
       x2.fillStyle = g;
       x2.fillRect(px - rad, py - rad, rad * 2, rad * 2);
@@ -5969,8 +5971,8 @@ function plankenTextur(groesse = 512, planken = 8, seed = 23) {
   const x = c.getContext('2d');
   const b = groesse / planken;
   for (let i = 0; i < planken; i++) {
-    const ton = 52 + z() * 26;
-    x.fillStyle = `rgb(${ton + 30},${ton + 8},${ton - 12})`;
+    const ton = 96 + z() * 24;
+    x.fillStyle = `rgb(${ton + 26},${ton + 2},${ton - 18})`;
     x.fillRect(i * b, 0, b, groesse);
     // Maserung
     for (let k = 0; k < 26; k++) {
@@ -6039,7 +6041,7 @@ function rostTextur(groesse = 128, seed = 41) {
   const z = texturZufall(seed);
   const c = leinwandNeu(groesse);
   const x = c.getContext('2d');
-  x.fillStyle = '#6e4a32';
+  x.fillStyle = '#8a6a50';
   x.fillRect(0, 0, groesse, groesse);
   for (let i = 0; i < 400; i++) {
     x.fillStyle = `rgba(${90 + z() * 80},${40 + z() * 40},${20 + z() * 20},${0.2 + z() * 0.3})`;
@@ -6154,10 +6156,10 @@ const MAT = {};
 function mat(name) {
   if (MAT[name]) return MAT[name];
   const defs = {
-    holz: { color: 0xc49a6c, roughness: 0.7 },
+    holz: { color: 0xd2bb9a, roughness: 0.75 },
     holzDunkel: { color: 0x7a5433, roughness: 0.8 },
-    stahl: { color: 0xb9c0c6, roughness: 0.35, metalness: 0.85 },
-    stahlDunkel: { color: 0x4a4f54, roughness: 0.45, metalness: 0.7 },
+    stahl: { color: 0xd4d2cc, roughness: 0.5, metalness: 0.15 },
+    stahlDunkel: { color: 0x5a5f64, roughness: 0.5, metalness: 0.3 },
     gummi: { color: 0x1d1d1f, roughness: 0.9 },
     gelb: { color: 0xf2c417, roughness: 0.45 },
     rot: { color: 0xb8352a, roughness: 0.6 },
@@ -6195,7 +6197,8 @@ function spatenModell() {
   g.add(griff);
   const blatt = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.012, 0.26), mat('stahl'));
   blatt.position.z = -0.72;
-  blatt.rotation.x = -0.12;
+  blatt.rotation.x = 0.45;
+  blatt.material = new THREE.MeshStandardMaterial({ color: 0x7a5a44, roughness: 0.7, metalness: 0.2 }); // Rostspaten
   g.add(blatt);
   const hals = zyl(0.024, 0.1, mat('stahlDunkel'), 8);
   hals.position.z = -0.6;
@@ -6206,13 +6209,13 @@ function spatenModell() {
 function heugabelModell() {
   const g = new THREE.Group();
   g.add(stiel(1.3));
-  const quer = zyl(0.012, 0.26, mat('stahl'), 6);
+  const quer = zyl(0.012, 0.32, mat('stahl'), 6);
   quer.rotation.y = Math.PI / 2;
   quer.position.z = -0.66;
   g.add(quer);
-  for (let i = 0; i < 5; i++) {
-    const x = -0.12 + i * 0.06;
-    const zinke = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.3, 5), mat('stahl'));
+  for (let i = 0; i < 6; i++) {
+    const x = -0.15 + i * 0.06;
+    const zinke = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.006, 0.26, 6), mat('stahl'));
     zinke.rotation.x = Math.PI / 2 - 0.18;
     zinke.position.set(x, 0.02, -0.8);
     g.add(zinke);
@@ -6226,7 +6229,7 @@ function sandschaufelModell() {
   s.position.z = 0.1;
   g.add(s);
   const kopf = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat('gelb'));
-  kopf.scale.set(1, 0.35, 1.3);
+  kopf.scale.set(1, 0.55, 1.3);
   kopf.rotation.x = Math.PI;
   kopf.position.z = -0.14;
   g.add(kopf);
@@ -6291,7 +6294,7 @@ function saugerModell() {
 function handModell() {
   const g = new THREE.Group();
   const haut = new THREE.MeshStandardMaterial({ color: 0xd9a57e, roughness: 0.75 });
-  const handschuh = new THREE.MeshStandardMaterial({ color: 0x8a6a3e, roughness: 0.9 });
+  const handschuh = new THREE.MeshStandardMaterial({ color: 0x7fcfa4, roughness: 0.9 });
   const flaeche = box(0.09, 0.03, 0.1, handschuh);
   g.add(flaeche);
   for (let i = 0; i < 4; i++) {
@@ -6313,7 +6316,7 @@ function handModell() {
 function eimerModell() {
   const g = new THREE.Group();
   const geo = new THREE.CylinderGeometry(0.16, 0.12, 0.3, 16, 1, true);
-  const wand = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xdadfe2, roughness: 0.4, metalness: 0.6, side: THREE.DoubleSide }));
+  const wand = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xc2a680, roughness: 0.85, metalness: 0, side: THREE.DoubleSide }));
   g.add(wand);
   const boden = new THREE.Mesh(new THREE.CircleGeometry(0.12, 16), wand.material);
   boden.rotation.x = -Math.PI / 2;
@@ -6364,11 +6367,11 @@ function nadelModell(gold = false) {
 
 /** Geometrien für Gegenstände auf Bändern und am Boden (als Instanzen gezeichnet). */
 function gegenstandGeometrien() {
-  const buendel = new THREE.IcosahedronGeometry(0.13, 1);
-  // leicht verbeult wie ein Heuknäuel
+  const buendel = new THREE.SphereGeometry(0.13, 14, 10);
+  // leicht verbeult wie ein Heuknäuel (stetig, damit die Naht zu bleibt)
   const p = buendel.attributes.position;
   for (let i = 0; i < p.count; i++) {
-    const f = 0.85 + Math.random() * 0.3;
+    const f = 0.9 + 0.1 * Math.sin(p.getX(i) * 61 + p.getZ(i) * 47) * Math.sin(p.getY(i) * 53 + p.getX(i) * 29);
     p.setXYZ(i, p.getX(i) * f, p.getY(i) * f * 0.85, p.getZ(i) * f);
   }
   buendel.computeVertexNormals();
@@ -6398,8 +6401,8 @@ const GEGENSTAND_FARBEN = {
 // Renderer, Himmel, Sonne und Landschaft draußen. Die Halle selbst baut hof3d.js.
 
 
-const HIMMEL_OBEN = new THREE.Color('#3f7fcf');
-const HIMMEL_HORIZONT = new THREE.Color('#cfe4f2');
+const HIMMEL_OBEN = new THREE.Color('#24518a');
+const HIMMEL_HORIZONT = new THREE.Color('#aebfcc');
 
 /** Qualitätsstufen: Pixeldichte und Schattenauflösung. */
 const QUALITAET = {
@@ -6415,7 +6418,7 @@ function szeneBauen(leinwand, qualitaet = 'mittel') {
   });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Neutral statt ACES: das Heu soll golden bleiben und nicht ins Graue kippen.
-  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMapping = THREE.NoToneMapping;
   renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -6445,9 +6448,9 @@ function szeneBauen(leinwand, qualitaet = 'mittel') {
     fragmentShader: `uniform vec3 oben; uniform vec3 horizont; uniform vec3 sonne; varying vec3 vRichtung;
       void main() {
         float h = clamp(vRichtung.y, -0.1, 1.0);
-        vec3 farbe = mix(horizont, oben, pow(max(h, 0.0), 0.55));
+        vec3 farbe = mix(horizont, oben, pow(max(h, 0.0), 0.3));
         float s = max(dot(normalize(vRichtung), sonne), 0.0);
-        farbe += vec3(1.0, 0.92, 0.75) * pow(s, 180.0) * 1.6 + vec3(1.0, 0.85, 0.6) * pow(s, 8.0) * 0.12;
+        farbe += vec3(1.0, 0.92, 0.75) * pow(s, 180.0) * 1.6 + vec3(1.0, 0.85, 0.6) * pow(s, 8.0) * 0.04;
         gl_FragColor = vec4(farbe, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -6458,10 +6461,10 @@ function szeneBauen(leinwand, qualitaet = 'mittel') {
   szene.add(himmel);
 
   // Licht: warme Sonne mit Schatten, Himmel und Boden als Grundhelligkeit.
-  const halbkugel = new THREE.HemisphereLight(0xcfe4ff, 0x8a7255, 1.15);
+  const halbkugel = new THREE.HemisphereLight(0xcdd6de, 0xa08a6c, 0.95);
   szene.add(halbkugel);
-  const sonne = new THREE.DirectionalLight(0xfff1dc, 2.6);
-  sonne.position.set(26, 44, 18);
+  const sonne = new THREE.DirectionalLight(0xfff0d8, 3.4);
+  sonne.position.set(-24, 44, 14);
   sonne.castShadow = true;
   sonne.shadow.mapSize.set(q.schatten, q.schatten);
   const sk = sonne.shadow.camera;
@@ -6513,7 +6516,7 @@ function szeneBauen(leinwand, qualitaet = 'mittel') {
     const rx = (x1 - x0) / 2 + 12;
     const rz = (z1 - z0) / 2 + 12;
     sonne.target.position.set(mx, 0, mz);
-    sonne.position.set(mx + 26, 44, mz + 18);
+    sonne.position.set(mx - 24, 44, mz + 14);
     sk.left = -rx; sk.right = rx; sk.top = rz; sk.bottom = -rz;
     sk.updateProjectionMatrix();
   }
@@ -6647,12 +6650,12 @@ function hofBauen(szene, qualitaet, felder = 0) {
   gruppe.add(boden);
 
   // --- Wände
-  const planken = plankenTextur(512, 8, 23);
+  const planken = plankenTextur(512, 20, 23);
   planken.anisotropy = qualitaet.aniso;
   const blech = wellblechTextur(256, 31);
   const rost = rostTextur(128, 41);
   const stahlMat = new THREE.MeshStandardMaterial({ color: STAHL, roughness: 0.6, metalness: 0.5 });
-  const rostMat = new THREE.MeshStandardMaterial({ map: rost, color: 0xd9a27c, roughness: 0.62, metalness: 0.15 });
+  const rostMat = new THREE.MeshStandardMaterial({ map: rost, color: 0xf0d2b0, roughness: 0.62, metalness: 0.15 });
   const dicke = 0.16;
   const H = W.wandHoehe;
   const B = W.bandHoehe;
@@ -6662,7 +6665,7 @@ function hofBauen(szene, qualitaet, felder = 0) {
     if (laenge < 0.01) return;
     const winkel = Math.atan2(z1 - z0, x1 - x0);
     const plMat = new THREE.MeshStandardMaterial({ map: gekachelt(planken, laenge, H, 2.2, H), roughness: 0.9 });
-    const blMat = new THREE.MeshStandardMaterial({ map: gekachelt(blech, laenge, B, 1.6, B), roughness: 0.7, metalness: 0.3 });
+    const blMat = new THREE.MeshStandardMaterial({ color: 0x2e2a26, roughness: 0.7 });
     const cx = (x0 + x1) / 2;
     const cz = (z0 + z1) / 2;
     const unten = kasten(laenge, H, dicke, plMat, cx, H / 2, cz);
@@ -6670,6 +6673,11 @@ function hofBauen(szene, qualitaet, felder = 0) {
     const oben = kasten(laenge, B, dicke * 0.6, blMat, cx, H + B / 2, cz);
     oben.rotation.y = -winkel;
     gruppe.add(unten, oben);
+    // graues Sockelband unten wie im Vorbild
+    const sockelMat = new THREE.MeshStandardMaterial({ map: gekachelt(planken, laenge, 1.1, 2.2, H), color: 0xa8a29a, roughness: 0.95 });
+    const sockel = kasten(laenge, 1.1, dicke + 0.04, sockelMat, cx, 0.55, cz);
+    sockel.rotation.y = -winkel;
+    gruppe.add(sockel);
   }
   function wandKollider(x0, z0, x1, z1) {
     kollider.push({ x0: Math.min(x0, x1) - dicke, x1: Math.max(x0, x1) + dicke, z0: Math.min(z0, z1) - dicke, z1: Math.max(z0, z1) + dicke, h: H + B });
@@ -6731,7 +6739,7 @@ function hofBauen(szene, qualitaet, felder = 0) {
       punkte.push(new THREE.Vector3(x, oben + Math.sin(t) * W.bogenHoehe, mz + Math.cos(t) * (tiefe / 2 + 0.05)));
     }
     const kurve = new THREE.CatmullRomCurve3(punkte);
-    const bogen = new THREE.Mesh(new THREE.TubeGeometry(kurve, 60, 0.14, 8, false), rostMat);
+    const bogen = new THREE.Mesh(new THREE.TubeGeometry(kurve, 60, 0.08, 6, false), rostMat);
     bogen.castShadow = true;
     gruppe.add(bogen);
   }
@@ -6757,7 +6765,12 @@ function hofBauen(szene, qualitaet, felder = 0) {
     tx.fillStyle = 'rgba(255,255,255,0.06)'; tx.fillRect(0, y + 2, 256, 2);
   }
   for (let x = -40; x < 300; x += 28) {
-    tx.fillStyle = '#e0b43a';
+    tx.fillStyle = '#d9822b';
+    tx.beginPath(); tx.moveTo(x, 256); tx.lineTo(x + 14, 256); tx.lineTo(x + 34, 226); tx.lineTo(x + 20, 226); tx.fill();
+  }
+  tx.fillStyle = '#141414'; tx.fillRect(0, 226, 256, 30);
+  for (let x = -40; x < 300; x += 28) {
+    tx.fillStyle = '#d9822b';
     tx.beginPath(); tx.moveTo(x, 256); tx.lineTo(x + 14, 256); tx.lineTo(x + 34, 226); tx.lineTo(x + 20, 226); tx.fill();
   }
   tx.fillStyle = '#1b1b1b'; tx.fillRect(0, 220, 256, 6);
@@ -6784,9 +6797,56 @@ function hofBauen(szene, qualitaet, felder = 0) {
   // zwei kleine Lampen neben der Uhr
   const lampeMat = new THREE.MeshBasicMaterial({ color: 0xffe9a8, toneMapped: false });
   for (const dx of [-0.42, 0.42]) {
-    const l = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), lampeMat);
+    const l = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), lampeMat);
     l.position.set(W.torX + dx, W.torHoehe + 0.3, W.zMin + 0.24);
     gruppe.add(l);
+  }
+
+  // Schild „VERSAND“ über dem Tor, Poller davor
+  const versand = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.4, 0.3),
+    new THREE.MeshStandardMaterial({ map: schildTextur('VERSAND', { breite: 512, hoehe: 110, grund: '#d8d4c8', schrift: '#2a2a2a', rahmen: '#2a2a2a', groesse: 0.62 }), roughness: 0.7 }),
+  );
+  versand.position.set(W.torX, W.torHoehe + 0.95, W.zMin + 0.12);
+  gruppe.add(versand);
+  const pollerMat = new THREE.MeshStandardMaterial({ color: 0xe0a12a, roughness: 0.55, metalness: 0.2 });
+  const pollerBand = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 });
+  for (const dx of [-2.0, 2.0]) {
+    const x = W.torX + dx;
+    const z = W.zMin + 0.35;
+    const poller = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.0, 12), pollerMat);
+    poller.position.set(x, 0.5, z);
+    poller.castShadow = true;
+    gruppe.add(poller);
+    for (const y of [0.55, 0.8]) {
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.083, 0.083, 0.08, 12), pollerBand);
+      band.position.set(x, y, z);
+      gruppe.add(band);
+    }
+    kollider.push({ x0: x - 0.1, x1: x + 0.1, z0: z - 0.1, z1: z + 0.1, h: 1.0 });
+  }
+  // Schräges Wellblechvordach an der Torwand, wie im Vorbild an einer Längswand
+  {
+    const tief = 3;
+    const oben = H + B;
+    const unten = oben - 0.65;
+    const laenge = W.xMax - W.xMin;
+    const neigung = Math.atan2(oben - unten, tief);
+    const vdMat = new THREE.MeshStandardMaterial({
+      map: gekachelt(blech, laenge, Math.hypot(tief, oben - unten), 1.6, 1.6), color: 0x8a8278, roughness: 0.7, metalness: 0.25, side: THREE.DoubleSide,
+    });
+    const vordach = new THREE.Mesh(new THREE.PlaneGeometry(laenge, Math.hypot(tief, oben - unten)), vdMat);
+    vordach.rotation.x = -Math.PI / 2 + neigung;
+    vordach.position.set((W.xMin + W.xMax) / 2, (oben + unten) / 2, W.zMin + tief / 2);
+    vordach.castShadow = true;
+    vordach.receiveShadow = true;
+    gruppe.add(vordach);
+    // Konsolen an den Pfosten
+    for (let x = W.xMin + 2; x < W.xMax - 1; x += W.pfostenAbstand) {
+      const konsole = kasten(0.08, 0.08, tief, stahlMat, x, unten - 0.05, W.zMin + tief / 2);
+      konsole.rotation.x = neigung;
+      gruppe.add(konsole);
+    }
   }
 
   // Firmenschild an der Rückwand
@@ -6811,7 +6871,7 @@ function hofBauen(szene, qualitaet, felder = 0) {
   // Aufsteller vor dem Stand
   const aufsteller = aufstellerBauen();
   aufsteller.position.set(W.standX + 2.3, 0, W.standZ + 1.7);
-  aufsteller.rotation.y = -Math.PI / 2 - 0.35;
+  aufsteller.rotation.y = Math.PI / 2 - 0.35;
   gruppe.add(aufsteller);
   kollider.push({ x0: W.standX + 1.95, x1: W.standX + 2.65, z0: W.standZ + 1.35, z1: W.standZ + 2.05, h: 1.1 });
 
@@ -7053,14 +7113,21 @@ function standBauen(qualitaet, planken) {
   const platte = kasten(0.62, 0.06, bt + 0.05, holzHell, tt / 2 - 0.22, 1.03, 0);
   g.add(tresen, platte);
   // Dach
-  const dach = kasten(tt + 0.5, 0.08, bt + 0.4, new THREE.MeshStandardMaterial({ color: 0x3b2a1c, roughness: 0.8 }), 0.1, 2.34, 0);
+  // Blechdach wie im Vorbild (grau, leicht glänzend)
+  const dach = kasten(tt + 0.5, 0.08, bt + 0.4, new THREE.MeshStandardMaterial({ color: 0x8c8f90, roughness: 0.55, metalness: 0.3 }), 0.1, 2.34, 0);
   dach.rotation.z = -0.08;
   g.add(dach);
   // Schild über dem Tresen
   const schild = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.52, 2.2));
   // BoxGeometry-Seiten: +x, -x, +y, -y, +z, -z. Das Schild soll nach +x zeigen.
   schild.material = [
-    new THREE.MeshStandardMaterial({ map: schildTextur('HEU VERKAUFEN', { breite: 1024, hoehe: 240, groesse: 0.6 }), roughness: 0.8 }),
+    new THREE.MeshStandardMaterial({
+      map: schildTextur('HEU VERKAUFEN', {
+        breite: 1024, hoehe: 240, groesse: 0.6, grund: '#d8d0c0', schrift: '#1a1a1a', rahmen: '#3a2a1c',
+        font: '700 {g}px Georgia, "Times New Roman", serif',
+      }),
+      roughness: 0.8,
+    }),
     new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
     new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
     new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
@@ -7118,8 +7185,8 @@ function aufstellerBauen() {
     const tafel = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.78), seite > 0 ? tafelMat : holz);
     tafel.position.set(0, 0.46, 0.02);
     bein.add(rahmen, tafel);
-    bein.rotation.x = -seite * 0.24;
-    bein.position.z = seite * 0.11;
+    bein.rotation.x = -seite * 0.22;
+    bein.position.z = seite * 0.2;
     if (seite < 0) bein.rotation.y = Math.PI;
     g.add(bein);
   }
@@ -7133,7 +7200,7 @@ function aufstellerBauen() {
 // Instanzen, die auf der Oberfläche liegen und über den Rand hinausstehen.
 
 
-const HALM_FARBEN = [0xf6cf6a, 0xeeb94c, 0xe2a338, 0xf9de90, 0xd58f2c, 0xc98a2e, 0xf3c455, 0xfde6a6, 0xe8a940];
+const HALM_FARBEN = [0xd9a263, 0xd0a14d, 0xe8c98a, 0xc8923f, 0x8d521b, 0xdcaa5c, 0xe3b46a, 0xb87a38, 0xe8c98a];
 
 function strohMaterial(qualitaet) {
   const { farbe } = strohTexturen(qualitaet.halme > 5000 ? 1024 : 512, qualitaet.halme > 5000 ? 9000 : 3200, 7);
@@ -7141,7 +7208,7 @@ function strohMaterial(qualitaet) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0, vertexColors: true });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.strohMap = { value: farbe };
-    shader.uniforms.strohSkala = { value: 0.72 };
+    shader.uniforms.strohSkala = { value: 0.55 };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWeltPos;\nvarying vec3 vWeltNorm;')
       .replace('#include <project_vertex>', '#include <project_vertex>\nvWeltPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWeltNorm = normalize(mat3(modelMatrix) * objectNormal);');
@@ -7154,7 +7221,7 @@ function strohMaterial(qualitaet) {
         vec4 sy = texture2D(strohMap, vWeltPos.xz * strohSkala);
         vec4 sz = texture2D(strohMap, vWeltPos.xy * strohSkala + vec2(0.37, 0.11));
         diffuseColor *= sx * gew.x + sy * gew.y + sz * gew.z;
-      `);
+      `).replace('#include <color_fragment>', '#include <color_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * 0.2;');
   };
   return mat;
 }
@@ -7265,7 +7332,7 @@ function haufenAnsichtBauen(szene, hf, qualitaet) {
   function halmeBauen(h) {
     if (halme) { gruppe.remove(halme); halme.dispose(); }
     const anzahl = qualitaet.halme;
-    const halmMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    const halmMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, emissive: 0x3a2610 });
     halme = new THREE.InstancedMesh(halmGeometrie(), halmMat, anzahl);
     halme.castShadow = false;
     halme.receiveShadow = true;
@@ -7400,14 +7467,14 @@ function ansichtBauen(szene, kamera) {
   kamera.add(hand);
   // Werkzeuge liegen in der Ruhelage mittig unten, der Stiel steigt von unten ins Bild.
   const modelle = {
-    hand: handModell(), sandschaufel: sandschaufelModell(), spaten: spatenModell(), heugabel: heugabelModell(),
+    hand: handModell(), sandschaufel: (() => { const m = sandschaufelModell(); m.scale.setScalar(1.3); return m; })(), spaten: spatenModell(), heugabel: heugabelModell(),
     besen: besenModell(), detektor: detektorModell(), sauger: saugerModell(),
   };
   const RUHE = {
     hand: { p: [0.2, -0.26, -0.42], r: [0.25, 0.1, 0] },
-    sandschaufel: { p: [0.14, -0.3, -0.5], r: [0.45, 0.05, 0] },
-    spaten: { p: [0.06, -0.52, -0.2], r: [0.62, 0.02, 0] },
-    heugabel: { p: [0.04, -0.52, -0.18], r: [0.6, 0.0, 0] },
+    sandschaufel: { p: [0, -0.13, -0.42], r: [0.5, 0, 0] },
+    spaten: { p: [0.03, -0.12, -0.01], r: [-0.12, 0, 0] },
+    heugabel: { p: [0, -0.124, 0.037], r: [-0.1, 0, 0] },
     besen: { p: [0.1, -0.7, -0.35], r: [0.85, 0.05, 0] },
     detektor: { p: [0.2, -0.28, -0.42], r: [0.55, 0.12, 0] },
     sauger: { p: [0.16, -0.34, -0.36], r: [0.35, 0.08, 0] },
@@ -8150,7 +8217,7 @@ function mmGreifarm(s, dunkel, h) {
   mmQ(bm, 0.07 * s, 0.1 * s, 0.07 * s, mmMat('dunkel'), 0, 0.1 * s, 0);
   mmQ(bm, 0.1 * s, 0.07 * s, 0.07 * s, kappe, 0.03 * s, 1.92 * s, 0);
   mmZ(bm, 0.034 * s, 0.03 * s, mmMat('dunkel'), 'y', 0, 2.0 * s, 0, 10);
-  const bake = mmZ(bm, 0.03 * s, 0.06 * s, mmLeucht('bake'), 'y', 0, 2.045 * s, 0, 10, 0.02 * s);
+  const bake = mmZ(bm, 0.055 * s, 0.1 * s, mmLeucht('bake'), 'y', 0, 2.045 * s, 0, 10, 0.02 * s);
   bake.name = 'bake';
 
   g.userData.leitung = [-0.31 * s, 1.84 * s, -0.31 * s];
@@ -9399,15 +9466,15 @@ function objBandTextur() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 128;
   const g = c.getContext('2d');
-  g.fillStyle = '#2a2a2c';
+  g.fillStyle = '#4a4442';
   g.fillRect(0, 0, 64, 128);
   for (let i = 0; i < 4; i++) {
-    g.fillStyle = '#3b3b3e';
+    g.fillStyle = '#554e4b';
     g.fillRect(4, i * 32 + 4, 56, 7);
-    g.fillStyle = '#1d1d1f';
+    g.fillStyle = '#3a3533';
     g.fillRect(4, i * 32 + 11, 56, 2);
   }
-  g.fillStyle = '#19191a';
+  g.fillStyle = '#2e2a28';
   g.fillRect(0, 0, 4, 128);
   g.fillRect(60, 0, 4, 128);
   const t = new THREE.CanvasTexture(c);
@@ -9438,8 +9505,8 @@ function objRauchTextur() {
   c.width = 64; c.height = 64;
   const g = c.getContext('2d');
   const r = g.createRadialGradient(32, 32, 2, 32, 32, 30);
-  r.addColorStop(0, 'rgba(120,118,112,0.55)');
-  r.addColorStop(1, 'rgba(120,118,112,0)');
+  r.addColorStop(0, 'rgba(236,234,228,0.85)');
+  r.addColorStop(1, 'rgba(236,234,228,0)');
   g.fillStyle = r;
   g.fillRect(0, 0, 64, 64);
   const t = new THREE.CanvasTexture(c);
@@ -9592,8 +9659,8 @@ function objDurchhang(a, b, tiefe, n = 12) {
 
 /* ------------------------------------------------------------ Bänder */
 
-const BAND_PROFIL_GURT = [[0.3, 0], [-0.3, 0]];
-const BAND_PROFIL_RAHMEN = [[0.36, 0.06], [0.36, -0.14], [0.3, -0.16], [-0.3, -0.16], [-0.36, -0.14], [-0.36, 0.06]];
+const BAND_PROFIL_GURT = [[-0.3, 0], [0.3, 0]]; // Normale nach oben: von oben sichtbar
+const BAND_PROFIL_RAHMEN = [[0.3, 0.0], [0.3, 0.07], [0.38, 0.07], [0.38, -0.14], [0.3, -0.16], [-0.3, -0.16], [-0.38, -0.14], [-0.38, 0.07], [-0.3, 0.07], [-0.3, 0.0]];
 
 /* ------------------------------------------------------------ Aufbau */
 
@@ -9609,7 +9676,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
   const bandTex = objBandTextur();
   const MAT = {
     gurt: new THREE.MeshStandardMaterial({ map: bandTex, roughness: 0.92, metalness: 0 }),
-    rahmen: new THREE.MeshStandardMaterial({ color: 0x8b9096, roughness: 0.5, metalness: 0.55 }),
+    rahmen: new THREE.MeshStandardMaterial({ color: 0xa5a9ab, roughness: 0.5, metalness: 0.25 }),
     bein: new THREE.MeshStandardMaterial({ color: 0x5b6066, roughness: 0.6, metalness: 0.4 }),
     rolle: new THREE.MeshStandardMaterial({ color: 0x3a3d40, roughness: 0.5, metalness: 0.6 }),
     leitung: new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7 }),
@@ -9629,7 +9696,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
   for (const [art, geo] of Object.entries(GEO_FUER)) {
     const m = new THREE.MeshStandardMaterial({ color: GEGENSTAND_FARBEN[art], roughness: art === 'silage' ? 0.35 : 0.95 });
     // Die Heubündel leuchten im Vorbild leicht orange-golden
-    if (art === 'roh' || art === 'knaeuel') { m.emissive.setHex(0x6a3000); m.emissiveIntensity = 0.35; }
+    if (art === 'roh' || art === 'knaeuel') { m.map = strohTexturen(256, 700, 13).farbe; m.map.repeat.set(3, 2); m.color.setHex(0xfff0dc); m.emissive.setHex(0x6a3a0a); m.emissiveIntensity = 0.45; }
     const im = new THREE.InstancedMesh(geo, m, MAX_STUECKE);
     im.count = 0;
     im.castShadow = schatten;
@@ -10145,7 +10212,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
       const lang = Math.hypot(l.b[0] - l.a[0], l.b[2] - l.a[2]);
       const pts = objDurchhang(l.a, l.b, Math.min(0.9, 0.04 * lang + (l.fall ? 0.05 : 0.15)));
       const kurve = new THREE.CatmullRomCurve3(pts);
-      geos.push(new THREE.TubeGeometry(kurve, 14, 0.014, 4, false));
+      geos.push(new THREE.TubeGeometry(kurve, 14, 0.008, 4, false));
     }
     if (!geos.length) { leitungen = null; return; }
     leitungen = new THREE.Mesh(objVereinen(geos), MAT.leitung);
@@ -10249,7 +10316,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
         r.sp.position.x += r.vx * dt;
         r.sp.position.z += r.vz * dt;
         r.sp.position.y += dt * (0.9 - u * 0.3);
-        r.sp.scale.setScalar(0.4 + u * 1.6);
+        r.sp.scale.setScalar(0.6 + u * 2.4);
         r.sp.material.opacity = 0.7 * (1 - u);
       }
       // Radar

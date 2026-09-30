@@ -8,10 +8,10 @@ const MAT = {};
 function mat(name) {
   if (MAT[name]) return MAT[name];
   const defs = {
-    holz: { color: 0xc49a6c, roughness: 0.7 },
+    holz: { color: 0xd2bb9a, roughness: 0.75 },
     holzDunkel: { color: 0x7a5433, roughness: 0.8 },
-    stahl: { color: 0xb9c0c6, roughness: 0.35, metalness: 0.85 },
-    stahlDunkel: { color: 0x4a4f54, roughness: 0.45, metalness: 0.7 },
+    stahl: { color: 0xd4d2cc, roughness: 0.5, metalness: 0.15 },
+    stahlDunkel: { color: 0x5a5f64, roughness: 0.5, metalness: 0.3 },
     gummi: { color: 0x1d1d1f, roughness: 0.9 },
     gelb: { color: 0xf2c417, roughness: 0.45 },
     rot: { color: 0xb8352a, roughness: 0.6 },
@@ -49,7 +49,8 @@ export function spatenModell() {
   g.add(griff);
   const blatt = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.012, 0.26), mat('stahl'));
   blatt.position.z = -0.72;
-  blatt.rotation.x = -0.12;
+  blatt.rotation.x = 0.45;
+  blatt.material = new THREE.MeshStandardMaterial({ color: 0x7a5a44, roughness: 0.7, metalness: 0.2 }); // Rostspaten
   g.add(blatt);
   const hals = zyl(0.024, 0.1, mat('stahlDunkel'), 8);
   hals.position.z = -0.6;
@@ -60,13 +61,13 @@ export function spatenModell() {
 export function heugabelModell() {
   const g = new THREE.Group();
   g.add(stiel(1.3));
-  const quer = zyl(0.012, 0.26, mat('stahl'), 6);
+  const quer = zyl(0.012, 0.32, mat('stahl'), 6);
   quer.rotation.y = Math.PI / 2;
   quer.position.z = -0.66;
   g.add(quer);
-  for (let i = 0; i < 5; i++) {
-    const x = -0.12 + i * 0.06;
-    const zinke = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.3, 5), mat('stahl'));
+  for (let i = 0; i < 6; i++) {
+    const x = -0.15 + i * 0.06;
+    const zinke = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.006, 0.26, 6), mat('stahl'));
     zinke.rotation.x = Math.PI / 2 - 0.18;
     zinke.position.set(x, 0.02, -0.8);
     g.add(zinke);
@@ -80,7 +81,7 @@ export function sandschaufelModell() {
   s.position.z = 0.1;
   g.add(s);
   const kopf = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat('gelb'));
-  kopf.scale.set(1, 0.35, 1.3);
+  kopf.scale.set(1, 0.55, 1.3);
   kopf.rotation.x = Math.PI;
   kopf.position.z = -0.14;
   g.add(kopf);
@@ -145,7 +146,7 @@ export function saugerModell() {
 export function handModell() {
   const g = new THREE.Group();
   const haut = new THREE.MeshStandardMaterial({ color: 0xd9a57e, roughness: 0.75 });
-  const handschuh = new THREE.MeshStandardMaterial({ color: 0x8a6a3e, roughness: 0.9 });
+  const handschuh = new THREE.MeshStandardMaterial({ color: 0x7fcfa4, roughness: 0.9 });
   const flaeche = box(0.09, 0.03, 0.1, handschuh);
   g.add(flaeche);
   for (let i = 0; i < 4; i++) {
@@ -167,7 +168,7 @@ export function handModell() {
 export function eimerModell() {
   const g = new THREE.Group();
   const geo = new THREE.CylinderGeometry(0.16, 0.12, 0.3, 16, 1, true);
-  const wand = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xdadfe2, roughness: 0.4, metalness: 0.6, side: THREE.DoubleSide }));
+  const wand = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xc2a680, roughness: 0.85, metalness: 0, side: THREE.DoubleSide }));
   g.add(wand);
   const boden = new THREE.Mesh(new THREE.CircleGeometry(0.12, 16), wand.material);
   boden.rotation.x = -Math.PI / 2;
@@ -218,11 +219,11 @@ export function nadelModell(gold = false) {
 
 /** Geometrien für Gegenstände auf Bändern und am Boden (als Instanzen gezeichnet). */
 export function gegenstandGeometrien() {
-  const buendel = new THREE.IcosahedronGeometry(0.13, 1);
-  // leicht verbeult wie ein Heuknäuel
+  const buendel = new THREE.SphereGeometry(0.13, 14, 10);
+  // leicht verbeult wie ein Heuknäuel (stetig, damit die Naht zu bleibt)
   const p = buendel.attributes.position;
   for (let i = 0; i < p.count; i++) {
-    const f = 0.85 + Math.random() * 0.3;
+    const f = 0.9 + 0.1 * Math.sin(p.getX(i) * 61 + p.getZ(i) * 47) * Math.sin(p.getY(i) * 53 + p.getX(i) * 29);
     p.setXYZ(i, p.getX(i) * f, p.getY(i) * f * 0.85, p.getZ(i) * f);
   }
   buendel.computeVertexNormals();

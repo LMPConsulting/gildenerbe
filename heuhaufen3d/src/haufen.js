@@ -29,7 +29,8 @@ export function haufenNeu({ halme, radius, hoehe, mitteX = 0, mitteZ = 0, zufall
       const r = Math.hypot(x, z) / radius;
       if (r >= 1) continue;
       const winkel = Math.atan2(z, x);
-      let f = Math.cos((r * Math.PI) / 2);
+      const laib = hoehe <= 5 ? 0.5 : 0; // erste Ladung: breiter Laib mit steilem Rand wie S0
+      let f = laib * (1 - r * r * r) + (1 - laib) * Math.cos((r * Math.PI) / 2);
       // Beulen nur zwischen Mitte und Rand: an der Spitze wäre jede Winkelwelle ein Grat.
       for (const w of wellen) f *= 1 + w.a * Math.sin(winkel * w.f + w.p + r * w.w) * 4 * r * (1 - r);
       h[j * n + i] = Math.max(0, hoehe * f);

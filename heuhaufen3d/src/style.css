@@ -20,7 +20,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-l: env(safe-area-inset-left, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
-  --schrift: "Bahnschrift", "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --schrift: "Bahnschrift", "Barlow Semi Condensed", "Avenir Next Condensed", "sans-serif-condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
   color-scheme: dark;
 }
 
@@ -62,10 +62,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
   position: absolute; top: calc(var(--safe-t) + 6px); right: calc(var(--safe-r) + 12px);
   text-align: right; line-height: 1.05; text-shadow: 0 0 2px #000, 0 1px 3px #000, 0 0 6px rgba(0, 0, 0, 0.7);
 }
-.hgeld { font-size: 30px; font-weight: 800; color: var(--geld); letter-spacing: 0.01em; }
+.hgeld { font-size: clamp(24px, 5.6vh, 60px); font-weight: 800; color: var(--geld); letter-spacing: 0.01em; font-stretch: condensed; }
 .hschulden { font-size: 13px; font-weight: 700; color: var(--rot); }
-.hrest { font-size: 13px; font-weight: 700; color: var(--heu); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
-.hrate { font-size: 13px; font-weight: 700; color: var(--rate); }
+.hrest { font-size: clamp(12px, 2vh, 22px); font-weight: 700; color: var(--heu); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
+.hrate { font-size: clamp(12px, 2vh, 22px); font-weight: 700; color: var(--rate); }
 .knopfleiste {
   position: absolute; top: calc(var(--safe-t) + 78px); right: calc(var(--safe-r) + 10px);
   display: flex; gap: 6px;
@@ -285,7 +285,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .sprungknopf { right: calc(var(--safe-r) + 114px); }
 }
 @media (orientation: portrait) {
-  .missionkarte { width: min(260px, 64vw); }
+  /* Hochkant: die Karte darf die Kasse oben rechts nicht verdecken */
+  .missionkarte { width: min(260px, calc(100vw - 196px)); }
   .knopfleiste { top: calc(var(--safe-t) + 82px); }
   .werkzeugleiste { bottom: calc(var(--safe-b) + 128px); }
   .statuszeile { bottom: calc(var(--safe-b) + 196px); }
