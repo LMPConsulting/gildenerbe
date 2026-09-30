@@ -39,7 +39,7 @@ import {
 import { scannerLeeren, annehmenMoeglich } from './maschinen.js';
 import { netzSchalten } from './versorgung.js';
 import { lasterAblehnen, lasterBereit, LASTER_BETT } from './laster.js';
-import { BAU_BY_ID, hallenGrenzen, lauf } from './welt.js';
+import { BAU_BY_ID, hallenGrenzen, lauf, gitterEintragen } from './welt.js';
 import { objekteBauen } from './grafik/objekte3d.js';
 import { baumodusBauen } from './baumodus.js';
 import { baukatalogZeigen, bauHudBauen } from './ui/bauen.js';
@@ -647,6 +647,9 @@ function hauptStart() {
         const u = bautenUmgebung(s);
         umgebung.kollider = hof.kollider.concat(u.kollider);
         umgebung.flaechen = u.flaechen;
+        umgebung.flaechenGitter = u.gitter;
+        umgebung.kolliderGitter = new Map();
+        for (const k of umgebung.kollider) gitterEintragen(umgebung.kolliderGitter, k.x0, k.z0, k.x1, k.z1, k);
         umgebung.grenzen = hallenGrenzen(w.hallenFelder);
         zustand.umgebungVersion = bauVersion(s);
         zustand.umgebungStand = s;

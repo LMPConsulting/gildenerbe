@@ -5145,12 +5145,30 @@ function spielerNeu() {
 function bodenHoehe(umgebung, x, z, fuss = Infinity) {
   let h = 0;
   if (umgebung.haufen) h = Math.max(h, haufenHoehe(umgebung.haufen, x, z));
-  for (const f of umgebung.flaechen || []) {
+  // Mit Raster nur die Flächen der Zelle unter dem Punkt (jede Fläche steht in allen Zellen, die sie berührt)
+  const liste = umgebung.flaechenGitter ? gitterBei(umgebung.flaechenGitter, x, z) : umgebung.flaechen || [];
+  for (const f of liste) {
     if (x < f.x0 || x > f.x1 || z < f.z0 || z > f.z1) continue;
     const top = f.hoeheBei ? f.hoeheBei(x, z) : f.h;
     if (top <= fuss + SPIELER.stufe && top > h) h = top;
   }
   return h;
+}
+
+/** Kästen in der Nähe von (x, z): mit Raster nur die umliegenden Zellen. */
+const kastenMenge = new Set();
+function kaestenNahe(umgebung, x, z, r) {
+  if (!umgebung.kolliderGitter) return umgebung.kollider;
+  kastenMenge.clear();
+  const i0 = Math.floor((x - r - 0.1) / GITTER); const i1 = Math.floor((x + r + 0.1) / GITTER);
+  const k0 = Math.floor((z - r - 0.1) / GITTER); const k1 = Math.floor((z + r + 0.1) / GITTER);
+  for (let i = i0; i <= i1; i++) {
+    for (let k = k0; k <= k1; k++) {
+      const liste = umgebung.kolliderGitter.get(gitterSchluessel(i, k));
+      if (liste) for (const kasten of liste) kastenMenge.add(kasten);
+    }
+  }
+  return kastenMenge;
 }
 
 function kreisGegenKasten(x, z, r, k) {
@@ -5220,7 +5238,7 @@ function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
   // Kästen (Wände, Stand, Maschinen): hinausschieben
   for (let runde = 0; runde < 3; runde++) {
     let geschoben = false;
-    for (const kasten of umgebung.kollider) {
+    for (const kasten of kaestenNahe(umgebung, nx, nz, r)) {
       if (kasten.h !== undefined && kasten.h <= sp.y + SPIELER.stufe) continue; // darüber steigen
       if (kasten.unten !== undefined && kasten.unten > sp.y + SPIELER.augenHoehe) continue; // darunter durch
       const s = kreisGegenKasten(nx, nz, r, kasten);
@@ -12858,6 +12876,9 @@ function hauptStart() {
         const u = bautenUmgebung(s);
         umgebung.kollider = hof.kollider.concat(u.kollider);
         umgebung.flaechen = u.flaechen;
+        umgebung.flaechenGitter = u.gitter;
+        umgebung.kolliderGitter = new Map();
+        for (const k of umgebung.kollider) gitterEintragen(umgebung.kolliderGitter, k.x0, k.z0, k.x1, k.z1, k);
         umgebung.grenzen = hallenGrenzen(w.hallenFelder);
         zustand.umgebungVersion = bauVersion(s);
         zustand.umgebungStand = s;
