@@ -384,6 +384,7 @@ describe('Maschinentafel', () => {
     const s = hof();
     setzen(s, 'mast', -11, 4);
     const gen = setzen(s, 'generator', -11, 6.2);
+    setzen(s, 'scanner', -13, 4);
     laufen(s, 0.1);
     const ui = uiAttrappe();
     const log = [];

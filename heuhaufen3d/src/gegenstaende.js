@@ -151,8 +151,9 @@ function flugSchritt(s, g, dt, welt, ereignisse, zufall) {
     let nz = g.z + g.vz * h;
     const gr = welt.grenzen;
     if (nx < gr.xMin + 0.2 || nx > gr.xMax - 0.2) { g.vx *= -0.3; nx = Math.max(gr.xMin + 0.2, Math.min(gr.xMax - 0.2, nx)); }
-    // Durch die Vorderwand geht es nur durchs Tor (zur Ladefläche des Lasters)
-    const imTor = Math.abs(nx - WELT.torX) < WELT.torBreite / 2 - 0.25 && ny < WELT.torHoehe;
+    // Durch die Vorderwand geht es nur durchs offene Tor (wenn der Laster davor steht)
+    const torAuf = !!s.laster && s.laster.zustand === 'steht';
+    const imTor = torAuf && Math.abs(nx - WELT.torX) < WELT.torBreite / 2 - 0.25 && ny < WELT.torHoehe;
     const zMin = imTor || g.z < gr.zMin ? gr.zMin - 6 : gr.zMin + 0.2;
     if (nz < zMin || nz > gr.zMax - 0.2) { g.vz *= -0.3; nz = Math.max(zMin, Math.min(gr.zMax - 0.2, nz)); }
     g.x = nx; g.z = nz;
@@ -179,6 +180,12 @@ function landen(s, g, unten, welt, zufall) {
   delete g.vomBand;
   g.vx = 0; g.vy = 0; g.vz = 0;
   g.y = unten;
+  // Draußen vor dem Tor gelandet (Laster fuhr gerade ab): zurück an die Innenseite, sonst unerreichbar
+  if (welt.grenzen && g.z < welt.grenzen.zMin) {
+    g.z = welt.grenzen.zMin + 0.4;
+    g.y = welt.boden(g.x, g.z, 99);
+    return;
+  }
   // Auf dem Haufen rollt ein Stück den Hang hinunter bis an den Fuß.
   const hf = s.hf;
   if (hf && unten > 0.25 && Math.abs(unten - haufenHoehe(hf, g.x, g.z)) < 0.05) {

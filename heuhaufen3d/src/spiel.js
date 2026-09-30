@@ -214,7 +214,10 @@ export function laden(text) {
     && NADELN[n.art] && ['versteckt', 'lose', 'gefunden', 'unterwegs', 'scanner', 'maschine'].includes(n.zustand));
   s.nadeln.forEach((n, i) => { n.nr = i; });
   s.lose = s.lose.filter((b) => istObjekt(b) && Number.isFinite(b.x) && Number.isFinite(b.z) && b.m > 0).slice(0, 400);
-  s.bauten = s.bauten.filter((b) => istObjekt(b) && BAU_NACH_ID[b.typ] && Number.isFinite(b.x) && Number.isFinite(b.z)
+  // Koordinaten weit außerhalb (kaputter Stand) würden Raster und Schleifen sprengen
+  const inHalle = (v) => Number.isFinite(v) && Math.abs(v) < 400;
+  s.bauten = s.bauten.filter((b) => istObjekt(b) && BAU_NACH_ID[b.typ] && inHalle(b.x) && inHalle(b.z) && (b.y == null || inHalle(b.y))
+    && (!Array.isArray(b.punkte) || b.punkte.every((p) => Array.isArray(p) && p.every(inHalle)))
     && (b.typ !== 'band' || (Array.isArray(b.punkte) && b.punkte.length >= 2 && b.punkte.every((p) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite))))
     && (!BAU_NACH_ID[b.typ].linie || b.typ === 'band' || (Array.isArray(b.a) && Array.isArray(b.b))));
   const eintragOk = (r) => istObjekt(r) && PRODUKTE[r.art] && Number.isFinite(r.halme) && r.halme > 0 && Number.isInteger(r.nadel);
@@ -234,7 +237,7 @@ export function laden(text) {
     for (const k of ['brenn', 'takt', 'fort', 'rest', 'weite', 'winkel', 'hell']) if (k in b) b[k] = zahlOder(b[k], grund[k] ?? 0);
   }
   const ORTE = ['boden', 'flug', 'band', 'hand'];
-  s.gegenstaende = s.gegenstaende.filter((g) => istObjekt(g) && Number.isFinite(g.x) && Number.isFinite(g.y) && Number.isFinite(g.z)
+  s.gegenstaende = s.gegenstaende.filter((g) => istObjekt(g) && inHalle(g.x) && inHalle(g.y) && inHalle(g.z)
     && PRODUKTE[g.art] && (g.art !== 'roh' || g.halme > 0));
   if (s.gegenstaende.length > 2000) {
     // Zu viele: liegendes loses Heu ohne Nadel wird zu Büscheln, alles andere bleibt
@@ -249,6 +252,8 @@ export function laden(text) {
     if (g.ort === 'hand' && s.spieler.haelt !== g.id) g.ort = 'flug';
     for (const k of ['vx', 'vy', 'vz']) g[k] = zahlOder(g[k], 0);
     if (!Number.isInteger(g.nadel) || !s.nadeln[g.nadel]) g.nadel = -1;
+    // Vor dem Tor liegengeblieben (ältere Stände): zurück in die Halle
+    if (g.ort === 'boden' && g.z < WELT.zMin) { g.z = WELT.zMin + 0.4; g.y = 0; }
   }
   if (s.spieler.haelt != null && !s.gegenstaende.some((g) => g.id === s.spieler.haelt && g.ort === 'hand')) s.spieler.haelt = null;
   // Nadeln unterwegs oder in Maschinen brauchen ihren Träger, sonst liegen sie lose am Haufen

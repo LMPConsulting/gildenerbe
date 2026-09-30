@@ -163,6 +163,7 @@ describe('Kolbenrechen und Strom', () => {
     const s = hof();
     const m = bauSetzen(s, 'mast', -11, 4, 0).bau;
     const gen = bauSetzen(s, 'generator', -11, 6.2, 0).bau;
+    bauSetzen(s, 'scanner', -13, 4, 0); // ein Abnehmer: ohne Bedarf ruht das Feuer
     const netz = netzHolen(s);
     expect(annehmen(s, netz, gen, gegenstandNeu(s, 'roh', 60, 0, 0, 0))).toBe(true);
     laufen(s, 1);
@@ -602,5 +603,24 @@ describe('Zyklus 2: neue Ladung und Plattformen', () => {
     expect(bauAbbauen(s, pl).ok).toBe(false);
     expect(bauAbbauen(s, r.bau).ok).toBe(true);
     expect(bauAbbauen(s, pl).ok).toBe(true);
+  });
+});
+
+describe('Zyklus 2: Generator und Netzschalter', () => {
+  it('ohne Abnehmer oder bei abgeschaltetem Netz verbrennt der Generator nichts', () => {
+    const s = hof();
+    const m = bauSetzen(s, 'mast', -11, 4, 0).bau;
+    const gen = bauSetzen(s, 'generator', -11, 6.2, 0).bau;
+    gen.brenn = 100;
+    laufen(s, 5);
+    expect(gen.brenn).toBe(100);
+    const sc = bauSetzen(s, 'scanner', -13, 4, 0).bau;
+    laufen(s, 2);
+    expect(gen.brenn).toBeLessThan(100);
+    netzSchalten(s, netzHolen(s), m);
+    const vorher = gen.brenn;
+    laufen(s, 3);
+    expect(gen.brenn).toBe(vorher);
+    expect(lauf(sc).status).toBe('netzAus');
   });
 });

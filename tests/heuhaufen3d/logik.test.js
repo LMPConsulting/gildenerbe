@@ -287,3 +287,22 @@ describe('Ducken', () => {
     expect((10 - a.z) / (10 - b.z)).toBeCloseTo(0.5, 1);
   });
 });
+
+describe('Zyklus 2: Spielfigur', () => {
+  it('steigt ohne Sprung über ein Band und läuft auch schnell nicht durch eine dünne Wand', async () => {
+    const { spielerNeu, spielerBewegen } = await import('../../heuhaufen3d/src/spieler.js');
+    const band = { x0: -2, x1: 2, z0: -1.3, z1: -0.7, h: 0.61 };
+    const umgebung = { kollider: [band], flaechen: [{ ...band }], haufen: null };
+    const sp = { ...spielerNeu(), x: 0, z: 0.5, y: 0, gier: 0 };
+    for (const fps of [60, 20]) {
+      Object.assign(sp, { x: 0, z: 0.5, y: 0, vx: 0, vz: 0, amBoden: true });
+      for (let i = 0; i < fps * 1.5; i++) spielerBewegen(sp, { vor: 1, seit: 0, blickX: 0, blickY: 0 }, 1 / fps, umgebung);
+      expect(sp.z, `bei ${fps} fps`).toBeLessThan(-2);
+    }
+    const wand = { x0: -3, x1: 3, z0: -1.05, z1: -0.95, h: 2.5 };
+    const u2 = { kollider: [wand], flaechen: [], haufen: null };
+    const sp2 = { ...spielerNeu(), x: 0, z: 0.5, y: 0, gier: 0 };
+    for (let i = 0; i < 40; i++) spielerBewegen(sp2, { vor: 1, seit: 0, blickX: 0, blickY: 0, rennen: true }, 1 / 12, u2, 3);
+    expect(sp2.z).toBeGreaterThan(-0.95);
+  });
+});

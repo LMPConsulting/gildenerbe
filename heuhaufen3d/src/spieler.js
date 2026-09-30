@@ -92,7 +92,8 @@ export function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
   sp.duck = (sp.duck || 0) + (duckZiel - (sp.duck || 0)) * (1 - Math.exp(-dt / 0.07));
   if (Math.abs(sp.duck - duckZiel) < 0.002) sp.duck = duckZiel;
   const geduckt = sp.duck > 0.5;
-  const tempo = (e.rennen && !geduckt ? SPIELER.rennen : SPIELER.gehen) * tempoFaktor * (1 - (1 - SPIELER.duckTempo) * sp.duck);
+  // Fitness macht schneller, aber höchstens um 45 % (Vorbild: 4,2 / 7,0 m/s)
+  const tempo = (e.rennen && !geduckt ? SPIELER.rennen : SPIELER.gehen) * Math.min(1.45, tempoFaktor) * (1 - (1 - SPIELER.duckTempo) * sp.duck);
   const vorX = -Math.sin(sp.gier);
   const vorZ = -Math.cos(sp.gier);
   const rechtsX = Math.cos(sp.gier);
@@ -108,43 +109,55 @@ export function spielerBewegen(sp, e, dt, umgebung, tempoFaktor = 1) {
   const r = SPIELER.radius;
   const vorherX = sp.x;
   const vorherZ = sp.z;
-  const bodenVorher = bodenHoehe(umgebung, sp.x, sp.z, sp.y);
-  let nx = sp.x + sp.vx * dt;
-  let nz = sp.z + sp.vz * dt;
-
-  // Haufen und hohe Flächen: zu steil oder zu hoch ist wie eine Wand
-  const bodenNeu = bodenHoehe(umgebung, nx, nz, sp.y);
-  const weg = Math.hypot(nx - sp.x, nz - sp.z);
-  if (weg > 1e-6 && bodenNeu > sp.y + 0.02) {
-    const steigung = (bodenNeu - Math.max(bodenVorher, sp.y)) / weg;
-    if (bodenNeu > sp.y + SPIELER.stufe || (steigung > 1.15 && sp.amBoden)) {
-      // einzeln in x und z probieren, damit man am Hang entlanggleitet
-      const nurX = bodenHoehe(umgebung, nx, sp.z, sp.y);
-      const nurZ = bodenHoehe(umgebung, sp.x, nz, sp.y);
-      const okX = nurX <= sp.y + 0.05 || (nurX - sp.y) / Math.max(1e-6, Math.abs(nx - sp.x)) <= 1.15;
-      const okZ = nurZ <= sp.y + 0.05 || (nurZ - sp.y) / Math.max(1e-6, Math.abs(nz - sp.z)) <= 1.15;
-      if (!okX) { nx = sp.x; sp.vx = 0; }
-      if (!okZ) { nz = sp.z; sp.vz = 0; }
-    }
-  }
-
-  // Kästen (Wände, Stand, Maschinen): hinausschieben
-  for (let runde = 0; runde < 3; runde++) {
-    let geschoben = false;
-    for (const kasten of kaestenNahe(umgebung, nx, nz, r)) {
-      if (kasten.h !== undefined && kasten.h <= sp.y + SPIELER.stufe) continue; // darüber steigen
-      if (kasten.unten !== undefined && kasten.unten > sp.y + augenHoehe(sp)) continue; // darunter durch (geduckt tiefer)
-      const s = kreisGegenKasten(nx, nz, r, kasten);
-      if (s) { nx += s[0]; nz += s[1]; geschoben = true; }
-    }
-    if (!geschoben) break;
-  }
-  // Halle nicht verlassen (umgebung.grenzen, wenn die Halle verlängert ist)
   const gr = umgebung.grenzen || WELT;
-  nx = Math.max(gr.xMin + r, Math.min(gr.xMax - r, nx));
-  nz = Math.max(gr.zMin + r, Math.min(gr.zMax - r, nz));
-  sp.x = nx;
-  sp.z = nz;
+  // In Teilschritten von höchstens 0,15 m: sonst läuft man bei hohem Tempo und
+  // niedriger Bildrate durch dünne Wände und Geländer
+  const gesamtX = sp.vx * dt;
+  const gesamtZ = sp.vz * dt;
+  const teile = Math.max(1, Math.ceil(Math.hypot(gesamtX, gesamtZ) / 0.15));
+  for (let t = 0; t < teile; t++) {
+    const bodenVorher = bodenHoehe(umgebung, sp.x, sp.z, sp.y);
+    let nx = sp.x + gesamtX / teile;
+    let nz = sp.z + gesamtZ / teile;
+    // Haufen und hohe Flächen: zu steil oder zu hoch ist wie eine Wand. Die Steilheit
+    // gilt nur fürs Heu; auf Bänder und Maschinen bis zur Stufenhöhe steigt man einfach.
+    const bodenNeu = bodenHoehe(umgebung, nx, nz, sp.y);
+    const weg = Math.hypot(nx - sp.x, nz - sp.z);
+    if (weg > 1e-6 && bodenNeu > sp.y + 0.02) {
+      const heu = umgebung.haufen ? haufenHoehe(umgebung.haufen, nx, nz) : 0;
+      const vonFlaeche = bodenNeu > heu + 0.01;
+      const steigung = (bodenNeu - Math.max(bodenVorher, sp.y)) / weg;
+      if (bodenNeu > sp.y + SPIELER.stufe || (!vonFlaeche && steigung > 1.15 && sp.amBoden)) {
+        // einzeln in x und z probieren, damit man am Hang entlanggleitet
+        const nurX = bodenHoehe(umgebung, nx, sp.z, sp.y);
+        const nurZ = bodenHoehe(umgebung, sp.x, nz, sp.y);
+        const okX = nurX <= sp.y + 0.05 || (nurX <= sp.y + SPIELER.stufe && vonFlaeche) || (nurX - sp.y) / Math.max(1e-6, Math.abs(nx - sp.x)) <= 1.15;
+        const okZ = nurZ <= sp.y + 0.05 || (nurZ <= sp.y + SPIELER.stufe && vonFlaeche) || (nurZ - sp.y) / Math.max(1e-6, Math.abs(nz - sp.z)) <= 1.15;
+        if (!okX) { nx = sp.x; sp.vx = 0; }
+        if (!okZ) { nz = sp.z; sp.vz = 0; }
+      }
+    }
+
+    // Kästen (Wände, Stand, Maschinen): hinausschieben
+    for (let runde = 0; runde < 3; runde++) {
+      let geschoben = false;
+      for (const kasten of kaestenNahe(umgebung, nx, nz, r)) {
+        if (kasten.h !== undefined && kasten.h <= sp.y + SPIELER.stufe) continue; // darüber steigen
+        if (kasten.unten !== undefined && kasten.unten > sp.y + augenHoehe(sp)) continue; // darunter durch (geduckt tiefer)
+        const s = kreisGegenKasten(nx, nz, r, kasten);
+        if (s) { nx += s[0]; nz += s[1]; geschoben = true; }
+      }
+      if (!geschoben) break;
+    }
+    // Halle nicht verlassen (umgebung.grenzen, wenn die Halle verlängert ist)
+    sp.x = Math.max(gr.xMin + r, Math.min(gr.xMax - r, nx));
+    sp.z = Math.max(gr.zMin + r, Math.min(gr.zMax - r, nz));
+    // auf eine Stufe gestiegen: ab hier gilt die neue Höhe (für die nächsten Teilschritte)
+    if (sp.amBoden) {
+      const b = bodenHoehe(umgebung, sp.x, sp.z, sp.y);
+      if (b > sp.y && b <= sp.y + SPIELER.stufe) sp.y = b;
+    }
+  }
 
   // Senkrecht: Springen, Schwerkraft, Boden
   const boden = bodenHoehe(umgebung, sp.x, sp.z, sp.y);

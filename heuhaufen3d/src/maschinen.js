@@ -324,7 +324,8 @@ function armJobSuchen(s, netz, bau, R, mitHaufen) {
     if (m.typ !== 'generator' && !d.rezept) continue;
     ziele.push({ art: 'bau', bau: m, punkt: [m.x, (m.y || 0) + d.h, m.z], d: 10 });
   }
-  if (!ziele.length) return null;
+  const L = lauf(bau);
+  if (!ziele.length) { L.grund = 'keinZiel'; return null; }
   ziele.sort((a, b) => a.d - b.d);
   const zielFuer = (art, ohneBand) => ziele.find((z) => {
     if (z.art === 'band') return z.band !== ohneBand && freieStelle(z.band, z.t, art) != null;
@@ -347,11 +348,14 @@ function armJobSuchen(s, netz, bau, R, mitHaufen) {
   }
   if (mitHaufen && passt('roh')) {
     const griff = haufenGriff(s, bau, R);
-    if (!griff) return null;
+    if (!griff) { L.grund = 'leer'; return null; }
     const ziel = zielFuer('roh', null);
-    if (!ziel) return null;
+    if (!ziel) { L.grund = 'zielVoll'; return null; }
     return { quelle: 'haufen', von: [griff.x, griff.y, griff.z], ziel, nach: ziel.punkt };
   }
+  // Heu auf den Bändern hinten, aber vorn kein Platz? Sonst wartet der Arm auf Heu.
+  const heuHinten = s.gegenstaende.some((g) => g.ort === 'band' && passt(g.art) && nah(g.x, g.z) && !vorn(g.x, g.z));
+  L.grund = heuHinten ? 'zielVoll' : 'wartet';
   return null;
 }
 
@@ -376,23 +380,37 @@ function armGreifen(s, netz, bau, job, ereignisse) {
   return g;
 }
 
-function armAblegen(s, netz, bau, job, ereignisse) {
+/**
+ * Ablegen am Ziel. true, wenn es geklappt hat. Ist das Ziel nur gerade voll, hält
+ * der Arm das Stück und versucht es weiter (wie ein Arm im Vorbild, der wartet);
+ * erst wenn das Ziel ganz weg ist oder lange nichts frei wird, lässt er los.
+ */
+function armAblegen(s, netz, bau, job, ereignisse, loslassen = false) {
   const g = job.g;
   const z = job.ziel;
-  g.ort = 'boden';
+  let zielDa = false;
   if (z.art === 'band' && netz.bauNachId.get(z.band.id)) {
+    zielDa = true;
     const t = freieStelle(z.band, z.t, g.art);
-    if (t != null) { bandEinlegen(z.band, g, t); return; }
+    if (t != null) { bandEinlegen(z.band, g, t); return true; }
   } else if (z.art === 'stand') {
+    g.ort = 'boden';
     gegenstandVerkaufen(s, g, ereignisse, 'arm');
-    return;
+    return true;
   } else if (z.art === 'laster') {
-    if (lasterAnnehmen(s, g, ereignisse)) return;
+    zielDa = lasterBereit(s);
+    if (zielDa) { g.ort = 'boden'; if (lasterAnnehmen(s, g, ereignisse)) return true; g.ort = 'arm'; }
   } else if (z.art === 'bau' && netz.bauNachId.get(z.bau.id)) {
-    if (annehmen(s, netz, z.bau, g, -1, ereignisse)) return;
+    zielDa = true;
+    g.ort = 'boden';
+    if (annehmen(s, netz, z.bau, g, -1, ereignisse)) return true;
+    g.ort = 'arm';
   }
-  // Ziel weg oder voll: loslassen, es fällt
+  if (zielDa && !loslassen) return false;
+  // Ziel weg (oder zu lange voll): loslassen, es fällt
+  g.ort = 'boden';
   werfenMit(g, g.x, g.y, g.z, 0, 0, 0);
+  return true;
 }
 
 function armSchritt(s, netz, bau, dt, ereignisse, mitHaufen) {
@@ -401,21 +419,30 @@ function armSchritt(s, netz, bau, dt, ereignisse, mitHaufen) {
   const w = werte(s);
   const a = anteil(bau);
   if (a <= 0) {
+    // Ohne Strom bleibt der Arm stehen und hält, was er hat
     l.status = bau.aus ? 'aus' : 'strom';
-    if (l.job && l.job.g) { werfenMit(l.job.g, l.job.g.x, l.job.g.y, l.job.g.z, 0, 0, 0); }
-    l.job = null;
+    if (l.job && !l.job.g) l.job = null;
     return;
   }
   if (!l.job) {
     l.warte = (l.warte || 0) - dt;
     if (l.warte > 0) return;
     const job = armJobSuchen(s, netz, bau, d.reichweite, mitHaufen);
-    if (!job) { l.status = 'wartet'; l.warte = 0.5; return; }
+    if (!job) { l.status = l.grund || 'wartet'; l.warte = 0.5; return; }
     l.job = job;
     l.phase = 0;
   }
   l.status = 'laeuft';
   const job = l.job;
+  if (job.haelt) {
+    // Wartet mit dem Stück über dem Ziel, bis Platz ist
+    const p = greiferPunkt(bau);
+    job.g.x = p[0]; job.g.y = p[1] - GROESSE[job.g.art] - 0.1; job.g.z = p[2];
+    job.haelt += dt;
+    l.status = 'zielVoll';
+    if (armAblegen(s, netz, bau, job, ereignisse, job.haelt > 20)) { job.g = null; job.haelt = 0; l.phase = 0.8; }
+    return;
+  }
   const takt = d.takt / (w.armTempo * tempo(s, bau) * a);
   const vorher = l.phase;
   l.phase += dt / takt;
@@ -432,7 +459,10 @@ function armSchritt(s, netz, bau, dt, ereignisse, mitHaufen) {
   if (job.g) {
     const p = greiferPunkt(bau);
     job.g.x = p[0]; job.g.y = p[1] - GROESSE[job.g.art] - 0.1; job.g.z = p[2];
-    if (vorher < 0.8 && l.phase >= 0.8) { armAblegen(s, netz, bau, job, ereignisse); job.g = null; }
+    if (vorher < 0.8 && l.phase >= 0.8) {
+      if (armAblegen(s, netz, bau, job, ereignisse)) job.g = null;
+      else { job.haelt = 1e-6; l.phase = 0.8; return; }
+    }
   }
   if (l.phase >= 1) { l.job = null; l.phase -= 1; }
 }
@@ -448,9 +478,12 @@ function generatorSchritt(s, netz, bau, dt) {
     return;
   }
   l.leistung = -d.kw * w.generatorMul * w.stromMul;
-  l.brennt = true;
-  l.status = 'laeuft';
-  bau.brenn = Math.max(0, bau.brenn - d.brennstoff * w.brennstoff * dt);
+  // Verbrannt wird nur, was das Netz braucht: abgeschaltet oder ohne Abnehmer ruht das Feuer
+  const n = (netz.strom || []).find((x) => x.id === l.netz);
+  const nutzung = !n || n.aus || n.bedarf <= 0 ? 0 : 1;
+  l.brennt = nutzung > 0;
+  l.status = nutzung > 0 ? 'laeuft' : 'bereit';
+  bau.brenn = Math.max(0, bau.brenn - d.brennstoff * w.brennstoff * nutzung * dt);
 }
 
 function brunnenSchritt(s, netz, bau) {
@@ -750,7 +783,7 @@ export function haeltNadel(s, bau) {
 export const STATUS_TEXT = {
   laeuft: 'Läuft', strom: 'Kein Strom', leer: 'Kein Heu in Reichweite', wartet: 'Wartet auf Heu', voll: 'Ausgang voll',
   stau: 'Stau am Ausgang', aus: 'Ausgeschaltet', wasser: 'Kein Wasser', bereit: 'Bereit', prueft: 'Prüft',
-  brennstoff: 'Kein Brennstoff',
+  brennstoff: 'Kein Brennstoff', zielVoll: 'Ziel voll, wartet', keinZiel: 'Kein Ziel in Reichweite', netzAus: 'Netz am Mast aus',
 };
 
 /** Zeilen für die Maschinentafel. */

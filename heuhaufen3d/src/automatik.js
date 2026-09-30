@@ -133,7 +133,12 @@ export function automatikSchritt(s, dt, ereignisse) {
   const netz = netzHolen(s);
   stromSchritt(s, netz);
   wasserSchritt(s, netz);
-  for (const bau of netz.maschinen) MASCHINE[bau.typ].schritt(s, netz, bau, dt, ereignisse);
+  for (const bau of netz.maschinen) {
+    MASCHINE[bau.typ].schritt(s, netz, bau, dt, ereignisse);
+    // Netz am Mast abgeschaltet ist etwas anderes als eine fehlende Leitung (keine Warnmarke)
+    const l = lauf(bau);
+    if (l.status === 'strom' && l.netzAus) l.status = 'netzAus';
+  }
   baenderSchritt(s, dt, netz, ereignisse);
   gegenstaendeSchritt(s, dt, netz.welt, ereignisse);
   drohnenSchritt(s, dt, netz, ereignisse);

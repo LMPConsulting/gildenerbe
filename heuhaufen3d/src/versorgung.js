@@ -120,10 +120,10 @@ export function stromSchritt(s, netz) {
     n.bedarf = n.verbraucher.reduce((sum, v) => sum + (v.aus ? 0 : BAU_BY_ID[v.typ].kw * w.verbrauch), 0);
     n.anteil = n.aus ? 0 : n.bedarf > 0 ? Math.min(1, n.angebot / n.bedarf) : 1;
     if (!n.aus && n.anteil < 0.999 && n.verbraucher.length) knapp = true;
-    for (const v of n.verbraucher) lauf(v).strom = v.aus ? 0 : n.anteil;
+    for (const v of n.verbraucher) { lauf(v).strom = v.aus ? 0 : n.anteil; lauf(v).netzAus = n.aus; }
   }
   // Verbraucher ohne Netz bekommen nichts
-  for (const b of netz.verbraucherAlle) if (lauf(b).netz < 0) lauf(b).strom = 0;
+  for (const b of netz.verbraucherAlle) if (lauf(b).netz < 0) { lauf(b).strom = 0; lauf(b).netzAus = false; }
   netz.stromKnapp = knapp;
 }
 
