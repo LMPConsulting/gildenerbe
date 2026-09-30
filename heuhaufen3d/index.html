@@ -4422,20 +4422,36 @@ function probePunkte(typ, x, z, rot) {
   return pts;
 }
 
-/** Berührt ein Band den Fußabdruck (Enden ausgenommen, dort rastet es ja ein)? */
-function bandImWeg(band, typ, x, z, rot) {
+/** Berührt ein Band den Fußabdruck (Enden ausgenommen, dort rastet es ja ein)? Nur auf gleicher Höhe. */
+function bandImWeg(band, typ, x, z, rot, y = 0) {
   const { segs, laenge } = bandGeometrie(band);
   const bau = { typ, x, z, rot };
+  const hoch = BAU_BY_ID[typ].h;
   for (const g of segs) {
     const n = Math.max(1, Math.ceil(g.len / 0.25));
     for (let i = 0; i <= n; i++) {
       const t = g.s0 + (g.len * i) / n;
       if (t < 0.6 || t > laenge - 0.6) continue;
+      const by = g.ay + g.dy * (g.len * i) / n;
+      if (by < y - 0.3 || by > y + hoch + 0.3) continue;
       if (imFussabdruck(bau, g.ax + g.dx * (g.len * i) / n, g.az + g.dz * (g.len * i) / n, 0.3)) return true;
     }
   }
   return false;
 }
+
+/** Oberkante der Plattform unter (x, z) auf Höhe y (±5 cm), oder null. */
+function plattformBei(s, x, z, y) {
+  const hp = BAU_BY_ID.plattform.h;
+  for (const b of s.bauten) {
+    if (b.typ !== 'plattform' || Math.abs((b.y || 0) + hp - y) > 0.05) continue;
+    if (imFussabdruck(b, x, z, 0.02)) return b;
+  }
+  return null;
+}
+
+/** Bauten, die nur auf dem Hallenboden stehen dürfen. */
+const NUR_BODEN = new Set(['plattform', 'treppe', 'dach', 'rechen', 'brunnen', 'heutreppe', 'klappe']);
 
 /**
  * Passt der Bau typ bei (x, z) mit Drehung rot? Liefert { ok, grund, kosten, geschenk }.
@@ -4451,6 +4467,11 @@ function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
   const k = fussabdruck(typ, x, z, rot);
   const gr = hallenGrenzen(werte(s).hallenFelder);
   if (k.x0 < gr.xMin + 0.05 || k.x1 > gr.xMax - 0.05 || k.z0 < gr.zMin + 0.05 || k.z1 > gr.zMax - 0.05) return aus('wand');
+  if (y > 0.1) {
+    // Auf einer Plattform: ganz darauf, und nicht alles darf hinauf
+    if (NUR_BODEN.has(typ)) return aus('boden');
+    for (const [px, pz] of probePunkte(typ, x, z, rot)) if (!plattformBei(s, px, pz, y)) return aus('kante');
+  }
   if (s.hf && y < 0.1) {
     const erlaubt = HAUFEN_ERLAUBT[typ] ?? 0.15;
     for (const [px, pz] of probePunkte(typ, x, z, rot)) if (haufenHoehe(s.hf, px, pz) > erlaubt) return aus('haufen');
@@ -4461,7 +4482,7 @@ function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
   if (imFussabdruck({ typ, x, z, rot }, STAND_TRICHTER.x, STAND_TRICHTER.z, 0.2)) return aus('belegt');
   if (imFussabdruck({ typ, x, z, rot }, LADERAMPE.x, LADERAMPE.z, 0.1)) return aus('belegt');
   for (const b of s.bauten) {
-    if (b.typ === 'band') { if (bandImWeg(b, typ, x, z, rot)) return aus('band'); continue; }
+    if (b.typ === 'band') { if (bandImWeg(b, typ, x, z, rot, y)) return aus('band'); continue; }
     const bd = BAU_BY_ID[b.typ];
     if (bd.linie && b.a && b.b) {
       if (b.typ === 'leitung') continue;
@@ -4472,7 +4493,8 @@ function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
       continue;
     }
     if (b.typ === 'dach' || typ === 'dach') continue;
-    if (b.typ === 'plattform' && y > 0.1) continue;
+    // Unter eine Plattform passt, was niedriger ist als ihr Deck; oben steht man auf ihr
+    if (b.typ === 'plattform' && (y > 0.1 || d.h < BAU_BY_ID.plattform.h - 0.1)) continue;
     if (Math.abs((b.y || 0) - y) > 1.5) continue;
     if (kastenUeberlapp(eng, fussabdruck(b.typ, b.x, b.z, b.rot || 0))) return aus('belegt');
   }
@@ -4564,7 +4586,7 @@ function bandSetzen(s, plan) {
 
 /* ------------------------------------------------------------ Linien (Wand, Geländer, Leitung) */
 
-function liniePlanen(s, typ, a, b) {
+function liniePlanen(s, typ, a, b, y = 0) {
   const d = BAU_BY_ID[typ];
   if (!d || !d.linie || typ === 'band') return { ok: false, grund: 'unbekannt' };
   if (!bauFrei(s, typ)) return { ok: false, grund: 'gesperrt' };
@@ -4572,16 +4594,17 @@ function liniePlanen(s, typ, a, b) {
   if (laenge < 0.4) return { ok: false, grund: 'kurz' };
   const gr = hallenGrenzen(werte(s).hallenFelder);
   for (const p of [a, b]) if (p[0] < gr.xMin || p[0] > gr.xMax || p[1] < gr.zMin || p[1] > gr.zMax) return { ok: false, grund: 'wand' };
+  if (y > 0.1 && (!plattformBei(s, a[0], a[1], y) || !plattformBei(s, b[0], b[1], y))) return { ok: false, grund: 'kante' };
   const kosten = bauKosten(s, typ, laenge);
   return { ok: s.geld >= kosten, grund: s.geld >= kosten ? undefined : 'geld', laenge, kosten };
 }
 
-function linieSetzen(s, typ, a, b) {
-  const p = liniePlanen(s, typ, a, b);
+function linieSetzen(s, typ, a, b, y = 0) {
+  const p = liniePlanen(s, typ, a, b, y);
   if (!p.ok) return p;
   s.geld -= p.kosten;
   const bau = {
-    id: s.naechsteId++, typ, a: [...a], b: [...b], x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, y: 0,
+    id: s.naechsteId++, typ, a: [...a], b: [...b], x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, y,
     rot: Math.atan2(-(b[1] - a[1]), b[0] - a[0]), bezahlt: p.kosten,
   };
   s.bauten.push(bau);
@@ -4678,7 +4701,7 @@ function bautenUmgebung(s) {
     const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
     if (b.typ === 'plattform') {
       const locher = klappen.filter((q) => imFussabdruck(b, q.x, q.z));
-      const f = { x0: k.x0, x1: k.x1, z0: k.z0, z1: k.z1, h: y0 + d.h };
+      const f = { x0: k.x0, x1: k.x1, z0: k.z0, z1: k.z1, h: y0 + d.h, plattform: b.id };
       if (locher.length) f.hoeheBei = (x, z) => (locher.some((q) => imFussabdruck(q, x, z, -0.05)) ? -Infinity : y0 + d.h);
       flaechen.push(f);
       pfosten(k, y0 + d.h - 0.02);
@@ -4727,6 +4750,7 @@ const GRUND_TEXT = {
   gesperrt: 'Noch nicht erforscht', wand: 'Zu nah an der Wand', haufen: 'Da liegt Heu', belegt: 'Da steht schon etwas',
   band: 'Ein Band ist im Weg', geld: 'Nicht genug Geld', 'kein Weg': 'Kein Weg frei', kurz: 'Zu kurz', steil: 'Zu steil',
   lang: 'Zu lang', blockiert: 'Weg versperrt', draussen: 'Außerhalb der Halle', unbekannt: 'Geht nicht',
+  kante: 'Steht nicht ganz auf der Plattform', boden: 'Nur auf dem Hallenboden',
 };
 
 
@@ -9559,7 +9583,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
   const euler = new THREE.Euler();
   const achseY = new THREE.Vector3(0, 1, 0);
 
-  function bandObjekt(bau) {
+  function bandObjekt(bau, s) {
     const g = new THREE.Group();
     const { bahn, laenge } = bandGeometrie(bau);
     const gurt = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_GURT, 0.5), MAT.gurt);
@@ -9588,11 +9612,13 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     const schritte = Math.max(1, Math.round(laenge / 1.6));
     for (let i = 0; i <= schritte; i++) {
       const { p, d } = probe((laenge * i) / schritte);
-      const hoehe = p[1] - 0.16;
+      // Beine bis zum Boden darunter: Hallenboden oder Plattform
+      const unten = s ? auflageBei(s, p[0], p[2], p[1] - 0.3) : 0;
+      const hoehe = p[1] - 0.16 - unten;
       if (hoehe < 0.05) continue;
       for (const seite of [-0.31, 0.31]) {
         const bg = new THREE.BoxGeometry(0.05, hoehe, 0.05);
-        bg.translate(p[0] + d[1] * seite, hoehe / 2, p[2] - d[0] * seite);
+        bg.translate(p[0] + d[1] * seite, unten + hoehe / 2, p[2] - d[0] * seite);
         beine.push(bg);
       }
     }
@@ -9618,18 +9644,19 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     const w = Math.atan2(-(bau.b[1] - bau.a[1]), bau.b[0] - bau.a[0]);
     const mx = (bau.a[0] + bau.b[0]) / 2;
     const mz = (bau.a[1] + bau.b[1]) / 2;
+    const y0 = bau.y || 0;
     if (bau.typ === 'leitung') {
       const rohr = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, l, 10), MAT.rohr);
       rohr.rotation.z = Math.PI / 2;
       const halter = new THREE.Group();
       halter.add(rohr);
-      halter.position.set(mx, 0.2, mz);
+      halter.position.set(mx, y0 + 0.2, mz);
       halter.rotation.y = w;
       g.add(halter);
       return g;
     }
     const halter = new THREE.Group();
-    halter.position.set(mx, 0, mz);
+    halter.position.set(mx, y0, mz);
     halter.rotation.y = w;
     g.add(halter);
     if (bau.typ === 'wand') {
@@ -9653,9 +9680,9 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     return g;
   }
 
-  function bauObjekt(bau) {
+  function bauObjekt(bau, s) {
     let obj;
-    if (bau.typ === 'band') obj = bandObjekt(bau);
+    if (bau.typ === 'band') obj = bandObjekt(bau, s);
     else if (BAU_BY_ID[bau.typ].linie && bau.a) obj = linienObjekt(bau);
     else {
       obj = objModell(bau.typ, qualitaet);
@@ -9680,6 +9707,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     ? `b|${bau.punkte.length}|${bau.punkte[0].join(',')}|${bau.punkte[bau.punkte.length - 1].join(',')}`
     : `m|${bau.typ}|${bau.x}|${bau.z}|${bau.y || 0}|${bau.rot || 0}|${bau.a ? bau.a.join(',') + bau.b.join(',') : ''}`);
 
+
   function abgleichen(s) {
     const v = bauVersion(s);
     if (v === version && eintraege.size === s.bauten.length) return;
@@ -9691,7 +9719,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
       const k = schluesselVon(bau);
       if (e && e.schluessel === k && e.bau === bau) continue;
       if (e) { bautenGruppe.remove(e.obj); entsorgen(e.obj); }
-      const obj = bauObjekt(bau);
+      const obj = bauObjekt(bau, s);
       bautenGruppe.add(obj);
       eintraege.set(bau.id, { bau, obj, schluessel: k, teile: teileSuchen(obj) });
       if (!ersterAbgleich) aufbauEffekt(obj);
@@ -10123,10 +10151,10 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     },
 
     /** Vorschau eines Linienbaus (Wand, Geländer, Leitung) von a nach b. */
-    linienVorschau(typ, a, b, ok) {
+    linienVorschau(typ, a, b, ok, y = 0) {
       if (linienGeist) { vorschauGruppe.remove(linienGeist); linienGeist = null; }
       if (!typ || !a || !b) return;
-      linienGeist = linienObjekt({ typ, a, b });
+      linienGeist = linienObjekt({ typ, a, b, y });
       objEinfaerben(linienGeist, ok ? matOk : matNein);
       vorschauGruppe.add(linienGeist);
     },
@@ -11782,10 +11810,26 @@ function baumodusBauen(ctx) {
     ctx.hud.verstecken();
   };
 
-  /** Wohin der Blick auf den Boden trifft (oder ein Punkt vor dir). */
+  /** Wohin der Blick trifft: Oberkante einer Plattform, sonst der Boden (oder ein Punkt vor dir). [x, z, y] */
   function blickPunkt(k, blick, weite) {
     const [dx, dy, dz] = blick;
     const flach = Math.hypot(dx, dz) || 1;
+    if (dy < -0.02) {
+      let beste = null;
+      const hp = BAU_BY_ID.plattform.h;
+      for (const b of stand().bauten) {
+        if (b.typ !== 'plattform') continue;
+        const oben = (b.y || 0) + hp;
+        if (k.y <= oben + 0.05) continue; // von unten sieht man die Oberseite nicht
+        const tp = (oben - k.y) / dy;
+        if (tp <= 0 || tp * flach > WEITE_MAX) continue;
+        const hx = k.x + dx * tp;
+        const hz = k.z + dz * tp;
+        if (!imFussabdruck(b, hx, hz, 0)) continue;
+        if (!beste || tp < beste.t) beste = { t: tp, x: hx, z: hz, y: oben };
+      }
+      if (beste) return [beste.x, beste.z, beste.y];
+    }
     let t = dy < -0.02 ? (0 - k.y) / dy : Infinity;
     let hx; let hz;
     if (Number.isFinite(t) && t * flach <= WEITE_MAX) {
@@ -11797,7 +11841,7 @@ function baumodusBauen(ctx) {
       hx = k.x + (dx / flach) * t; hz = k.z + (dz / flach) * t;
     }
     const gr = hallenGrenzen(werte(stand()).hallenFelder);
-    return [Math.max(gr.xMin + 0.2, Math.min(gr.xMax - 0.2, hx)), Math.max(gr.zMin + 0.2, Math.min(gr.zMax - 0.2, hz))];
+    return [Math.max(gr.xMin + 0.2, Math.min(gr.xMax - 0.2, hx)), Math.max(gr.zMin + 0.2, Math.min(gr.zMax - 0.2, hz)), 0];
   }
 
   function kostenText(s, typ) {
@@ -11883,7 +11927,7 @@ function baumodusBauen(ctx) {
       if (modus.art === 'bau') {
         const l = modus.lage;
         if (!l) return;
-        const r = bauSetzen(s, modus.typ, l.x, l.z, l.rot);
+        const r = bauSetzen(s, modus.typ, l.x, l.z, l.rot, { y: l.y || 0 });
         if (!r.ok) { ctx.klang.fehler(); ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht hier nicht.', 'warn'); return; }
         ctx.klang.bauen();
         ev.push({ typ: 'gebaut', bau: r.bau });
@@ -11904,7 +11948,7 @@ function baumodusBauen(ctx) {
           ctx.ui.toast(GRUND_TEXT[plan ? plan.grund : 'kein Weg'] || 'Geht so nicht.', 'warn');
           return;
         }
-        const r = modus.art === 'band' ? bandSetzen(s, plan) : linieSetzen(s, modus.typ, plan.a, plan.b);
+        const r = modus.art === 'band' ? bandSetzen(s, plan) : linieSetzen(s, modus.typ, plan.a, plan.b, plan.y || 0);
         if (!r.ok) { ctx.klang.fehler(); ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht so nicht.', 'warn'); return; }
         ctx.klang.bauen();
         ev.push({ typ: 'gebaut', bau: r.bau });
@@ -11942,7 +11986,7 @@ function baumodusBauen(ctx) {
         });
         return true;
       }
-      const [px, pz] = blickPunkt(k, blick, modus.weite);
+      const [px, pz, py] = blickPunkt(k, blick, modus.weite);
       if (modus.art === 'bau') {
         const d = BAU_BY_ID[modus.typ];
         const x = rastern(px);
@@ -11956,9 +12000,9 @@ function baumodusBauen(ctx) {
           // Blickrichtung (x, z) als Drehung: lokal +x zeigt nach (cos rot, -sin rot)
           rot = winkel45(Math.atan2(-blick[2], blick[0])) + modus.dreh;
         }
-        const p = bauPruefen(s, modus.typ, x, z, rot);
-        modus.lage = { x, z, rot };
-        ctx.objekte.geist(modus.typ, { x, y: 0, z, rot }, p.ok);
+        const p = bauPruefen(s, modus.typ, x, z, rot, { y: py });
+        modus.lage = { x, z, rot, y: py };
+        ctx.objekte.geist(modus.typ, { x, y: py, z, rot }, p.ok);
         let grund = p.ok ? null : GRUND_TEXT[p.grund] || 'Geht hier nicht';
         if (p.ok && modus.typ === 'rechen') {
           const [kx, kz] = [x + Math.cos(rot) * (d.b / 2 + 0.45), z - Math.sin(rot) * (d.b / 2 + 0.45)];
@@ -11973,10 +12017,10 @@ function baumodusBauen(ctx) {
       }
       if (modus.art === 'band') {
         const ende = modus.schritt === 'ende';
-        const a = bandAnker(s, px, pz, ende, { radius: 1.2 });
+        const a = bandAnker(s, px, pz, ende, { radius: 1.2, y: py });
         const d = BAU_BY_ID.band;
         if (!ende) {
-          const ok = haufenHoehe(s.hf, a.x, a.z) < 0.15;
+          const ok = py > 0.1 || haufenHoehe(s.hf, a.x, a.z) < 0.15;
           modus.anker = a;
           modus.ankerOk = ok;
           ctx.objekte.ankerZeigen([...ankerListe(s, px, pz, false, a), { x: a.x, y: a.y, z: a.z, ziel: true }]);
@@ -12010,9 +12054,9 @@ function baumodusBauen(ctx) {
         const x = rastern(px);
         const z = rastern(pz);
         if (modus.schritt === 'anfang') {
-          modus.anker = { x, z, y: 0 };
+          modus.anker = { x, z, y: py };
           modus.ankerOk = true;
-          ctx.objekte.ankerZeigen([{ x, y: 0, z, ziel: true }]);
+          ctx.objekte.ankerZeigen([{ x, y: py, z, ziel: true }]);
           ctx.hud.zeigen({
             titel: d.name, zeile: `Anfang wählen · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
             grund: null, ok: true, schritt: 'anfang', einrasten: null, drehen: false, abstand: false,
@@ -12021,10 +12065,11 @@ function baumodusBauen(ctx) {
         }
         const a = [modus.von.x, modus.von.z];
         const b = [x, z];
-        const plan = liniePlanen(s, modus.typ, a, b);
-        modus.plan = { ...plan, a, b };
-        ctx.objekte.linienVorschau(modus.typ, a, b, plan.ok);
-        ctx.objekte.ankerZeigen([{ x: a[0], y: 0, z: a[1], ziel: true }, { x, y: 0, z, ziel: false }]);
+        const hoehe = modus.von.y || 0;
+        const plan = liniePlanen(s, modus.typ, a, b, hoehe);
+        modus.plan = { ...plan, a, b, y: hoehe };
+        ctx.objekte.linienVorschau(modus.typ, a, b, plan.ok, hoehe);
+        ctx.objekte.ankerZeigen([{ x: a[0], y: hoehe, z: a[1], ziel: true }, { x, y: hoehe, z, ziel: false }]);
         ctx.hud.zeigen({
           titel: d.name, zeile: plan.laenge ? `${meter(plan.laenge)} · ${geld(plan.kosten)}` : 'Ende wählen',
           grund: plan.ok ? null : GRUND_TEXT[plan.grund] || 'Geht so nicht', ok: plan.ok, schritt: 'ende', einrasten: null, drehen: false, abstand: false,

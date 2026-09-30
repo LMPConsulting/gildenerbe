@@ -30,20 +30,36 @@ function probePunkte(typ, x, z, rot) {
   return pts;
 }
 
-/** Berührt ein Band den Fußabdruck (Enden ausgenommen, dort rastet es ja ein)? */
-function bandImWeg(band, typ, x, z, rot) {
+/** Berührt ein Band den Fußabdruck (Enden ausgenommen, dort rastet es ja ein)? Nur auf gleicher Höhe. */
+function bandImWeg(band, typ, x, z, rot, y = 0) {
   const { segs, laenge } = bandGeometrie(band);
   const bau = { typ, x, z, rot };
+  const hoch = BAU_BY_ID[typ].h;
   for (const g of segs) {
     const n = Math.max(1, Math.ceil(g.len / 0.25));
     for (let i = 0; i <= n; i++) {
       const t = g.s0 + (g.len * i) / n;
       if (t < 0.6 || t > laenge - 0.6) continue;
+      const by = g.ay + g.dy * (g.len * i) / n;
+      if (by < y - 0.3 || by > y + hoch + 0.3) continue;
       if (imFussabdruck(bau, g.ax + g.dx * (g.len * i) / n, g.az + g.dz * (g.len * i) / n, 0.3)) return true;
     }
   }
   return false;
 }
+
+/** Oberkante der Plattform unter (x, z) auf Höhe y (±5 cm), oder null. */
+export function plattformBei(s, x, z, y) {
+  const hp = BAU_BY_ID.plattform.h;
+  for (const b of s.bauten) {
+    if (b.typ !== 'plattform' || Math.abs((b.y || 0) + hp - y) > 0.05) continue;
+    if (imFussabdruck(b, x, z, 0.02)) return b;
+  }
+  return null;
+}
+
+/** Bauten, die nur auf dem Hallenboden stehen dürfen. */
+const NUR_BODEN = new Set(['plattform', 'treppe', 'dach', 'rechen', 'brunnen', 'heutreppe', 'klappe']);
 
 /**
  * Passt der Bau typ bei (x, z) mit Drehung rot? Liefert { ok, grund, kosten, geschenk }.
@@ -59,6 +75,11 @@ export function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
   const k = fussabdruck(typ, x, z, rot);
   const gr = hallenGrenzen(werte(s).hallenFelder);
   if (k.x0 < gr.xMin + 0.05 || k.x1 > gr.xMax - 0.05 || k.z0 < gr.zMin + 0.05 || k.z1 > gr.zMax - 0.05) return aus('wand');
+  if (y > 0.1) {
+    // Auf einer Plattform: ganz darauf, und nicht alles darf hinauf
+    if (NUR_BODEN.has(typ)) return aus('boden');
+    for (const [px, pz] of probePunkte(typ, x, z, rot)) if (!plattformBei(s, px, pz, y)) return aus('kante');
+  }
   if (s.hf && y < 0.1) {
     const erlaubt = HAUFEN_ERLAUBT[typ] ?? 0.15;
     for (const [px, pz] of probePunkte(typ, x, z, rot)) if (haufenHoehe(s.hf, px, pz) > erlaubt) return aus('haufen');
@@ -69,7 +90,7 @@ export function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
   if (imFussabdruck({ typ, x, z, rot }, STAND_TRICHTER.x, STAND_TRICHTER.z, 0.2)) return aus('belegt');
   if (imFussabdruck({ typ, x, z, rot }, LADERAMPE.x, LADERAMPE.z, 0.1)) return aus('belegt');
   for (const b of s.bauten) {
-    if (b.typ === 'band') { if (bandImWeg(b, typ, x, z, rot)) return aus('band'); continue; }
+    if (b.typ === 'band') { if (bandImWeg(b, typ, x, z, rot, y)) return aus('band'); continue; }
     const bd = BAU_BY_ID[b.typ];
     if (bd.linie && b.a && b.b) {
       if (b.typ === 'leitung') continue;
@@ -80,7 +101,8 @@ export function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
       continue;
     }
     if (b.typ === 'dach' || typ === 'dach') continue;
-    if (b.typ === 'plattform' && y > 0.1) continue;
+    // Unter eine Plattform passt, was niedriger ist als ihr Deck; oben steht man auf ihr
+    if (b.typ === 'plattform' && (y > 0.1 || d.h < BAU_BY_ID.plattform.h - 0.1)) continue;
     if (Math.abs((b.y || 0) - y) > 1.5) continue;
     if (kastenUeberlapp(eng, fussabdruck(b.typ, b.x, b.z, b.rot || 0))) return aus('belegt');
   }
@@ -172,7 +194,7 @@ export function bandSetzen(s, plan) {
 
 /* ------------------------------------------------------------ Linien (Wand, Geländer, Leitung) */
 
-export function liniePlanen(s, typ, a, b) {
+export function liniePlanen(s, typ, a, b, y = 0) {
   const d = BAU_BY_ID[typ];
   if (!d || !d.linie || typ === 'band') return { ok: false, grund: 'unbekannt' };
   if (!bauFrei(s, typ)) return { ok: false, grund: 'gesperrt' };
@@ -180,16 +202,17 @@ export function liniePlanen(s, typ, a, b) {
   if (laenge < 0.4) return { ok: false, grund: 'kurz' };
   const gr = hallenGrenzen(werte(s).hallenFelder);
   for (const p of [a, b]) if (p[0] < gr.xMin || p[0] > gr.xMax || p[1] < gr.zMin || p[1] > gr.zMax) return { ok: false, grund: 'wand' };
+  if (y > 0.1 && (!plattformBei(s, a[0], a[1], y) || !plattformBei(s, b[0], b[1], y))) return { ok: false, grund: 'kante' };
   const kosten = bauKosten(s, typ, laenge);
   return { ok: s.geld >= kosten, grund: s.geld >= kosten ? undefined : 'geld', laenge, kosten };
 }
 
-export function linieSetzen(s, typ, a, b) {
-  const p = liniePlanen(s, typ, a, b);
+export function linieSetzen(s, typ, a, b, y = 0) {
+  const p = liniePlanen(s, typ, a, b, y);
   if (!p.ok) return p;
   s.geld -= p.kosten;
   const bau = {
-    id: s.naechsteId++, typ, a: [...a], b: [...b], x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, y: 0,
+    id: s.naechsteId++, typ, a: [...a], b: [...b], x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, y,
     rot: Math.atan2(-(b[1] - a[1]), b[0] - a[0]), bezahlt: p.kosten,
   };
   s.bauten.push(bau);
@@ -286,7 +309,7 @@ export function bautenUmgebung(s) {
     const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
     if (b.typ === 'plattform') {
       const locher = klappen.filter((q) => imFussabdruck(b, q.x, q.z));
-      const f = { x0: k.x0, x1: k.x1, z0: k.z0, z1: k.z1, h: y0 + d.h };
+      const f = { x0: k.x0, x1: k.x1, z0: k.z0, z1: k.z1, h: y0 + d.h, plattform: b.id };
       if (locher.length) f.hoeheBei = (x, z) => (locher.some((q) => imFussabdruck(q, x, z, -0.05)) ? -Infinity : y0 + d.h);
       flaechen.push(f);
       pfosten(k, y0 + d.h - 0.02);
@@ -335,5 +358,6 @@ export const GRUND_TEXT = {
   gesperrt: 'Noch nicht erforscht', wand: 'Zu nah an der Wand', haufen: 'Da liegt Heu', belegt: 'Da steht schon etwas',
   band: 'Ein Band ist im Weg', geld: 'Nicht genug Geld', 'kein Weg': 'Kein Weg frei', kurz: 'Zu kurz', steil: 'Zu steil',
   lang: 'Zu lang', blockiert: 'Weg versperrt', draussen: 'Außerhalb der Halle', unbekannt: 'Geht nicht',
+  kante: 'Steht nicht ganz auf der Plattform', boden: 'Nur auf dem Hallenboden',
 };
 

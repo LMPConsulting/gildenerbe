@@ -11,7 +11,7 @@ import { GROESSE } from '../gegenstaende.js';
 import { greiferPunkt, innenPunkt, BRENN_MAX } from '../maschinen.js';
 import { lasterLage, LASTER_BETT } from '../laster.js';
 import { drohnenListe } from '../drohnen.js';
-import { bauVersion } from '../bauen.js';
+import { bauVersion, auflageBei } from '../bauen.js';
 import { werte } from '../wirtschaft.js';
 import { gegenstandGeometrien, GEGENSTAND_FARBEN } from './modelle.js';
 import { maschinenModell, lasterModell, drohnenModell } from './maschinenmodelle.js';
@@ -363,7 +363,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   const euler = new THREE.Euler();
   const achseY = new THREE.Vector3(0, 1, 0);
 
-  function bandObjekt(bau) {
+  function bandObjekt(bau, s) {
     const g = new THREE.Group();
     const { bahn, laenge } = bandGeometrie(bau);
     const gurt = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_GURT, 0.5), MAT.gurt);
@@ -392,11 +392,13 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     const schritte = Math.max(1, Math.round(laenge / 1.6));
     for (let i = 0; i <= schritte; i++) {
       const { p, d } = probe((laenge * i) / schritte);
-      const hoehe = p[1] - 0.16;
+      // Beine bis zum Boden darunter: Hallenboden oder Plattform
+      const unten = s ? auflageBei(s, p[0], p[2], p[1] - 0.3) : 0;
+      const hoehe = p[1] - 0.16 - unten;
       if (hoehe < 0.05) continue;
       for (const seite of [-0.31, 0.31]) {
         const bg = new THREE.BoxGeometry(0.05, hoehe, 0.05);
-        bg.translate(p[0] + d[1] * seite, hoehe / 2, p[2] - d[0] * seite);
+        bg.translate(p[0] + d[1] * seite, unten + hoehe / 2, p[2] - d[0] * seite);
         beine.push(bg);
       }
     }
@@ -422,18 +424,19 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     const w = Math.atan2(-(bau.b[1] - bau.a[1]), bau.b[0] - bau.a[0]);
     const mx = (bau.a[0] + bau.b[0]) / 2;
     const mz = (bau.a[1] + bau.b[1]) / 2;
+    const y0 = bau.y || 0;
     if (bau.typ === 'leitung') {
       const rohr = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, l, 10), MAT.rohr);
       rohr.rotation.z = Math.PI / 2;
       const halter = new THREE.Group();
       halter.add(rohr);
-      halter.position.set(mx, 0.2, mz);
+      halter.position.set(mx, y0 + 0.2, mz);
       halter.rotation.y = w;
       g.add(halter);
       return g;
     }
     const halter = new THREE.Group();
-    halter.position.set(mx, 0, mz);
+    halter.position.set(mx, y0, mz);
     halter.rotation.y = w;
     g.add(halter);
     if (bau.typ === 'wand') {
@@ -457,9 +460,9 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     return g;
   }
 
-  function bauObjekt(bau) {
+  function bauObjekt(bau, s) {
     let obj;
-    if (bau.typ === 'band') obj = bandObjekt(bau);
+    if (bau.typ === 'band') obj = bandObjekt(bau, s);
     else if (BAU_BY_ID[bau.typ].linie && bau.a) obj = linienObjekt(bau);
     else {
       obj = objModell(bau.typ, qualitaet);
@@ -484,6 +487,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     ? `b|${bau.punkte.length}|${bau.punkte[0].join(',')}|${bau.punkte[bau.punkte.length - 1].join(',')}`
     : `m|${bau.typ}|${bau.x}|${bau.z}|${bau.y || 0}|${bau.rot || 0}|${bau.a ? bau.a.join(',') + bau.b.join(',') : ''}`);
 
+
   function abgleichen(s) {
     const v = bauVersion(s);
     if (v === version && eintraege.size === s.bauten.length) return;
@@ -495,7 +499,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
       const k = schluesselVon(bau);
       if (e && e.schluessel === k && e.bau === bau) continue;
       if (e) { bautenGruppe.remove(e.obj); entsorgen(e.obj); }
-      const obj = bauObjekt(bau);
+      const obj = bauObjekt(bau, s);
       bautenGruppe.add(obj);
       eintraege.set(bau.id, { bau, obj, schluessel: k, teile: teileSuchen(obj) });
       if (!ersterAbgleich) aufbauEffekt(obj);
@@ -927,10 +931,10 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     },
 
     /** Vorschau eines Linienbaus (Wand, Geländer, Leitung) von a nach b. */
-    linienVorschau(typ, a, b, ok) {
+    linienVorschau(typ, a, b, ok, y = 0) {
       if (linienGeist) { vorschauGruppe.remove(linienGeist); linienGeist = null; }
       if (!typ || !a || !b) return;
-      linienGeist = linienObjekt({ typ, a, b });
+      linienGeist = linienObjekt({ typ, a, b, y });
       objEinfaerben(linienGeist, ok ? matOk : matNein);
       vorschauGruppe.add(linienGeist);
     },

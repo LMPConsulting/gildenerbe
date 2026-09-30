@@ -10,7 +10,7 @@ import { WELT } from './daten.js';
 import { haufenHoehe } from './haufen.js';
 import { werte, bauKosten } from './wirtschaft.js';
 import { geld } from './format.js';
-import { BAU_BY_ID, hallenGrenzen } from './welt.js';
+import { BAU_BY_ID, hallenGrenzen, imFussabdruck } from './welt.js';
 import { anschlussListe } from './baender.js';
 import {
   bauPruefen, bauSetzen, bandAnker, bandPlanen, bandSetzen, liniePlanen, linieSetzen, abbauInfo, bauAbbauen, GRUND_TEXT,
@@ -38,10 +38,26 @@ export function baumodusBauen(ctx) {
     ctx.hud.verstecken();
   };
 
-  /** Wohin der Blick auf den Boden trifft (oder ein Punkt vor dir). */
+  /** Wohin der Blick trifft: Oberkante einer Plattform, sonst der Boden (oder ein Punkt vor dir). [x, z, y] */
   function blickPunkt(k, blick, weite) {
     const [dx, dy, dz] = blick;
     const flach = Math.hypot(dx, dz) || 1;
+    if (dy < -0.02) {
+      let beste = null;
+      const hp = BAU_BY_ID.plattform.h;
+      for (const b of stand().bauten) {
+        if (b.typ !== 'plattform') continue;
+        const oben = (b.y || 0) + hp;
+        if (k.y <= oben + 0.05) continue; // von unten sieht man die Oberseite nicht
+        const tp = (oben - k.y) / dy;
+        if (tp <= 0 || tp * flach > WEITE_MAX) continue;
+        const hx = k.x + dx * tp;
+        const hz = k.z + dz * tp;
+        if (!imFussabdruck(b, hx, hz, 0)) continue;
+        if (!beste || tp < beste.t) beste = { t: tp, x: hx, z: hz, y: oben };
+      }
+      if (beste) return [beste.x, beste.z, beste.y];
+    }
     let t = dy < -0.02 ? (0 - k.y) / dy : Infinity;
     let hx; let hz;
     if (Number.isFinite(t) && t * flach <= WEITE_MAX) {
@@ -53,7 +69,7 @@ export function baumodusBauen(ctx) {
       hx = k.x + (dx / flach) * t; hz = k.z + (dz / flach) * t;
     }
     const gr = hallenGrenzen(werte(stand()).hallenFelder);
-    return [Math.max(gr.xMin + 0.2, Math.min(gr.xMax - 0.2, hx)), Math.max(gr.zMin + 0.2, Math.min(gr.zMax - 0.2, hz))];
+    return [Math.max(gr.xMin + 0.2, Math.min(gr.xMax - 0.2, hx)), Math.max(gr.zMin + 0.2, Math.min(gr.zMax - 0.2, hz)), 0];
   }
 
   function kostenText(s, typ) {
@@ -139,7 +155,7 @@ export function baumodusBauen(ctx) {
       if (modus.art === 'bau') {
         const l = modus.lage;
         if (!l) return;
-        const r = bauSetzen(s, modus.typ, l.x, l.z, l.rot);
+        const r = bauSetzen(s, modus.typ, l.x, l.z, l.rot, { y: l.y || 0 });
         if (!r.ok) { ctx.klang.fehler(); ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht hier nicht.', 'warn'); return; }
         ctx.klang.bauen();
         ev.push({ typ: 'gebaut', bau: r.bau });
@@ -160,7 +176,7 @@ export function baumodusBauen(ctx) {
           ctx.ui.toast(GRUND_TEXT[plan ? plan.grund : 'kein Weg'] || 'Geht so nicht.', 'warn');
           return;
         }
-        const r = modus.art === 'band' ? bandSetzen(s, plan) : linieSetzen(s, modus.typ, plan.a, plan.b);
+        const r = modus.art === 'band' ? bandSetzen(s, plan) : linieSetzen(s, modus.typ, plan.a, plan.b, plan.y || 0);
         if (!r.ok) { ctx.klang.fehler(); ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht so nicht.', 'warn'); return; }
         ctx.klang.bauen();
         ev.push({ typ: 'gebaut', bau: r.bau });
@@ -198,7 +214,7 @@ export function baumodusBauen(ctx) {
         });
         return true;
       }
-      const [px, pz] = blickPunkt(k, blick, modus.weite);
+      const [px, pz, py] = blickPunkt(k, blick, modus.weite);
       if (modus.art === 'bau') {
         const d = BAU_BY_ID[modus.typ];
         const x = rastern(px);
@@ -212,9 +228,9 @@ export function baumodusBauen(ctx) {
           // Blickrichtung (x, z) als Drehung: lokal +x zeigt nach (cos rot, -sin rot)
           rot = winkel45(Math.atan2(-blick[2], blick[0])) + modus.dreh;
         }
-        const p = bauPruefen(s, modus.typ, x, z, rot);
-        modus.lage = { x, z, rot };
-        ctx.objekte.geist(modus.typ, { x, y: 0, z, rot }, p.ok);
+        const p = bauPruefen(s, modus.typ, x, z, rot, { y: py });
+        modus.lage = { x, z, rot, y: py };
+        ctx.objekte.geist(modus.typ, { x, y: py, z, rot }, p.ok);
         let grund = p.ok ? null : GRUND_TEXT[p.grund] || 'Geht hier nicht';
         if (p.ok && modus.typ === 'rechen') {
           const [kx, kz] = [x + Math.cos(rot) * (d.b / 2 + 0.45), z - Math.sin(rot) * (d.b / 2 + 0.45)];
@@ -229,10 +245,10 @@ export function baumodusBauen(ctx) {
       }
       if (modus.art === 'band') {
         const ende = modus.schritt === 'ende';
-        const a = bandAnker(s, px, pz, ende, { radius: 1.2 });
+        const a = bandAnker(s, px, pz, ende, { radius: 1.2, y: py });
         const d = BAU_BY_ID.band;
         if (!ende) {
-          const ok = haufenHoehe(s.hf, a.x, a.z) < 0.15;
+          const ok = py > 0.1 || haufenHoehe(s.hf, a.x, a.z) < 0.15;
           modus.anker = a;
           modus.ankerOk = ok;
           ctx.objekte.ankerZeigen([...ankerListe(s, px, pz, false, a), { x: a.x, y: a.y, z: a.z, ziel: true }]);
@@ -266,9 +282,9 @@ export function baumodusBauen(ctx) {
         const x = rastern(px);
         const z = rastern(pz);
         if (modus.schritt === 'anfang') {
-          modus.anker = { x, z, y: 0 };
+          modus.anker = { x, z, y: py };
           modus.ankerOk = true;
-          ctx.objekte.ankerZeigen([{ x, y: 0, z, ziel: true }]);
+          ctx.objekte.ankerZeigen([{ x, y: py, z, ziel: true }]);
           ctx.hud.zeigen({
             titel: d.name, zeile: `Anfang wählen · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
             grund: null, ok: true, schritt: 'anfang', einrasten: null, drehen: false, abstand: false,
@@ -277,10 +293,11 @@ export function baumodusBauen(ctx) {
         }
         const a = [modus.von.x, modus.von.z];
         const b = [x, z];
-        const plan = liniePlanen(s, modus.typ, a, b);
-        modus.plan = { ...plan, a, b };
-        ctx.objekte.linienVorschau(modus.typ, a, b, plan.ok);
-        ctx.objekte.ankerZeigen([{ x: a[0], y: 0, z: a[1], ziel: true }, { x, y: 0, z, ziel: false }]);
+        const hoehe = modus.von.y || 0;
+        const plan = liniePlanen(s, modus.typ, a, b, hoehe);
+        modus.plan = { ...plan, a, b, y: hoehe };
+        ctx.objekte.linienVorschau(modus.typ, a, b, plan.ok, hoehe);
+        ctx.objekte.ankerZeigen([{ x: a[0], y: hoehe, z: a[1], ziel: true }, { x, y: hoehe, z, ziel: false }]);
         ctx.hud.zeigen({
           titel: d.name, zeile: plan.laenge ? `${meter(plan.laenge)} · ${geld(plan.kosten)}` : 'Ende wählen',
           grund: plan.ok ? null : GRUND_TEXT[plan.grund] || 'Geht so nicht', ok: plan.ok, schritt: 'ende', einrasten: null, drehen: false, abstand: false,

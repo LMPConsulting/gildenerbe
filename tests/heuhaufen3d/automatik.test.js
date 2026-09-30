@@ -375,3 +375,32 @@ describe('Maschinenverzeichnis', () => {
     for (const b of BAUTEN) if ((b.ein.length || b.aus.length) && b.id !== 'band') expect(MASCHINE[b.id], b.id).toBeDefined();
   });
 });
+
+describe('Plattformen', () => {
+  it('oben darf gebaut werden, darunter passt, was niedriger ist', () => {
+    const s = hof();
+    s.tech.plattform = 1;
+    s.rev++;
+    const pl = bauSetzen(s, 'plattform', -10, 8, 0);
+    expect(pl.ok).toBe(true);
+    // Scanner (1,5 m hoch) passt darunter, das Silo (4,2 m) nicht
+    expect(bauPruefen(s, 'scanner', -10, 8, 0).ok).toBe(true);
+    expect(bauPruefen(s, 'silo', -10, 8, 0).grund).toBe('belegt');
+    // oben: ganz auf dem Deck, der Rechen gehört an den Haufen
+    expect(bauPruefen(s, 'scanner', -10, 8, 0, { y: 2.2 }).ok).toBe(true);
+    expect(bauPruefen(s, 'scanner', -9.2, 8, 0, { y: 2.2 }).grund).toBe('kante');
+    expect(bauPruefen(s, 'rechen', -10, 8, 0, { y: 2.2 }).grund).toBe('boden');
+    const oben = bauSetzen(s, 'scanner', -10, 8, 0, { y: 2.2 });
+    expect(oben.ok).toBe(true);
+    // ein Band vom Boden hinauf in den Scanner steigt an
+    const von = bandAnker(s, -16, 8, false);
+    const nach = bandAnker(s, -10.7, 8, true, { y: 2.2 });
+    expect(nach.art).toBe('ein');
+    const plan = bandPlanen(s, von, nach);
+    expect(plan.ok).toBe(true);
+    expect(plan.punkte[plan.punkte.length - 1][1]).toBeCloseTo(2.2 + 0.55, 5);
+    // Stücke landen oben auf dem Deck
+    const u = bautenUmgebung(s);
+    expect(u.flaechen.some((f) => f.plattform === pl.bau.id && Math.abs(f.h - 2.2) < 1e-6)).toBe(true);
+  });
+});
