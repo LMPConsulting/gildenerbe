@@ -487,26 +487,37 @@ function radarSchritt(s, netz, bau, dt, ereignisse) {
 function scannerSchritt(s, netz, bau, dt, ereignisse) {
   const d = BAU_BY_ID.scanner;
   const l = lauf(bau);
-  const f = bau.schlange[0];
   const a = anteil(bau);
-  if (!f) { l.status = a > 0 ? 'bereit' : bau.aus ? 'aus' : 'strom'; return; }
-  if (!f.geprueft) {
-    if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
-    f.fort = (f.fort || 0) + d.rate * werte(s).scanDeckung * tempo(s, bau) * a * dt;
-    l.status = 'prueft';
-    l.scan = Math.min(1, f.fort / Math.max(1, f.halme));
-    if (f.fort < f.halme) return;
-    f.geprueft = true;
-    if (f.nadel >= 0) {
-      const n = s.nadeln[f.nadel];
-      if (n) { n.zustand = 'scanner'; n.bei = bau.id; bau.nadeln.push(f.nadel); }
-      f.nadel = -1;
-      ereignisse.push({ typ: 'scannerNadel', id: bau.id, x: bau.x, z: bau.z });
+  // Übrige Zeit eines Takts geht ans nächste Stück (große Schritte beim Aufholen)
+  let zeit = dt;
+  for (let runde = 0; runde < 8; runde++) {
+    const f = bau.schlange[0];
+    if (!f) { l.status = a > 0 ? 'bereit' : bau.aus ? 'aus' : 'strom'; return; }
+    if (!f.geprueft) {
+      if (a <= 0) { l.status = bau.aus ? 'aus' : 'strom'; return; }
+      const rate = d.rate * werte(s).scanDeckung * tempo(s, bau) * a;
+      const noetig = (f.halme - (f.fort || 0)) / rate;
+      l.status = 'prueft';
+      if (noetig > zeit) {
+        f.fort = (f.fort || 0) + rate * zeit;
+        l.scan = Math.min(1, f.fort / Math.max(1, f.halme));
+        return;
+      }
+      zeit -= Math.max(0, noetig);
+      f.fort = f.halme;
+      l.scan = 1;
+      f.geprueft = true;
+      if (f.nadel >= 0) {
+        const n = s.nadeln[f.nadel];
+        if (n) { n.zustand = 'scanner'; n.bei = bau.id; bau.nadeln.push(f.nadel); }
+        f.nadel = -1;
+        ereignisse.push({ typ: 'scannerNadel', id: bau.id, x: bau.x, z: bau.z });
+      }
     }
+    if (!ausgangFrei(s, netz, bau, 0, f.art)) { l.status = 'stau'; return; }
+    bau.schlange.shift();
+    ausgeben(s, netz, bau, 0, f, ereignisse);
   }
-  if (!ausgangFrei(s, netz, bau, 0, f.art)) { l.status = 'stau'; return; }
-  bau.schlange.shift();
-  ausgeben(s, netz, bau, 0, f, ereignisse);
 }
 
 /** Nadeln aus dem Scanner nehmen (Spieler tippt ihn an). Liefert die Zahl. */

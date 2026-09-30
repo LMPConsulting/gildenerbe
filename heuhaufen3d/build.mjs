@@ -109,7 +109,13 @@ kollisionenPruefen(MODULE.map((d) => [d, read(d)]));
 
 const spielCode = MODULE.map(modulText).join('\n');
 const rumpf = `(function () {\n'use strict';\n${threeKapseln()}\n${spielCode}\n})();`;
-const css = read('src/style.css');
+// Schmale Schrift wie im Vorbild (Barlow Semi Condensed, SIL OFL 1.1, vendor/fonts/OFL.txt).
+// Im Einzeldokument als data:-URL, in der Webfassung als Dateien neben stil.css.
+const SCHRIFTEN = [500, 700, 800].map((w) => ({ w, datei: `barlow-semi-condensed-latin-${w}-normal.woff2` }));
+const schriftRegeln = (url) => SCHRIFTEN.map(({ w, datei }) => `@font-face { font-family: "Barlow Semi Condensed"; font-style: normal; font-weight: ${w}; font-display: swap; src: url(${url(datei)}) format("woff2"); }`).join('\n');
+const schriftDaten = (datei) => `data:font/woff2;base64,${readFileSync(join(here, 'vendor/fonts', datei)).toString('base64')}`;
+const stil = read('src/style.css');
+const css = `${schriftRegeln(schriftDaten)}\n${stil}`;
 
 // Ein Heuhaufen unter Stahlbögen, mit einer Nadel darin.
 const ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">`
@@ -177,7 +183,8 @@ if (webFlagge !== -1) {
     rumpf,
   ].join('\n');
   writeFileSync(join(ziel, 'spiel.js'), webScript);
-  writeFileSync(join(ziel, 'stil.css'), css);
+  writeFileSync(join(ziel, 'stil.css'), `${schriftRegeln((datei) => datei)}\n${stil}`);
+  for (const { datei } of SCHRIFTEN) writeFileSync(join(ziel, datei), readFileSync(join(here, 'vendor/fonts', datei)));
   writeFileSync(join(ziel, 'index.html'), [
     '<!doctype html>', '<html lang="de">', '<head>', kopf,
     '<link rel="stylesheet" href="stil.css">',
@@ -186,7 +193,7 @@ if (webFlagge !== -1) {
     '</head>', '<body>', '<div id="app"></div>', '</body>', '</html>', '',
   ].join('\n'));
   writeFileSync(join(ziel, mitnahme), page);
-  console.log(`Webfassung: ${ziel} (index.html + spiel.js + stil.css + ${mitnahme})`);
+  console.log(`Webfassung: ${ziel} (index.html + spiel.js + stil.css + Schriften + ${mitnahme})`);
   process.exit(0);
 }
 
