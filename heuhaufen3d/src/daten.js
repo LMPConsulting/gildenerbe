@@ -651,7 +651,7 @@ export const AUFTRAG_PAUSE = 20;
 export const MISSIONEN = [
   { text: 'Schau dich um', hilfe: 'Rechts über den Bildschirm wischen.', art: 'umgesehen', ziel: 2, geld: 0 },
   { text: 'Geh zum Haufen', hilfe: 'Links den Daumen aufsetzen und schieben.', art: 'gelaufen', ziel: 8, geld: 0 },
-  { text: 'Heb etwas Heu auf', hilfe: 'Auf den Haufen zielen und die Aktion drücken.', art: 'tipps', ziel: 5, geld: 1 },
+  { text: 'Heb etwas Heu auf', hilfe: 'Auf den Haufen zielen und den runden Knopf drücken.', art: 'tipps', ziel: 5, geld: 1 },
   { text: 'Bring 25 Halme zum Stand', hilfe: 'Am Stand hinten links auf „Verkaufen“ tippen.', art: 'verkauft', ziel: 25, geld: 1 },
   { text: 'Kauf einen Eimer', hilfe: 'Am Werkzeugstand oder in der Forschung.', art: 'tech', ziel: 'eimer', geld: 2 },
   { text: 'Kauf den Spaten', hilfe: 'Am Werkzeugstand: 12 $.', art: 'tech', ziel: 'spaten', geld: 3 },
@@ -659,7 +659,7 @@ export const MISSIONEN = [
   { text: 'Verdiene 30 $', art: 'verdient', ziel: 30, geld: 5 },
   { text: 'Kauf den Besen und feg verschüttetes Heu zusammen', hilfe: 'Lose Halme liegen am Fuß des Haufens.', art: 'gefegt', ziel: 50, geld: 10 },
   { text: 'Kauf die Förderband-Pläne', hilfe: 'In der Forschung unter Heulinien.', art: 'tech', ziel: 'foerderband', geschenk: 'rechen' },
-  { text: 'Leg ein Band vom Haufen zum Stand', hilfe: 'B drücken, Förderband wählen, Anfang und Ende setzen.', art: 'gebaut', ziel: ['band', 1], geschenk: 'mast' },
+  { text: 'Leg ein Band vom Haufen zum Stand', hilfe: 'Unten auf BAUEN tippen, Förderband wählen, Anfang beim Haufen und Ende am Stand setzen.', art: 'gebaut', ziel: ['band', 1], geschenk: 'mast' },
   { text: 'Stell den Kolbenrechen an den Haufen', hilfe: 'Im Baukatalog liegt er als Geschenk bereit.', art: 'gebaut', ziel: ['rechen', 1], geld: 20 },
   { text: 'Bring den Rechen ans Netz', hilfe: 'Der Hausanschluss hängt an der linken Wand. Masten verlängern die Leitung.', art: 'strom', ziel: 1, geld: 40 },
   { text: 'Finde die erste Nadel', hilfe: 'Der Detektor piept, je näher sie ist. Dort graben.', art: 'nadeln', ziel: 1, geld: 120 },
