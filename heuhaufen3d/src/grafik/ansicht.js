@@ -73,8 +73,8 @@ export function ansichtBauen(szene, kamera) {
   hand.add(ladung);
   // Behälter: Eimer links unten, Heubündel in den Armen
   const eimer = eimerModell();
-  eimer.scale.setScalar(0.9);
-  eimer.position.set(-0.34, -0.42, -0.52);
+  eimer.scale.setScalar(0.75);
+  eimer.position.set(-0.38, -0.44, -0.6);
   eimer.rotation.set(0.25, 0.3, 0.12);
   kamera.add(eimer);
   const armHeu = heuBueschel(26, 0.1);
@@ -212,7 +212,7 @@ export function ansichtBauen(szene, kamera) {
       eimer.visible = b === 'eimer' && sp.werkzeug !== 'besen';
       const f = eimer.getObjectByName('fuellung');
       if (f) { f.position.y = -0.14 + fuell * 0.26; f.visible = fuell > 0.01; }
-      eimer.position.y = -0.42 - wy * 0.6;
+      eimer.position.y = -0.44 - wy * 0.6;
       armHeu.visible = b === 'arme' && sp.last > 0 && sp.werkzeug !== 'besen';
       armHeu.scale.setScalar(0.4 + fuell * 0.9);
       karre.visible = b === 'schubkarre';

@@ -80,13 +80,13 @@ export function szeneBauen(leinwand, qualitaet = 'mittel') {
   // Wolken als Sprites, die langsam ziehen.
   const wolken = [];
   const wt = [wolkenTextur(3), wolkenTextur(9), wolkenTextur(17)];
-  for (let i = 0; i < 16; i++) {
-    const mat = new THREE.SpriteMaterial({ map: wt[i % 3], fog: false, depthWrite: false, transparent: true, opacity: 0.92 });
+  for (let i = 0; i < 10; i++) {
+    const mat = new THREE.SpriteMaterial({ map: wt[i % 3], fog: false, depthWrite: false, transparent: true, opacity: 0.95 });
     const s = new THREE.Sprite(mat);
-    const winkel = (i / 16) * Math.PI * 2 + Math.random() * 0.3;
-    const weite = 180 + Math.random() * 220;
-    s.position.set(Math.cos(winkel) * weite, 60 + Math.random() * 60, Math.sin(winkel) * weite);
-    const g = 60 + Math.random() * 70;
+    const winkel = (i / 10) * Math.PI * 2 + Math.random() * 0.4;
+    const weite = 250 + Math.random() * 150;
+    s.position.set(Math.cos(winkel) * weite, 90 + Math.random() * 70, Math.sin(winkel) * weite);
+    const g = 180 + Math.random() * 120;
     s.scale.set(g, g * 0.5, 1);
     s.renderOrder = -9;
     wolken.push({ s, geschw: 0.6 + Math.random() * 1.2 });
@@ -146,7 +146,7 @@ function landschaftBauen(szene, q) {
   feld.repeat.set(40, 40);
   const boden = new THREE.Mesh(
     new THREE.CircleGeometry(700, 48),
-    new THREE.MeshLambertMaterial({ color: 0xb7a26a, map: feld }),
+    new THREE.MeshLambertMaterial({ color: 0xd8ccb0, map: feld }),
   );
   boden.rotation.x = -Math.PI / 2;
   boden.position.y = -0.02;

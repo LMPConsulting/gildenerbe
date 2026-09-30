@@ -163,12 +163,46 @@ export const klang = {
     ton(1568, 0.3, { laut: 0.16, start: 0.1 });
     [2093, 2637, 2349, 2794].forEach((f, i) => ton(f, 0.12, { typ: 'triangle', laut: 0.07, start: 0.18 + i * 0.06 }));
   },
+  /** Ein Schritt: auf dem Boden dumpf, im Heu raschelnd. */
+  schritt(aufHeu = false) {
+    if (!bereit()) return;
+    if (aufHeu) rauschen(0.12, { frequenz: 2500, q: 0.7, laut: 0.07 });
+    else rauschen(0.07, { frequenz: 900, q: 0.8, laut: 0.06, typ: 'lowpass' });
+  },
+  /** Knistern eines brennenden Generators in der Nähe; laut 0..1. */
+  knistern(laut = 1) {
+    if (!bereit() || laut < 0.05) return;
+    rauschen(0.03 + Math.random() * 0.04, { frequenz: 1800 + Math.random() * 2500, q: 2, laut: 0.08 * laut });
+  },
   summen() {
     if (!bereit()) return;
     ton(110, 0.5, { typ: 'sawtooth', laut: 0.05 });
     ton(116, 0.5, { typ: 'sawtooth', laut: 0.04 });
   },
 };
+
+/** Wind über der offenen Halle, ganz leise, solange gespielt wird. */
+let windTon = null;
+export function wind(an) {
+  if (!ctx) return;
+  if (!windTon) {
+    const q = ctx.createBufferSource();
+    q.buffer = rauschPuffer;
+    q.loop = true;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 400;
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    q.connect(f).connect(g).connect(master);
+    q.start();
+    windTon = { g, f };
+  }
+  const ziel = an && !stumm && ctx.state === 'running' ? 0.015 : 0;
+  windTon.g.gain.setTargetAtTime(ziel, ctx.currentTime, 1.2);
+  // der Wind schwillt langsam an und ab
+  windTon.f.frequency.setTargetAtTime(320 + Math.sin(ctx.currentTime * 0.15) * 120, ctx.currentTime, 2);
+}
 
 /** Leises Brummen laufender Maschinen in der Nähe; laut 0..1. */
 let brummTon = null;

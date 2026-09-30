@@ -272,20 +272,29 @@ export function schildTextur(zeilen, {
 
 /** Weiche Wolke als Sprite-Textur. */
 export function wolkenTextur(seed = 3) {
+  // Große Kumuluswolke wie im Vorbild: oben hell, unten blaugrau und flach
   const z = texturZufall(seed);
-  const c = leinwandNeu(256, 128);
+  const c = leinwandNeu(512, 256);
   const x = c.getContext('2d');
-  for (let i = 0; i < 26; i++) {
-    const px = 40 + z() * 176;
-    const py = 50 + z() * 40 - Math.abs(px - 128) * 0.15;
-    const rad = 18 + z() * 34;
+  for (let i = 0; i < 46; i++) {
+    const px = 70 + z() * 372;
+    const py = 118 + z() * 70 - Math.abs(px - 256) * 0.22;
+    const rad = 34 + z() * 64;
     const g = x.createRadialGradient(px, py, 0, px, py, rad);
-    g.addColorStop(0, 'rgba(255,255,255,0.95)');
-    g.addColorStop(0.6, 'rgba(250,250,252,0.6)');
+    g.addColorStop(0, 'rgba(255,255,255,0.97)');
+    g.addColorStop(0.6, 'rgba(250,250,252,0.62)');
     g.addColorStop(1, 'rgba(245,247,250,0)');
     x.fillStyle = g;
     x.fillRect(px - rad, py - rad, rad * 2, rad * 2);
   }
+  // Schattenseite unten
+  x.globalCompositeOperation = 'source-atop';
+  const unten = x.createLinearGradient(0, 120, 0, 230);
+  unten.addColorStop(0, 'rgba(150,165,185,0)');
+  unten.addColorStop(1, 'rgba(150,165,185,0.55)');
+  x.fillStyle = unten;
+  x.fillRect(0, 0, 512, 256);
+  x.globalCompositeOperation = 'source-over';
   return alsTextur(c, { kachel: false });
 }
 

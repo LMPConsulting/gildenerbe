@@ -5802,12 +5802,46 @@ const klang = {
     ton(1568, 0.3, { laut: 0.16, start: 0.1 });
     [2093, 2637, 2349, 2794].forEach((f, i) => ton(f, 0.12, { typ: 'triangle', laut: 0.07, start: 0.18 + i * 0.06 }));
   },
+  /** Ein Schritt: auf dem Boden dumpf, im Heu raschelnd. */
+  schritt(aufHeu = false) {
+    if (!bereit()) return;
+    if (aufHeu) rauschen(0.12, { frequenz: 2500, q: 0.7, laut: 0.07 });
+    else rauschen(0.07, { frequenz: 900, q: 0.8, laut: 0.06, typ: 'lowpass' });
+  },
+  /** Knistern eines brennenden Generators in der Nähe; laut 0..1. */
+  knistern(laut = 1) {
+    if (!bereit() || laut < 0.05) return;
+    rauschen(0.03 + Math.random() * 0.04, { frequenz: 1800 + Math.random() * 2500, q: 2, laut: 0.08 * laut });
+  },
   summen() {
     if (!bereit()) return;
     ton(110, 0.5, { typ: 'sawtooth', laut: 0.05 });
     ton(116, 0.5, { typ: 'sawtooth', laut: 0.04 });
   },
 };
+
+/** Wind über der offenen Halle, ganz leise, solange gespielt wird. */
+let windTon = null;
+function wind(an) {
+  if (!ctx) return;
+  if (!windTon) {
+    const q = ctx.createBufferSource();
+    q.buffer = rauschPuffer;
+    q.loop = true;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 400;
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    q.connect(f).connect(g).connect(master);
+    q.start();
+    windTon = { g, f };
+  }
+  const ziel = an && !stumm && ctx.state === 'running' ? 0.015 : 0;
+  windTon.g.gain.setTargetAtTime(ziel, ctx.currentTime, 1.2);
+  // der Wind schwillt langsam an und ab
+  windTon.f.frequency.setTargetAtTime(320 + Math.sin(ctx.currentTime * 0.15) * 120, ctx.currentTime, 2);
+}
 
 /** Leises Brummen laufender Maschinen in der Nähe; laut 0..1. */
 let brummTon = null;
@@ -6155,20 +6189,29 @@ function schildTextur(zeilen, {
 
 /** Weiche Wolke als Sprite-Textur. */
 function wolkenTextur(seed = 3) {
+  // Große Kumuluswolke wie im Vorbild: oben hell, unten blaugrau und flach
   const z = texturZufall(seed);
-  const c = leinwandNeu(256, 128);
+  const c = leinwandNeu(512, 256);
   const x = c.getContext('2d');
-  for (let i = 0; i < 26; i++) {
-    const px = 40 + z() * 176;
-    const py = 50 + z() * 40 - Math.abs(px - 128) * 0.15;
-    const rad = 18 + z() * 34;
+  for (let i = 0; i < 46; i++) {
+    const px = 70 + z() * 372;
+    const py = 118 + z() * 70 - Math.abs(px - 256) * 0.22;
+    const rad = 34 + z() * 64;
     const g = x.createRadialGradient(px, py, 0, px, py, rad);
-    g.addColorStop(0, 'rgba(255,255,255,0.95)');
-    g.addColorStop(0.6, 'rgba(250,250,252,0.6)');
+    g.addColorStop(0, 'rgba(255,255,255,0.97)');
+    g.addColorStop(0.6, 'rgba(250,250,252,0.62)');
     g.addColorStop(1, 'rgba(245,247,250,0)');
     x.fillStyle = g;
     x.fillRect(px - rad, py - rad, rad * 2, rad * 2);
   }
+  // Schattenseite unten
+  x.globalCompositeOperation = 'source-atop';
+  const unten = x.createLinearGradient(0, 120, 0, 230);
+  unten.addColorStop(0, 'rgba(150,165,185,0)');
+  unten.addColorStop(1, 'rgba(150,165,185,0.55)');
+  x.fillStyle = unten;
+  x.fillRect(0, 0, 512, 256);
+  x.globalCompositeOperation = 'source-over';
   return alsTextur(c, { kachel: false });
 }
 
@@ -6546,13 +6589,13 @@ function szeneBauen(leinwand, qualitaet = 'mittel') {
   // Wolken als Sprites, die langsam ziehen.
   const wolken = [];
   const wt = [wolkenTextur(3), wolkenTextur(9), wolkenTextur(17)];
-  for (let i = 0; i < 16; i++) {
-    const mat = new THREE.SpriteMaterial({ map: wt[i % 3], fog: false, depthWrite: false, transparent: true, opacity: 0.92 });
+  for (let i = 0; i < 10; i++) {
+    const mat = new THREE.SpriteMaterial({ map: wt[i % 3], fog: false, depthWrite: false, transparent: true, opacity: 0.95 });
     const s = new THREE.Sprite(mat);
-    const winkel = (i / 16) * Math.PI * 2 + Math.random() * 0.3;
-    const weite = 180 + Math.random() * 220;
-    s.position.set(Math.cos(winkel) * weite, 60 + Math.random() * 60, Math.sin(winkel) * weite);
-    const g = 60 + Math.random() * 70;
+    const winkel = (i / 10) * Math.PI * 2 + Math.random() * 0.4;
+    const weite = 250 + Math.random() * 150;
+    s.position.set(Math.cos(winkel) * weite, 90 + Math.random() * 70, Math.sin(winkel) * weite);
+    const g = 180 + Math.random() * 120;
     s.scale.set(g, g * 0.5, 1);
     s.renderOrder = -9;
     wolken.push({ s, geschw: 0.6 + Math.random() * 1.2 });
@@ -6612,7 +6655,7 @@ function landschaftBauen(szene, q) {
   feld.repeat.set(40, 40);
   const boden = new THREE.Mesh(
     new THREE.CircleGeometry(700, 48),
-    new THREE.MeshLambertMaterial({ color: 0xb7a26a, map: feld }),
+    new THREE.MeshLambertMaterial({ color: 0xd8ccb0, map: feld }),
   );
   boden.rotation.x = -Math.PI / 2;
   boden.position.y = -0.02;
@@ -7558,8 +7601,8 @@ function ansichtBauen(szene, kamera) {
   hand.add(ladung);
   // Behälter: Eimer links unten, Heubündel in den Armen
   const eimer = eimerModell();
-  eimer.scale.setScalar(0.9);
-  eimer.position.set(-0.34, -0.42, -0.52);
+  eimer.scale.setScalar(0.75);
+  eimer.position.set(-0.38, -0.44, -0.6);
   eimer.rotation.set(0.25, 0.3, 0.12);
   kamera.add(eimer);
   const armHeu = heuBueschel(26, 0.1);
@@ -7697,7 +7740,7 @@ function ansichtBauen(szene, kamera) {
       eimer.visible = b === 'eimer' && sp.werkzeug !== 'besen';
       const f = eimer.getObjectByName('fuellung');
       if (f) { f.position.y = -0.14 + fuell * 0.26; f.visible = fuell > 0.01; }
-      eimer.position.y = -0.42 - wy * 0.6;
+      eimer.position.y = -0.44 - wy * 0.6;
       armHeu.visible = b === 'arme' && sp.last > 0 && sp.werkzeug !== 'besen';
       armHeu.scale.setScalar(0.4 + fuell * 0.9);
       karre.visible = b === 'schubkarre';
@@ -9792,6 +9835,7 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     return t;
   })();
   const glanzMat = new THREE.SpriteMaterial({ map: glanzTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  const haloMat = new THREE.SpriteMaterial({ map: glanzTex, color: 0xffb347, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const glanzPool = Array.from({ length: 8 }, () => {
     const sp = new THREE.Sprite(glanzMat);
     sp.scale.setScalar(0.35);
@@ -10069,8 +10113,17 @@ function objekteBauen(szene, qualitaet = 'mittel') {
       case 'arm': case 'vorrangarm': {
         armStellen(bau, obj, teile, dt);
         if (teile.bake) {
+          const puls = laeuft ? 0.6 + 0.6 * Math.max(0, Math.sin(zeit * 8)) : 0.1;
           const m = teile.bake.material;
-          if (m && m.emissive) m.emissiveIntensity = laeuft ? 0.6 + 0.6 * Math.max(0, Math.sin(zeit * 8)) : 0.1;
+          if (m && m.emissive) m.emissiveIntensity = puls;
+          // Lichthof um die Bake, wie die orange Leuchte im Vorbild
+          if (!e.halo) {
+            e.halo = new THREE.Sprite(haloMat.clone());
+            e.halo.raycast = () => {};
+            e.halo.scale.setScalar(0.45);
+            teile.bake.add(e.halo);
+          }
+          e.halo.material.opacity = Math.min(1, puls * 0.8);
         }
         break;
       }
@@ -13032,6 +13085,14 @@ function hauptStart() {
         const eingabe = { ...e, rennen: rennt };
         const vorX = s.spieler.x; const vorZ = s.spieler.z;
         tempo = spielerBewegen(s.spieler, eingabe, dt, umgebung, gehFaktor(w));
+        // Schritte hören: alle 0,55 m (rennend 0,75 m), im Heu raschelnd
+        if (s.spieler.amBoden && tempo > 0.5) {
+          zustand.schrittWeg = (zustand.schrittWeg || 0) + tempo * dt;
+          if (zustand.schrittWeg > (rennt ? 0.75 : 0.55)) {
+            zustand.schrittWeg = 0;
+            klang.schritt(haufenHoehe(s.hf, s.spieler.x, s.spieler.z) > 0.1);
+          }
+        }
         s.stat.gelaufen += Math.hypot(s.spieler.x - vorX, s.spieler.z - vorZ);
         s.stat.umgesehen += Math.abs(e.blickX) + Math.abs(e.blickY);
         pusteSchritt(s, dt, rennt && tempo > 0.5);
@@ -13150,6 +13211,11 @@ function hauptStart() {
           if (d < naechste) naechste = d;
         }
         brummen(zustand.laeuft ? Math.max(0, 1 - naechste / 14) * Math.min(1, 0.45 + laufen * 0.15) : 0);
+        wind(zustand.laeuft && !blockiert());
+        // Knistern am brennenden Generator
+        let gen = Infinity;
+        for (const b of netzHolen(s).maschinenAlle) if (b.typ === 'generator' && lauf(b).brennt) gen = Math.min(gen, Math.hypot(b.x - s.spieler.x, b.z - s.spieler.z));
+        if (gen < 10 && Math.random() < 0.6) klang.knistern(1 - gen / 10);
         if (zustand.tafel && zustand.tafel.aktualisieren) zustand.tafel.aktualisieren();
       }
       if (zustand.laeuft && bm.aktiv()) {

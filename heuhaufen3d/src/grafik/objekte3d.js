@@ -283,6 +283,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     return t;
   })();
   const glanzMat = new THREE.SpriteMaterial({ map: glanzTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  const haloMat = new THREE.SpriteMaterial({ map: glanzTex, color: 0xffb347, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const glanzPool = Array.from({ length: 8 }, () => {
     const sp = new THREE.Sprite(glanzMat);
     sp.scale.setScalar(0.35);
@@ -560,8 +561,17 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
       case 'arm': case 'vorrangarm': {
         armStellen(bau, obj, teile, dt);
         if (teile.bake) {
+          const puls = laeuft ? 0.6 + 0.6 * Math.max(0, Math.sin(zeit * 8)) : 0.1;
           const m = teile.bake.material;
-          if (m && m.emissive) m.emissiveIntensity = laeuft ? 0.6 + 0.6 * Math.max(0, Math.sin(zeit * 8)) : 0.1;
+          if (m && m.emissive) m.emissiveIntensity = puls;
+          // Lichthof um die Bake, wie die orange Leuchte im Vorbild
+          if (!e.halo) {
+            e.halo = new THREE.Sprite(haloMat.clone());
+            e.halo.raycast = () => {};
+            e.halo.scale.setScalar(0.45);
+            teile.bake.add(e.halo);
+          }
+          e.halo.material.opacity = Math.min(1, puls * 0.8);
         }
         break;
       }

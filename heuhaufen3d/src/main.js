@@ -18,7 +18,7 @@ import {
 } from './werkzeuge.js';
 import { detektorMessen, nadelFinden } from './nadeln.js';
 import { loseNaechster } from './lose.js';
-import { klang, klangWecken, klangStumm, saugerAn, saugerAus, saugerHitze, brummen } from './klang.js';
+import { klang, klangWecken, klangStumm, saugerAn, saugerAus, saugerHitze, brummen, wind } from './klang.js';
 import { szeneBauen } from './grafik/szene3d.js';
 import { hofBauen } from './grafik/hof3d.js';
 import { haufenAnsichtBauen } from './grafik/haufen3d.js';
@@ -667,6 +667,14 @@ function hauptStart() {
         const eingabe = { ...e, rennen: rennt };
         const vorX = s.spieler.x; const vorZ = s.spieler.z;
         tempo = spielerBewegen(s.spieler, eingabe, dt, umgebung, gehFaktor(w));
+        // Schritte hören: alle 0,55 m (rennend 0,75 m), im Heu raschelnd
+        if (s.spieler.amBoden && tempo > 0.5) {
+          zustand.schrittWeg = (zustand.schrittWeg || 0) + tempo * dt;
+          if (zustand.schrittWeg > (rennt ? 0.75 : 0.55)) {
+            zustand.schrittWeg = 0;
+            klang.schritt(haufenHoehe(s.hf, s.spieler.x, s.spieler.z) > 0.1);
+          }
+        }
         s.stat.gelaufen += Math.hypot(s.spieler.x - vorX, s.spieler.z - vorZ);
         s.stat.umgesehen += Math.abs(e.blickX) + Math.abs(e.blickY);
         pusteSchritt(s, dt, rennt && tempo > 0.5);
@@ -785,6 +793,11 @@ function hauptStart() {
           if (d < naechste) naechste = d;
         }
         brummen(zustand.laeuft ? Math.max(0, 1 - naechste / 14) * Math.min(1, 0.45 + laufen * 0.15) : 0);
+        wind(zustand.laeuft && !blockiert());
+        // Knistern am brennenden Generator
+        let gen = Infinity;
+        for (const b of netzHolen(s).maschinenAlle) if (b.typ === 'generator' && lauf(b).brennt) gen = Math.min(gen, Math.hypot(b.x - s.spieler.x, b.z - s.spieler.z));
+        if (gen < 10 && Math.random() < 0.6) klang.knistern(1 - gen / 10);
         if (zustand.tafel && zustand.tafel.aktualisieren) zustand.tafel.aktualisieren();
       }
       if (zustand.laeuft && bm.aktiv()) {
