@@ -18,6 +18,19 @@ export function nadelnVerteilen(s, hf, zufall) {
 }
 
 function nadelStelle(hf, lage, zufall) {
+  if (lage === NADEL_LAGEN[0]) {
+    // Die erste Nadel steckt flach am Fuß des Haufens: vom Boden aus erreichbar und
+    // höchstens gut 30 cm unter der Oberfläche, damit der Detektor „heiß“ zeigen kann.
+    for (let versuch = 0; versuch < 80; versuch++) {
+      const winkel = zufall() * Math.PI * 2;
+      const rand = 0.68 + zufall() * 0.28;
+      const x = hf.mitteX + Math.cos(winkel) * rand * hf.radius;
+      const z = hf.mitteZ + Math.sin(winkel) * rand * hf.radius;
+      const h = haufenHoehe(hf, x, z);
+      if (h < 0.5 || h > 1.8) continue;
+      return { x, y: Math.max(0.08, h - (0.12 + zufall() * 0.2)), z };
+    }
+  }
   for (let versuch = 0; versuch < 40; versuch++) {
     const winkel = zufall() * Math.PI * 2;
     const rand = lage.rand[0] + zufall() * (lage.rand[1] - lage.rand[0]);

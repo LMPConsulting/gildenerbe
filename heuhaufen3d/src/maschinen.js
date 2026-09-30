@@ -202,7 +202,8 @@ export function maschineFangen(s, netz, g, ereignisse) {
     if (!d.ein.length && bau.typ !== 'generator' && bau.typ !== 'rohrwerfer' && !d.rezept) continue;
     const oben = (bau.y || 0) + d.h;
     if (g.y > oben + 0.05 || g.y < oben - 0.7) continue;
-    if (!imFussabdruck(bau, g.x, g.z, -0.08)) continue;
+    // etwas großzügig: was auf die Dachkante fällt, rutscht hinein
+    if (!imFussabdruck(bau, g.x, g.z, 0.12)) continue;
     return annehmen(s, netz, bau, g, -1, ereignisse);
   }
   return false;

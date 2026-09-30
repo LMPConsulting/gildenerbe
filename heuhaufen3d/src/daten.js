@@ -48,7 +48,7 @@ export const SPIELER = {
   rennen: 6.6,
   sprung: 4.6, // m/s nach oben
   schwerkraft: 14,
-  stufe: 0.42, // so hoch kommt man ohne Springen
+  stufe: 0.65, // so hoch kommt man ohne Springen (über Bänder hinweg, wie am Handy nötig)
   reichweite: 3.2, // bis hierhin wirkt ein Werkzeug
   blickEmpfindlichkeit: 0.0042, // rad je Pixel Wischen
 };
@@ -650,14 +650,14 @@ export const AUFTRAG_PAUSE = 20;
 // ladungen, forschung, arten, strom (ein Rechen läuft).
 export const MISSIONEN = [
   { text: 'Schau dich um', hilfe: 'Rechts über den Bildschirm wischen.', art: 'umgesehen', ziel: 2, geld: 0 },
-  { text: 'Geh zum Haufen', hilfe: 'Links den Daumen aufsetzen und schieben.', art: 'gelaufen', ziel: 8, geld: 0 },
+  { text: 'Geh zum Haufen', hilfe: 'Links den Daumen aufsetzen und schieben.', art: 'gelaufen', ziel: 5, geld: 0 },
   { text: 'Heb etwas Heu auf', hilfe: 'Auf den Haufen zielen und den runden Knopf drücken.', art: 'tipps', ziel: 5, geld: 1 },
   { text: 'Bring 25 Halme zum Stand', hilfe: 'Am Stand hinten links auf „Verkaufen“ tippen.', art: 'verkauft', ziel: 25, geld: 1 },
   { text: 'Kauf einen Eimer', hilfe: 'Am Werkzeugstand oder in der Forschung.', art: 'tech', ziel: 'eimer', geld: 2 },
   { text: 'Kauf den Spaten', hilfe: 'Am Werkzeugstand: 12 $.', art: 'tech', ziel: 'spaten', geld: 3 },
-  { text: 'Halte den Detektor an den Haufen', hilfe: 'Werkzeug 5 wählen und auf den Haufen zielen.', art: 'werkzeug', ziel: 'detektor', geld: 2 },
+  { text: 'Halte den Detektor an den Haufen', hilfe: 'Den Detektor unten in der Leiste wählen und auf den Haufen zielen.', art: 'werkzeug', ziel: 'detektor', geld: 2 },
   { text: 'Verdiene 30 $', art: 'verdient', ziel: 30, geld: 5 },
-  { text: 'Kauf den Besen und feg verschüttetes Heu zusammen', hilfe: 'Lose Halme liegen am Fuß des Haufens.', art: 'gefegt', ziel: 50, geld: 10 },
+  { text: 'Kauf den Besen und feg verschüttetes Heu zusammen', hilfe: 'Beim Graben fällt Heu daneben und rollt an den Fuß des Haufens. Dort zusammenfegen.', art: 'gefegt', ziel: 20, geld: 10 },
   { text: 'Kauf die Förderband-Pläne', hilfe: 'In der Forschung unter Heulinien.', art: 'tech', ziel: 'foerderband', geschenk: 'rechen' },
   { text: 'Leg ein Band vom Haufen zum Stand', hilfe: 'Unten auf BAUEN tippen, Förderband wählen, Anfang beim Haufen und Ende am Stand setzen.', art: 'gebaut', ziel: ['band', 1], geschenk: 'mast' },
   { text: 'Stell den Kolbenrechen an den Haufen', hilfe: 'Im Baukatalog liegt er als Geschenk bereit.', art: 'gebaut', ziel: ['rechen', 1], geschenk: 'mast' },

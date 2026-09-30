@@ -10,7 +10,8 @@ import { WELT } from './daten.js';
 import { haufenHoehe } from './haufen.js';
 import { werte, bauKosten } from './wirtschaft.js';
 import { geld } from './format.js';
-import { BAU_BY_ID, hallenGrenzen, imFussabdruck } from './welt.js';
+import { BAU_BY_ID, hallenGrenzen, imFussabdruck, HAUSANSCHLUSS } from './welt.js';
+import { leitungsPunkt } from './versorgung.js';
 import { anschlussListe } from './baender.js';
 import {
   bauPruefen, bauSetzen, bandAnker, bandPlanen, bandSetzen, liniePlanen, linieSetzen, abbauInfo, bauAbbauen, GRUND_TEXT,
@@ -30,6 +31,7 @@ const meter = (m) => `${m.toFixed(1).replace('.', ',')} m`;
 export function baumodusBauen(ctx) {
   let modus = null;
   let planZeit = 0;
+  let zuletztOk = true;
 
   const stand = () => ctx.holeStand();
   const beenden = () => {
@@ -104,8 +106,43 @@ export function baumodusBauen(ctx) {
     ctx.ereignisse(ev);
   }
 
+  /** Was ein Mast an dieser Stelle erreichen würde: Leitungen in der Vorschau und eine Zeile. */
+  function mastVorschau(s, x, z) {
+    const w = werte(s);
+    const oben = [x, 4.3, z];
+    const leitungen = [];
+    let masten = 0;
+    let haus = false;
+    let maschinen = 0;
+    if (Math.hypot(HAUSANSCHLUSS.x - x, HAUSANSCHLUSS.z - z) <= w.spannweite) {
+      haus = true;
+      leitungen.push([oben, [HAUSANSCHLUSS.x, HAUSANSCHLUSS.y, HAUSANSCHLUSS.z]]);
+    }
+    for (const b of s.bauten) {
+      const d = BAU_BY_ID[b.typ];
+      if (b.typ === 'mast') {
+        if (Math.hypot(b.x - x, b.z - z) <= w.spannweite) { masten++; leitungen.push([oben, leitungsPunkt(b)]); }
+      } else if (d.kw !== 0 && !d.linie && Math.hypot(b.x - x, b.z - z) - Math.max(d.b, d.t) / 2 <= w.abspannung) {
+        maschinen++;
+        leitungen.push([oben, leitungsPunkt(b)]);
+      }
+    }
+    const teile = [];
+    if (haus) teile.push('Hausanschluss');
+    if (masten) teile.push(masten === 1 ? '1 Mast' : `${masten} Masten`);
+    if (maschinen) teile.push(maschinen === 1 ? '1 Maschine' : `${maschinen} Maschinen`);
+    return {
+      leitungen, ringe: [w.spannweite, w.abspannung],
+      text: teile.length ? `verbindet sich mit ${teile.join(', ')}` : null,
+      grund: haus || masten ? null : `Kein Mast und kein Hausanschluss in ${kommaMeter(w.spannweite)}`,
+    };
+  }
+  const kommaMeter = (m) => `${String(Math.round(m * 10) / 10).replace('.', ',')} m`;
+
   const api = {
     aktiv: () => !!modus,
+    /** Ist die gerade gezeigte Stelle gültig? (Der große Knopf wird sonst matt.) */
+    ok: () => zuletztOk,
 
     /** Abbauen ohne Zielen (aus der Maschinentafel, die schon nachgefragt hat). */
     abbauDirekt(bau) {
@@ -159,8 +196,8 @@ export function baumodusBauen(ctx) {
         if (!r.ok) { ctx.klang.fehler(); ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht hier nicht.', 'warn'); return; }
         ctx.klang.bauen();
         ev.push({ typ: 'gebaut', bau: r.bau });
-        // Ein Geschenk gibt es meist nur einmal: ist keins mehr da und reicht das Geld nicht, ist der Modus vorbei.
-        if (r.bau.geschenk && !(s.geschenke[modus.typ] > 0) && s.geld < bauKosten(s, modus.typ)) beenden();
+        // Nach einem Geschenk ist der Modus vorbei, damit kein zweiter Tipp aus Versehen kauft
+        if (r.bau.geschenk) beenden();
       } else if (modus.art === 'band' || modus.art === 'linie') {
         if (modus.schritt === 'anfang') {
           if (!modus.anker || modus.ankerOk === false) { ctx.klang.fehler(); return; }
@@ -206,6 +243,7 @@ export function baumodusBauen(ctx) {
         modus.ziel = t ? t.bau : null;
         ctx.objekte.markieren(modus.ziel);
         const info = modus.ziel ? abbauInfo(s, modus.ziel) : null;
+        zuletztOk = !!modus.ziel;
         ctx.hud.zeigen({
           titel: modus.ziel ? `${BAU_BY_ID[modus.ziel.typ].name} abbauen` : 'Abbauen',
           zeile: info ? (info.geschenk ? 'Geschenk zurück in den Katalog' : `+${geld(info.erstattung)} zurück`) : 'Auf einen Bau schauen',
@@ -230,15 +268,18 @@ export function baumodusBauen(ctx) {
         }
         const p = bauPruefen(s, modus.typ, x, z, rot, { y: py });
         modus.lage = { x, z, rot, y: py };
-        ctx.objekte.geist(modus.typ, { x, y: py, z, rot }, p.ok);
-        let grund = p.ok ? null : GRUND_TEXT[p.grund] || 'Geht hier nicht';
+        const mast = modus.typ === 'mast' ? mastVorschau(s, x, z) : null;
+        ctx.objekte.geist(modus.typ, { x, y: py, z, rot }, p.ok, mast ? { ringe: mast.ringe, leitungen: mast.leitungen } : null);
+        zuletztOk = p.ok;
+        let grund = p.ok ? (mast ? mast.grund : null) : GRUND_TEXT[p.grund] || 'Geht hier nicht';
         if (p.ok && modus.typ === 'rechen') {
           const [kx, kz] = [x + Math.cos(rot) * (d.b / 2 + 0.45), z - Math.sin(rot) * (d.b / 2 + 0.45)];
           if (haufenHoehe(s.hf, kx, kz) < 0.06) grund = 'Der Kamm muss ins Heu zeigen';
         }
         const kw = d.kw > 0 ? ` · braucht ${d.kw} kW` : d.kw < 0 ? ` · liefert ${-d.kw} kW` : '';
+        const extra = mast && mast.text ? ` · ${mast.text}` : '';
         ctx.hud.zeigen({
-          titel: d.name, zeile: `${kostenText(s, modus.typ)}${kw}`, grund, ok: p.ok,
+          titel: d.name, zeile: `${kostenText(s, modus.typ)}${kw}${extra}`, grund, ok: p.ok,
           schritt: 'setzen', einrasten: null, drehen: true, abstand: false,
         });
         return true;
@@ -251,6 +292,7 @@ export function baumodusBauen(ctx) {
           const ok = py > 0.1 || haufenHoehe(s.hf, a.x, a.z) < 0.15;
           modus.anker = a;
           modus.ankerOk = ok;
+          zuletztOk = ok;
           ctx.objekte.ankerZeigen([...ankerListe(s, px, pz, false, a), { x: a.x, y: a.y, z: a.z, ziel: true }]);
           ctx.hud.zeigen({
             titel: 'Förderband', zeile: `Anfang wählen · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
@@ -267,6 +309,7 @@ export function baumodusBauen(ctx) {
           ctx.objekte.bandVorschau(modus.plan.punkte || [[modus.von.x, modus.von.y, modus.von.z], [a.x, a.y, a.z]], !!modus.plan.ok);
         }
         const plan = modus.plan;
+        zuletztOk = !!(plan && plan.ok);
         ctx.objekte.ankerZeigen([{ x: modus.von.x, y: modus.von.y, z: modus.von.z, ziel: true }, ...ankerListe(s, px, pz, true, a)]);
         const ziel = a.art === 'stand' ? ' · zum Stand' : a.art === 'laster' ? ' · zum Laster' : a.art === 'ein' ? ` · in ${BAU_BY_ID[a.bau.typ].name}` : a.art === 'band' ? ' · aufs Band' : '';
         ctx.hud.zeigen({
@@ -284,6 +327,7 @@ export function baumodusBauen(ctx) {
         if (modus.schritt === 'anfang') {
           modus.anker = { x, z, y: py };
           modus.ankerOk = true;
+          zuletztOk = true;
           ctx.objekte.ankerZeigen([{ x, y: py, z, ziel: true }]);
           ctx.hud.zeigen({
             titel: d.name, zeile: `Anfang wählen · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
@@ -296,6 +340,7 @@ export function baumodusBauen(ctx) {
         const hoehe = modus.von.y || 0;
         const plan = liniePlanen(s, modus.typ, a, b, hoehe);
         modus.plan = { ...plan, a, b, y: hoehe };
+        zuletztOk = plan.ok;
         ctx.objekte.linienVorschau(modus.typ, a, b, plan.ok, hoehe);
         ctx.objekte.ankerZeigen([{ x: a[0], y: hoehe, z: a[1], ziel: true }, { x, y: hoehe, z, ziel: false }]);
         ctx.hud.zeigen({

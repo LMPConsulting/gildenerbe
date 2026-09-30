@@ -819,13 +819,44 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   zielRing.visible = false;
   vorschauGruppe.add(zielRing);
 
-  /** Hilfsringe für den Baugeist: Wurfziel des Rechens, Reichweite von Armen. */
-  function hilfeRinge(typ, lage) {
+  const zweiterRing = reichweiteRing.clone();
+  zweiterRing.material = ringMat.clone();
+  zweiterRing.material.color.setHex(0xffd24a);
+  vorschauGruppe.add(zweiterRing);
+  const vorschauDraehte = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x9fe8ff, dashSize: 0.3, gapSize: 0.18, transparent: true, opacity: 0.9 }));
+  vorschauDraehte.visible = false;
+  vorschauDraehte.frustumCulled = false;
+  vorschauGruppe.add(vorschauDraehte);
+
+  /** Hilfsringe für den Baugeist: Wurfziel des Rechens, Reichweite von Armen, Spannweite von Masten. */
+  function hilfeRinge(typ, lage, extra = null) {
     const d = typ ? BAU_BY_ID[typ] : null;
     reichweiteRing.visible = false;
+    zweiterRing.visible = false;
     zielRing.visible = false;
+    vorschauDraehte.visible = false;
     if (!d) return;
     const y0 = (lage.y || 0) + 0.03;
+    if (extra && extra.ringe) {
+      // z. B. Mast: Spannweite zu anderen Masten (blau) und Abspannung zu Maschinen (gold)
+      reichweiteRing.visible = true;
+      reichweiteRing.scale.setScalar(extra.ringe[0]);
+      reichweiteRing.position.set(lage.x, y0, lage.z);
+      if (extra.ringe[1]) {
+        zweiterRing.visible = true;
+        zweiterRing.scale.setScalar(extra.ringe[1]);
+        zweiterRing.position.set(lage.x, y0 + 0.01, lage.z);
+      }
+    }
+    if (extra && extra.leitungen && extra.leitungen.length) {
+      const pos = new Float32Array(extra.leitungen.length * 6);
+      extra.leitungen.forEach(([a, b], i) => pos.set([a[0], a[1], a[2], b[0], b[1], b[2]], i * 6));
+      vorschauDraehte.geometry.dispose();
+      vorschauDraehte.geometry = new THREE.BufferGeometry();
+      vorschauDraehte.geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      vorschauDraehte.computeLineDistances();
+      vorschauDraehte.visible = true;
+    }
     if (d.reichweite) {
       reichweiteRing.visible = true;
       reichweiteRing.scale.setScalar(d.reichweite);
@@ -952,9 +983,9 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     },
 
     /** Grünes (oder rotes) Modell an der Stelle, an der gebaut würde. typ null: weg. */
-    geist(typ, lage, ok) {
+    geist(typ, lage, ok, extra = null) {
       if (geistAktiv && (!typ || geistAktiv.typ !== typ)) { geistAktiv.obj.visible = false; geistAktiv = null; }
-      hilfeRinge(typ, lage || {});
+      hilfeRinge(typ, lage || {}, extra);
       if (!typ) return;
       const g = geistHolen(typ);
       g.visible = true;

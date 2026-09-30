@@ -182,6 +182,14 @@ export function bandPlanen(s, von, nach, { gerade = false } = {}) {
   if (!bauFrei(s, 'band')) return { ok: false, grund: 'gesperrt' };
   // Ein Ende mitten im Heu: gar nicht erst suchen (sonst durchsucht A* die ganze Halle)
   for (const a of [von, nach]) if (a.art === 'frei' && a.y < 1 && s.hf && haufenHoehe(s.hf, a.x, a.z) > 0.15) return { ok: false, grund: 'haufen' };
+  // Ein freier Anfang mitten auf einem anderen Band würde zwei Bänder übereinanderlegen
+  if (von.art === 'frei') {
+    for (const b of s.bauten) {
+      if (b.typ !== 'band') continue;
+      const nb = bandNaechster(b, von.x, von.z);
+      if (nb.d < 0.45 && Math.abs(nb.y - von.y) < 0.6) return { ok: false, grund: 'band' };
+    }
+  }
   const ohne = [];
   if (von.bau) ohne.push(von.bau.id);
   if (nach.bau) ohne.push(nach.bau.id);

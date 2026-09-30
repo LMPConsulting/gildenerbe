@@ -91,7 +91,6 @@ export function lasterAnnehmen(s, g, ereignisse) {
   if (a.geliefert >= au.menge) {
     const lohn = auftragLohn(s, au);
     einnahme(s, lohn);
-    s.einnahmenFenster.push([s.zeit, lohn]);
     s.stat.auftraege++;
     ereignisse.push({ typ: 'auftrag', auftrag: au, lohn });
     a.nr++;

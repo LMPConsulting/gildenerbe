@@ -215,7 +215,8 @@ export function gegenstandNehmen(s, g, ereignisse) {
   const sp = s.spieler;
   if (!g || (g.ort !== 'boden' && g.ort !== 'flug')) return { ok: false, grund: 'weg' };
   const n = nadelIn(s, g);
-  if (g.art === 'roh' || g.art === 'knaeuel') {
+  // Loses Heu kommt in den Behälter; Knäuel und Waren nimmt man in die Hand (sie behalten ihren Wert)
+  if (g.art === 'roh') {
     const frei = platzFrei(s);
     if (frei <= 0) return { ok: false, grund: 'voll' };
     const halme = gegenstandHalme(g);
@@ -241,25 +242,33 @@ export function gegenstandNehmen(s, g, ereignisse) {
 export const gehaltenesStueck = (s) => (s.spieler.haelt != null ? gegenstandNachId(s, s.spieler.haelt) : null);
 
 /** Wirft das getragene Stück in Blickrichtung. */
-export function stueckWerfen(s, von, richtung, kraft = 6.5) {
+export function stueckWerfen(s, von, richtung, kraft = 6.5, ziel = null) {
   const g = gehaltenesStueck(s);
   if (!g) { s.spieler.haelt = null; return null; }
   s.spieler.haelt = null;
-  werfenMit(g, von[0], von[1], von[2], richtung[0] * kraft, richtung[1] * kraft + 2.2, richtung[2] * kraft);
+  if (ziel) werfenAuf(g, von, ziel);
+  else werfenMit(g, von[0], von[1], von[2], richtung[0] * kraft, richtung[1] * kraft + 2.2, richtung[2] * kraft);
   return g;
+}
+
+/** Wurf, der sicher im Ziel landet (Trichter, Band, Ladefläche): die Hand zielt mit. */
+export function werfenAuf(g, von, ziel) {
+  const d = Math.hypot(ziel[0] - von[0], ziel[2] - von[2]);
+  werfenNach(g, von[0], von[1], von[2], ziel[0], ziel[1], ziel[2], 0.4 + Math.min(0.5, d * 0.1));
 }
 
 /**
  * Heu aus dem Behälter als Bündel werfen (etwa auf ein Band oder in einen Trichter).
  * Liefert das Bündel oder null.
  */
-export function heuWerfen(s, von, richtung, menge = 40, kraft = 5.5) {
+export function heuWerfen(s, von, richtung, menge = 40, kraft = 5.5, ziel = null) {
   const sp = s.spieler;
   const m = Math.min(sp.last, menge);
   if (m < 1) return null;
   sp.last -= m;
   const g = gegenstandNeu(s, 'roh', m, von[0], von[1], von[2]);
-  werfenMit(g, von[0], von[1], von[2], richtung[0] * kraft, richtung[1] * kraft + 2, richtung[2] * kraft);
+  if (ziel) werfenAuf(g, von, ziel);
+  else werfenMit(g, von[0], von[1], von[2], richtung[0] * kraft, richtung[1] * kraft + 2, richtung[2] * kraft);
   return g;
 }
 

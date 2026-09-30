@@ -3,7 +3,7 @@
 // Werkzeugaktion aus, treibt die Welt an und zeigt alles an.
 
 import * as THREE from '../vendor/three.module.min.js';
-import { WELT, SPIELER } from './daten.js';
+import { WELT, SPIELER, PRODUKTE } from './daten.js';
 import { haufenStrahl, haufenHoehe } from './haufen.js';
 import {
   werte, techStatus, proMinute, gehFaktor, taschePlatz, TECH_NACH_ID, techStufe, missionStand,
@@ -70,6 +70,8 @@ function hauptStart() {
 
   let s = null;
   try { s = laden(localStorage.getItem(SPEICHER3D_KEY) || ''); } catch { s = null; }
+  // Fehlt der Stand (etwa nach einem abgebrochenen Schreiben beim Schließen), hilft die Sicherung
+  if (!s) { try { s = laden(localStorage.getItem(SPEICHER3D_KEY + '-sicher') || ''); } catch { s = null; } }
   const gespeichert = !!s;
   if (!s) s = standNeu();
   hof = hofBauen(s3.szene, s3.qualitaet, werte(s).hallenFelder);
@@ -128,11 +130,25 @@ function hauptStart() {
   });
 
   function speichernJetzt() {
-    try { localStorage.setItem(SPEICHER3D_KEY, speichern(s)); } catch { /* voll oder gesperrt */ }
+    try {
+      const text = speichern(s);
+      localStorage.setItem(SPEICHER3D_KEY, text);
+      // Alle 30 s zusätzlich eine Sicherung unter eigenem Schlüssel
+      if (!zustand.sicherZeit || performance.now() - zustand.sicherZeit > 30000) {
+        localStorage.setItem(SPEICHER3D_KEY + '-sicher', text);
+        zustand.sicherZeit = performance.now();
+      }
+    } catch { /* voll oder gesperrt */ }
     zustand.zuletztGespeichert = performance.now();
   }
   function einstellungenSichern() {
     try { localStorage.setItem(EINSTELLUNGEN_KEY, JSON.stringify(einst)); } catch { /* egal */ }
+  }
+
+  /** Ein gerade gekauftes Werkzeug kommt gleich in die Hand. */
+  function werkzeugNeu(id) {
+    if (!['spaten', 'heugabel', 'besen', 'sauger'].includes(id)) return;
+    if (werkzeugWaehlen(s, id)) ui.toast(`${({ spaten: 'Spaten', heugabel: 'Heugabel', besen: 'Besen', sauger: 'Hofsauger' })[id]} in der Hand.`, 'gut');
   }
 
   function werkzeugKlick(id) {
@@ -150,6 +166,7 @@ function hauptStart() {
       klick: () => klang.klick(),
       gekauft: (id) => {
         klang.kauf();
+        werkzeugNeu(id);
         const t = TECH_NACH_ID[id];
         if (t.effekt.some((e) => e[0] === 'frei') && techStufe(s, id) === 1) ui.toast(`${t.name} freigeschaltet.`, 'gut');
       },
@@ -198,7 +215,7 @@ function hauptStart() {
         titel: 'Spielstand löschen?', absaetze: ['Alles ist weg: Geld, Forschung, Nadeln, Bauten. Das lässt sich nicht rückgängig machen.'],
         knoepfe: [{ text: 'Abbrechen', klasse: 'primaer' }, {
           text: 'Löschen', klasse: 'gefahr', aktion: () => {
-            try { localStorage.removeItem(SPEICHER3D_KEY); } catch { /* egal */ }
+            try { localStorage.removeItem(SPEICHER3D_KEY); localStorage.removeItem(SPEICHER3D_KEY + '-sicher'); } catch { /* egal */ }
             s = standNeu();
             hAnsicht.neu(s.hf);
             window.__heuhaufen3d.s = s;
@@ -336,6 +353,20 @@ function hauptStart() {
     return { von: [k.x + dx * 0.45, k.y - 0.3, k.z + dz * 0.45], richtung: [dx, dy, dz] };
   }
 
+  /** Wurfziel auf der Ladefläche des Lasters. */
+  const lasterZiel = () => [LASTER_BETT.x, LASTER_BETT.y + 0.15, (LASTER_BETT.z0 + LASTER_BETT.z1) / 2];
+  /** Wurfziel an einem Bau: auf dem Band dort, wo man hinschaut, sonst mitten in den Trichter. */
+  function bauZiel(ziel) {
+    const b = ziel.bau;
+    if (b.typ === 'band') return [ziel.punkt.x, ziel.punkt.y + 0.05, ziel.punkt.z];
+    return [b.x, (b.y || 0) + BAU_BY_ID[b.typ].h + 0.1, b.z];
+  }
+  /** Kurzes Vibrieren (wenn das Gerät es kann und es eingeschaltet ist). */
+  function beben(ms) {
+    if (einst.beben === false) return;
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch { /* egal */ }
+  }
+
   /** Nimmt der Bau geworfenes Heu an (Band, Trichter)? */
   const heuZiel = (bau) => bau.typ === 'band' || annehmenMoeglich(s, bau, 'roh', -1);
 
@@ -375,8 +406,13 @@ function hauptStart() {
         return;
       }
       const { von, richtung } = wurfStart();
-      stueckWerfen(s, von, richtung);
+      // Zielt man auf ein Band, einen Trichter oder den Laster, wirft die Hand genau hinein
+      let wurfziel = null;
+      if (ziel && ziel.art === 'laster') wurfziel = lasterZiel();
+      else if (ziel && ziel.art === 'bau' && (ziel.bau.typ === 'band' || annehmenMoeglich(s, ziel.bau, gehalten.art, -1))) wurfziel = bauZiel(ziel);
+      stueckWerfen(s, von, richtung, 6.5, wurfziel);
       klang.werfen();
+      beben(12);
       return;
     }
     if (ziel && ziel.art === 'stueck') {
@@ -388,7 +424,7 @@ function hauptStart() {
     }
     if (ziel && ziel.art === 'laster') {
       if (!druck) return;
-      if (sp.last > 0) { const { von, richtung } = wurfStart(); heuWerfen(s, von, richtung, 60); klang.werfen(); }
+      if (sp.last > 0) { const { von, richtung } = wurfStart(); heuWerfen(s, von, richtung, 60, 5.5, lasterZiel()); klang.werfen(); beben(12); }
       else ui.toast('Was auf die Ladefläche fällt, nimmt der Laster mit.');
       return;
     }
@@ -404,8 +440,9 @@ function hauptStart() {
       if (bau.typ === 'scanner' && (bau.nadeln || []).length) { scannerLeeren(s, bau, ereignisPuffer); return; }
       if (sp.last > 0 && heuZiel(bau)) {
         const { von, richtung } = wurfStart();
-        heuWerfen(s, von, richtung, bau.typ === 'band' ? 40 : 60);
+        heuWerfen(s, von, richtung, bau.typ === 'band' ? 40 : 60, 5.5, bauZiel(ziel));
         klang.werfen();
+        beben(12);
         return;
       }
       maschineZeigen(bau);
@@ -419,7 +456,7 @@ function hauptStart() {
         standKippen(s, ereignisPuffer);
       } else if (ziel.art === 'werkzeugstand') {
         werkzeugstandZeigen(ui, s, {
-          gekauft: (id) => { klang.kauf(); if (id === 'spaten' && sp.werkzeug === 'hand') werkzeugWaehlen(s, 'spaten'); if (id === 'heugabel') werkzeugWaehlen(s, 'heugabel'); },
+          gekauft: (id) => { klang.kauf(); werkzeugNeu(id); },
           fehler: () => klang.fehler(),
         });
       } else if (ziel.art === 'lieferschalter') {
@@ -467,7 +504,7 @@ function hauptStart() {
         const r = stechen(s, s.hf, ziel, spielZufall(s), ereignisPuffer);
         zustand.stichPause = 1 / (2.8 + (halten ? w.autotipp : 0));
         if (r.voll) voll();
-        else if (r.menge > 0) klang.stich(r.krit);
+        else if (r.menge > 0) { klang.stich(r.krit); beben(8); }
         if (r.erschoepft && !zustand.pusteGemeldet) { ui.toast('Aus der Puste. Die Kinderschaufel kostet keine.', 'warn'); zustand.pusteGemeldet = true; }
         if (!r.erschoepft) zustand.pusteGemeldet = false;
       }
@@ -535,6 +572,15 @@ function hauptStart() {
   };
   function ereignisseZeigen(liste) {
     const missionen = liste.filter((e) => e.typ === 'mission');
+    for (const e of missionen) {
+      if (!e.belohnung || !e.belohnung.includes('Baukatalog')) continue;
+      // Ein geschenkter Bau soll nicht übersehen werden: eine Tafel, die bleibt, bis man tippt
+      ui.modal({
+        klasse: 'gold', ober: 'Geschenk', titel: e.belohnung.split(' geschenkt')[0],
+        absaetze: [`Für „${e.text}“. Er liegt im Baukatalog bereit und kostet nichts.`],
+        knoepfe: [{ text: 'Zum Baukatalog', klasse: 'primaer', aktion: () => bauenAuf() }, { text: 'Später' }],
+      });
+    }
     if (missionen.length) {
       klang.fund(2);
       const summe = missionen.filter((e) => !e.belohnung).reduce((n, e) => n + (e.geld || 0), 0);
@@ -582,7 +628,7 @@ function hauptStart() {
         klang.hupe();
         ui.toast('Der Laster kommt ans Tor.', '');
       } else if (e.typ === 'lasterDa') {
-        ui.toast(`Auftrag: ${e.auftrag.titel} will ${e.auftrag.will === 'roh' ? `${halme(e.auftrag.menge)} Halme loses Heu` : `${e.auftrag.menge} Stück`}.`, '');
+        ui.toast(`Auftrag: ${e.auftrag.titel} will ${e.auftrag.will === 'roh' ? `${halme(e.auftrag.menge)} Halme loses Heu` : `${e.auftrag.menge} × ${PRODUKTE[e.auftrag.will].name}`}.`, '');
       } else if (e.typ === 'auftrag') {
         klang.auftrag();
         ui.toast(`Auftrag erfüllt: ${e.auftrag.titel} · +${geld(e.lohn)}`, 'gut');
@@ -597,6 +643,7 @@ function hauptStart() {
         ui.toast('Da glitzert etwas im Heu!', 'gut');
       } else if (e.typ === 'nadel') {
         klang.nadel();
+        beben([40, 60, 40]);
         // kurz warten, damit man das Glitzern noch sieht
         setTimeout(() => nadelModal(ui, e, s), 650);
       } else if (e.typ === 'nadelZurueck') {
@@ -607,6 +654,75 @@ function hauptStart() {
         ui.toast('Der Sauger ist zu heiß und muss abkühlen.', 'warn');
       }
     }
+  }
+
+  /* ------------------------------------------------ Missionsziel */
+  // Für die ersten Schritte: eine goldene Marke über dem Ziel, am Bildrand ein Pfeil dorthin.
+  const zielMarke = h('div', {
+    'aria-hidden': 'true',
+    style: {
+      position: 'absolute', left: '0', top: '0', width: '28px', height: '28px', marginLeft: '-14px', marginTop: '-14px',
+      pointerEvents: 'none', zIndex: '6', display: 'none', color: '#ffdb57', filter: 'drop-shadow(0 1px 2px #000)',
+      transition: 'opacity 0.2s',
+    },
+    html: '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2 20 12 12 22 4 12Z" opacity=".9"/></svg>',
+  });
+  app.append(zielMarke);
+  function missionsZiel() {
+    const ms = missionStand(s);
+    if (!ms || s.mission > 16) return null;
+    const m = ms.m;
+    const sp = s.spieler;
+    const amHaufen = () => {
+      const dx = sp.x - WELT.haufenX; const dz = sp.z - WELT.haufenZ; const d = Math.hypot(dx, dz) || 1;
+      const r = s.hf.radius * 0.8;
+      return [WELT.haufenX + (dx / d) * r, 1.2, WELT.haufenZ + (dz / d) * r];
+    };
+    switch (m.art) {
+      case 'gelaufen': case 'tipps': case 'gefegt': case 'nadeln': return amHaufen();
+      case 'werkzeug': return m.ziel === 'detektor' ? amHaufen() : null;
+      case 'verkauft': return [hof.standTrichter.x, 1.6, hof.standTrichter.z];
+      case 'tech': return ['eimer', 'spaten', 'besen'].includes(m.ziel) ? [WELT.werkzeugX, 2.2, WELT.werkzeugZ] : null;
+      case 'strom': return [WELT.anschlussX + 0.3, 2.0, WELT.anschlussZ];
+      case 'auftraege': return [WELT.torX, 2.4, WELT.zMin + 0.5];
+      case 'ladungen': return [WELT.lieferX, 1.8, WELT.lieferZ];
+      default: return null;
+    }
+  }
+  function zielMarkeZeigen() {
+    const p = zustand.laeuft && !blockiert() && !bm.aktiv() ? missionsZiel() : null;
+    const sp = s.spieler;
+    if (!p || Math.hypot(p[0] - sp.x, p[2] - sp.z) < 3.5) { zielMarke.style.display = 'none'; return; }
+    v.set(p[0], p[1], p[2]).project(s3.kamera);
+    const b = leinwand.clientWidth; const hh = leinwand.clientHeight;
+    const vorn = v.z < 1;
+    let x = (v.x * 0.5 + 0.5) * b;
+    let y = (-v.y * 0.5 + 0.5) * hh;
+    const rand = 36;
+    const drin = vorn && x > rand && x < b - rand && y > rand && y < hh - rand;
+    if (!drin) {
+      // Richtung zum Ziel vom Bildmittelpunkt aus, hinter der Kamera gespiegelt
+      let dx = x - b / 2; let dy = y - hh / 2;
+      if (!vorn) { dx = -dx; dy = -dy; }
+      const l = Math.hypot(dx, dy) || 1;
+      const k = Math.min((b / 2 - rand) / Math.abs(dx / l || 1e-6), (hh / 2 - rand) / Math.abs(dy / l || 1e-6));
+      x = b / 2 + (dx / l) * k;
+      y = hh / 2 + (dy / l) * k;
+      zielMarke.style.transform = `rotate(${Math.atan2(dy, dx) + Math.PI / 2}rad)`;
+      if (zielMarke.dataset.form !== 'pfeil') {
+        zielMarke.dataset.form = 'pfeil';
+        zielMarke.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 3 20 19 12 15 4 19Z"/></svg>';
+      }
+    } else {
+      zielMarke.style.transform = `translateY(${Math.sin(performance.now() / 260) * 4}px)`;
+      if (zielMarke.dataset.form !== 'raute') {
+        zielMarke.dataset.form = 'raute';
+        zielMarke.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2 20 12 12 22 4 12Z" opacity=".9"/></svg>';
+      }
+    }
+    zielMarke.style.display = 'block';
+    zielMarke.style.left = `${x}px`;
+    zielMarke.style.top = `${y}px`;
   }
 
   /* ------------------------------------------------ Dynamische Auflösung */
@@ -755,7 +871,7 @@ function hauptStart() {
       hAnsicht.schritt(s.hf);
       ansicht.schritt(s, dt, {
         tempo, detektor: detektorStaerke, behaelter: behaelter(s), platz: taschePlatz(w), boden: bodenBei,
-        haelt: gehaltenesStueck(s), bauen: bm.aktiv(),
+        haelt: gehaltenesStueck(s), bauen: bm.aktiv() || !zustand.laeuft,
       });
       s3.schritt(dt);
       const m = Math.floor(s.zeit / 60);
@@ -800,8 +916,9 @@ function hauptStart() {
         if (gen < 10 && Math.random() < 0.6) klang.knistern(1 - gen / 10);
         if (zustand.tafel && zustand.tafel.aktualisieren) zustand.tafel.aktualisieren();
       }
+      zielMarkeZeigen();
       if (zustand.laeuft && bm.aktiv()) {
-        ui.aktionZeigen(({ bau: 'Bauen', band: 'Setzen', linie: 'Setzen', abbau: 'Abbauen' })[bm.art()] || 'Bauen', true);
+        ui.aktionZeigen(({ bau: 'Bauen', band: 'Setzen', linie: 'Setzen', abbau: 'Abbauen' })[bm.art()] || 'Bauen', bm.ok());
         ui.hinweisZeigen('');
         ui.infoZeigen(false);
       } else if (zustand.laeuft) {
@@ -851,13 +968,14 @@ function hauptStart() {
     }
     s.zuletzt = Date.now();
     spielerKamera(s.spieler, s3.kamera, 0);
-    if (neu) anleitungZeigen(ui);
+    if (neu && !ui.modalOffen()) anleitungZeigen(ui);
     speichernJetzt();
   }
 
   window.addEventListener('resize', () => s3.groesseAnpassen());
   document.addEventListener('visibilitychange', () => { if (document.hidden && zustand.laeuft) speichernJetzt(); });
-  window.addEventListener('pagehide', () => { if (zustand.laeuft) speichernJetzt(); });
+  // Beim Schließen nur speichern, wenn der letzte Stand älter als eine Sekunde ist
+  window.addEventListener('pagehide', () => { if (zustand.laeuft && performance.now() - zustand.zuletztGespeichert > 1000) speichernJetzt(); });
   requestAnimationFrame(schleife);
   window.__heuhaufen3d = {
     get s() { return s; }, set s(x) { s = x; }, s3, ui, zustand, losgehen, speichernJetzt, objekte, bm, netz: () => netzHolen(s),

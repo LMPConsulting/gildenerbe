@@ -48,7 +48,7 @@ export function werkzeugstandZeigen(ui, s, { gekauft, fehler }) {
   }
   aktualisieren();
   ui.modal({
-    ober: `Kasse: ${geld(s.geld)}`, titel: 'Werkzeugstand', inhalt: liste,
+    klasse: 'werkzeugstand', ober: `Kasse: ${geld(s.geld)}`, titel: 'Werkzeugstand', inhalt: liste,
     absaetze: ['Upgrades für Werkzeuge, Eimer und Karre gibt es in der Forschung.'],
     knoepfe: [{ text: 'Fertig', klasse: 'primaer' }],
   });
@@ -112,6 +112,7 @@ export function nadelbuchZeigen(ui, s) {
 
 export function menueZeigen(ui, einstellungen, { aendern, anleitung, herunterladen, loeschen }) {
   const ton = h('button', { class: 'knopf' });
+  const beben = h('button', { class: 'knopf' });
   const empf = h('input', { type: 'range', min: '0.4', max: '2', step: '0.1', value: String(einstellungen.empfindlichkeit), class: 'regler', 'aria-label': 'Blickempfindlichkeit' });
   const empfText = h('span', { class: 'num' });
   const grafik = h('div', { class: 'wahlreihe' }, ['niedrig', 'mittel', 'hoch'].map((q) => h('button', {
@@ -119,16 +120,18 @@ export function menueZeigen(ui, einstellungen, { aendern, anleitung, herunterlad
   }, q)));
   const zeige = () => {
     setzeText(ton, einstellungen.ton ? 'Ton: an' : 'Ton: aus');
+    setzeText(beben, einstellungen.beben === false ? 'Vibration: aus' : 'Vibration: an');
     setzeText(empfText, `${Number(einstellungen.empfindlichkeit).toFixed(1)}×`);
   };
   ton.addEventListener('click', () => { aendern({ ton: !einstellungen.ton }); zeige(); });
+  beben.addEventListener('click', () => { aendern({ beben: einstellungen.beben === false }); zeige(); });
   empf.addEventListener('input', () => { aendern({ empfindlichkeit: Number(empf.value) }); zeige(); });
   empf.addEventListener('pointerdown', (ev) => ev.stopPropagation());
   zeige();
   ui.modal({
     ober: 'Heuhaufen 3D', titel: 'Menü',
     inhalt: h('div', { class: 'liste' },
-      ton,
+      ton, beben,
       h('div', { class: 'zeile ohneicon' }, h('div', {}, h('b', {}, 'Umsehen'), h('small', {}, 'Wie schnell sich der Blick beim Wischen dreht.')), h('div', {}, empf, empfText)),
       h('div', {}, h('p', { class: 'ober' }, 'Grafik (lädt neu)'), grafik)),
     knoepfe: [
