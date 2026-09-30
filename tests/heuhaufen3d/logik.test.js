@@ -308,3 +308,25 @@ describe('Zyklus 2: Spielfigur', () => {
     expect(sp2.z).toBeGreaterThan(-0.95);
   });
 });
+
+describe('Zyklus 2: Werkzeug hebt Nadeln heraus', () => {
+  it('ein Stich mit dem Spaten direkt über einer flachen Nadel bringt sie nach oben', async () => {
+    const { standNeu } = await import('../../heuhaufen3d/src/spiel.js');
+    const { stechen } = await import('../../heuhaufen3d/src/werkzeuge.js');
+    const { haufenHoehe } = await import('../../heuhaufen3d/src/haufen.js');
+    const s = standNeu(21);
+    s.tech.spaten = 1; s.rev++;
+    s.spieler.werkzeug = 'spaten';
+    const n = s.nadeln[0];
+    const oben = haufenHoehe(s.hf, n.x, n.z);
+    n.y = oben - 0.28;
+    const ev = [];
+    let versuche = 0;
+    while (n.zustand === 'versteckt' && versuche++ < 3) {
+      s.spieler.last = 0;
+      stechen(s, s.hf, { x: n.x + 0.1, y: oben, z: n.z }, () => 0.5, ev);
+    }
+    expect(n.zustand).not.toBe('versteckt');
+    expect(versuche).toBeLessThanOrEqual(2);
+  });
+});

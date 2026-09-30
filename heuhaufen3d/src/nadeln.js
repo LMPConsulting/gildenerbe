@@ -53,13 +53,17 @@ function nadelStelle(hf, lage, zufall) {
  * Liefert die Nadeln, die mit dem weggenommenen Heu mitgehen (bei Maschinen und
  * der Kinderschaufel); die übrigen werden 'lose' und liegen obenauf.
  */
+/** So tief unter der neuen Oberfläche hebt ein Werkzeug beim Stich eine Nadel mit heraus (Vorbild: „the shovel does“). */
+const HEBT = { hand: 0.08, sandschaufel: 0.3, spaten: 0.3, heugabel: 0.35 };
+
 export function nadelnFreilegen(s, hf, quelle, ereignisse) {
   const mit = [];
   for (const n of s.nadeln) {
     if (n.zustand !== 'versteckt') continue;
     const oben = haufenHoehe(hf, n.x, n.z);
-    if (oben > n.y + 0.03) continue;
     const nahe = quelle && Math.hypot(n.x - quelle.x, n.z - quelle.z) <= (quelle.radius || 0.8) + 0.25;
+    const hebt = nahe && quelle.art === 'spieler' && oben - n.y <= (HEBT[quelle.werkzeug] || 0);
+    if (oben > n.y + 0.03 && !hebt) continue;
     if (nahe && quelle.art === 'maschine') {
       n.zustand = 'unterwegs';
       mit.push(n);
