@@ -642,3 +642,52 @@ describe('Zyklus 2: Missionsbuch mit 45 Schritten', () => {
     expect(missionStand(t).erfuellt).toBe(true);
   });
 });
+
+describe('Zyklus 2: Einfädeln', () => {
+  it('ein seitlich einspeisendes Band kommt auch auf ein dicht belegtes Band (Reißverschluss)', async () => {
+    const { platzAuf } = await import('../../heuhaufen3d/src/baender.js');
+    const s = hof();
+    const haupt = band(s, [12, 2], [12, 10]);
+    const seite = band(s, [16, 6], [12.3, 6]);
+    netzHolen(s);
+    expect(lauf(seite).ziel.art).toBe('band');
+    let durch = 0;
+    for (let t = 0; t < 40; t += 1 / 30) {
+      if (platzAuf(haupt, 0, 'roh')) bandEinlegen(haupt, gegenstandNeu(s, 'roh', 10, 0, 0, 0), 0);
+      if (platzAuf(seite, 0, 'roh')) { const g = gegenstandNeu(s, 'roh', 10, 0, 0, 0); g.seite = true; bandEinlegen(seite, g, 0); }
+      spielTakt(s, 1 / 30, [automatikSchritt]);
+      for (const g of s.gegenstaende) if (g.seite && g.band === haupt.id && !g.gezaehlt) { g.gezaehlt = true; durch++; }
+    }
+    expect(durch).toBeGreaterThan(8);
+  });
+});
+
+describe('Zyklus 2: Band von der Plattform', () => {
+  it('bleibt über dem Deck auf Deckhöhe und neigt sich erst hinter der Kante', async () => {
+    const { imFussabdruck } = await import('../../heuhaufen3d/src/welt.js');
+    const s = hof();
+    s.tech.plattform = 1; s.rev++;
+    const pl = bauSetzen(s, 'plattform', -12, 9, 0).bau;
+    const oben = BAUTEN.find((b) => b.id === 'plattform').h;
+    const plan = bandPlanen(s, bandAnker(s, -12, 9, false, { y: oben }), bandAnker(s, -4, 9, true));
+    expect(plan.ok, plan.grund).toBe(true);
+    for (const p of plan.punkte) {
+      if (imFussabdruck(pl, p[0], p[2], -0.05)) expect(p[1]).toBeCloseTo(oben + 0.55, 2);
+    }
+    expect(plan.punkte[plan.punkte.length - 1][1]).toBeCloseTo(0.55, 2);
+  });
+});
+
+describe('Zyklus 2: Klappe und Dach', () => {
+  it('die Klappe geht nur in eine Plattform, unter ein Dach passt nichts Höheres', () => {
+    const s = hof();
+    for (const t of ['plattform', 'klappe', 'dach', 'daecher', 'waende']) s.tech[t] = 1;
+    s.rev++;
+    expect(bauPruefen(s, 'klappe', -12, 9, 0).grund).toBe('nurPlattform');
+    bauSetzen(s, 'plattform', -12, 9, 0);
+    const oben = BAUTEN.find((b) => b.id === 'plattform').h;
+    expect(bauPruefen(s, 'klappe', -12, 9, 0, { y: oben }).ok).toBe(true);
+    bauSetzen(s, 'silo', -5, 9, 0);
+    expect(bauPruefen(s, 'dach', -5, 9, 0).grund).toBe('hoch');
+  });
+});

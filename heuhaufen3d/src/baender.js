@@ -171,14 +171,37 @@ export function baenderSchritt(s, dt, netz, ereignisse) {
     if (!items.length) { l.voll = false; continue; }
     items.sort((a, b) => b.t - a.t);
     const L = bandLaenge(band);
+    // Reißverschluss: wartet ein seitlich einspeisendes Band schon eine Weile, halten
+    // die eigenen Stücke vor der Einfädelstelle an, bis es seins losgeworden ist
+    const sperren = [];
+    if (l.einfaedeln) {
+      for (const [id, w] of l.einfaedeln) {
+        if (s.zeit - w.stempel > 0.25) l.einfaedeln.delete(id);
+        else if (w.zeit > 0.5) sperren.push(w.t);
+      }
+    }
     let vorne = null;
     const bleiben = [];
     for (const g of items) {
       let nt = g.t + v * dt;
       if (vorne) nt = Math.min(nt, vorne.t - abstand(vorne.art, g.art));
+      for (const mt of sperren) {
+        const grenze = mt - abstand(g.art, 'roh') - 0.05;
+        if (g.t <= grenze + 1e-6) nt = Math.min(nt, grenze);
+      }
       if (!vorne && nt >= L) {
         const ziel = l.ziel;
-        if (ziel && netz.abgeben(s, band, ziel, g, ereignisse)) continue;
+        if (ziel && netz.abgeben(s, band, ziel, g, ereignisse)) {
+          if (ziel.art === 'band' && lauf(ziel.band).einfaedeln) lauf(ziel.band).einfaedeln.delete(band.id);
+          continue;
+        }
+        if (ziel && ziel.art === 'band' && ziel.t > 0.05) {
+          const zl = lauf(ziel.band);
+          if (!zl.einfaedeln) zl.einfaedeln = new Map();
+          const w = zl.einfaedeln.get(band.id) || { t: ziel.t, zeit: 0, stempel: s.zeit };
+          w.zeit += dt; w.stempel = s.zeit; w.t = ziel.t;
+          zl.einfaedeln.set(band.id, w);
+        }
         // Will die Maschine am Ende diese Ware nie (Ballen vor dem Silo), fällt sie nach 2 s herunter
         let abwerfen = !ziel;
         if (ziel && ziel.art === 'bau' && netz.nimmtNie && netz.nimmtNie(ziel.bau, g.art)) {
@@ -397,7 +420,7 @@ export function sperrRaster(s, { frei = [], ohne = [], fest = [] } = {}) {
  * Anschlüssen die Richtung, in die das Band dort laufen muss. gerade: ohne
  * Raster, direkt (Einrasten aus). Liefert { punkte, laenge } oder { fehler }.
  */
-export function bandWeg(s, von, nach, { ohne = [], fest = [], gerade = false, maxSchritte = 60000 } = {}) {
+export function bandWeg(s, von, nach, { ohne = [], fest = [], gerade = false, maxSchritte = 60000, aufDeck = null } = {}) {
   const frei = [[von.x, von.z, 0.75], [nach.x, nach.z, 0.75]];
   const raster = sperrRaster(s, { frei, ohne, fest });
   const { sperre, oben, unten, nx, nz, x0, z0, mitte } = raster;
@@ -426,23 +449,48 @@ export function bandWeg(s, von, nach, { ohne = [], fest = [], gerade = false, ma
     }
     return true;
   };
-  const hoehe = (punkte) => {
-    // Höhe gleichmäßig von von.y nach nach.y über die Länge
+  const hoehe = (punkte0) => {
+    // Steht ein Ende auf einer Plattform (aufDeck), bleibt das Band über ihr auf Deckhöhe
+    // und neigt sich erst hinter der Kante; dort kommt ein Stützpunkt hinzu.
+    let punkte = punkte0;
+    let kanteA = null;
+    let kanteB = null;
+    const deckA = aufDeck && aufDeck(von.x, von.z, von.y);
+    const deckB = aufDeck && aufDeck(nach.x, nach.z, nach.y);
+    if (deckA || deckB) {
+      const dicht = [];
+      const ecke = [];
+      for (let i = 0; i < punkte0.length; i++) {
+        if (i === 0) { dicht.push(punkte0[0]); ecke.push(true); continue; }
+        const a = punkte0[i - 1]; const b = punkte0[i];
+        const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.1));
+        for (let j = 1; j <= n; j++) { dicht.push(j === n ? b : [a[0] + ((b[0] - a[0]) * j) / n, a[1] + ((b[1] - a[1]) * j) / n]); ecke.push(j === n); }
+      }
+      let ia = 0; let ib = dicht.length - 1;
+      if (deckA) while (ia < dicht.length - 1 && aufDeck(dicht[ia + 1][0], dicht[ia + 1][1], von.y) === deckA) ia++;
+      if (deckB) while (ib > ia && aufDeck(dicht[ib - 1][0], dicht[ib - 1][1], nach.y) === deckB) ib--;
+      if (deckA) kanteA = dicht[ia];
+      if (deckB) kanteB = dicht[ib];
+      punkte = dicht.filter((p, i) => ecke[i] || i === ia || i === ib);
+    }
     let laenge = 0;
     const abschnitte = [0];
     for (let i = 1; i < punkte.length; i++) {
       laenge += Math.hypot(punkte[i][0] - punkte[i - 1][0], punkte[i][1] - punkte[i - 1][1]);
       abschnitte.push(laenge);
     }
+    const sA = kanteA ? abschnitte[punkte.indexOf(kanteA)] : 0;
+    const sB = kanteB ? abschnitte[punkte.indexOf(kanteB)] : laenge;
+    const y = (sp) => (sp <= sA ? von.y : sp >= sB ? nach.y : lerp(von.y, nach.y, (sp - sA) / Math.max(1e-6, sB - sA)));
     return {
-      laenge,
-      punkte: punkte.map((p, i) => [p[0], lerp(von.y, nach.y, laenge > 0 ? abschnitte[i] / laenge : 0), p[1]]),
+      laenge, rampe: Math.max(1e-6, sB - sA),
+      punkte: punkte.map((p, i) => [p[0], y(abschnitte[i]), p[1]]),
     };
   };
   const fertig = (flach) => {
     const r = hoehe(flach);
     if (r.laenge < 0.6) return { fehler: 'kurz' };
-    if (Math.abs(nach.y - von.y) / r.laenge > 0.6) return { fehler: 'steil' };
+    if (Math.abs(nach.y - von.y) / r.rampe > 0.6) return { fehler: 'steil' };
     if (r.laenge > 80) return { fehler: 'lang' };
     if (!kreuzungenOk(r.punkte)) return { fehler: 'kreuzt' };
     return r;

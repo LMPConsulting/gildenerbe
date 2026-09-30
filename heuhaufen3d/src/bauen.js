@@ -59,7 +59,7 @@ export function plattformBei(s, x, z, y) {
 }
 
 /** Bauten, die nur auf dem Hallenboden stehen dürfen. */
-const NUR_BODEN = new Set(['plattform', 'treppe', 'dach', 'rechen', 'brunnen', 'heutreppe', 'klappe']);
+const NUR_BODEN = new Set(['plattform', 'treppe', 'dach', 'rechen', 'brunnen', 'heutreppe']);
 
 /**
  * Passt der Bau typ bei (x, z) mit Drehung rot? Liefert { ok, grund, kosten, geschenk }.
@@ -75,6 +75,8 @@ export function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
   const k = fussabdruck(typ, x, z, rot);
   const gr = hallenGrenzen(werte(s).hallenFelder);
   if (k.x0 < gr.xMin + 0.05 || k.x1 > gr.xMax - 0.05 || k.z0 < gr.zMin + 0.05 || k.z1 > gr.zMax - 0.05) return aus('wand');
+  // Die Abwurfklappe sitzt im Deck einer Plattform, nirgends sonst
+  if (typ === 'klappe' && y < 0.1) return aus('nurPlattform');
   if (y > 0.1) {
     // Auf einer Plattform: ganz darauf, und nicht alles darf hinauf
     if (NUR_BODEN.has(typ)) return aus('boden');
@@ -101,7 +103,15 @@ export function bauPruefen(s, typ, x, z, rot = 0, { y = 0 } = {}) {
       }
       continue;
     }
-    if (b.typ === 'dach' || typ === 'dach') continue;
+    // Unter ein Dach passt nur, was niedriger ist als das Dach
+    if (b.typ === 'dach' || typ === 'dach') {
+      const dach = b.typ === 'dach' ? b : { typ, x, z, rot, y };
+      const drunter = b.typ === 'dach' ? { typ, y, h: d.h } : { typ: b.typ, y: b.y || 0, h: bd.h };
+      const dachUnten = (dach.y || 0) + BAU_BY_ID.dach.h - 0.25;
+      if (drunter.typ !== 'dach' && drunter.y + drunter.h > dachUnten
+        && kastenUeberlapp(eng, fussabdruck(b.typ, b.x, b.z, b.rot || 0))) return aus('hoch');
+      continue;
+    }
     // Unter eine Plattform passt, was niedriger ist als ihr Deck; oben steht man auf ihr
     if (b.typ === 'plattform' && (y > 0.1 || d.h < BAU_BY_ID.plattform.h - 0.1)) continue;
     if (Math.abs((b.y || 0) - y) > 1.5) continue;
@@ -198,7 +208,9 @@ export function bandPlanen(s, von, nach, { gerade = false } = {}) {
     if (von.art === 'aus' && Math.hypot(A[0] - von.x, A[2] - von.z) < 0.3 && Math.abs(A[1] - von.y) < 0.45) return { ok: false, grund: 'belegt' };
   }
   const fest = [von.bau, nach.bau].filter(Boolean);
-  const weg = bandWeg(s, von, nach, { fest, gerade, maxSchritte: 20000 });
+  // Bandenden auf einer Plattform: über dem Deck bleibt das Band auf Deckhöhe
+  const aufDeck = (x, z, y) => plattformBei(s, x, z, y - BAND_Y);
+  const weg = bandWeg(s, von, nach, { fest, gerade, maxSchritte: 20000, aufDeck });
   if (weg.fehler) return { ok: false, grund: weg.fehler };
   const kosten = bauKosten(s, 'band', weg.laenge);
   const r = { ok: s.geld >= kosten, punkte: weg.punkte, laenge: weg.laenge, kosten };
@@ -423,6 +435,6 @@ export const GRUND_TEXT = {
   band: 'Ein Band ist im Weg', geld: 'Nicht genug Geld', 'kein Weg': 'Kein Weg frei', kurz: 'Zu kurz', steil: 'Zu steil',
   lang: 'Zu lang', blockiert: 'Weg versperrt', draussen: 'Außerhalb der Halle', unbekannt: 'Geht nicht',
   kante: 'Steht nicht ganz auf der Plattform', boden: 'Nur auf dem Hallenboden',
-  kreuzt: 'Zum Kreuzen höher legen', traegt: 'Erst abbauen, was darauf steht', platz: 'Der Landeplatz ist nicht frei',
+  kreuzt: 'Zum Kreuzen höher legen', nurPlattform: 'Nur in einer Plattform', hoch: 'Zu hoch für das Dach', traegt: 'Erst abbauen, was darauf steht', platz: 'Der Landeplatz ist nicht frei',
 };
 
