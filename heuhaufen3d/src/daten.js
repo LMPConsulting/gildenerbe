@@ -662,7 +662,7 @@ export const MISSIONEN = [
   { text: 'Kauf einen Eimer', hilfe: 'Am Werkzeugstand oder in der Forschung.', art: 'tech', ziel: 'eimer', geld: 2 },
   { text: 'Kauf den Spaten', hilfe: 'Am Werkzeugstand: 12 $.', art: 'tech', ziel: 'spaten', geld: 3 },
   { text: 'Halte den Detektor an den Haufen', hilfe: 'Den Detektor unten in der Leiste wählen und auf den Haufen zielen.', art: 'werkzeug', ziel: 'detektor', geld: 2 },
-  { text: 'Verdiene 30 $', art: 'verdient', ziel: 30, geld: 5 },
+  { text: 'Verdiene 30 $', hilfe: 'Heu zum Stand bringen. Größerer Eimer und Spaten machen jeden Gang lohnender.', art: 'verdient', ziel: 30, geld: 5 },
   { text: 'Verkauf 1.000 Halme', hilfe: 'Heu in den Trichter am Stand oder auf die Rampe daneben werfen.', art: 'verkauft', ziel: 1000, geld: 5 },
   { text: 'Kauf den Besen und feg verschüttetes Heu zusammen', hilfe: 'Beim Graben fällt Heu daneben und rollt an den Fuß des Haufens. Dort zusammenfegen.', art: 'gefegt', ziel: 20, geld: 10 },
   { text: 'Kauf die Heugabel', hilfe: 'Am Werkzeugstand. Sticht doppelt so viel wie der Spaten.', art: 'tech', ziel: 'heugabel', geld: 10 },

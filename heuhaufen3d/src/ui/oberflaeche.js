@@ -173,6 +173,10 @@ export function oberflaecheBauen(wurzel, rueckruf) {
 
   /** Kurzer Text, der an einer Bildschirmstelle aufsteigt (Verkaufsbetrag, „+6“). */
   function schwebeText(text, x, y, art = '') {
+    // Im sichtbaren Bereich halten (nah am Trichter liegt der Verkaufspunkt oft über dem Bildrand)
+    const w = wurzel.clientWidth || innerWidth; const hoehe = wurzel.clientHeight || innerHeight;
+    x = Math.max(50, Math.min(w - 50, x));
+    y = Math.max(90, Math.min(hoehe - 140, y));
     const t = h('div', { class: `schwebetext ${art}`, style: { left: `${x}px`, top: `${y}px` } }, text);
     el.schwebe.append(t);
     while (el.schwebe.children.length > 12) el.schwebe.firstChild.remove();

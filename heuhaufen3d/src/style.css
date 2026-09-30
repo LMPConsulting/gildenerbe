@@ -669,3 +669,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .skizzenwerkzeug { gap: 6px; }
   .skizzenwerkzeug .knopf.klein { min-height: 38px; }
 }
+
+/* Menü: Einstellungen oben sichtbar, Knöpfe fließen mit (nicht klebend), quer zweispaltig */
+.modal.menue .modalknoepfe { position: static; box-shadow: none; }
+.modal.menue .modalknoepfe .knopf { flex: 1 1 45%; }
+.zeile.umsehen { flex-wrap: wrap; }
+.zeile.umsehen > div:first-child { flex: 1 1 100%; }
+.zeile.umsehen .reglerzeile { display: flex; align-items: center; gap: 10px; flex: 1 1 100%; }
+.zeile.umsehen .regler { flex: 1; }

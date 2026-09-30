@@ -45,6 +45,9 @@ export function werkzeugstandZeigen(ui, s, { gekauft, fehler }) {
         knopf.disabled = true;
       } else { setzeText(knopf, geld(techKosten(s, t.id))); knopf.disabled = st !== 'kaufbar'; }
     }
+    // die Kasse oben mitführen
+    const ober = liste.closest && liste.closest('.modal') ? liste.closest('.modal').querySelector('.ober') : null;
+    if (ober) setzeText(ober, `Kasse: ${geld(s.geld)}`);
   }
   aktualisieren();
   ui.modal({
@@ -129,10 +132,10 @@ export function menueZeigen(ui, einstellungen, { aendern, anleitung, herunterlad
   empf.addEventListener('pointerdown', (ev) => ev.stopPropagation());
   zeige();
   ui.modal({
-    ober: 'Heuhaufen 3D', titel: 'Menü',
+    klasse: 'menue', ober: 'Heuhaufen 3D', titel: 'Menü',
     inhalt: h('div', { class: 'liste' },
       ton, beben,
-      h('div', { class: 'zeile ohneicon' }, h('div', {}, h('b', {}, 'Umsehen'), h('small', {}, 'Wie schnell sich der Blick beim Wischen dreht.')), h('div', {}, empf, empfText)),
+      h('div', { class: 'zeile ohneicon umsehen' }, h('div', {}, h('b', {}, 'Umsehen'), h('small', {}, 'Wie schnell sich der Blick beim Wischen dreht.')), h('div', { class: 'reglerzeile' }, empf, empfText)),
       h('div', {}, h('p', { class: 'ober' }, 'Grafik (lädt neu)'), grafik)),
     knoepfe: [
       { text: 'Anleitung', aktion: anleitung },
@@ -164,13 +167,14 @@ export function nadelModal(ui, ev, s) {
 export function anleitungZeigen(ui) {
   ui.modal({
     ober: 'Rund sechs Millionen Halme', titel: 'Finde die Nadel',
-    absaetze: GESCHICHTE.anfang,
-    inhalt: h('ul', { class: 'anleitung' },
+    // Erst die Steuerung (ohne Scrollen sichtbar), dann die Geschichte
+    inhalt: h('div', {}, h('ul', { class: 'anleitung' },
       h('li', {}, 'Links den Daumen aufsetzen und schieben: gehen. Ganz nach außen: rennen.'),
       h('li', {}, 'Rechts wischen: umsehen. Tippen oder der runde Knopf: die Aktion (graben, verkaufen, aufheben).'),
       h('li', {}, 'Unten wählst du das Werkzeug. Heu kommt in die Arme, später in Eimer und Schubkarre.'),
       h('li', {}, 'Am Stand „Heu verkaufen“ kippst du alles in den Trichter. Am Werkzeugstand gibt es Spaten, Heugabel, Besen.'),
       h('li', {}, 'Der Metalldetektor piept, je näher eine Nadel ist. Oben links steht immer der nächste Schritt.')),
+      GESCHICHTE.anfang.map((p) => h('p', {}, p))),
     knoepfe: [{ text: 'Los geht’s', klasse: 'primaer' }],
   });
 }

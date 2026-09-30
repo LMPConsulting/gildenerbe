@@ -19,6 +19,8 @@ import {
 
 const RASTER_BAU = 0.25;
 const HUB_MAX = 3;
+/** Bauten ohne Richtung: kein Drehen-Knopf. */
+const RUND = new Set(['mast', 'lampe']);
 const WEITE_MIN = 1.2;
 const WEITE_MAX = 12;
 const rastern = (v, r = RASTER_BAU) => Math.round(v / r) * r;
@@ -229,6 +231,7 @@ export function baumodusBauen(ctx) {
       if (modus.art === 'bau') {
         const l = modus.lage;
         if (!l) return;
+        if (modus.lageOk === false && modus.typ === 'rechen') { ctx.klang.fehler(); ctx.ui.toast('Der Kamm muss ins Heu zeigen.', 'warn'); return; }
         const r = bauSetzen(s, modus.typ, l.x, l.z, l.rot, { y: l.y || 0 });
         if (!r.ok) { ctx.klang.fehler(); ctx.ui.toast(GRUND_TEXT[r.grund] || 'Geht hier nicht.', 'warn'); return; }
         ctx.klang.bauen();
@@ -307,18 +310,21 @@ export function baumodusBauen(ctx) {
         const p = bauPruefen(s, modus.typ, x, z, rot, { y: py });
         modus.lage = { x, z, rot, y: py };
         const mast = modus.typ === 'mast' ? mastVorschau(s, x, z) : null;
-        ctx.objekte.geist(modus.typ, { x, y: py, z, rot }, p.ok, mast ? { ringe: mast.ringe, leitungen: mast.leitungen } : null);
-        zuletztOk = p.ok;
         let grund = p.ok ? (mast ? mast.grund : null) : GRUND_TEXT[p.grund] || 'Geht hier nicht';
+        // Ein Rechen, dessen Kamm nicht ins Heu zeigt, täte nichts: dann gilt die Stelle als ungültig
+        let ok = p.ok;
         if (p.ok && modus.typ === 'rechen') {
           const [kx, kz] = [x + Math.cos(rot) * (d.b / 2 + 0.45), z - Math.sin(rot) * (d.b / 2 + 0.45)];
-          if (haufenHoehe(s.hf, kx, kz) < 0.06) grund = 'Der Kamm muss ins Heu zeigen';
+          if (haufenHoehe(s.hf, kx, kz) < 0.06) { grund = 'Der Kamm muss ins Heu zeigen'; ok = false; }
         }
+        modus.lageOk = ok;
+        ctx.objekte.geist(modus.typ, { x, y: py, z, rot }, ok, mast ? { ringe: mast.ringe, leitungen: mast.leitungen } : null);
+        zuletztOk = ok;
         const kw = d.kw > 0 ? ` · braucht ${d.kw} kW` : d.kw < 0 ? ` · liefert ${-d.kw} kW` : '';
         const extra = mast && mast.text ? ` · ${mast.text}` : '';
         ctx.hud.zeigen({
-          titel: d.name, zeile: `${kostenText(s, modus.typ)}${kw}${extra}`, grund, ok: p.ok,
-          schritt: 'setzen', einrasten: null, drehen: true, abstand: true,
+          titel: d.name, zeile: `${kostenText(s, modus.typ)}${kw}${extra}`, grund, ok,
+          schritt: 'setzen', einrasten: null, drehen: !RUND.has(modus.typ), abstand: true,
         });
         return true;
       }

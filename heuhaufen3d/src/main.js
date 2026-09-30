@@ -209,6 +209,14 @@ function hauptStart() {
     });
     zustand.tafel = f;
   }
+  /** Katalog auf jeden Fall öffnen (Geschenk-Tafel): offene Forschung schließen, Baumodus beenden. */
+  function katalogErzwingen() {
+    if (zustand.tafel) zustand.tafel.schliessen();
+    while (bm.aktiv()) bm.abbrechen();
+    // Das Modal schließt erst nach diesem Rückruf: den Katalog danach öffnen
+    setTimeout(() => bauenAuf(), 0);
+  }
+
   function bauenAuf() {
     if (zustand.tafel || !zustand.laeuft) return;
     if (bm.aktiv()) { bm.abbrechen(); if (bm.aktiv()) bm.abbrechen(); return; }
@@ -629,7 +637,7 @@ function hauptStart() {
       ui.modal({
         klasse: 'gold', ober: 'Geschenk', titel: e.belohnung.split(' geschenkt')[0],
         absaetze: [`Für „${e.text}“. Er liegt im Baukatalog bereit und kostet nichts.`],
-        knoepfe: [{ text: 'Zum Baukatalog', klasse: 'primaer', aktion: () => bauenAuf() }, { text: 'Später' }],
+        knoepfe: [{ text: 'Zum Baukatalog', klasse: 'primaer', aktion: katalogErzwingen }, { text: 'Später' }],
       });
     }
     if (missionen.length) {
@@ -752,13 +760,16 @@ function hauptStart() {
     const rand = 36;
     const drin = vorn && x > rand && x < b - rand && y > rand && y < hh - rand;
     if (!drin) {
-      // Richtung zum Ziel vom Bildmittelpunkt aus, hinter der Kamera gespiegelt
-      let dx = x - b / 2; let dy = y - hh / 2;
+      // Richtung zum Ziel vom Bildmittelpunkt aus, hinter der Kamera gespiegelt. Der Pfeil
+      // bleibt in einem Band über Werkzeugleiste und Knöpfen und unter der Kopfzeile.
+      const oben = 90; const unten = hh * 0.62;
+      const cy = (oben + unten) / 2; const halb = (unten - oben) / 2;
+      let dx = x - b / 2; let dy = y - cy;
       if (!vorn) { dx = -dx; dy = -dy; }
       const l = Math.hypot(dx, dy) || 1;
-      const k = Math.min((b / 2 - rand) / Math.abs(dx / l || 1e-6), (hh / 2 - rand) / Math.abs(dy / l || 1e-6));
+      const k = Math.min((b / 2 - rand - 60) / Math.abs(dx / l || 1e-6), halb / Math.abs(dy / l || 1e-6));
       x = b / 2 + (dx / l) * k;
-      y = hh / 2 + (dy / l) * k;
+      y = cy + (dy / l) * k;
       zielMarke.style.transform = `rotate(${Math.atan2(dy, dx) + Math.PI / 2}rad)`;
       if (zielMarke.dataset.form !== 'pfeil') {
         zielMarke.dataset.form = 'pfeil';
@@ -993,7 +1004,7 @@ function hauptStart() {
     h('div', { class: 'knoepfe' },
       gespeichert ? h('button', { class: 'knopf primaer', onclick: () => losgehen(false) }, 'Weiterspielen') : null,
       h('button', { class: `knopf${gespeichert ? '' : ' primaer'}`, onclick: () => (gespeichert ? neuFragen() : losgehen(true)) }, 'Neues Spiel'),
-      h('button', { class: 'knopf', onclick: () => anleitungZeigen(ui) }, 'Anleitung')),
+      h('button', { class: 'knopf', onclick: () => { zustand.anleitungGelesen = true; anleitungZeigen(ui); } }, 'Anleitung')),
     h('small', {}, 'Sechs Millionen Halme, sechs Nadeln. Am besten quer halten.'));
   app.append(startbild);
   app.classList.add('vorstart');
@@ -1020,7 +1031,8 @@ function hauptStart() {
     }
     s.zuletzt = Date.now();
     spielerKamera(s.spieler, s3.kamera, 0);
-    if (neu && !ui.modalOffen()) anleitungZeigen(ui);
+    // Wer die Anleitung schon auf dem Startbild gelesen hat, bekommt sie nicht noch einmal
+    if (neu && !ui.modalOffen() && !zustand.anleitungGelesen) anleitungZeigen(ui);
     speichernJetzt();
   }
 
