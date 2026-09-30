@@ -796,6 +796,38 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   const markierung = new THREE.Box3Helper(new THREE.Box3(), 0xff5533);
   markierung.visible = false;
   vorschauGruppe.add(markierung);
+  // Reichweite und Wurfziel beim Platzieren (wie die Reichweitenringe im Vorbild)
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide });
+  const reichweiteRing = new THREE.Mesh(new THREE.RingGeometry(0.97, 1.0, 64), ringMat);
+  reichweiteRing.rotation.x = -Math.PI / 2;
+  reichweiteRing.visible = false;
+  vorschauGruppe.add(reichweiteRing);
+  const zielMat = new THREE.MeshBasicMaterial({ color: 0xffd24a, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide });
+  const zielRing = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.34, 32), zielMat);
+  zielRing.rotation.x = -Math.PI / 2;
+  zielRing.visible = false;
+  vorschauGruppe.add(zielRing);
+
+  /** Hilfsringe für den Baugeist: Wurfziel des Rechens, Reichweite von Armen. */
+  function hilfeRinge(typ, lage) {
+    const d = typ ? BAU_BY_ID[typ] : null;
+    reichweiteRing.visible = false;
+    zielRing.visible = false;
+    if (!d) return;
+    const y0 = (lage.y || 0) + 0.03;
+    if (d.reichweite) {
+      reichweiteRing.visible = true;
+      reichweiteRing.scale.setScalar(d.reichweite);
+      reichweiteRing.position.set(lage.x, y0, lage.z);
+    }
+    if (typ === 'rechen' || typ === 'pellet') {
+      // Rechen werfen nach hinten, die Pelletmaschine nach vorn (Standardweite)
+      const weite = typ === 'rechen' ? -(d.b / 2 + 2.5) : d.b / 2 + 3;
+      const [zx, zz] = lokalZuWelt({ x: lage.x, z: lage.z, rot: lage.rot }, weite, 0);
+      zielRing.visible = true;
+      zielRing.position.set(zx, (lage.y || 0) + BAND_Y + 0.02, zz);
+    }
+  }
 
   function geistHolen(typ) {
     if (!geisterCache.has(typ)) {
@@ -911,6 +943,7 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     /** Grünes (oder rotes) Modell an der Stelle, an der gebaut würde. typ null: weg. */
     geist(typ, lage, ok) {
       if (geistAktiv && (!typ || geistAktiv.typ !== typ)) { geistAktiv.obj.visible = false; geistAktiv = null; }
+      hilfeRinge(typ, lage || {});
       if (!typ) return;
       const g = geistHolen(typ);
       g.visible = true;
