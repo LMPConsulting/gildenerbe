@@ -402,5 +402,6 @@ export const GRUND_TEXT = {
   band: 'Ein Band ist im Weg', geld: 'Nicht genug Geld', 'kein Weg': 'Kein Weg frei', kurz: 'Zu kurz', steil: 'Zu steil',
   lang: 'Zu lang', blockiert: 'Weg versperrt', draussen: 'Außerhalb der Halle', unbekannt: 'Geht nicht',
   kante: 'Steht nicht ganz auf der Plattform', boden: 'Nur auf dem Hallenboden',
+  kreuzt: 'Zum Kreuzen höher legen',
 };
 

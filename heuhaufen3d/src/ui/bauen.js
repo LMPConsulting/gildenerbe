@@ -147,10 +147,11 @@ export function baukatalogZeigen(ui, s, rueck) {
 
 /**
  * Einblendung beim Platzieren, hängt unter wurzel (dort, wo auch das HUD liegt).
- * rueck: { setzen(), drehen(), naeher(), weiter(), einrasten(), abbrechen() }.
+ * rueck: { setzen(), drehen(), naeher(), weiter(), hoeher(), tiefer(), einrasten(), abbrechen() }.
  * zeigen(info) darf jedes Bild laufen, es ändert das DOM nur bei neuen Werten.
  * info: { titel, zeile, grund, ok, schritt: 'setzen'|'anfang'|'ende'|'abbau',
- *         einrasten: true|false|null (null blendet den Schalter aus), drehen, abstand }.
+ *         einrasten: true|false|null (null blendet den Schalter aus), drehen, abstand,
+ *         hoehe: Zahl (Bandenden anheben: blendet Höher/Tiefer ein) }.
  */
 export function bauHudBauen(wurzel, rueck) {
   const BESTAETIGEN = { setzen: 'Hier bauen', anfang: 'Anfang setzen', ende: 'Ende setzen', abbau: 'Abbauen' };
@@ -168,10 +169,13 @@ export function bauHudBauen(wurzel, rueck) {
   const karte = h('div', { class: 'bhkarte', role: 'status' }, h('div', { class: 'bhtexte' }, titel, zeile, grund), zu);
   const naeher = knopf('', 'Näher', () => rueck.naeher());
   const weiter = knopf('', 'Weiter', () => rueck.weiter());
+  // Bandenden anheben: für Rampen und um über andere Bänder zu kreuzen
+  const tiefer = knopf('', 'Tiefer', () => rueck.tiefer && rueck.tiefer());
+  const hoeher = knopf('', 'Höher', () => rueck.hoeher && rueck.hoeher());
   const drehen = knopf('', 'Drehen', () => rueck.drehen());
   const einrasten = knopf('schalter', 'Einrasten: an', () => rueck.einrasten());
   const bestaetigen = knopf('bestaetigen', BESTAETIGEN.setzen, () => rueck.setzen());
-  const reiheAbstand = h('div', { class: 'bhreihe' }, naeher, weiter);
+  const reiheAbstand = h('div', { class: 'bhreihe' }, naeher, weiter, tiefer, hoeher);
   const reiheDrehen = h('div', { class: 'bhreihe' }, drehen, einrasten);
   const leiste = h('div', { class: 'bhleiste' }, reiheAbstand, reiheDrehen, bestaetigen);
   const el = h('div', { class: 'bauhud', hidden: true }, h('div', { class: 'bhband' }, karte), leiste);
@@ -214,7 +218,14 @@ export function bauHudBauen(wurzel, rueck) {
     sichtbarSetzen(drehen, !!info.drehen);
     sichtbarSetzen(naeher, !!info.abstand);
     sichtbarSetzen(weiter, !!info.abstand);
-    sichtbarSetzen(reiheAbstand, !!info.abstand);
+    const hub = typeof info.hoehe === 'number';
+    sichtbarSetzen(tiefer, hub);
+    sichtbarSetzen(hoeher, hub);
+    if (hub) {
+      tiefer.classList.toggle('matt', info.hoehe <= 0);
+      hoeher.classList.toggle('matt', info.hoehe >= 3);
+    }
+    sichtbarSetzen(reiheAbstand, !!info.abstand || hub);
     sichtbarSetzen(reiheDrehen, !!info.drehen || rast !== null);
   }
   function verstecken() {

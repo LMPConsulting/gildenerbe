@@ -18,6 +18,7 @@ import {
 } from './bauen.js';
 
 const RASTER_BAU = 0.25;
+const HUB_MAX = 3;
 const WEITE_MIN = 1.2;
 const WEITE_MAX = 12;
 const rastern = (v, r = RASTER_BAU) => Math.round(v / r) * r;
@@ -26,7 +27,8 @@ const meter = (m) => `${m.toFixed(1).replace('.', ',')} m`;
 
 /**
  * ctx: { holeStand(), objekte, hud (aus bauHudBauen), ui, klang, ereignisse(liste), abbauFragen(bau, info, weiter) }.
- * Liefert { aktiv(), art(), starten(typ), abbauStarten(), abbrechen(), setzen(), drehen(), naeher(), weiter(), einrasten(), schritt(kamera, blick) }.
+ * Liefert { aktiv(), art(), starten(typ), abbauStarten(), abbrechen(), setzen(), drehen(), naeher(), weiter(),
+ * hoeher(), tiefer(), einrasten(), schritt(kamera, blick) }.
  */
 export function baumodusBauen(ctx) {
   let modus = null;
@@ -156,7 +158,7 @@ export function baumodusBauen(ctx) {
       const d = BAU_BY_ID[typ];
       if (!d) return;
       ctx.objekte.vorschauWeg();
-      if (typ === 'band') modus = { art: 'band', typ, schritt: 'anfang', einrasten: true, weite: 5 };
+      if (typ === 'band') modus = { art: 'band', typ, schritt: 'anfang', einrasten: true, weite: 5, hub: 0 };
       else if (d.linie) modus = { art: 'linie', typ, schritt: 'anfang', weite: 5 };
       else modus = { art: 'bau', typ, dreh: 0, weite: 5 };
     },
@@ -182,6 +184,9 @@ export function baumodusBauen(ctx) {
     drehen() { if (modus && modus.art === 'bau') { modus.dreh += Math.PI / 4; ctx.klang.klick(); } },
     naeher() { if (modus) modus.weite = Math.max(WEITE_MIN, modus.weite - 1); },
     weiter() { if (modus) modus.weite = Math.min(WEITE_MAX, modus.weite + 1); },
+    /** Freie Bandenden anheben oder absenken (0 bis 3 m in halben Metern), für Rampen und Kreuzungen. */
+    hoeher() { if (modus && modus.art === 'band' && modus.hub < HUB_MAX) { modus.hub = Math.min(HUB_MAX, modus.hub + 0.5); modus.plan = null; ctx.klang.klick(); } },
+    tiefer() { if (modus && modus.art === 'band' && modus.hub > 0) { modus.hub = Math.max(0, modus.hub - 0.5); modus.plan = null; ctx.klang.klick(); } },
     einrasten() { if (modus && modus.art === 'band') { modus.einrasten = !modus.einrasten; modus.plan = null; ctx.klang.klick(); } },
 
     /** Bestätigen: bauen, Anfang oder Ende setzen, abbauen. */
@@ -286,8 +291,9 @@ export function baumodusBauen(ctx) {
       }
       if (modus.art === 'band') {
         const ende = modus.schritt === 'ende';
-        const a = bandAnker(s, px, pz, ende, { radius: 1.2, y: py });
+        const a = bandAnker(s, px, pz, ende, { radius: 1.2, y: py + modus.hub });
         const d = BAU_BY_ID.band;
+        const hubText = modus.hub > 0 && a.art === 'frei' ? ` · ${meter(modus.hub)} hoch` : '';
         if (!ende) {
           const ok = py > 0.1 || haufenHoehe(s.hf, a.x, a.z) < 0.15;
           modus.anker = a;
@@ -295,13 +301,14 @@ export function baumodusBauen(ctx) {
           zuletztOk = ok;
           ctx.objekte.ankerZeigen([...ankerListe(s, px, pz, false, a), { x: a.x, y: a.y, z: a.z, ziel: true }]);
           ctx.hud.zeigen({
-            titel: 'Förderband', zeile: `Anfang wählen · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
-            grund: ok ? null : GRUND_TEXT.haufen, ok, schritt: 'anfang', einrasten: modus.einrasten, drehen: false, abstand: false,
+            titel: 'Förderband', zeile: `Anfang wählen${hubText} · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
+            grund: ok ? null : GRUND_TEXT.haufen, ok, schritt: 'anfang', einrasten: modus.einrasten, drehen: false, abstand: false, hoehe: modus.hub,
           });
           return true;
         }
         const alt = modus.plan;
-        const verschoben = !modus.anker || Math.hypot(a.x - modus.anker.x, a.z - modus.anker.z) > 0.12 || a.art !== modus.anker.art;
+        const verschoben = !modus.anker || Math.hypot(a.x - modus.anker.x, a.z - modus.anker.z) > 0.12 || a.art !== modus.anker.art
+          || Math.abs(a.y - modus.anker.y) > 0.01;
         if ((verschoben || !alt) && planZeit <= 0) {
           modus.anker = a;
           modus.plan = bandPlanen(s, modus.von, a, { gerade: !modus.einrasten });
@@ -314,9 +321,9 @@ export function baumodusBauen(ctx) {
         const ziel = a.art === 'stand' ? ' · zum Stand' : a.art === 'laster' ? ' · zum Laster' : a.art === 'ein' ? ` · in ${BAU_BY_ID[a.bau.typ].name}` : a.art === 'band' ? ' · aufs Band' : '';
         ctx.hud.zeigen({
           titel: 'Förderband',
-          zeile: plan && plan.punkte ? `${meter(plan.laenge)} · ${geld(plan.kosten)}${ziel}` : `Ende wählen${ziel}`,
+          zeile: plan && plan.punkte ? `${meter(plan.laenge)} · ${geld(plan.kosten)}${ziel}${hubText}` : `Ende wählen${ziel}${hubText}`,
           grund: plan && !plan.ok ? GRUND_TEXT[plan.grund] || 'Geht so nicht' : null,
-          ok: !!(plan && plan.ok), schritt: 'ende', einrasten: modus.einrasten, drehen: false, abstand: false,
+          ok: !!(plan && plan.ok), schritt: 'ende', einrasten: modus.einrasten, drehen: false, abstand: false, hoehe: modus.hub,
         });
         return true;
       }

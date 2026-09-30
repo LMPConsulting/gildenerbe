@@ -332,7 +332,8 @@ describe('Spielstand mit Automatik', () => {
     expect(text).not.toContain('"_l"');
     const t = laden(text);
     expect(t).not.toBeNull();
-    expect(t.bauten.length).toBe(2);
+    expect(t.bauten.filter((x) => !x.start).length).toBe(2);
+    expect(t.bauten.some((x) => x.start)).toBe(true); // die Startrampe bleibt
     expect(t.gegenstaende.filter((g) => g.ort === 'band').length).toBe(3);
     laufen(t, 30);
     expect(t.stat.verkauft).toBe(120);
@@ -460,5 +461,84 @@ describe('Befunde aus der Code-Prüfung', () => {
     const verkaufRate = erg.halme * werte(s).preisRoh / 120;
     // Hochrechnung höchstens aus Verkäufen: nicht mehr als Rate × Zeit plus die genaue Phase
     expect(s.verdient - vorher).toBeLessThan(verkaufRate * 2 * 3600 * 1.2 + 50000);
+  });
+});
+
+describe('Kreuzende Bänder', () => {
+  const hochPlan = (s, von, nach, hub, opt = {}) => bandPlanen(s, bandAnker(s, von[0], von[1], false, { y: hub }), bandAnker(s, nach[0], nach[1], true, { y: hub }), opt);
+
+  it('ein hoch gelegtes Band führt gerade über ein Band am Boden', () => {
+    const s = hof();
+    band(s, [12, 4], [16.5, 4]);
+    const plan = hochPlan(s, [14, 0], [14, 8], 1.5);
+    expect(plan.ok, plan.grund).toBe(true);
+    // geradeaus, ohne Umweg: nur Anfang und Ende
+    expect(plan.punkte.length).toBe(2);
+    expect(plan.punkte[0][1]).toBeCloseTo(2.05, 2);
+    bandSetzen(s, plan);
+    // und ein Band am Boden darf unter einem hohen hindurch
+    const unten = bandPlanen(s, bandAnker(s, 12.5, 6, false), bandAnker(s, 16.5, 6, true));
+    expect(unten.ok, unten.grund).toBe(true);
+    expect(unten.punkte.length).toBe(2);
+  });
+
+  it('zu flach zum Kreuzen: Umweg oder Absage, nie mitten durch', () => {
+    const s = hof();
+    // Band quer über die ganze freie Breite rechts vom Haufen
+    band(s, [10.6, 4], [17.4, 4]);
+    const flach = hochPlan(s, [14, 0], [14, 8], 0.5);
+    // Umweg um das Bandende herum, nie in 0,5 m Höhe mitten durch
+    if (flach.ok) {
+      for (let i = 1; i < flach.punkte.length; i++) {
+        const a = flach.punkte[i - 1]; const b = flach.punkte[i];
+        if ((a[2] - 4) * (b[2] - 4) > 0 || a[2] === b[2]) continue;
+        const x = a[0] + ((b[0] - a[0]) * (4 - a[2])) / (b[2] - a[2]);
+        expect(x < 10.1 || x > 17.9, `kreuzt bei x = ${x}`).toBe(true);
+      }
+      expect(flach.punkte.length).toBeGreaterThan(2);
+    }
+    const gerade = hochPlan(s, [14, 0], [14, 8], 0.5, { gerade: true });
+    expect(gerade.ok).toBe(false);
+    expect(hochPlan(s, [14, 0], [14, 8], 1.5, { gerade: true }).ok).toBe(true);
+  });
+
+  it('eine Rampe vom Boden nach oben kreuzt dort, wo sie hoch genug ist', () => {
+    const s = hof();
+    band(s, [12, 6], [16.5, 6]);
+    // von z = -4 (Boden, 0,55 m) nach z = 7 (3 m hoch → 3,55 m): bei z = 6 schon über 3 m
+    const plan = bandPlanen(s, bandAnker(s, 14, -4, false), bandAnker(s, 14, 7, true, { y: 3 }));
+    expect(plan.ok, plan.grund).toBe(true);
+    expect(plan.punkte.length).toBe(2);
+    // dieselbe Rampe andersherum (oben am Anfang) kreuzt am tiefen Ende nicht
+    const falsch = bandPlanen(s, bandAnker(s, 14, 5, false, { y: 0 }), bandAnker(s, 14, 7.2, true, { y: 0.4 }), { gerade: true });
+    expect(falsch.ok).toBe(false);
+  });
+});
+
+describe('Startrampe', () => {
+  it('steht in jeder neuen Halle am Stand, verkauft, was darauf fällt, und zählt nicht als gebautes Band', async () => {
+    const { bauAnzahl, missionStand } = await import('../../heuhaufen3d/src/wirtschaft.js');
+    const s = hof();
+    const rampe = s.bauten.find((b) => b.start);
+    expect(rampe).toBeTruthy();
+    expect(rampe.typ).toBe('band');
+    expect(bauAnzahl(s, 'band')).toBe(0);
+    netzHolen(s);
+    expect(lauf(rampe).ziel.art).toBe('stand');
+    // unten ist sie fast am Boden, oben über dem Trichter
+    expect(rampe.punkte[0][1]).toBeLessThan(0.4);
+    expect(rampe.punkte[1][1]).toBeGreaterThan(0.9);
+    // Heu von oben auf das untere Ende fallen lassen
+    const p = bandPunkt(rampe, 0.4);
+    const g = gegenstandNeu(s, 'roh', 30, p.x, p.y + 0.6, p.z);
+    g.ort = 'flug';
+    const vorher = s.stat.verkauft;
+    laufen(s, 8);
+    expect(s.stat.verkauft - vorher).toBe(30);
+    // die Mission „Leg ein Band vom Haufen zum Stand“ ist damit nicht erledigt
+    const { MISSIONEN } = await import('../../heuhaufen3d/src/daten.js');
+    s.mission = MISSIONEN.findIndex((m) => m.art === 'gebaut' && m.ziel[0] === 'band');
+    expect(s.mission).toBeGreaterThan(0);
+    expect(missionStand(s).ist).toBe(0);
   });
 });

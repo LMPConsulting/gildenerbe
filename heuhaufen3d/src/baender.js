@@ -266,10 +266,15 @@ class Haufenliste {
 
 const RICHTUNGEN = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
+/** So viel höher oder tiefer muss ein Band liegen, um ein anderes zu kreuzen (Oberkante zu Oberkante). */
+export const KREUZ_ABSTAND = 0.85;
+
 /**
- * Sperrraster für die Wegfindung: 0 frei, 1 belegt (Bauten, Bänder, Haufen,
- * Stationen), 2 Hallenwand. Zwischengespeichert, bis sich Bauten ändern oder
- * zwei Sekunden Spielzeit vergehen (der Haufen schrumpft langsam).
+ * Sperrraster für die Wegfindung: 0 frei, 1 belegt (Bauten, Haufen, Stationen),
+ * 2 Hallenwand, 3 Band (kreuzbar, wenn das neue Band dort hoch oder tief genug
+ * liegt; oben/unten halten die Höhen der Bänder je Zelle). Zwischengespeichert,
+ * bis sich Bauten ändern oder zwei Sekunden Spielzeit vergehen (der Haufen
+ * schrumpft langsam).
  */
 function sperrRasterRoh(s, ohne) {
   const L = lauf(s);
@@ -281,6 +286,8 @@ function sperrRasterRoh(s, ohne) {
   const nx = Math.floor((gr.xMax - gr.xMin) / RASTER);
   const nz = Math.floor((gr.zMax - gr.zMin) / RASTER);
   const sperre = new Uint8Array(nx * nz);
+  const oben = new Float32Array(nx * nz).fill(-Infinity);
+  const unten = new Float32Array(nx * nz).fill(Infinity);
   const H = RASTER / 2;
   for (let i = 0; i < nx; i++) {
     const cx = x0 + i * RASTER + H;
@@ -301,11 +308,12 @@ function sperrRasterRoh(s, ohne) {
       for (let kk = k0; kk <= k1; kk++) {
         const cz = z0 + kk * RASTER + H;
         if (cz < kz0 - rand || cz > kz1 + rand) continue;
-        if (sperre[i * nz + kk] === 0) sperre[i * nz + kk] = 1;
+        if (sperre[i * nz + kk] === 0 || sperre[i * nz + kk] === 3) sperre[i * nz + kk] = 1;
       }
     }
   };
-  const strecke = (ax, az, bx, bz, abst) => {
+  // Strecke von a nach b sperren; mit Höhen (ay, by) als kreuzbares Band
+  const strecke = (ax, az, bx, bz, abst, ay = null, by = null) => {
     const i0 = Math.max(0, Math.floor((Math.min(ax, bx) - abst - x0) / RASTER));
     const i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx) + abst - x0) / RASTER));
     const k0 = Math.max(0, Math.floor((Math.min(az, bz) - abst - z0) / RASTER));
@@ -319,7 +327,16 @@ function sperrRasterRoh(s, ohne) {
         let u = l2 > 0 ? ((cx - ax) * dx + (cz - az) * dz) / l2 : 0;
         u = u < 0 ? 0 : u > 1 ? 1 : u;
         const qx = ax + dx * u - cx; const qz = az + dz * u - cz;
-        if (qx * qx + qz * qz < abst * abst && sperre[i * nz + kk] === 0) sperre[i * nz + kk] = 1;
+        if (qx * qx + qz * qz >= abst * abst) continue;
+        const idx = i * nz + kk;
+        if (ay === null) {
+          if (sperre[idx] === 0 || sperre[idx] === 3) sperre[idx] = 1;
+        } else if (sperre[idx] === 0 || sperre[idx] === 3) {
+          sperre[idx] = 3;
+          const y = ay + (by - ay) * u;
+          if (y > oben[idx]) oben[idx] = y;
+          if (y < unten[idx]) unten[idx] = y;
+        }
       }
     }
   };
@@ -327,7 +344,7 @@ function sperrRasterRoh(s, ohne) {
   for (const b of s.bauten) {
     if (ohne.includes(b.id)) continue;
     if (b.typ === 'band') {
-      for (const g of bandGeometrie(b).segs) strecke(g.ax, g.az, g.bx, g.bz, 0.52);
+      for (const g of bandGeometrie(b).segs) strecke(g.ax, g.az, g.bx, g.bz, 0.52, g.ay, g.by);
       continue;
     }
     if (b.typ === 'plattform' || b.typ === 'dach' || b.typ === 'leitung' || b.typ === 'klappe') continue;
@@ -335,14 +352,14 @@ function sperrRasterRoh(s, ohne) {
     const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
     kasten(k.x0, k.x1, k.z0, k.z1, 0.28);
   }
-  L.sperrRaster = { schluessel, sperre, nx, nz, x0, z0 };
+  L.sperrRaster = { schluessel, sperre, oben, unten, nx, nz, x0, z0 };
   return L.sperrRaster;
 }
 
 /** Sperrraster mit freien Kreisen um Anfang und Ende (Wände bleiben gesperrt). */
 export function sperrRaster(s, { frei = [], ohne = [] } = {}) {
   const roh = sperrRasterRoh(s, ohne);
-  const { nx, nz, x0, z0 } = roh;
+  const { nx, nz, x0, z0, oben, unten } = roh;
   const sperre = roh.sperre.slice();
   for (const [fx, fz, r] of frei) {
     const i0 = Math.max(0, Math.floor((fx - r - x0) / RASTER));
@@ -352,12 +369,12 @@ export function sperrRaster(s, { frei = [], ohne = [] } = {}) {
     for (let i = i0; i <= i1; i++) {
       for (let k = k0; k <= k1; k++) {
         const cx = x0 + (i + 0.5) * RASTER - fx; const cz = z0 + (k + 0.5) * RASTER - fz;
-        if (cx * cx + cz * cz < r * r && sperre[i * nz + k] === 1) sperre[i * nz + k] = 0;
+        if (cx * cx + cz * cz < r * r && (sperre[i * nz + k] === 1 || sperre[i * nz + k] === 3)) sperre[i * nz + k] = 0;
       }
     }
   }
   const mitte = (i, k) => [x0 + (i + 0.5) * RASTER, z0 + (k + 0.5) * RASTER];
-  return { sperre, nx, nz, x0, z0, mitte };
+  return { sperre, oben, unten, nx, nz, x0, z0, mitte };
 }
 
 /**
@@ -368,11 +385,31 @@ export function sperrRaster(s, { frei = [], ohne = [] } = {}) {
 export function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 } = {}) {
   const frei = [[von.x, von.z, 0.75], [nach.x, nach.z, 0.75]];
   const raster = sperrRaster(s, { frei, ohne });
-  const { sperre, nx, nz, x0, z0, mitte } = raster;
+  const { sperre, oben, unten, nx, nz, x0, z0, mitte } = raster;
   const zelle = (x, z) => [Math.floor((x - x0) / RASTER), Math.floor((z - z0) / RASTER)];
-  const gesperrt = (x, z) => {
+  // Über oder unter einem anderen Band hindurch, wenn der Höhenunterschied reicht
+  const kreuzbar = (idx, y) => sperre[idx] === 3 && (y >= oben[idx] + KREUZ_ABSTAND || y <= unten[idx] - KREUZ_ABSTAND);
+  const gesperrt = (x, z, y) => {
     const [i, k] = zelle(x, z);
-    return i < 0 || k < 0 || i >= nx || k >= nz || sperre[i * nz + k] !== 0;
+    if (i < 0 || k < 0 || i >= nx || k >= nz) return true;
+    const idx = i * nz + k;
+    return sperre[idx] !== 0 && !kreuzbar(idx, y);
+  };
+  // Liegt das fertige Band an jeder Kreuzung hoch oder tief genug?
+  const kreuzungenOk = (punkte) => {
+    for (let n = 1; n < punkte.length; n++) {
+      const a = punkte[n - 1]; const b = punkte[n];
+      const l = Math.hypot(b[0] - a[0], b[2] - a[2]);
+      const m = Math.max(1, Math.ceil(l / 0.2));
+      for (let j = 0; j <= m; j++) {
+        const u = j / m;
+        const [i, k] = zelle(a[0] + (b[0] - a[0]) * u, a[2] + (b[2] - a[2]) * u);
+        if (i < 0 || k < 0 || i >= nx || k >= nz) continue;
+        const idx = i * nz + k;
+        if (sperre[idx] === 3 && !kreuzbar(idx, a[1] + (b[1] - a[1]) * u)) return false;
+      }
+    }
+    return true;
   };
   const hoehe = (punkte) => {
     // Höhe gleichmäßig von von.y nach nach.y über die Länge
@@ -392,6 +429,7 @@ export function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte =
     if (r.laenge < 0.6) return { fehler: 'kurz' };
     if (Math.abs(nach.y - von.y) / r.laenge > 0.6) return { fehler: 'steil' };
     if (r.laenge > 80) return { fehler: 'lang' };
+    if (!kreuzungenOk(r.punkte)) return { fehler: 'kreuzt' };
     return r;
   };
 
@@ -399,7 +437,7 @@ export function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte =
     const l = Math.hypot(nach.x - von.x, nach.z - von.z);
     for (let t = 0.2; t < l - 0.2; t += 0.25) {
       const x = lerp(von.x, nach.x, t / l); const z = lerp(von.z, nach.z, t / l);
-      if (gesperrt(x, z)) return { fehler: 'blockiert' };
+      if (gesperrt(x, z, lerp(von.y, nach.y, t / l))) return { fehler: 'blockiert' };
     }
     return fertig([[von.x, von.z], [nach.x, nach.z]]);
   }
@@ -438,13 +476,24 @@ export function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte =
     const i = Math.floor(c / nz); const k = c % nz;
     if (i === bi && k === bk) { ende = st; break; }
     const g0 = kosten[st];
+    const inKreuzung = sperre[c] === 3;
     for (let nd = 0; nd < 4; nd++) {
       if (nd === ((d + 2) & 3)) continue;
+      if (inKreuzung && nd !== d) continue; // über einem anderen Band nicht abbiegen
       const ni = i + RICHTUNGEN[nd][0]; const nk = k + RICHTUNGEN[nd][1];
-      if (ni < 0 || nk < 0 || ni >= nx || nk >= nz || sperre[ni * nz + nk]) continue;
-      const ns = (ni * nz + nk) * 4 + nd;
+      if (ni < 0 || nk < 0 || ni >= nx || nk >= nz) continue;
+      const nIdx = ni * nz + nk;
+      let extra = 0;
+      if (sperre[nIdx]) {
+        // Kreuzen nur geradeaus und nur, wenn die geschätzte Höhe dort reicht
+        if (sperre[nIdx] !== 3 || nd !== d) continue;
+        const da = Math.abs(ni - ai) + Math.abs(nk - ak); const db = Math.abs(ni - bi) + Math.abs(nk - bk);
+        if (!kreuzbar(nIdx, lerp(von.y, nach.y, da / Math.max(1, da + db)))) continue;
+        extra = 0.5;
+      }
+      const ns = nIdx * 4 + nd;
       const amZiel = ni === bi && nk === bk;
-      const ng = g0 + 1 + (nd === d ? 0 : 1.6) + (amZiel && zielRichtung >= 0 && nd !== zielRichtung ? 1.6 : 0);
+      const ng = g0 + 1 + extra + (nd === d ? 0 : 1.6) + (amZiel && zielRichtung >= 0 && nd !== zielRichtung ? 1.6 : 0);
       if (ng < kosten[ns]) {
         kosten[ns] = ng;
         her[ns] = st;

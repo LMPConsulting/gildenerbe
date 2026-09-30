@@ -113,6 +113,8 @@ function hauptStart() {
       else if (k === 'q' && bm.aktiv()) bm.drehen();
       else if (k === 'f' && bm.aktiv()) bm.einrasten();
       // C und V schieben den Geist näher und weiter weg wie im Vorbild; sonst duckt C
+      else if (k === 'c' && bm.art() === 'band') bm.tiefer();
+      else if (k === 'v' && bm.art() === 'band') bm.hoeher();
       else if (k === 'c' && bm.aktiv()) bm.naeher();
       else if (k === 'v' && bm.aktiv()) bm.weiter();
       else if (k === 'c') ui.duckenZeigen(st.duckenUmschalten());
@@ -125,8 +127,9 @@ function hauptStart() {
     if (!bm.aktiv()) return;
     ev.preventDefault();
     radRest += ev.deltaY;
+    const band = bm.art() === 'band';
     while (Math.abs(radRest) >= 80) {
-      if (radRest < 0) { bm.weiter(); radRest += 80; } else { bm.naeher(); radRest -= 80; }
+      if (radRest < 0) { if (band) bm.hoeher(); else bm.weiter(); radRest += 80; } else { if (band) bm.tiefer(); else bm.naeher(); radRest -= 80; }
     }
   }, { passive: false });
 
@@ -272,6 +275,7 @@ function hauptStart() {
   /* ------------------------------------------------ Baumodus */
   const bauHud = bauHudBauen(app, {
     setzen: () => bm.setzen(), drehen: () => bm.drehen(), naeher: () => bm.naeher(), weiter: () => bm.weiter(),
+    hoeher: () => bm.hoeher(), tiefer: () => bm.tiefer(),
     einrasten: () => bm.einrasten(), abbrechen: () => bm.abbrechen(),
   });
   const bm = baumodusBauen({

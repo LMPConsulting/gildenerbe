@@ -14,7 +14,8 @@ import { nadelnVerteilen, nadelnFreilegen, loseNadelnSetzen } from './nadeln.js'
 import { spielerNeu } from './spieler.js';
 import { WERKZEUG_NACH_ID } from './werkzeuge.js';
 import { lasterNeu } from './laster.js';
-import { lauf } from './welt.js';
+import { lauf, STAND_TRICHTER } from './welt.js';
+import { bandBau } from './baender.js';
 import { bauZustand } from './maschinen.js';
 
 export const STAND3D_VERSION = 1;
@@ -34,6 +35,17 @@ export function spielZufall(s) {
   return s.zufallFn;
 }
 
+/**
+ * Die kurze Schrägrampe am Stand, die im Vorbild schon in der frischen Halle
+ * steht: unten fast am Boden, oben über dem Trichter. Was darauf fällt, wird
+ * verkauft. Gratis, zählt nirgends mit, lässt sich abbauen.
+ */
+export function startRampe(id) {
+  const T = STAND_TRICHTER;
+  const punkte = [[T.x, 0.32, T.z + 3.7], [T.x, 1.0, T.z + 0.78]];
+  return { ...bandBau(id, punkte), start: true, bezahlt: 0 };
+}
+
 export function standNeu(seed = (Date.now() % 2147483647) || 7) {
   const s = {
     version: STAND3D_VERSION,
@@ -51,11 +63,11 @@ export function standNeu(seed = (Date.now() % 2147483647) || 7) {
       ...spielerNeu(), werkzeug: 'hand', last: 0, puste: GRUND.ausdauer, ruhe: 0,
       sauger: { an: false, hitze: 0, heiss: false, rest: 0 }, haelt: null,
     },
-    bauten: [],
+    bauten: [startRampe(1)],
     gegenstaende: [],
     geschenke: {},
     skizzen: [],
-    naechsteId: 1,
+    naechsteId: 2,
     mission: 0,
     missionErledigt: [],
     auftrag: { nr: 0, skip: 0, geliefert: 0, pause: 0 },

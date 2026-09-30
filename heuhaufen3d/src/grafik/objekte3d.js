@@ -6,7 +6,7 @@
 
 import * as THREE from '../../vendor/three.module.min.js';
 import { BAU_BY_ID, BAND_Y, lauf, lokalZuWelt } from '../welt.js';
-import { bandGeometrie, bandBahn } from '../baender.js';
+import { bandGeometrie, bandBahn, bandNaechster } from '../baender.js';
 import { GROESSE } from '../gegenstaende.js';
 import { greiferPunkt, innenPunkt, BRENN_MAX } from '../maschinen.js';
 import { lasterLage, LASTER_BETT } from '../laster.js';
@@ -365,8 +365,29 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
   const euler = new THREE.Euler();
   const achseY = new THREE.Vector3(0, 1, 0);
 
+  /** Bänder, die unter diesem hindurchlaufen (dort stehen keine Beine). */
+  function baenderDarunter(bau, s) {
+    if (!s) return [];
+    const box = (b) => {
+      let x0 = Infinity; let x1 = -Infinity; let z0 = Infinity; let z1 = -Infinity; let y0 = Infinity; let y1 = -Infinity;
+      for (const p of b.punkte) {
+        x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[2]); z1 = Math.max(z1, p[2]);
+        y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]);
+      }
+      return { x0, x1, z0, z1, y0, y1 };
+    };
+    const a = box(bau);
+    if (a.y1 < BAND_Y + 0.6) return [];
+    return s.bauten.filter((b) => {
+      if (b.typ !== 'band' || b === bau) return false;
+      const k = box(b);
+      return k.x0 < a.x1 + 0.6 && k.x1 > a.x0 - 0.6 && k.z0 < a.z1 + 0.6 && k.z1 > a.z0 - 0.6 && k.y0 < a.y1 - 0.5;
+    });
+  }
+
   function bandObjekt(bau, s) {
     const g = new THREE.Group();
+    const darunter = baenderDarunter(bau, s);
     const { bahn, laenge } = bandGeometrie(bau);
     const gurt = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_GURT, 0.5), MAT.gurt);
     gurt.receiveShadow = schatten;
@@ -399,8 +420,11 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
       const hoehe = p[1] - 0.16 - unten;
       if (hoehe < 0.05) continue;
       for (const seite of [-0.31, 0.31]) {
+        const bx = p[0] + d[1] * seite; const bz = p[2] - d[0] * seite;
+        // kein Bein mitten auf einem Band, das darunter kreuzt
+        if (darunter.some((b) => { const nb = bandNaechster(b, bx, bz); return nb.d < 0.42 && nb.y < p[1] - 0.3; })) continue;
         const bg = new THREE.BoxGeometry(0.05, hoehe, 0.05);
-        bg.translate(p[0] + d[1] * seite, unten + hoehe / 2, p[2] - d[0] * seite);
+        bg.translate(bx, unten + hoehe / 2, bz);
         beine.push(bg);
       }
     }
@@ -485,8 +509,9 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     return obj;
   }
 
-  const schluesselVon = (bau) => (bau.typ === 'band'
-    ? `b|${bau.punkte.length}|${bau.punkte[0].join(',')}|${bau.punkte[bau.punkte.length - 1].join(',')}`
+  // Bänder hängen auch von den Bändern darunter ab (Beine weichen aus)
+  const schluesselVon = (bau, s) => (bau.typ === 'band'
+    ? `b|${bau.punkte.length}|${bau.punkte[0].join(',')}|${bau.punkte[bau.punkte.length - 1].join(',')}|${baenderDarunter(bau, s).map((b) => b.id).join(',')}`
     : `m|${bau.typ}|${bau.x}|${bau.z}|${bau.y || 0}|${bau.rot || 0}|${bau.a ? bau.a.join(',') + bau.b.join(',') : ''}`);
 
 
@@ -498,13 +523,14 @@ export function objekteBauen(szene, qualitaet = 'mittel') {
     for (const bau of s.bauten) {
       da.add(bau.id);
       const e = eintraege.get(bau.id);
-      const k = schluesselVon(bau);
+      const k = schluesselVon(bau, s);
       if (e && e.schluessel === k && e.bau === bau) continue;
       if (e) { bautenGruppe.remove(e.obj); entsorgen(e.obj); }
       const obj = bauObjekt(bau, s);
       bautenGruppe.add(obj);
       eintraege.set(bau.id, { bau, obj, schluessel: k, teile: teileSuchen(obj) });
-      if (!ersterAbgleich) aufbauEffekt(obj);
+      // Aufbau-Hologramm nur für Neues, nicht wenn ein Band wegen eines Nachbarn neu entsteht
+      if (!ersterAbgleich && !(e && e.bau === bau)) aufbauEffekt(obj);
     }
     for (const [id, e] of eintraege) {
       if (!da.has(id)) { bautenGruppe.remove(e.obj); entsorgen(e.obj); eintraege.delete(id); }

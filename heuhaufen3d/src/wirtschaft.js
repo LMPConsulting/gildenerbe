@@ -258,7 +258,8 @@ export function techLage(aeste) {
 
 /* ------------------------------------------------------------ Bauten kaufen */
 
-export const bauAnzahl = (s, typ) => s.bauten.reduce((n, b) => n + (b.typ === typ ? 1 : 0), 0);
+// Die Startrampe am Stand zählt nicht mit (weder für Preise noch für Missionen)
+export const bauAnzahl = (s, typ) => s.bauten.reduce((n, b) => n + (b.typ === typ && !b.start ? 1 : 0), 0);
 export const bauFrei = (s, typ) => {
   const b = BAU_NACH_ID[typ];
   return !!b && (b.frei === null || werte(s).frei.has(b.frei) || (s.geschenke[typ] || 0) > 0);

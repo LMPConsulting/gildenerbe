@@ -2046,7 +2046,8 @@ function techLage(aeste) {
 
 /* ------------------------------------------------------------ Bauten kaufen */
 
-const bauAnzahl = (s, typ) => s.bauten.reduce((n, b) => n + (b.typ === typ ? 1 : 0), 0);
+// Die Startrampe am Stand zählt nicht mit (weder für Preise noch für Missionen)
+const bauAnzahl = (s, typ) => s.bauten.reduce((n, b) => n + (b.typ === typ && !b.start ? 1 : 0), 0);
 const bauFrei = (s, typ) => {
   const b = BAU_NACH_ID[typ];
   return !!b && (b.frei === null || werte(s).frei.has(b.frei) || (s.geschenke[typ] || 0) > 0);
@@ -3307,10 +3308,15 @@ class Haufenliste {
 
 const RICHTUNGEN = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
+/** So viel höher oder tiefer muss ein Band liegen, um ein anderes zu kreuzen (Oberkante zu Oberkante). */
+const KREUZ_ABSTAND = 0.85;
+
 /**
- * Sperrraster für die Wegfindung: 0 frei, 1 belegt (Bauten, Bänder, Haufen,
- * Stationen), 2 Hallenwand. Zwischengespeichert, bis sich Bauten ändern oder
- * zwei Sekunden Spielzeit vergehen (der Haufen schrumpft langsam).
+ * Sperrraster für die Wegfindung: 0 frei, 1 belegt (Bauten, Haufen, Stationen),
+ * 2 Hallenwand, 3 Band (kreuzbar, wenn das neue Band dort hoch oder tief genug
+ * liegt; oben/unten halten die Höhen der Bänder je Zelle). Zwischengespeichert,
+ * bis sich Bauten ändern oder zwei Sekunden Spielzeit vergehen (der Haufen
+ * schrumpft langsam).
  */
 function sperrRasterRoh(s, ohne) {
   const L = lauf(s);
@@ -3322,6 +3328,8 @@ function sperrRasterRoh(s, ohne) {
   const nx = Math.floor((gr.xMax - gr.xMin) / RASTER);
   const nz = Math.floor((gr.zMax - gr.zMin) / RASTER);
   const sperre = new Uint8Array(nx * nz);
+  const oben = new Float32Array(nx * nz).fill(-Infinity);
+  const unten = new Float32Array(nx * nz).fill(Infinity);
   const H = RASTER / 2;
   for (let i = 0; i < nx; i++) {
     const cx = x0 + i * RASTER + H;
@@ -3342,11 +3350,12 @@ function sperrRasterRoh(s, ohne) {
       for (let kk = k0; kk <= k1; kk++) {
         const cz = z0 + kk * RASTER + H;
         if (cz < kz0 - rand || cz > kz1 + rand) continue;
-        if (sperre[i * nz + kk] === 0) sperre[i * nz + kk] = 1;
+        if (sperre[i * nz + kk] === 0 || sperre[i * nz + kk] === 3) sperre[i * nz + kk] = 1;
       }
     }
   };
-  const strecke = (ax, az, bx, bz, abst) => {
+  // Strecke von a nach b sperren; mit Höhen (ay, by) als kreuzbares Band
+  const strecke = (ax, az, bx, bz, abst, ay = null, by = null) => {
     const i0 = Math.max(0, Math.floor((Math.min(ax, bx) - abst - x0) / RASTER));
     const i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx) + abst - x0) / RASTER));
     const k0 = Math.max(0, Math.floor((Math.min(az, bz) - abst - z0) / RASTER));
@@ -3360,7 +3369,16 @@ function sperrRasterRoh(s, ohne) {
         let u = l2 > 0 ? ((cx - ax) * dx + (cz - az) * dz) / l2 : 0;
         u = u < 0 ? 0 : u > 1 ? 1 : u;
         const qx = ax + dx * u - cx; const qz = az + dz * u - cz;
-        if (qx * qx + qz * qz < abst * abst && sperre[i * nz + kk] === 0) sperre[i * nz + kk] = 1;
+        if (qx * qx + qz * qz >= abst * abst) continue;
+        const idx = i * nz + kk;
+        if (ay === null) {
+          if (sperre[idx] === 0 || sperre[idx] === 3) sperre[idx] = 1;
+        } else if (sperre[idx] === 0 || sperre[idx] === 3) {
+          sperre[idx] = 3;
+          const y = ay + (by - ay) * u;
+          if (y > oben[idx]) oben[idx] = y;
+          if (y < unten[idx]) unten[idx] = y;
+        }
       }
     }
   };
@@ -3368,7 +3386,7 @@ function sperrRasterRoh(s, ohne) {
   for (const b of s.bauten) {
     if (ohne.includes(b.id)) continue;
     if (b.typ === 'band') {
-      for (const g of bandGeometrie(b).segs) strecke(g.ax, g.az, g.bx, g.bz, 0.52);
+      for (const g of bandGeometrie(b).segs) strecke(g.ax, g.az, g.bx, g.bz, 0.52, g.ay, g.by);
       continue;
     }
     if (b.typ === 'plattform' || b.typ === 'dach' || b.typ === 'leitung' || b.typ === 'klappe') continue;
@@ -3376,14 +3394,14 @@ function sperrRasterRoh(s, ohne) {
     const k = fussabdruck(b.typ, b.x, b.z, b.rot || 0);
     kasten(k.x0, k.x1, k.z0, k.z1, 0.28);
   }
-  L.sperrRaster = { schluessel, sperre, nx, nz, x0, z0 };
+  L.sperrRaster = { schluessel, sperre, oben, unten, nx, nz, x0, z0 };
   return L.sperrRaster;
 }
 
 /** Sperrraster mit freien Kreisen um Anfang und Ende (Wände bleiben gesperrt). */
 function sperrRaster(s, { frei = [], ohne = [] } = {}) {
   const roh = sperrRasterRoh(s, ohne);
-  const { nx, nz, x0, z0 } = roh;
+  const { nx, nz, x0, z0, oben, unten } = roh;
   const sperre = roh.sperre.slice();
   for (const [fx, fz, r] of frei) {
     const i0 = Math.max(0, Math.floor((fx - r - x0) / RASTER));
@@ -3393,12 +3411,12 @@ function sperrRaster(s, { frei = [], ohne = [] } = {}) {
     for (let i = i0; i <= i1; i++) {
       for (let k = k0; k <= k1; k++) {
         const cx = x0 + (i + 0.5) * RASTER - fx; const cz = z0 + (k + 0.5) * RASTER - fz;
-        if (cx * cx + cz * cz < r * r && sperre[i * nz + k] === 1) sperre[i * nz + k] = 0;
+        if (cx * cx + cz * cz < r * r && (sperre[i * nz + k] === 1 || sperre[i * nz + k] === 3)) sperre[i * nz + k] = 0;
       }
     }
   }
   const mitte = (i, k) => [x0 + (i + 0.5) * RASTER, z0 + (k + 0.5) * RASTER];
-  return { sperre, nx, nz, x0, z0, mitte };
+  return { sperre, oben, unten, nx, nz, x0, z0, mitte };
 }
 
 /**
@@ -3409,11 +3427,31 @@ function sperrRaster(s, { frei = [], ohne = [] } = {}) {
 function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 } = {}) {
   const frei = [[von.x, von.z, 0.75], [nach.x, nach.z, 0.75]];
   const raster = sperrRaster(s, { frei, ohne });
-  const { sperre, nx, nz, x0, z0, mitte } = raster;
+  const { sperre, oben, unten, nx, nz, x0, z0, mitte } = raster;
   const zelle = (x, z) => [Math.floor((x - x0) / RASTER), Math.floor((z - z0) / RASTER)];
-  const gesperrt = (x, z) => {
+  // Über oder unter einem anderen Band hindurch, wenn der Höhenunterschied reicht
+  const kreuzbar = (idx, y) => sperre[idx] === 3 && (y >= oben[idx] + KREUZ_ABSTAND || y <= unten[idx] - KREUZ_ABSTAND);
+  const gesperrt = (x, z, y) => {
     const [i, k] = zelle(x, z);
-    return i < 0 || k < 0 || i >= nx || k >= nz || sperre[i * nz + k] !== 0;
+    if (i < 0 || k < 0 || i >= nx || k >= nz) return true;
+    const idx = i * nz + k;
+    return sperre[idx] !== 0 && !kreuzbar(idx, y);
+  };
+  // Liegt das fertige Band an jeder Kreuzung hoch oder tief genug?
+  const kreuzungenOk = (punkte) => {
+    for (let n = 1; n < punkte.length; n++) {
+      const a = punkte[n - 1]; const b = punkte[n];
+      const l = Math.hypot(b[0] - a[0], b[2] - a[2]);
+      const m = Math.max(1, Math.ceil(l / 0.2));
+      for (let j = 0; j <= m; j++) {
+        const u = j / m;
+        const [i, k] = zelle(a[0] + (b[0] - a[0]) * u, a[2] + (b[2] - a[2]) * u);
+        if (i < 0 || k < 0 || i >= nx || k >= nz) continue;
+        const idx = i * nz + k;
+        if (sperre[idx] === 3 && !kreuzbar(idx, a[1] + (b[1] - a[1]) * u)) return false;
+      }
+    }
+    return true;
   };
   const hoehe = (punkte) => {
     // Höhe gleichmäßig von von.y nach nach.y über die Länge
@@ -3433,6 +3471,7 @@ function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 
     if (r.laenge < 0.6) return { fehler: 'kurz' };
     if (Math.abs(nach.y - von.y) / r.laenge > 0.6) return { fehler: 'steil' };
     if (r.laenge > 80) return { fehler: 'lang' };
+    if (!kreuzungenOk(r.punkte)) return { fehler: 'kreuzt' };
     return r;
   };
 
@@ -3440,7 +3479,7 @@ function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 
     const l = Math.hypot(nach.x - von.x, nach.z - von.z);
     for (let t = 0.2; t < l - 0.2; t += 0.25) {
       const x = lerp(von.x, nach.x, t / l); const z = lerp(von.z, nach.z, t / l);
-      if (gesperrt(x, z)) return { fehler: 'blockiert' };
+      if (gesperrt(x, z, lerp(von.y, nach.y, t / l))) return { fehler: 'blockiert' };
     }
     return fertig([[von.x, von.z], [nach.x, nach.z]]);
   }
@@ -3479,13 +3518,24 @@ function bandWeg(s, von, nach, { ohne = [], gerade = false, maxSchritte = 60000 
     const i = Math.floor(c / nz); const k = c % nz;
     if (i === bi && k === bk) { ende = st; break; }
     const g0 = kosten[st];
+    const inKreuzung = sperre[c] === 3;
     for (let nd = 0; nd < 4; nd++) {
       if (nd === ((d + 2) & 3)) continue;
+      if (inKreuzung && nd !== d) continue; // über einem anderen Band nicht abbiegen
       const ni = i + RICHTUNGEN[nd][0]; const nk = k + RICHTUNGEN[nd][1];
-      if (ni < 0 || nk < 0 || ni >= nx || nk >= nz || sperre[ni * nz + nk]) continue;
-      const ns = (ni * nz + nk) * 4 + nd;
+      if (ni < 0 || nk < 0 || ni >= nx || nk >= nz) continue;
+      const nIdx = ni * nz + nk;
+      let extra = 0;
+      if (sperre[nIdx]) {
+        // Kreuzen nur geradeaus und nur, wenn die geschätzte Höhe dort reicht
+        if (sperre[nIdx] !== 3 || nd !== d) continue;
+        const da = Math.abs(ni - ai) + Math.abs(nk - ak); const db = Math.abs(ni - bi) + Math.abs(nk - bk);
+        if (!kreuzbar(nIdx, lerp(von.y, nach.y, da / Math.max(1, da + db)))) continue;
+        extra = 0.5;
+      }
+      const ns = nIdx * 4 + nd;
       const amZiel = ni === bi && nk === bk;
-      const ng = g0 + 1 + (nd === d ? 0 : 1.6) + (amZiel && zielRichtung >= 0 && nd !== zielRichtung ? 1.6 : 0);
+      const ng = g0 + 1 + extra + (nd === d ? 0 : 1.6) + (amZiel && zielRichtung >= 0 && nd !== zielRichtung ? 1.6 : 0);
       if (ng < kosten[ns]) {
         kosten[ns] = ng;
         her[ns] = st;
@@ -5004,6 +5054,7 @@ const GRUND_TEXT = {
   band: 'Ein Band ist im Weg', geld: 'Nicht genug Geld', 'kein Weg': 'Kein Weg frei', kurz: 'Zu kurz', steil: 'Zu steil',
   lang: 'Zu lang', blockiert: 'Weg versperrt', draussen: 'Außerhalb der Halle', unbekannt: 'Geht nicht',
   kante: 'Steht nicht ganz auf der Plattform', boden: 'Nur auf dem Hallenboden',
+  kreuzt: 'Zum Kreuzen höher legen',
 };
 
 
@@ -5485,6 +5536,17 @@ function spielZufall(s) {
   return s.zufallFn;
 }
 
+/**
+ * Die kurze Schrägrampe am Stand, die im Vorbild schon in der frischen Halle
+ * steht: unten fast am Boden, oben über dem Trichter. Was darauf fällt, wird
+ * verkauft. Gratis, zählt nirgends mit, lässt sich abbauen.
+ */
+function startRampe(id) {
+  const T = STAND_TRICHTER;
+  const punkte = [[T.x, 0.32, T.z + 3.7], [T.x, 1.0, T.z + 0.78]];
+  return { ...bandBau(id, punkte), start: true, bezahlt: 0 };
+}
+
 function standNeu(seed = (Date.now() % 2147483647) || 7) {
   const s = {
     version: STAND3D_VERSION,
@@ -5502,11 +5564,11 @@ function standNeu(seed = (Date.now() % 2147483647) || 7) {
       ...spielerNeu(), werkzeug: 'hand', last: 0, puste: GRUND.ausdauer, ruhe: 0,
       sauger: { an: false, hitze: 0, heiss: false, rest: 0 }, haelt: null,
     },
-    bauten: [],
+    bauten: [startRampe(1)],
     gegenstaende: [],
     geschenke: {},
     skizzen: [],
-    naechsteId: 1,
+    naechsteId: 2,
     mission: 0,
     missionErledigt: [],
     auftrag: { nr: 0, skip: 0, geliefert: 0, pause: 0 },
@@ -10067,8 +10129,29 @@ function objekteBauen(szene, qualitaet = 'mittel') {
   const euler = new THREE.Euler();
   const achseY = new THREE.Vector3(0, 1, 0);
 
+  /** Bänder, die unter diesem hindurchlaufen (dort stehen keine Beine). */
+  function baenderDarunter(bau, s) {
+    if (!s) return [];
+    const box = (b) => {
+      let x0 = Infinity; let x1 = -Infinity; let z0 = Infinity; let z1 = -Infinity; let y0 = Infinity; let y1 = -Infinity;
+      for (const p of b.punkte) {
+        x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[2]); z1 = Math.max(z1, p[2]);
+        y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]);
+      }
+      return { x0, x1, z0, z1, y0, y1 };
+    };
+    const a = box(bau);
+    if (a.y1 < BAND_Y + 0.6) return [];
+    return s.bauten.filter((b) => {
+      if (b.typ !== 'band' || b === bau) return false;
+      const k = box(b);
+      return k.x0 < a.x1 + 0.6 && k.x1 > a.x0 - 0.6 && k.z0 < a.z1 + 0.6 && k.z1 > a.z0 - 0.6 && k.y0 < a.y1 - 0.5;
+    });
+  }
+
   function bandObjekt(bau, s) {
     const g = new THREE.Group();
+    const darunter = baenderDarunter(bau, s);
     const { bahn, laenge } = bandGeometrie(bau);
     const gurt = new THREE.Mesh(objExtrudieren(bahn, BAND_PROFIL_GURT, 0.5), MAT.gurt);
     gurt.receiveShadow = schatten;
@@ -10101,8 +10184,11 @@ function objekteBauen(szene, qualitaet = 'mittel') {
       const hoehe = p[1] - 0.16 - unten;
       if (hoehe < 0.05) continue;
       for (const seite of [-0.31, 0.31]) {
+        const bx = p[0] + d[1] * seite; const bz = p[2] - d[0] * seite;
+        // kein Bein mitten auf einem Band, das darunter kreuzt
+        if (darunter.some((b) => { const nb = bandNaechster(b, bx, bz); return nb.d < 0.42 && nb.y < p[1] - 0.3; })) continue;
         const bg = new THREE.BoxGeometry(0.05, hoehe, 0.05);
-        bg.translate(p[0] + d[1] * seite, unten + hoehe / 2, p[2] - d[0] * seite);
+        bg.translate(bx, unten + hoehe / 2, bz);
         beine.push(bg);
       }
     }
@@ -10187,8 +10273,9 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     return obj;
   }
 
-  const schluesselVon = (bau) => (bau.typ === 'band'
-    ? `b|${bau.punkte.length}|${bau.punkte[0].join(',')}|${bau.punkte[bau.punkte.length - 1].join(',')}`
+  // Bänder hängen auch von den Bändern darunter ab (Beine weichen aus)
+  const schluesselVon = (bau, s) => (bau.typ === 'band'
+    ? `b|${bau.punkte.length}|${bau.punkte[0].join(',')}|${bau.punkte[bau.punkte.length - 1].join(',')}|${baenderDarunter(bau, s).map((b) => b.id).join(',')}`
     : `m|${bau.typ}|${bau.x}|${bau.z}|${bau.y || 0}|${bau.rot || 0}|${bau.a ? bau.a.join(',') + bau.b.join(',') : ''}`);
 
 
@@ -10200,13 +10287,14 @@ function objekteBauen(szene, qualitaet = 'mittel') {
     for (const bau of s.bauten) {
       da.add(bau.id);
       const e = eintraege.get(bau.id);
-      const k = schluesselVon(bau);
+      const k = schluesselVon(bau, s);
       if (e && e.schluessel === k && e.bau === bau) continue;
       if (e) { bautenGruppe.remove(e.obj); entsorgen(e.obj); }
       const obj = bauObjekt(bau, s);
       bautenGruppe.add(obj);
       eintraege.set(bau.id, { bau, obj, schluessel: k, teile: teileSuchen(obj) });
-      if (!ersterAbgleich) aufbauEffekt(obj);
+      // Aufbau-Hologramm nur für Neues, nicht wenn ein Band wegen eines Nachbarn neu entsteht
+      if (!ersterAbgleich && !(e && e.bau === bau)) aufbauEffekt(obj);
     }
     for (const [id, e] of eintraege) {
       if (!da.has(id)) { bautenGruppe.remove(e.obj); entsorgen(e.obj); eintraege.delete(id); }
@@ -11787,10 +11875,11 @@ function baukatalogZeigen(ui, s, rueck) {
 
 /**
  * Einblendung beim Platzieren, hängt unter wurzel (dort, wo auch das HUD liegt).
- * rueck: { setzen(), drehen(), naeher(), weiter(), einrasten(), abbrechen() }.
+ * rueck: { setzen(), drehen(), naeher(), weiter(), hoeher(), tiefer(), einrasten(), abbrechen() }.
  * zeigen(info) darf jedes Bild laufen, es ändert das DOM nur bei neuen Werten.
  * info: { titel, zeile, grund, ok, schritt: 'setzen'|'anfang'|'ende'|'abbau',
- *         einrasten: true|false|null (null blendet den Schalter aus), drehen, abstand }.
+ *         einrasten: true|false|null (null blendet den Schalter aus), drehen, abstand,
+ *         hoehe: Zahl (Bandenden anheben: blendet Höher/Tiefer ein) }.
  */
 function bauHudBauen(wurzel, rueck) {
   const BESTAETIGEN = { setzen: 'Hier bauen', anfang: 'Anfang setzen', ende: 'Ende setzen', abbau: 'Abbauen' };
@@ -11808,10 +11897,13 @@ function bauHudBauen(wurzel, rueck) {
   const karte = h('div', { class: 'bhkarte', role: 'status' }, h('div', { class: 'bhtexte' }, titel, zeile, grund), zu);
   const naeher = knopf('', 'Näher', () => rueck.naeher());
   const weiter = knopf('', 'Weiter', () => rueck.weiter());
+  // Bandenden anheben: für Rampen und um über andere Bänder zu kreuzen
+  const tiefer = knopf('', 'Tiefer', () => rueck.tiefer && rueck.tiefer());
+  const hoeher = knopf('', 'Höher', () => rueck.hoeher && rueck.hoeher());
   const drehen = knopf('', 'Drehen', () => rueck.drehen());
   const einrasten = knopf('schalter', 'Einrasten: an', () => rueck.einrasten());
   const bestaetigen = knopf('bestaetigen', BESTAETIGEN.setzen, () => rueck.setzen());
-  const reiheAbstand = h('div', { class: 'bhreihe' }, naeher, weiter);
+  const reiheAbstand = h('div', { class: 'bhreihe' }, naeher, weiter, tiefer, hoeher);
   const reiheDrehen = h('div', { class: 'bhreihe' }, drehen, einrasten);
   const leiste = h('div', { class: 'bhleiste' }, reiheAbstand, reiheDrehen, bestaetigen);
   const el = h('div', { class: 'bauhud', hidden: true }, h('div', { class: 'bhband' }, karte), leiste);
@@ -11854,7 +11946,14 @@ function bauHudBauen(wurzel, rueck) {
     sichtbarSetzen(drehen, !!info.drehen);
     sichtbarSetzen(naeher, !!info.abstand);
     sichtbarSetzen(weiter, !!info.abstand);
-    sichtbarSetzen(reiheAbstand, !!info.abstand);
+    const hub = typeof info.hoehe === 'number';
+    sichtbarSetzen(tiefer, hub);
+    sichtbarSetzen(hoeher, hub);
+    if (hub) {
+      tiefer.classList.toggle('matt', info.hoehe <= 0);
+      hoeher.classList.toggle('matt', info.hoehe >= 3);
+    }
+    sichtbarSetzen(reiheAbstand, !!info.abstand || hub);
     sichtbarSetzen(reiheDrehen, !!info.drehen || rast !== null);
   }
   function verstecken() {
@@ -12361,6 +12460,7 @@ function skizzeZeigen(ui, s, bau, rueck) {
 
 
 const RASTER_BAU = 0.25;
+const HUB_MAX = 3;
 const WEITE_MIN = 1.2;
 const WEITE_MAX = 12;
 const rastern = (v, r = RASTER_BAU) => Math.round(v / r) * r;
@@ -12369,7 +12469,8 @@ const meter = (m) => `${m.toFixed(1).replace('.', ',')} m`;
 
 /**
  * ctx: { holeStand(), objekte, hud (aus bauHudBauen), ui, klang, ereignisse(liste), abbauFragen(bau, info, weiter) }.
- * Liefert { aktiv(), art(), starten(typ), abbauStarten(), abbrechen(), setzen(), drehen(), naeher(), weiter(), einrasten(), schritt(kamera, blick) }.
+ * Liefert { aktiv(), art(), starten(typ), abbauStarten(), abbrechen(), setzen(), drehen(), naeher(), weiter(),
+ * hoeher(), tiefer(), einrasten(), schritt(kamera, blick) }.
  */
 function baumodusBauen(ctx) {
   let modus = null;
@@ -12499,7 +12600,7 @@ function baumodusBauen(ctx) {
       const d = BAU_BY_ID[typ];
       if (!d) return;
       ctx.objekte.vorschauWeg();
-      if (typ === 'band') modus = { art: 'band', typ, schritt: 'anfang', einrasten: true, weite: 5 };
+      if (typ === 'band') modus = { art: 'band', typ, schritt: 'anfang', einrasten: true, weite: 5, hub: 0 };
       else if (d.linie) modus = { art: 'linie', typ, schritt: 'anfang', weite: 5 };
       else modus = { art: 'bau', typ, dreh: 0, weite: 5 };
     },
@@ -12525,6 +12626,9 @@ function baumodusBauen(ctx) {
     drehen() { if (modus && modus.art === 'bau') { modus.dreh += Math.PI / 4; ctx.klang.klick(); } },
     naeher() { if (modus) modus.weite = Math.max(WEITE_MIN, modus.weite - 1); },
     weiter() { if (modus) modus.weite = Math.min(WEITE_MAX, modus.weite + 1); },
+    /** Freie Bandenden anheben oder absenken (0 bis 3 m in halben Metern), für Rampen und Kreuzungen. */
+    hoeher() { if (modus && modus.art === 'band' && modus.hub < HUB_MAX) { modus.hub = Math.min(HUB_MAX, modus.hub + 0.5); modus.plan = null; ctx.klang.klick(); } },
+    tiefer() { if (modus && modus.art === 'band' && modus.hub > 0) { modus.hub = Math.max(0, modus.hub - 0.5); modus.plan = null; ctx.klang.klick(); } },
     einrasten() { if (modus && modus.art === 'band') { modus.einrasten = !modus.einrasten; modus.plan = null; ctx.klang.klick(); } },
 
     /** Bestätigen: bauen, Anfang oder Ende setzen, abbauen. */
@@ -12629,8 +12733,9 @@ function baumodusBauen(ctx) {
       }
       if (modus.art === 'band') {
         const ende = modus.schritt === 'ende';
-        const a = bandAnker(s, px, pz, ende, { radius: 1.2, y: py });
+        const a = bandAnker(s, px, pz, ende, { radius: 1.2, y: py + modus.hub });
         const d = BAU_BY_ID.band;
+        const hubText = modus.hub > 0 && a.art === 'frei' ? ` · ${meter(modus.hub)} hoch` : '';
         if (!ende) {
           const ok = py > 0.1 || haufenHoehe(s.hf, a.x, a.z) < 0.15;
           modus.anker = a;
@@ -12638,13 +12743,14 @@ function baumodusBauen(ctx) {
           zuletztOk = ok;
           ctx.objekte.ankerZeigen([...ankerListe(s, px, pz, false, a), { x: a.x, y: a.y, z: a.z, ziel: true }]);
           ctx.hud.zeigen({
-            titel: 'Förderband', zeile: `Anfang wählen · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
-            grund: ok ? null : GRUND_TEXT.haufen, ok, schritt: 'anfang', einrasten: modus.einrasten, drehen: false, abstand: false,
+            titel: 'Förderband', zeile: `Anfang wählen${hubText} · ${geld(d.prometer * werte(s).maschinenKosten)} je Meter`,
+            grund: ok ? null : GRUND_TEXT.haufen, ok, schritt: 'anfang', einrasten: modus.einrasten, drehen: false, abstand: false, hoehe: modus.hub,
           });
           return true;
         }
         const alt = modus.plan;
-        const verschoben = !modus.anker || Math.hypot(a.x - modus.anker.x, a.z - modus.anker.z) > 0.12 || a.art !== modus.anker.art;
+        const verschoben = !modus.anker || Math.hypot(a.x - modus.anker.x, a.z - modus.anker.z) > 0.12 || a.art !== modus.anker.art
+          || Math.abs(a.y - modus.anker.y) > 0.01;
         if ((verschoben || !alt) && planZeit <= 0) {
           modus.anker = a;
           modus.plan = bandPlanen(s, modus.von, a, { gerade: !modus.einrasten });
@@ -12657,9 +12763,9 @@ function baumodusBauen(ctx) {
         const ziel = a.art === 'stand' ? ' · zum Stand' : a.art === 'laster' ? ' · zum Laster' : a.art === 'ein' ? ` · in ${BAU_BY_ID[a.bau.typ].name}` : a.art === 'band' ? ' · aufs Band' : '';
         ctx.hud.zeigen({
           titel: 'Förderband',
-          zeile: plan && plan.punkte ? `${meter(plan.laenge)} · ${geld(plan.kosten)}${ziel}` : `Ende wählen${ziel}`,
+          zeile: plan && plan.punkte ? `${meter(plan.laenge)} · ${geld(plan.kosten)}${ziel}${hubText}` : `Ende wählen${ziel}${hubText}`,
           grund: plan && !plan.ok ? GRUND_TEXT[plan.grund] || 'Geht so nicht' : null,
-          ok: !!(plan && plan.ok), schritt: 'ende', einrasten: modus.einrasten, drehen: false, abstand: false,
+          ok: !!(plan && plan.ok), schritt: 'ende', einrasten: modus.einrasten, drehen: false, abstand: false, hoehe: modus.hub,
         });
         return true;
       }
@@ -12770,6 +12876,8 @@ function hauptStart() {
       else if (k === 'q' && bm.aktiv()) bm.drehen();
       else if (k === 'f' && bm.aktiv()) bm.einrasten();
       // C und V schieben den Geist näher und weiter weg wie im Vorbild; sonst duckt C
+      else if (k === 'c' && bm.art() === 'band') bm.tiefer();
+      else if (k === 'v' && bm.art() === 'band') bm.hoeher();
       else if (k === 'c' && bm.aktiv()) bm.naeher();
       else if (k === 'v' && bm.aktiv()) bm.weiter();
       else if (k === 'c') ui.duckenZeigen(st.duckenUmschalten());
@@ -12782,8 +12890,9 @@ function hauptStart() {
     if (!bm.aktiv()) return;
     ev.preventDefault();
     radRest += ev.deltaY;
+    const band = bm.art() === 'band';
     while (Math.abs(radRest) >= 80) {
-      if (radRest < 0) { bm.weiter(); radRest += 80; } else { bm.naeher(); radRest -= 80; }
+      if (radRest < 0) { if (band) bm.hoeher(); else bm.weiter(); radRest += 80; } else { if (band) bm.tiefer(); else bm.naeher(); radRest -= 80; }
     }
   }, { passive: false });
 
@@ -12929,6 +13038,7 @@ function hauptStart() {
   /* ------------------------------------------------ Baumodus */
   const bauHud = bauHudBauen(app, {
     setzen: () => bm.setzen(), drehen: () => bm.drehen(), naeher: () => bm.naeher(), weiter: () => bm.weiter(),
+    hoeher: () => bm.hoeher(), tiefer: () => bm.tiefer(),
     einrasten: () => bm.einrasten(), abbrechen: () => bm.abbrechen(),
   });
   const bm = baumodusBauen({
