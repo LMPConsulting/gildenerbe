@@ -217,11 +217,222 @@ export function hofBauen(szene, qualitaet) {
   gruppe.add(aufsteller);
   kollider.push({ x0: W.standX + 1.95, x1: W.standX + 2.65, z0: W.standZ + 1.35, z1: W.standZ + 2.05, h: 1.1 });
 
+  const stationen = stationenBauen(gruppe, kollider, planken, stahlMat);
+
   szene.add(gruppe);
   return {
     gruppe, kollider, uhr, boden, tor, torMat,
     stand: stand.gruppe, standTresen: stand.tresen,
+    // Trichter vorn am Stand: hier rasten Bänder ein, hier wird verkauft
+    standTrichter: { x: W.standX + W.standTiefe / 2 + 0.45, y: 0.9, z: W.standZ },
+    ...stationen,
   };
+}
+
+/** Werkzeugstand, Werkbank, Lieferschalter, Hausanschluss und Auftragstafel. */
+function stationenBauen(gruppe, kollider, planken, stahlMat) {
+  const W = WELT;
+  const holz = new THREE.MeshStandardMaterial({ map: gekachelt(planken, 2.4, 2.2, 1.4, 2.2), color: 0xa08a74, roughness: 0.85 });
+  const holzHell = new THREE.MeshStandardMaterial({ color: 0x8a6440, roughness: 0.8 });
+  const schatten = (g) => g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+
+  // Werkzeugstand: Bude mit rot-weißer Dachkante, Werkzeuge an der Rückwand, Preisschilder
+  const ws = new THREE.Group();
+  ws.name = 'werkzeugstand';
+  ws.add(kasten(3.0, 2.4, 0.1, holz, 0, 1.2, 0.7));
+  ws.add(kasten(0.1, 2.4, 1.5, holz, -1.5, 1.2, 0));
+  ws.add(kasten(0.1, 2.4, 1.5, holz, 1.5, 1.2, 0));
+  const tresen = kasten(2.9, 1.0, 0.45, holz, 0, 0.5, -0.5);
+  ws.add(tresen, kasten(3.05, 0.06, 0.6, holzHell, 0, 1.03, -0.5));
+  const dach = kasten(3.4, 0.08, 1.9, new THREE.MeshStandardMaterial({ color: 0x3b2a1c, roughness: 0.8 }), 0, 2.45, -0.1);
+  dach.rotation.x = 0.1;
+  ws.add(dach);
+  const rotMat = new THREE.MeshStandardMaterial({ color: 0xa8342a, roughness: 0.7 });
+  const weissMat = new THREE.MeshStandardMaterial({ color: 0xefe6d4, roughness: 0.7 });
+  for (let i = 0; i < 12; i++) {
+    const zacke = kasten(0.28, 0.24, 0.03, i % 2 ? weissMat : rotMat, -1.54 + i * 0.28, 2.28, -1.05);
+    ws.add(zacke);
+  }
+  // Werkzeuge an der Wand
+  const haken = [[-0.9, 'spaten'], [-0.3, 'heugabel'], [0.35, 'besen'], [0.95, 'sauger']];
+  for (const [x, art] of haken) {
+    const m = art === 'spaten' ? spatenWand() : art === 'heugabel' ? gabelWand() : art === 'besen' ? besenWand() : saugerWand();
+    m.position.set(x, 1.55, 0.6);
+    ws.add(m);
+  }
+  // Preisschilder auf dem Tresen
+  const schilder = [['SPATEN', '12 $', -0.95], ['HEUGABEL', '45 $', -0.2], ['BESEN', '8 $', 0.5], ['EIMER', '3 $', 1.15]];
+  for (const [name, preis, x] of schilder) {
+    const karte = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.26), new THREE.MeshStandardMaterial({
+      map: schildTextur([name, preis], { breite: 256, hoehe: 160, grund: '#f1e8d2', schrift: '#2a1c10', rahmen: '#8a2f22', font: '800 {g}px "Arial Narrow", Arial, sans-serif', groesse: 0.72 }),
+      roughness: 0.9,
+    }));
+    karte.position.set(x, 1.2, -0.72);
+    karte.rotation.x = -0.35;
+    karte.rotation.y = Math.PI;
+    ws.add(karte);
+  }
+  // Schild oben und Tafel für Bestwerte an der Seite
+  const kopf = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.4), new THREE.MeshStandardMaterial({
+    map: schildTextur('WERKZEUG', { breite: 512, hoehe: 110, groesse: 0.66 }), roughness: 0.85,
+  }));
+  kopf.position.set(0, 2.72, -1.0);
+  kopf.rotation.y = Math.PI;
+  ws.add(kopf);
+  const tafel = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.7), new THREE.MeshStandardMaterial({
+    map: schildTextur(['BESTENLISTE', '—'], { breite: 320, hoehe: 250, grund: '#1e2320', schrift: '#f4f4ee', rahmen: '#6b4a2d', font: '700 {g}px "Arial Narrow", Arial, sans-serif', groesse: 0.44, kreide: true }),
+    roughness: 0.95,
+  }));
+  tafel.name = 'bestenliste';
+  tafel.position.set(1.56, 1.5, -0.3);
+  tafel.rotation.y = Math.PI / 2;
+  ws.add(tafel);
+  ws.position.set(W.werkzeugX, 0, W.werkzeugZ);
+  ws.rotation.y = 0; // Tresen zeigt nach −z (in die Halle)
+  schatten(ws);
+  gruppe.add(ws);
+  kollider.push({ x0: W.werkzeugX - 1.6, x1: W.werkzeugX + 1.6, z0: W.werkzeugZ - 0.8, z1: W.werkzeugZ + 0.8, h: 2.4 });
+
+  // Werkbank mit Kinderschaufel und Detektor darauf
+  const bank = new THREE.Group();
+  bank.name = 'werkbank';
+  bank.add(kasten(1.8, 0.08, 0.8, holzHell, 0, 0.9, 0));
+  for (const [x, z] of [[-0.8, -0.32], [0.8, -0.32], [-0.8, 0.32], [0.8, 0.32]]) bank.add(kasten(0.08, 0.9, 0.08, holzHell, x, 0.45, z));
+  bank.add(kasten(1.7, 0.05, 0.7, holzHell, 0, 0.25, 0));
+  const schaufel = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf2c417, roughness: 0.45 }));
+  schaufel.scale.set(1, 0.35, 1.3);
+  schaufel.position.set(-0.4, 0.96, 0);
+  bank.add(schaufel);
+  const stiel = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.34, 6), schaufel.material);
+  stiel.rotation.z = Math.PI / 2;
+  stiel.position.set(-0.15, 0.96, 0);
+  bank.add(stiel);
+  const det = kasten(0.3, 0.06, 0.1, new THREE.MeshStandardMaterial({ color: 0x8d949a, roughness: 0.5, metalness: 0.4 }), 0.4, 0.97, 0.1);
+  bank.add(det);
+  bank.position.set(W.bankX, 0, W.bankZ);
+  bank.rotation.y = 0.3;
+  schatten(bank);
+  gruppe.add(bank);
+  kollider.push({ x0: W.bankX - 1.0, x1: W.bankX + 1.0, z0: W.bankZ - 0.6, z1: W.bankZ + 0.6, h: 1.0 });
+
+  // Lieferschalter (im Vorbild „SUPPLY CO.“): hier bestellt man neue Ladungen
+  const liefer = new THREE.Group();
+  liefer.name = 'lieferschalter';
+  liefer.add(kasten(2.6, 1.05, 0.7, holz, 0, 0.525, 0));
+  liefer.add(kasten(2.75, 0.06, 0.85, holzHell, 0, 1.08, 0));
+  const lschild = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.52), new THREE.MeshStandardMaterial({
+    map: schildTextur('LIEFERUNGEN', { breite: 512, hoehe: 116, grund: '#efe8da', schrift: '#8a2f22', rahmen: '#a8342a', font: '800 {g}px "Arial Narrow", Arial, sans-serif', groesse: 0.66 }),
+    roughness: 0.85,
+  }));
+  lschild.position.set(0, 1.9, -0.3);
+  liefer.add(lschild);
+  for (const x of [-1.05, 1.05]) liefer.add(kasten(0.06, 1.0, 0.06, stahlMat, x, 1.55, -0.3));
+  const ltafel = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.5), new THREE.MeshStandardMaterial({
+    map: schildTextur(['NEUE', 'LADUNG'], { breite: 256, hoehe: 180, grund: '#1e2320', schrift: '#f4f4ee', rahmen: '#6b4a2d', font: '700 {g}px "Arial Narrow", Arial, sans-serif', groesse: 0.5, kreide: true }),
+    roughness: 0.95,
+  }));
+  ltafel.position.set(0.8, 1.35, 0.36);
+  ltafel.rotation.x = -0.4;
+  liefer.add(ltafel);
+  liefer.position.set(W.lieferX, 0, W.lieferZ);
+  schatten(liefer);
+  gruppe.add(liefer);
+  kollider.push({ x0: W.lieferX - 1.4, x1: W.lieferX + 1.4, z0: W.lieferZ - 0.45, z1: W.lieferZ + 0.45, h: 1.1 });
+
+  // Hausanschluss: grauer Kasten mit Blitz, Leitung nach oben
+  const an = new THREE.Group();
+  an.name = 'hausanschluss';
+  const kastenMat = new THREE.MeshStandardMaterial({ color: 0x8e979b, roughness: 0.45, metalness: 0.5 });
+  an.add(kasten(0.2, 0.8, 0.6, kastenMat, 0, 1.4, 0));
+  const blitz = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), new THREE.MeshBasicMaterial({
+    map: schildTextur('⚡', { breite: 128, hoehe: 128, grund: '#f2c417', schrift: '#1b1b1b', rahmen: '#1b1b1b', font: '900 {g}px system-ui, sans-serif', groesse: 0.8 }),
+    toneMapped: false,
+  }));
+  blitz.rotation.y = Math.PI / 2;
+  blitz.position.set(0.105, 1.45, 0);
+  an.add(blitz);
+  an.add(kasten(0.06, 2.4, 0.06, stahlMat, 0, 3.0, 0.2));
+  const lampe = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshBasicMaterial({ color: 0x7cf29a, toneMapped: false }));
+  lampe.position.set(0.11, 1.72, -0.2);
+  lampe.name = 'lampe';
+  an.add(lampe);
+  an.position.set(W.anschlussX, 0, W.anschlussZ);
+  schatten(an);
+  gruppe.add(an);
+
+  // Auftragstafel auf einer Staffelei neben dem Tor
+  const tafelG = new THREE.Group();
+  tafelG.name = 'auftragstafel';
+  for (const [x, r] of [[-0.3, 0.12], [0.3, -0.12]]) {
+    const bein = kasten(0.05, 1.8, 0.05, holzHell, x, 0.9, 0.1);
+    bein.rotation.z = r;
+    tafelG.add(bein);
+  }
+  const hinten = kasten(0.05, 1.7, 0.05, holzHell, 0, 0.85, -0.35);
+  hinten.rotation.x = -0.25;
+  tafelG.add(hinten);
+  const kork = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.04), new THREE.MeshStandardMaterial({ color: 0xb0875a, roughness: 1 }));
+  kork.position.set(0, 1.25, 0.14);
+  tafelG.add(kork);
+  const zettelTextur = schildTextur(['AUFTRÄGE', '—'], { breite: 256, hoehe: 200, grund: '#f3eee2', schrift: '#2a1c10', rahmen: null, font: '700 {g}px "Arial Narrow", Arial, sans-serif', groesse: 0.42 });
+  const zettel = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.4), new THREE.MeshStandardMaterial({ map: zettelTextur, roughness: 0.95 }));
+  zettel.name = 'auftragszettel';
+  zettel.position.set(0, 1.26, 0.165);
+  zettel.rotation.z = 0.04;
+  tafelG.add(zettel);
+  tafelG.position.set(W.tafelX, 0, W.tafelZ);
+  schatten(tafelG);
+  gruppe.add(tafelG);
+
+  return {
+    werkzeugstand: ws, werkbank: bank, lieferschalter: liefer, hausanschluss: an, auftragstafel: tafelG,
+    anschlussPunkt: { x: W.anschlussX + 0.15, y: 1.4, z: W.anschlussZ },
+  };
+}
+
+function spatenWand() {
+  const g = new THREE.Group();
+  const holz = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.7 });
+  const stahl = new THREE.MeshStandardMaterial({ color: 0x8a8480, roughness: 0.5, metalness: 0.7 });
+  const s = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.0, 6), holz);
+  g.add(s);
+  const b = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.26, 0.012), stahl);
+  b.position.y = -0.6;
+  g.add(b);
+  return g;
+}
+function gabelWand() {
+  const g = new THREE.Group();
+  const holz = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.7 });
+  const stahl = new THREE.MeshStandardMaterial({ color: 0xb9c0c6, roughness: 0.35, metalness: 0.85 });
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.1, 6), holz));
+  for (let i = 0; i < 5; i++) {
+    const z = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.28, 5), stahl);
+    z.position.set(-0.12 + i * 0.06, -0.7, 0);
+    g.add(z);
+  }
+  const q = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.26, 5), stahl);
+  q.rotation.z = Math.PI / 2;
+  q.position.y = -0.56;
+  g.add(q);
+  return g;
+}
+function besenWand() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.1, 6), new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.7 })));
+  const k = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.12, 0.07), new THREE.MeshStandardMaterial({ color: 0x2a2320, roughness: 1 }));
+  k.position.y = -0.6;
+  g.add(k);
+  return g;
+}
+function saugerWand() {
+  const g = new THREE.Group();
+  const k = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.3, 10), new THREE.MeshStandardMaterial({ color: 0xe9e4da, roughness: 0.55 }));
+  g.add(k);
+  const r = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0xb9c0c6, roughness: 0.35, metalness: 0.85 }));
+  r.position.y = -0.4;
+  g.add(r);
+  return g;
 }
 
 /** Holzbude mit Tresen, Kasse, Schild „HEU VERKAUFEN“ und hängendem Ballen. Blick nach +x. */
@@ -248,17 +459,7 @@ function standBauen(qualitaet, planken) {
   dach.rotation.z = -0.08;
   g.add(dach);
   // Schild über dem Tresen
-  const schild = new THREE.Mesh(
-    new THREE.BoxGeometry(0.06, 0.52, 2.2),
-    [
-      new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
-      new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
-      new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
-      new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
-      new THREE.MeshStandardMaterial({ map: schildTextur('HEU VERKAUFEN', { breite: 1024, hoehe: 240, groesse: 0.6 }), roughness: 0.8 }),
-      new THREE.MeshStandardMaterial({ color: 0x2b1d12 }),
-    ],
-  );
+  const schild = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.52, 2.2));
   // BoxGeometry-Seiten: +x, -x, +y, -y, +z, -z. Das Schild soll nach +x zeigen.
   schild.material = [
     new THREE.MeshStandardMaterial({ map: schildTextur('HEU VERKAUFEN', { breite: 1024, hoehe: 240, groesse: 0.6 }), roughness: 0.8 }),
@@ -295,7 +496,7 @@ function standBauen(qualitaet, planken) {
     new THREE.MeshStandardMaterial({ color: 0xd8b778, roughness: 0.95 }),
   );
   ballen.rotation.z = Math.PI / 2 + 0.3;
-  ballen.position.set(tt / 2 + 0.25, 2.0, -1.45);
+  ballen.position.set(-tt / 2 + 0.35, 2.05, -bt / 2 + 0.35); // hinten in der Ecke, nicht vor dem Gesicht
   ballen.castShadow = true;
   g.add(ballen);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });

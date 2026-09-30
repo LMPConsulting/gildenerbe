@@ -24,12 +24,23 @@ export const MODULE = [
   'src/format.js',
   'src/zufall.js',
   'src/haufen.js',
+  'src/wirtschaft.js',
+  'src/nadeln.js',
+  'src/lose.js',
+  'src/werkzeuge.js',
+  'src/spieler.js',
+  'src/spiel.js',
+  'src/klang.js',
   'src/grafik/texturen.js',
+  'src/grafik/modelle.js',
   'src/grafik/szene3d.js',
   'src/grafik/hof3d.js',
   'src/grafik/haufen3d.js',
+  'src/grafik/ansicht.js',
   'src/steuerung.js',
-  'src/spieler.js',
+  'src/ui/oberflaeche.js',
+  'src/ui/forschung.js',
+  'src/ui/panele.js',
   'src/main.js',
 ];
 
@@ -67,6 +78,7 @@ function kollisionenPruefen(namen) {
 
 function modulText(datei) {
   const roh = read(datei);
+  if (/^export\s*\{/m.test(roh)) throw new Error(`${datei}: "export { … }" geht hier nicht, bitte direkt beim Deklarieren exportieren.`);
   // Umbenennen beim Import gibt es im gemeinsamen Scope nicht.
   for (const imp of roh.matchAll(/^import\s*\{([^}]*)\}/gm)) {
     if (/\bas\b/.test(imp[1])) throw new Error(`${datei}: "import { a as b }" geht hier nicht, bitte den Originalnamen nutzen.`);
