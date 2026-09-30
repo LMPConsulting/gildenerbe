@@ -136,7 +136,7 @@ export function menueZeigen(ui, einstellungen, { aendern, anleitung, herunterlad
       h('div', {}, h('p', { class: 'ober' }, 'Grafik (lädt neu)'), grafik)),
     knoepfe: [
       { text: 'Anleitung', aktion: anleitung },
-      { text: 'Spiel mit Spielstand herunterladen', aktion: herunterladen },
+      ...(herunterladen ? [{ text: 'Spiel mit Spielstand herunterladen', aktion: herunterladen }] : []),
       { text: 'Spielstand löschen', klasse: 'gefahr', aktion: loeschen },
       { text: 'Weiter', klasse: 'primaer' },
     ],

@@ -188,26 +188,25 @@ export const GESCHICHTE = {
   anfang: [
     'Du stehst in einer Lagerhalle. Das Dach ist offen, darüber blauer Himmel. '
       + 'Das Tor ist zu, und du weißt nicht, wie du hergekommen bist.',
-    'Vor dir ein Heuhaufen, höher als die Wände. Auf einem Zettel am Pfosten steht: '
+    'Vor dir ein Heuhaufen, fast so hoch wie die Wände. Auf einem Zettel am Stand steht: '
       + '„Rund sechs Millionen Halme. Sechs Nadeln. Finde sie.“',
-    'Auf der Werkbank liegen eine gelbe Kinderschaufel und ein Metalldetektor. Am Stand '
+    'Auf der Werkbank lagen eine gelbe Kinderschaufel und ein Metalldetektor. Am Stand '
       + 'hinten links steht „Heu verkaufen“. Wer dort bezahlt, sieht man nicht.',
   ],
+  // Nach der Reihenfolge der Funde erzählt, darum ohne Nadelart (die steht im Titel)
   nadeln: [
-    'Etwas glitzert im Heu. Eine Nähnadel, rostig, völlig wertlos. '
-      + 'Auf der Rückseite des Zettels steht plötzlich: „Eine.“',
-    'Die zweite Nadel ist dicker, eine Stopfnadel. Irgendwo hinter dem Haufen klackt ein Schloss. '
-      + 'Das Tor bleibt trotzdem zu.',
-    'Eine Stecknadel mit rotem Kopf. Jemand hat sie mit Absicht hier versteckt, '
-      + 'da bist du dir jetzt sicher. Am Stand liegt ein neuer Zettel: „Weiter.“',
-    'Die Sticknadel liegt in einem Bett aus besonders ordentlichem Heu. '
-      + 'Hat hier jemand vor dir gesucht? Auf dem Boden: Kratzspuren, die zum Haufen führen.',
-    'Eine Kompassnadel. Sie zeigt nicht nach Norden, sondern stur auf den Verkaufsstand. '
+    'Etwas glitzert im Heu. Die erste Nadel. Auf der Rückseite des Zettels steht plötzlich: „Eine.“',
+    'Die zweite. Irgendwo hinter dem Haufen klackt ein Schloss. Das Tor bleibt trotzdem zu.',
+    'Die dritte. Jemand hat sie mit Absicht hier versteckt, da bist du dir jetzt sicher. '
+      + 'Am Stand liegt ein neuer Zettel: „Weiter.“',
+    'Die vierte lag in einem Bett aus besonders ordentlichem Heu. Hat hier jemand vor dir gesucht? '
+      + 'Auf dem Boden: Kratzspuren, die zum Haufen führen.',
+    'Die fünfte. Auf der flachen Hand dreht sie sich stur zum Verkaufsstand. '
       + 'Von drüben hörst du jemanden lachen.',
-    'Die sechste Nadel ist aus Gold. Das Tor rollt hoch, draußen ist heller Tag. '
-      + 'Auf dem Zettel steht nur noch: „Danke. Die nächste Ladung kommt, wenn du sie bestellst.“',
+    'Die sechste. Draußen hupt ein Laster. Auf dem Zettel steht nur noch: '
+      + '„Danke. Die nächste Ladung kommt, wenn du sie am Lieferschalter bestellst.“',
   ],
-  ladung: 'Ein Laster setzt rückwärts ans Tor, kippt, fährt wieder. Neue Ladung, neue Nadeln.',
+  ladung: 'Kurz darauf liegt ein neuer Haufen in der Halle. Neue Halme, neue Nadeln.',
 };
 
 /* ------------------------------------------------------------ Ladungen */

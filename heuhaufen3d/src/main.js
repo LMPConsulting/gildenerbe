@@ -245,7 +245,6 @@ function hauptStart() {
         if ('grafik' in neu) { speichernJetzt(); location.reload(); }
       },
       anleitung: () => anleitungZeigen(ui),
-      herunterladen: () => ui.toast('Kommt noch: die Datei mit Spielstand.', ''),
       loeschen: () => ui.modal({
         titel: 'Spielstand löschen?', absaetze: ['Alles ist weg: Geld, Forschung, Nadeln, Bauten. Das lässt sich nicht rückgängig machen.'],
         knoepfe: [{ text: 'Abbrechen', klasse: 'primaer' }, {
@@ -524,7 +523,7 @@ function hauptStart() {
       } else if (ziel.art === 'hausanschluss') {
         ui.modal({ titel: 'Hausanschluss', absaetze: ['Hier kommen 5 kW aus dem Netz. Maschinen in der Nähe hängen direkt dran, weiter weg helfen Strommasten.'], knoepfe: [{ text: 'OK', klasse: 'primaer' }] });
       } else if (ziel.art === 'werkbank') {
-        ui.toast('Die Werkbank. Kinderschaufel und Detektor sind schon in deiner Leiste.');
+        ui.toast('Die Werkbank. Kinderschaufel und Detektor von hier liegen in deiner Leiste.');
       } else if (ziel.art === 'nadel') {
         nadelFinden(s, ziel.nadel, ereignisPuffer);
       }

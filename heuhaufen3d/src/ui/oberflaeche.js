@@ -36,7 +36,7 @@ const ICON = {
   hand: '<path d="M8 21c-2-3-3-6-3-9V8a1.5 1.5 0 0 1 3 0v4M8 11V5a1.5 1.5 0 0 1 3 0v6M11 10V4a1.5 1.5 0 0 1 3 0v6M14 10V5.5a1.5 1.5 0 0 1 3 0V14c0 4-2 7-6 7H8"/>',
   sandschaufel: '<path d="M12 3v9"/><path d="M7 14c0-2 2-3 5-3s5 1 5 3c0 4-2 7-5 7s-5-3-5-7Z" fill="currentColor" fill-opacity=".35"/>',
   spaten: '<path d="M12 2v11"/><path d="M9 2h6"/><path d="M8 13h8l-1 7c-1 2-5 2-6 0Z"/>',
-  heugabel: '<path d="M12 11v11"/><path d="M6 3v5c0 2 2 3 6 3s6-1 6-3V3M9 3v6M12 3v7M15 3v6"/>',
+  heugabel: '<path d="M12 11v11"/><path d="M6 3v5c0 2 2 3 6 3s6-1 6-3V3M8.4 3v6.3M10.8 3v7M13.2 3v7M15.6 3v6.3"/>',
   besen: '<path d="M16 3 9 14"/><path d="M5 13l6 3-2 6c-2 0-5-2-6-4Z"/>',
   detektor: '<path d="M6 21 12 9"/><circle cx="15" cy="6" r="3"/><path d="M4 17l3 1"/>',
   sauger: '<path d="M4 20l7-7"/><rect x="11" y="5" width="9" height="8" rx="2"/><path d="M13 5V3h5v2"/>',

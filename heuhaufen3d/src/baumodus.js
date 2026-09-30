@@ -345,7 +345,8 @@ export function baumodusBauen(ctx) {
         if ((verschoben || !alt) && planZeit <= 0) {
           modus.anker = a;
           modus.plan = bandPlanen(s, modus.von, a, { gerade: !modus.einrasten });
-          planZeit = 0.12;
+          // Ohne Weg ist die Suche am teuersten: dann seltener neu suchen
+          planZeit = modus.plan.ok || modus.plan.grund === 'geld' ? 0.12 : 0.35;
           ctx.objekte.bandVorschau(modus.plan.punkte || [[modus.von.x, modus.von.y, modus.von.z], [a.x, a.y, a.z]], !!modus.plan.ok);
         }
         const plan = modus.plan;
