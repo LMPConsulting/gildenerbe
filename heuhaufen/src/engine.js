@@ -102,6 +102,8 @@ export function neuerStand(seed = Date.now()) {
     radar: { rest: 0, abstand: null, zeit: null },
     auftrag: { nr: 0, skip: 0, geliefert: 0, pause: 0 },
     mission: 0,
+    /** Missionen, die ein alter Stand schon bezahlt hat: werden ohne Belohnung übersprungen. */
+    missionErledigt: [],
     stat: {
       tipps: 0, hand: 0, drohne: 0, maschine: 0, gaenge: 0, verkauft: 0, gefegt: 0,
       abgetragen: 0, auftraege: 0, besterVerkauf: 0, maxGeld: 0, ersteNadel: null, ersteLadung: null,
@@ -409,6 +411,12 @@ export function techKaufen(s, id) {
   if (s.geld < 0 && s.geld > -1e-9) s.geld = 0;
   s.tech[id] = techStufe(s, id) + 1;
   s.rev++;
+  // Mit dem Band trägt niemand mehr: was noch in der Tasche ist, geht gleich aufs Band.
+  if (id === 'foerderband' && s.tasche > 0 && s.laufen <= 0) {
+    const e = [];
+    ankommen(s, e);
+    return { ok: true, ereignisse: e };
+  }
   return { ok: true };
 }
 
@@ -743,7 +751,8 @@ export function missionStand(s) {
 }
 
 function missionenPruefen(s, ereignisse) {
-  for (let schutz = 0; schutz < 5; schutz++) {
+  for (let schutz = 0; schutz < 8; schutz++) {
+    if (s.missionErledigt.includes(s.mission)) { s.mission++; continue; }
     const ms = missionStand(s);
     if (!ms || !ms.erfuellt) return;
     const { m } = ms;
@@ -1020,6 +1029,8 @@ const MISSIONEN_V2 = ['Heb etwas Heu auf', 'Bring 25 Halme zum Stand', 'Kauf ein
   'Trag eine Million Halme ab', 'Finde drei Nadeln', 'Bohr einen Brunnen', 'Trag den Haufen zur Hälfte ab',
   'Stell 20 Greifarme auf', 'Mach 50 Bögen Heupapier', 'Finde alle sechs Nadeln', 'Bestell eine neue Ladung',
   'Presse 100 Öko-Ziegel', 'Finde zwölf Nadeln', 'Erforsche 200 Stufen', 'Finde alle 24 Nadelarten'];
+/** Missionen, deren Text sich seit Fassung 2 geändert hat. */
+const MISSION_UMBENANNT = { 'Feg verschüttetes Heu zusammen': 'Kauf den Besen und feg verschüttetes Heu zusammen' };
 const summePreise = (kosten, faktor, von, bis) => {
   let n = 0;
   for (let i = von; i < bis; i++) n += kosten * Math.pow(faktor, i);
@@ -1045,9 +1056,18 @@ function vonFassung2(roh) {
     if (n > 0) erstattung += summePreise(kosten, faktor, 0, n);
   }
   roh.geld = zahlOder(roh.geld, 0) + Math.round(erstattung);
-  const text = MISSIONEN_V2[Math.floor(zahlOder(roh.mission, 0))];
-  const neu = text ? MISSIONEN.findIndex((m) => m.text === text) : -1;
-  roh.mission = text == null ? MISSIONEN.length : Math.max(0, neu);
+  // Die Reihenfolge hat sich geändert: weiter geht es bei der ersten noch offenen Mission,
+  // und was damals schon bezahlt war, wird später ohne Belohnung übersprungen.
+  const alt = Math.max(0, Math.floor(zahlOder(roh.mission, 0)));
+  const erledigt = new Set();
+  MISSIONEN_V2.slice(0, alt).forEach((text) => {
+    const i = MISSIONEN.findIndex((m) => m.text === (MISSION_UMBENANNT[text] || text));
+    if (i >= 0) erledigt.add(i);
+  });
+  let neu = 0;
+  while (erledigt.has(neu)) neu++;
+  roh.mission = neu;
+  roh.missionErledigt = [...erledigt].filter((i) => i > neu).sort((a, b) => a - b);
   roh.version = STAND_VERSION;
   return erstattung;
 }
@@ -1095,6 +1115,7 @@ export function laden(text) {
   for (const k of ['nr', 'skip', 'geliefert', 'pause']) s.auftrag[k] = Math.max(0, zahlOder(s.auftrag[k], 0));
   s.auftrag.nr = Math.floor(s.auftrag.nr);
   s.mission = Math.max(0, Math.floor(s.mission));
+  s.missionErledigt = s.missionErledigt.filter((i) => Number.isInteger(i) && i > s.mission && i < MISSIONEN.length);
   s.ladung = Math.max(1, Math.floor(s.ladung));
   s.stat.produziert = Object.fromEntries(Object.entries(s.stat.produziert).filter(([p, n]) => PRODUKTE[p] && Number.isFinite(n)));
   s.haufen.entfernt = Math.max(0, Math.min(s.haufen.entfernt, s.haufen.gesamt));

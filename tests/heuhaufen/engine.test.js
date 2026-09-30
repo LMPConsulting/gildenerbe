@@ -626,6 +626,8 @@ describe('Alte Stände und kurze Pausen', () => {
     expect(neu.maschinen.dampf).toBeUndefined();
     expect(neu.aus.dampf).toBeUndefined();
     expect(MISSIONEN[neu.mission].text).toBe('Bau einen Scanner');
+    // Silo und Greifarm waren damals schon bezahlt: sie werden ohne Belohnung übersprungen.
+    expect(neu.missionErledigt.map((i) => MISSIONEN[i].text)).toEqual(['Bau ein Silo', 'Bau einen Greifarm']);
     expect(JSON.parse(speichern(neu)).erstattet).toBeUndefined();
     expect(JSON.parse(speichern(neu)).version).toBe(3);
   });

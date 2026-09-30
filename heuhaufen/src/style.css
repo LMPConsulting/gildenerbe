@@ -164,7 +164,7 @@ button:disabled { cursor: default; }
 }
 .hinweis.sichtbar { display: block; }
 .szeneunten { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 5px; pointer-events: none; }
-.schildreihe { display: flex; align-items: flex-end; justify-content: flex-end; gap: 6px; min-width: 0; }
+.schildreihe { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: flex-end; gap: 5px 6px; min-width: 0; }
 .maschinenzeile {
   margin-right: auto; font-size: 11px; font-weight: 700; color: var(--heu-hell); min-width: 0;
   background: rgba(18, 14, 10, 0.78); border-radius: 8px; padding: 3px 8px;
@@ -459,6 +459,8 @@ button:disabled { cursor: default; }
 .toastan .szeneoben .mission { visibility: hidden; }
 /* Außerhalb des Haufens liegen oben Suchfeld und Kennzahlen: dort kommen Toasts von unten. */
 #app:not([data-reiter="haufen"]) .toasts { top: auto; bottom: calc(var(--reiter-h) + var(--safe-b) + 8px); flex-direction: column-reverse; }
+/* In der Forschung liegt unten das Blatt mit dem Kaufknopf: dort oben über dem Baum. */
+#app[data-reiter="forschung"] .toasts { top: calc(var(--kopf-h) + var(--safe-t) + 104px); bottom: auto; flex-direction: column; }
 @keyframes rein { from { opacity: 0; } }
 
 .modalhalter { display: none; }

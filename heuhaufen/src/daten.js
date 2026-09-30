@@ -26,7 +26,7 @@ export const GRUND = {
   saugerHitze: 6,
   drohnenMax: 0,
   drohnenRate: 4,
-  detektor: 3000,      // Reichweite in Halmen
+  detektor: 6000,      // Reichweite in Halmen
   radarCD: 60,         // Sekunden zwischen zwei Radarpings
   preisRoh: 0.0222,    // was der Stand pro Halm zahlt
   preisAlle: 1,
@@ -69,7 +69,7 @@ export const KREDIT_TILGUNG = 0.5;
 
 /** Wo die sechs Nadeln einer Ladung stecken können, als Anteil des Haufens von oben. */
 export const NADEL_BEREICHE = [
-  [0.0015, 0.004], [0.02, 0.06], [0.08, 0.2], [0.25, 0.45], [0.5, 0.75], [0.8, 0.99],
+  [0.0015, 0.0025], [0.02, 0.06], [0.08, 0.2], [0.25, 0.45], [0.5, 0.75], [0.8, 0.99],
 ];
 
 /** 24 Nadelarten, sechs je Ladung. Die Boni sind absichtlich lächerlich. */
@@ -500,9 +500,9 @@ export const MISSIONEN = [
   { text: 'Kauf die Heugabel', art: 'tech', ziel: 'heugabel', geld: 3 },
   { text: 'Halte den Detektor an den Haufen', art: 'werkzeug', ziel: 'detektor', geld: 2 },
   { text: 'Verdiene 30 $', art: 'verdient', ziel: 30, geld: 5 },
-  { text: 'Feg verschüttetes Heu zusammen', art: 'gefegt', ziel: 50, geld: 10 },
-  { text: 'Finde die erste Nadel', art: 'nadeln', ziel: 1, geld: 120 },
+  { text: 'Kauf den Besen und feg verschüttetes Heu zusammen', art: 'gefegt', ziel: 50, geld: 10 },
   { text: 'Kauf die Förderband-Pläne', art: 'tech', ziel: 'foerderband', geschenk: 'rechen' },
+  { text: 'Finde die erste Nadel', art: 'nadeln', ziel: 1, geld: 120 },
   { text: 'Stell einen zweiten Kolbenrechen auf', art: 'maschine', ziel: ['rechen', 2], geld: 150 },
   { text: 'Kauf Elektrizität', art: 'tech', ziel: 'elektrizitaet', geschenkTech: 'strommast' },
   { text: 'Bau einen Scanner', art: 'maschine', ziel: ['scanner', 1], geld: 600 },

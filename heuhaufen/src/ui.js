@@ -245,7 +245,7 @@ function einfuehrung() {
   modal({
     klasse: 'intromodal',
     ober: `Rund ${halme(ladungGroesse(stand ? stand.ladung : 1))} Halme`,
-    titel: 'Find die Nadel',
+    titel: 'Finde die Nadel',
     absaetze: GESCHICHTE.anfang,
     inhalt: h('ul', { class: 'anleitung' },
       h('li', {}, 'Tippe auf den Haufen, um Heu zu stechen. Unten wählst du das Werkzeug.'),
@@ -368,9 +368,14 @@ function ereignisse(liste) {
   if (missionen.length) {
     klang.fund(2);
     const letzte = missionen[missionen.length - 1];
-    toast(missionen.length === 1
-      ? `Mission erfüllt: ${letzte.text}${belohnungText(letzte) ? ` · ${belohnungText(letzte)}` : ''}`
-      : `${missionen.length} Missionen erfüllt, zuletzt: ${letzte.text}`, 'gut');
+    if (missionen.length === 1) {
+      toast(`Mission erfüllt: ${letzte.text}${belohnungText(letzte) ? ` · ${belohnungText(letzte)}` : ''}`, 'gut');
+    } else {
+      // Mehrere auf einmal: Geld zusammenzählen, Geschenke nennen.
+      const summe = missionen.filter((e) => !e.belohnung).reduce((n, e) => n + (e.geld || 0), 0);
+      const teile = [summe > 0 ? `+${geld(summe)}` : '', ...missionen.filter((e) => e.belohnung).map(belohnungText)].filter(Boolean);
+      toast(`${missionen.length} Missionen erfüllt${teile.length ? ` · ${teile.join(' · ')}` : ''}`, 'gut');
+    }
   }
   for (const e of liste) {
     if (e.typ === 'nadel') nadelGefunden(e);
@@ -526,7 +531,7 @@ function bildHaufen() {
       const lohn = ms.m.geschenk || ms.m.geschenkTech ? 'Geschenk' : ms.m.geld ? `+${geld(ms.m.geld)}` : '';
       const zaehlbar = !['tech', 'werkzeug', 'ladungen', 'haelfte'].includes(ms.m.art) && ms.ziel > 1;
       // Große Ziele als Prozent: "456.834/1,00 Mio." liest keiner.
-      const fortschritt = ms.m.art === 'haelfte' ? ` · ${prozentAb(ms.ist)}`
+      const fortschritt = ms.m.art === 'haelfte' ? ` · ${prozentAb(ms.ist)} von 50 %`
         : zaehlbar && ms.ziel >= 1e5 ? ` · ${prozentAb(ms.ist / ms.ziel)}`
         : zaehlbar ? ` · ${zahl(ms.ist)}/${zahl(ms.ziel)}` : '';
       setzeText(missionLohn, `${lohn}${fortschritt}`);
@@ -535,9 +540,10 @@ function bildHaufen() {
     // Hinweis nur für das, was keine Mission sagt
     let hw = '';
     if (ladungMoeglich(stand)) hw = 'Alle Nadeln dieser Ladung gefunden. Unter „Nadeln“ bestellst du die nächste.';
+    else if (ms && ms.m.art === 'gefegt' && !w.frei.has('besen')) hw = 'Den Besen gibt es in der Forschung unter Handarbeit.';
     else if (rest(stand) <= 0) hw = 'Der Haufen ist leer.';
     else if (!hatBand(w) && stand.laufen <= 0 && stand.tasche >= taschePlatz(w)) hw = 'Die Tasche ist voll. Bring das Heu zum Stand.';
-    else if (hatBand(w) && fabrik(stand).fluss > 0 && fabrik(stand).deckung < 0.95) {
+    else if (hatBand(w) && w.frei.has('generator') && fabrik(stand).fluss > 0 && fabrik(stand).deckung < 0.95) {
       hw = w.frei.has('scanner') ? 'Nicht alles Heu auf dem Band wird gescannt. Nadeln können zurückfallen.'
         : 'Ohne Scanner fallen Nadeln, die Maschinen erwischen, zurück in den Haufen.';
     }
@@ -564,20 +570,20 @@ function bildHaufen() {
     schalte(hitze, 'heiss', stand.sauger.heiss);
     // Was in der Halle arbeitet, steht als Zeile unten im Bild, nicht auf die Leinwand gemalt.
     // Kurz, damit alles in eine Zeile passt; ausgeschrieben steht es im title.
-    const liste = [['arm', 'Arm', 'Arme', 'Arme'], ['rechen', 'Rechen', 'Rechen', 'Rechen'], ['generator', 'Generator', 'Generatoren', 'Gen.']]
+    const liste = [['arm', 'Arm', 'Arme', 'Arme'], ['rechen', 'Rechen', 'Rechen', 'Rechen'], ['generator', 'Generator', 'Generatoren', 'Generatoren']]
       .filter(([id]) => stand.maschinen[id] > 0)
       .map(([id, eins, viele, kurz]) => {
         const n = stand.maschinen[id];
         const aus = stand.aus[id] ? ' (aus)' : '';
         return [`${n} ${n === 1 ? eins : viele}${aus}`, `${n} ${n === 1 ? eins : kurz}${aus}`];
       });
-    if (stand.drohnen) liste.push([`${stand.drohnen} ${stand.drohnen === 1 ? 'Drohne' : 'Drohnen'}`, `${stand.drohnen} Dr.`]);
+    // Drohnen stehen auf ihrem eigenen Knopf.
     const zaehl = liste.map((x) => x[0]);
     setzeText(maschinenZeile, liste.map((x) => x[1]).join(' · '));
     maschinenZeile.title = zaehl.join(' · ');
     maschinenZeile.hidden = !zaehl.length;
     // Ohne Tasche ist die obere Reihe frei: dann steht die Maschinenzeile dort und das Werkzeugschild allein.
-    const oben = tasche.hidden ? balkenReihe : schildReihe;
+    const oben = tasche.hidden && hitze.hidden ? balkenReihe : schildReihe;
     if (maschinenZeile.parentNode !== oben) oben.prepend(maschinenZeile);
     const wzName = WERKZEUGE.find((x) => x.id === stand.werkzeug).kurz;
     let info = '';
@@ -725,7 +731,7 @@ function bildHalle() {
       const umschalten = h('button', {
         class: 'knopf klein', onclick: () => { maschineUmschalten(stand, m.id); klang.klick(); },
       });
-      let sicher = 0;
+      let sicher = -Infinity;
       const abbauen = h('button', {
         class: 'knopf klein', 'aria-label': `${m.name} abbauen`, onclick: () => {
           if (performance.now() - sicher > 2500) {
@@ -734,7 +740,7 @@ function bildHalle() {
             setTimeout(() => setzeText(abbauen, '−'), 2500);
             return;
           }
-          sicher = 0;
+          sicher = -Infinity;
           setzeText(abbauen, '−');
           const r = maschineAbbauen(stand, m.id);
           if (r.ok) toast(`${m.name} abgebaut, ${geld(r.erstattung)} zurück.`);
@@ -789,7 +795,7 @@ function bildHalle() {
       else if (f.strom < 1 && f.bedarf > 0) {
         warn.push(f.brennBedarf > 0 && f.fluss < f.brennBedarf
           ? 'Die Generatoren bekommen zu wenig Heu vom Band. Mehr Rechen oder Arme, oder weniger Maschinen.'
-          : `Der Strom reicht nicht: alle Maschinen laufen mit ${prozentAb(f.strom)}.`);
+          : `Der Strom reicht nicht: alle Maschinen laufen mit ${prozentAb(f.strom)}.${wv.frei.has('generator') ? '' : ' Mehr Strom gibt es mit „Elektrizität“ in der Forschung.'}`);
       }
       if (f.fluss > 0 && f.deckung < 1) warn.push(`Nur ${prozentAb(f.deckung)} des Heus wird gescannt. Übersehene Nadeln fallen zurück in den Haufen.`);
       if (f.wasserAnteil < 1) warn.push('Das Wasser reicht nicht für alle Pulper und Papiermaschinen.');
@@ -1056,6 +1062,7 @@ function bildForschung() {
       klangWecken();
       const r = techKaufen(stand, id);
       if (r.ok) {
+        if (r.ereignisse) ereignisse(r.ereignisse);
         klang.kauf();
         summen(8);
         const karte = karten[id].karte;

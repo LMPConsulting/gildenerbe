@@ -80,7 +80,7 @@ sonst das Billigste mit Nutzen und lehnt Aufträge ab, die die Halle nicht bedie
 |---|---|
 | Heugabel | 1 min |
 | Förderband | 10 min |
-| erste Nadel | 7 min |
+| erste Nadel | 5 min |
 | halbe Ladung | 78 min |
 | Ladung 1 geschafft | 98 min |
 | Ladung 2 (10 Mio. Halme) | knapp eine Stunde |
