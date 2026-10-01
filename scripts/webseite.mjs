@@ -188,6 +188,23 @@ const SPIELE = [
   },
 ];
 
+// Kein Spiel, sondern ein Verweis: Montys Karteikasten liegt privat bei claude.ai
+// und öffnet sich nur nach Anmeldung und mit Passwort. Bewusst nicht in SPIELE —
+// er wird nicht gebaut, nicht offline gespeichert und nicht im Symbol mitgezählt.
+const LERNEN = {
+  url: 'https://claude.ai/artifact/SYKX8SU9H4sZyk3P8CXBv3',
+  titel: 'Lernkasten',
+  zeile: 'Karteikarten mit Wiederholung',
+  text: 'Umdrehen, bewerten, wiederkommen lassen — wie Anki. Was sitzt, kommt seltener, '
+    + 'was nicht sitzt, gleich noch einmal.',
+  fakten: ['Privat', 'Anmeldung bei claude.ai'],
+  farbe: '#8e9bff',
+  icon: '<rect x="14" y="10" width="38" height="44" rx="6" fill="none" stroke-width="5"/>'
+    + '<path d="M8 18 V52 a6 6 0 0 0 6 6 H40" fill="none" stroke-width="5" stroke-linecap="round" opacity="0.55"/>'
+    + '<rect x="22" y="24" width="22" height="5" rx="2" stroke="none"/>'
+    + '<rect x="22" y="35" width="15" height="5" rx="2" stroke="none" opacity="0.6"/>',
+};
+
 mkdirSync(ziel, { recursive: true });
 
 for (const spiel of SPIELE) {
@@ -271,6 +288,20 @@ const startseite = `<!doctype html>
 
   <main class="liste">${SPIELE.map(kachel).join('')}
   </main>
+
+  <section class="lernen" aria-labelledby="lernen-titel">
+    <h2 class="abschnitt" id="lernen-titel">Lernen</h2>
+    <a class="spiel" href="${LERNEN.url}" target="_blank" rel="noopener" style="--akzent:${LERNEN.farbe}">
+      <svg class="zeichen" viewBox="0 0 64 64" aria-hidden="true">${LERNEN.icon}</svg>
+      <div class="text">
+        <h2>${LERNEN.titel}</h2>
+        <p class="zeile">${LERNEN.zeile}</p>
+        <p class="beschreibung">${LERNEN.text}</p>
+        <p class="fakten">${LERNEN.fakten.map((f) => `<span>${f}</span>`).join('')}</p>
+      </div>
+      <span class="pfeil" aria-hidden="true">↗</span>
+    </a>
+  </section>
 
   <section class="hinweiskasten">
     <h3>Vor dem Flug: einmal installieren</h3>
@@ -367,6 +398,12 @@ body {
   border: 1px solid var(--naht); border-radius: 999px; padding: 2px 8px;
 }
 .spiel .pfeil { color: var(--leise); font-size: 20px; flex: none; }
+
+.lernen { margin-top: 26px; }
+.abschnitt {
+  margin: 0 0 10px; font-size: 11px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--leise); font-weight: 700;
+}
 
 .hinweiskasten {
   margin-top: 26px; background: var(--karte); border: 1px solid var(--naht);
